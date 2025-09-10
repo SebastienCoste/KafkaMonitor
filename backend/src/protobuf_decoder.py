@@ -75,9 +75,18 @@ class ProtobufDecoder:
                 raise FileNotFoundError(f"Proto file not found: {proto_file}")
                 
             logger.info(f"🎯 Using proto file: {proto_path}")
-            decoder = TopicDecoder(str(proto_path), message_type)
-            self.topic_decoders[topic] = decoder
-            logger.info(f"✅ Successfully loaded protobuf decoder for topic '{topic}' with message type '{message_type}'")
+            
+            # Try to load from cache first
+            cached_class = self.cache.load_compilation(topic, proto_file, message_type)
+            if cached_class:
+                decoder = CachedTopicDecoder(topic, message_type, cached_class)
+                self.topic_decoders[topic] = decoder
+                logger.info(f"✅ Successfully loaded CACHED protobuf decoder for topic '{topic}' with message type '{message_type}'")
+            else:
+                # Compile and cache
+                decoder = TopicDecoder(str(proto_path), message_type, self.cache, topic, proto_file)
+                self.topic_decoders[topic] = decoder
+                logger.info(f"✅ Successfully loaded and CACHED protobuf decoder for topic '{topic}' with message type '{message_type}'")
             
         except Exception as e:
             logger.error(f"💥 Failed to load protobuf for topic '{topic}': {str(e)}")
