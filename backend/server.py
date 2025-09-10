@@ -335,8 +335,35 @@ async def lifespan(app: FastAPI):
     
     logger.info("✅ Application shutdown complete")
 
-# Update the FastAPI app to use lifespan
+# Create the FastAPI app with lifespan
 app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
+
+# Include the router in the main app
+app.include_router(api_router)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Serve static files (frontend)
+if os.path.exists("../frontend/build"):
+    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
+    
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse("../frontend/build/index.html")
 
 if __name__ == "__main__":
     import uvicorn
