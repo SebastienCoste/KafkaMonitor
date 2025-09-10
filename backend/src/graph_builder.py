@@ -17,6 +17,10 @@ class TraceGraphBuilder:
     """Manages topic graph and trace collection with FIFO eviction"""
 
     def __init__(self, topics_config_path: str, max_traces: int = 1000):
+        logger.info(f"🔄 Initializing TraceGraphBuilder")
+        logger.info(f"📄 Topics config path: {topics_config_path}")
+        logger.info(f"📊 Max traces: {max_traces}")
+        
         self.topics_config_path = topics_config_path
         self.max_traces = max_traces
         self.topic_graph = TopicGraph()
@@ -24,6 +28,8 @@ class TraceGraphBuilder:
         self.trace_order = deque()  # For FIFO eviction
         self.monitored_topics: Set[str] = set()
         self._load_topic_graph()
+        
+        logger.info(f"✅ TraceGraphBuilder initialized successfully")
 
     def _load_topic_graph(self):
         """Load topic graph configuration"""
