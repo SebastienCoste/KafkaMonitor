@@ -44,6 +44,17 @@ async def initialize_kafka_components():
     logger.info("🚀 Starting Kafka trace viewer component initialization")
     global graph_builder, kafka_consumer
     
+    # Check if required directories exist
+    if not CONFIG_DIR.exists():
+        logger.error(f"❌ Configuration directory not found: {CONFIG_DIR}")
+        logger.info("💡 Make sure you're running from the correct directory with config/ folder")
+        raise FileNotFoundError(f"Configuration directory not found: {CONFIG_DIR}")
+    
+    if not PROTO_DIR.exists():
+        logger.error(f"❌ Proto directory not found: {PROTO_DIR}")
+        logger.info("💡 Creating proto directory structure...")
+        PROTO_DIR.mkdir(parents=True, exist_ok=True)
+    
     try:
         logger.info("📄 Loading configuration files...")
         
