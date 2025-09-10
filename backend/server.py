@@ -360,3 +360,31 @@ async def lifespan(app: FastAPI):
 
 # Update the FastAPI app to use lifespan
 app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
+
+if __name__ == "__main__":
+    import uvicorn
+    import sys
+    
+    # Configure logging
+    logging.basicConfig(
+        level=logging.DEBUG,  # More verbose for local development
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    logger.info("🚀 Starting Kafka Trace Viewer Server...")
+    logger.info(f"📂 Working directory: {os.getcwd()}")
+    logger.info(f"📂 Config directory: {CONFIG_DIR}")
+    logger.info(f"📂 Proto directory: {PROTO_DIR}")
+    
+    # Check basic requirements before starting
+    if not CONFIG_DIR.exists():
+        logger.error(f"❌ Configuration directory not found: {CONFIG_DIR}")
+        logger.error("💡 Make sure you're running from the backend/ directory")
+        logger.error("💡 Try: cd backend && python server.py")
+        sys.exit(1)
+    
+    try:
+        uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=False)
+    except Exception as e:
+        logger.error(f"❌ Failed to start server: {e}")
+        raise
