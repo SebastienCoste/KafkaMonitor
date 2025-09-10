@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package kafka_trace.test;
+
+message ProcessEvent {
+    string trace_id = 1;
+    string process_id = 2;
+    string process_type = 3;
+    int64 processed_timestamp = 4;
+    string result = 5;
+}
