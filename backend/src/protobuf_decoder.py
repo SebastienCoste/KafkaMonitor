@@ -309,12 +309,58 @@ class TopicDecoder:
                         f"Message type '{self.message_type}' not found. Available: {available_classes}"
                     )
 
+                # Cache the compilation if cache is available
+                if self.cache and self.topic and self.proto_file:
+                    generated_files = {}
+                    for py_file in expected_py_files:
+                        file_name = os.path.basename(py_file)
+                        generated_files[file_name] = Path(py_file)
+                    
+                    self.cache.save_compilation(self.topic, self.proto_file, generated_files, self.message_class)
+
         except Exception as e:
             logger.error(f"💥 Failed to load protobuf definition: {str(e)}")
             logger.error(f"🔴 Error type: {type(e).__name__}")
             if hasattr(e, '__cause__') and e.__cause__:
                 logger.error(f"🔴 Caused by: {e.__cause__}")
             raise ProtobufDecodingError(f"Protobuf loading failed: {str(e)}") from e
+    
+    def _find_dependencies(self, proto_file: Path, proto_root: Path) -> List[str]:
+        """Find import dependencies for a proto file"""
+        dependencies = []
+        
+        try:
+            content = proto_file.read_text()
+            lines = content.split('\n')
+            
+            for line in lines:
+                line = line.strip()
+                if line.startswith('import "') and line.endswith('";'):
+                    # Extract import path
+                    import_path = line[8:-2]  # Remove 'import "' and '";'
+                    
+                    # Check if the imported file exists
+                    imported_file = proto_root / import_path
+                    if imported_file.exists():
+                        dependencies.append(import_path)
+                        logger.debug(f"🔗 Found dependency: {import_path}")
+                        
+                        # Recursively find dependencies of dependencies
+                        sub_deps = self._find_dependencies(imported_file, proto_root)
+                        dependencies.extend(sub_deps)
+            
+        except Exception as e:
+            logger.warning(f"Could not analyze dependencies for {proto_file}: {e}")
+        
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_deps = []
+        for dep in dependencies:
+            if dep not in seen:
+                seen.add(dep)
+                unique_deps.append(dep)
+        
+        return unique_deps
 
     def decode_message(self, message_bytes: bytes) -> Dict[str, Any]:
         """
