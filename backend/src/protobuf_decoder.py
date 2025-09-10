@@ -1,10 +1,11 @@
 """
-Protobuf message decoder with support for multiple proto files per topic
+Protobuf message decoder with support for multiple proto files per topic and subfolder imports
 """
 import os
 import importlib.util
 import tempfile
 import subprocess
+import shutil
 from typing import Dict, Any, Optional, List
 from google.protobuf.message import Message
 from google.protobuf import descriptor_pb2
@@ -13,7 +14,13 @@ from google.protobuf import message_factory
 import logging
 from pathlib import Path
 
+# Set up extensive logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+class ProtobufDecodingError(Exception):
+    """Custom exception for protobuf decoding errors"""
+    pass
 
 class ProtobufDecoder:
     """Handles protobuf message decoding for multiple topics"""
