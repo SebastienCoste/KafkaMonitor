@@ -318,18 +318,24 @@ if os.path.exists("../frontend/build"):
     async def serve_frontend():
         return FileResponse("../frontend/build/index.html")
 
-@app.on_event("startup")
-async def startup_event():
-    """Initialize Kafka components on startup"""
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan context manager"""
+    # Startup
+    logger.info("🚀 Application starting up...")
     try:
         await initialize_kafka_components()
+        logger.info("✅ Application startup complete")
     except Exception as e:
-        logger.error(f"Failed to start Kafka components: {e}")
-        # Don't fail startup - allow manual initialization
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Cleanup on shutdown"""
+        logger.error(f"❌ Failed to start Kafka components: {e}")
+        logger.error("⚠️  Continuing without Kafka components - manual initialization required")
+    
+    yield
+    
+    # Shutdown
+    logger.info("🔄 Application shutting down...")
     if kafka_consumer:
         kafka_consumer.stop_consuming()
     
@@ -340,4 +346,7 @@ async def shutdown_event():
         except:
             pass
     
-    logger.info("Application shutdown complete")
+    logger.info("✅ Application shutdown complete")
+
+# Update the FastAPI app to use lifespan
+app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
