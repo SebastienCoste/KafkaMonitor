@@ -364,7 +364,6 @@ app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
 
 if __name__ == "__main__":
     import uvicorn
-    import sys
     
     # Configure logging
     logging.basicConfig(
