@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package kafka_trace.processed_events;
+
+message ProcessedEvent {
+    // Trace identifier
+    string trace_id = 1;
+    
+    // Event metadata
+    string original_event_id = 2;
+    string processing_stage = 3;
+    int64 processed_timestamp = 4;
+    
+    // Processing results
+    string processing_result = 5;
+    repeated string tags = 6;
+    double confidence_score = 7;
+    
+    // Enriched data
+    map<string, string> enriched_properties = 8;
+    string user_segment = 9;
+    bool requires_notification = 10;
+}

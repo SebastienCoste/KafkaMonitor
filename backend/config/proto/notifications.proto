@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package kafka_trace.notifications;
+
+message NotificationEvent {
+    // Trace identifier
+    string trace_id = 1;
+    
+    // Notification metadata
+    string notification_id = 2;
+    string user_id = 3;
+    string notification_type = 4;
+    int64 created_timestamp = 5;
+    
+    // Notification content
+    string title = 6;
+    string content = 7;
+    string channel = 8;  // email, push, sms
+    
+    // Delivery status
+    bool sent_successfully = 9;
+    string delivery_status = 10;
+    int64 sent_timestamp = 11;
+    
+    // Retry information
+    int32 retry_count = 12;
+    string failure_reason = 13;
+}

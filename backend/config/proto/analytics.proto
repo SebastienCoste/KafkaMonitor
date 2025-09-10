@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package kafka_trace.analytics;
+
+message AnalyticsEvent {
+    // Trace identifier
+    string trace_id = 1;
+    
+    // Event metadata
+    string event_name = 2;
+    string event_category = 3;
+    int64 timestamp = 4;
+    
+    // Metrics
+    map<string, double> metrics = 5;
+    map<string, string> dimensions = 6;
+    
+    // Aggregation data
+    string aggregation_period = 7;  // hourly, daily, etc.
+    double total_value = 8;
+    int32 event_count = 9;
+    
+    // User context
+    string user_id = 10;
+    string session_id = 11;
+}

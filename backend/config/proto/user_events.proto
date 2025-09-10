@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package kafka_trace.user_events;
+
+message UserEvent {
+    // Trace identifier
+    string trace_id = 1;
+    
+    // Event metadata
+    string user_id = 2;
+    string session_id = 3;
+    string event_type = 4;
+    int64 timestamp = 5;
+    
+    // Event data
+    string page_url = 6;
+    string user_agent = 7;
+    map<string, string> properties = 8;
+    
+    // Optional fields
+    string referrer = 9;
+    string ip_address = 10;
+}
