@@ -74,46 +74,130 @@ class TopicDecoder:
         self._load_proto_definition()
 
     def _load_proto_definition(self):
-        """Load and compile protobuf definition"""
+        """Load and compile protobuf definition with support for subfolder imports"""
+        logger.info(f"🔄 Starting protobuf compilation for: {self.proto_file_path}")
+        logger.info(f"🎯 Target message type: {self.message_type}")
+        
         try:
             # Create temporary directory for compiled proto
             with tempfile.TemporaryDirectory() as temp_dir:
-                # Compile proto file
-                proto_dir = os.path.dirname(self.proto_file_path)
-                proto_file = os.path.basename(self.proto_file_path)
+                logger.debug(f"📁 Created temp directory: {temp_dir}")
                 
+                # Get the root proto directory and the proto file path
+                proto_path = Path(self.proto_file_path)
+                if not proto_path.exists():
+                    raise FileNotFoundError(f"Proto file not found: {self.proto_file_path}")
+                
+                # Find the root proto directory (contains all proto files and subfolders)
+                proto_root = proto_path.parent
+                while proto_root.name != 'proto' and proto_root.parent != proto_root:
+                    proto_root = proto_root.parent
+                
+                logger.info(f"📂 Proto root directory: {proto_root}")
+                logger.info(f"📄 Proto file: {proto_path}")
+                
+                # Copy entire proto directory structure to temp directory to handle imports
+                temp_proto_dir = Path(temp_dir) / "proto"
+                logger.debug(f"📋 Copying proto directory to: {temp_proto_dir}")
+                shutil.copytree(proto_root, temp_proto_dir)
+                
+                # Get relative path from proto root
+                relative_proto_path = proto_path.relative_to(proto_root)
+                temp_proto_file = temp_proto_dir / relative_proto_path
+                
+                logger.debug(f"🔗 Relative proto path: {relative_proto_path}")
+                logger.debug(f"🎯 Temp proto file: {temp_proto_file}")
+                
+                # Build protoc command with proper import paths
                 cmd = [
                     'protoc',
                     f'--python_out={temp_dir}',
-                    f'--proto_path={proto_dir}',
-                    self.proto_file_path
+                    f'--proto_path={temp_proto_dir}',
+                    str(relative_proto_path)
                 ]
-
-                result = subprocess.run(cmd, capture_output=True, text=True)
+                
+                logger.info(f"🚀 Running protoc command: {' '.join(cmd)}")
+                
+                result = subprocess.run(cmd, capture_output=True, text=True, cwd=temp_proto_dir)
+                
                 if result.returncode != 0:
-                    raise RuntimeError(f"Failed to compile proto: {result.stderr}")
-
-                # Import compiled proto module
-                proto_name = os.path.splitext(proto_file)[0]
-                py_file = os.path.join(temp_dir, f"{proto_name}_pb2.py")
-
-                spec = importlib.util.spec_from_file_location(f"{proto_name}_pb2", py_file)
+                    logger.error(f"❌ Protoc compilation failed!")
+                    logger.error(f"🔴 Return code: {result.returncode}")
+                    logger.error(f"🔴 STDERR: {result.stderr}")
+                    logger.error(f"🔴 STDOUT: {result.stdout}")
+                    
+                    # List files in temp directory for debugging
+                    logger.error("📋 Files in temp proto directory:")
+                    for root, dirs, files in os.walk(temp_proto_dir):
+                        for file in files:
+                            logger.error(f"  📄 {os.path.join(root, file)}")
+                    
+                    raise ProtobufDecodingError(f"Failed to compile proto: {result.stderr}")
+                
+                logger.info("✅ Protoc compilation successful!")
+                logger.debug(f"📤 STDOUT: {result.stdout}")
+                
+                # Find the generated Python file
+                proto_name = proto_path.stem
+                
+                # Look for the generated file in the expected location
+                expected_py_files = []
+                for root, dirs, files in os.walk(temp_dir):
+                    for file in files:
+                        if file.endswith('_pb2.py'):
+                            full_path = os.path.join(root, file)
+                            expected_py_files.append(full_path)
+                            logger.debug(f"📄 Found generated file: {full_path}")
+                
+                # Find the specific file we need
+                target_py_file = None
+                for py_file in expected_py_files:
+                    if proto_name + '_pb2.py' in py_file:
+                        target_py_file = py_file
+                        break
+                
+                if not target_py_file:
+                    logger.error(f"❌ Could not find generated Python file for {proto_name}")
+                    logger.error(f"🔍 Expected files containing '{proto_name}_pb2.py'")
+                    logger.error(f"🔍 Found files: {expected_py_files}")
+                    raise ProtobufDecodingError(f"Generated Python file not found for {proto_name}")
+                
+                logger.info(f"🎯 Found target Python file: {target_py_file}")
+                
+                # Import the compiled proto module
+                module_name = f"{proto_name}_pb2"
+                spec = importlib.util.spec_from_file_location(module_name, target_py_file)
                 proto_module = importlib.util.module_from_spec(spec)
+                
+                logger.debug(f"📦 Loading module: {module_name}")
                 spec.loader.exec_module(proto_module)
-
+                
                 # Get the specific message class
                 if hasattr(proto_module, self.message_type):
                     self.message_class = getattr(proto_module, self.message_type)
-                    logger.info(f"Loaded message class: {self.message_type}")
+                    logger.info(f"✅ Successfully loaded message class: {self.message_type}")
+                    logger.debug(f"🏷️  Message class type: {type(self.message_class)}")
                 else:
-                    available_classes = [attr for attr in dir(proto_module) 
-                                       if isinstance(getattr(proto_module, attr), type) 
-                                       and issubclass(getattr(proto_module, attr), Message)]
-                    raise ValueError(f"Message type '{self.message_type}' not found. Available: {available_classes}")
+                    available_classes = []
+                    for attr_name in dir(proto_module):
+                        attr = getattr(proto_module, attr_name)
+                        if isinstance(attr, type) and issubclass(attr, Message):
+                            available_classes.append(attr_name)
+                    
+                    logger.error(f"❌ Message type '{self.message_type}' not found in module")
+                    logger.error(f"🔍 Available message classes: {available_classes}")
+                    logger.error(f"🔍 All module attributes: {[attr for attr in dir(proto_module) if not attr.startswith('_')]}")
+                    
+                    raise ProtobufDecodingError(
+                        f"Message type '{self.message_type}' not found. Available: {available_classes}"
+                    )
 
         except Exception as e:
-            logger.error(f"Failed to load protobuf definition: {e}")
-            raise
+            logger.error(f"💥 Failed to load protobuf definition: {str(e)}")
+            logger.error(f"🔴 Error type: {type(e).__name__}")
+            if hasattr(e, '__cause__') and e.__cause__:
+                logger.error(f"🔴 Caused by: {e.__cause__}")
+            raise ProtobufDecodingError(f"Protobuf loading failed: {str(e)}") from e
 
     def decode_message(self, message_bytes: bytes) -> Dict[str, Any]:
         """
