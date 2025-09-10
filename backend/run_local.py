@@ -119,22 +119,35 @@ def main():
     print("✅ All checks passed! Starting Kafka Trace Viewer...")
     print("=" * 50)
     
-    # Import and run the server
+    # Start the server
     try:
         # Add current directory to Python path
         sys.path.insert(0, str(Path.cwd()))
         
-        # Import the server
-        import server
-        
-        # The server will start automatically due to the lifespan handler
-        print("\n🌐 Server should be running at:")
+        print("\n🌐 Starting server at:")
         print("   - API: http://localhost:8001")
-        print("   - Health: http://localhost:8001/api/health")
+        print("   - Health: http://localhost:8001/api/health") 
         print("   - Docs: http://localhost:8001/docs")
         print("\n💡 Start the frontend separately with: cd frontend && yarn start")
         print("🛑 Press Ctrl+C to stop the server")
+        print("\n" + "=" * 50)
         
+        # Import and start the server using uvicorn
+        import uvicorn
+        import logging
+        
+        # Configure logging for local development
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        
+        # Start the server (this will keep running)
+        uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=False)
+        
+    except KeyboardInterrupt:
+        print("\n\n🛑 Server stopped by user")
+        print("✅ Shutdown complete")
     except Exception as e:
         print(f"\n❌ Failed to start server: {e}")
         import traceback
