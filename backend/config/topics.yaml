@@ -1,12 +1,12 @@
 # Topic configuration with protobuf mappings
 topics:
   user-events:
-    proto_file: "user_events.proto"
+    proto_file: "events/user_events.proto"
     message_type: "UserEvent"
     description: "Raw user interaction events"
   
   processed-events:
-    proto_file: "processed_events.proto"
+    proto_file: "processing/processed_events.proto"
     message_type: "ProcessedEvent"
     description: "Events after processing pipeline"
   
