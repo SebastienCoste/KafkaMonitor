@@ -99,10 +99,32 @@ def check_dependencies():
     
     return True
 
+def check_port_available(port):
+    """Check if a port is available"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.bind(('0.0.0.0', port))
+        return True
+    except OSError:
+        return False
+
 def main():
     """Main function to run all checks and start the server"""
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description='Kafka Trace Viewer Local Development')
+    parser.add_argument('--port', type=int, default=8001, help='Port to run the server on (default: 8001)')
+    args = parser.parse_args()
+    
     print("🚀 Kafka Trace Viewer - Local Development Setup")
     print("=" * 50)
+    
+    # Check if port is available
+    if not check_port_available(args.port):
+        print(f"⚠️  Port {args.port} is already in use!")
+        print(f"💡 Try a different port: python run_local.py --port 8002")
+        if args.port == 8001:
+            print(f"💡 Or stop the existing service: sudo supervisorctl stop backend")
+        sys.exit(1)
     
     # Run all checks
     if not check_system_requirements():
