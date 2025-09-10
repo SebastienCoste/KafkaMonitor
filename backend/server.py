@@ -8,6 +8,7 @@ import logging
 import asyncio
 import json
 import yaml
+import traceback
 from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
