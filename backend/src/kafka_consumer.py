@@ -5,6 +5,7 @@ import asyncio
 import logging
 import random
 import time
+import traceback
 from typing import Dict, List, Callable, Optional
 from confluent_kafka import Consumer, KafkaError, KafkaException
 import yaml
@@ -12,6 +13,8 @@ from datetime import datetime
 from src.models import KafkaMessage
 from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 
+# Set up extensive logging
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 class KafkaConsumerService:
