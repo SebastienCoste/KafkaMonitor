@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package kafka_trace.test;
+
+message Event {
+    string trace_id = 1;
+    string event_id = 2;
+    string event_type = 3;
+    int64 timestamp = 4;
+    map<string, string> properties = 5;
+}
