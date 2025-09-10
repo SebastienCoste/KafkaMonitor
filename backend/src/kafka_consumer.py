@@ -21,6 +21,11 @@ class KafkaConsumerService:
     """Kafka consumer with SASL/SCRAM authentication and mock support"""
 
     def __init__(self, config_path: str, decoder: ProtobufDecoder, trace_header_field: str):
+        logger.info(f"🔄 Initializing KafkaConsumerService")
+        logger.info(f"📄 Config path: {config_path}")
+        logger.info(f"🎯 Trace header field: {trace_header_field}")
+        logger.info(f"🔧 Decoder type: {type(decoder).__name__}")
+        
         self.config_path = config_path
         self.decoder = decoder
         self.trace_header_field = trace_header_field
@@ -30,6 +35,8 @@ class KafkaConsumerService:
         self.message_handlers: List[Callable[[KafkaMessage], None]] = []
         self.subscribed_topics = []
         self._load_config()
+        
+        logger.info(f"✅ KafkaConsumerService initialized successfully")
 
     def _load_config(self):
         """Load Kafka configuration from YAML file"""
