@@ -41,64 +41,101 @@ PROTO_DIR = CONFIG_DIR / "proto"
 
 async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
+    logger.info("🚀 Starting Kafka trace viewer component initialization")
     global graph_builder, kafka_consumer
     
     try:
+        logger.info("📄 Loading configuration files...")
+        
         # Load settings
-        with open(CONFIG_DIR / "settings.yaml", 'r') as f:
+        settings_path = CONFIG_DIR / "settings.yaml"
+        logger.info(f"📋 Loading settings from: {settings_path}")
+        with open(settings_path, 'r') as f:
             settings = yaml.safe_load(f)
+        logger.debug(f"⚙️  Settings loaded: {settings}")
         
         # Load topics configuration
-        with open(CONFIG_DIR / "topics.yaml", 'r') as f:
+        topics_path = CONFIG_DIR / "topics.yaml"
+        logger.info(f"📋 Loading topics from: {topics_path}")
+        with open(topics_path, 'r') as f:
             topics_config = yaml.safe_load(f)
+        logger.debug(f"🎯 Topics config loaded: {topics_config}")
         
         # Initialize protobuf decoder
         kafka_config_path = CONFIG_DIR / "kafka.yaml"
+        logger.info(f"📋 Loading Kafka config from: {kafka_config_path}")
         with open(kafka_config_path, 'r') as f:
             kafka_config = yaml.safe_load(f)
         
+        logger.info(f"🎭 Mock mode: {kafka_config.get('mock_mode', True)}")
+        
         if kafka_config.get('mock_mode', True):
             decoder = MockProtobufDecoder()
-            logger.info("Using mock protobuf decoder")
+            logger.info("🎭 Using mock protobuf decoder")
         else:
+            logger.info(f"🔧 Using real protobuf decoder with proto dir: {PROTO_DIR}")
             decoder = ProtobufDecoder(str(PROTO_DIR))
-            logger.info("Using real protobuf decoder")
+            logger.info("✅ Real protobuf decoder initialized")
         
         # Load protobuf definitions for each topic
+        logger.info("🔄 Loading protobuf definitions for topics...")
         for topic_name, topic_config in topics_config.get('topics', {}).items():
-            decoder.load_topic_protobuf(
-                topic_name,
-                topic_config['proto_file'],
-                topic_config['message_type']
-            )
+            logger.info(f"📄 Loading protobuf for topic: {topic_name}")
+            logger.debug(f"  📄 Proto file: {topic_config['proto_file']}")
+            logger.debug(f"  🎯 Message type: {topic_config['message_type']}")
+            
+            try:
+                decoder.load_topic_protobuf(
+                    topic_name,
+                    topic_config['proto_file'],
+                    topic_config['message_type']
+                )
+                logger.info(f"✅ Successfully loaded protobuf for topic: {topic_name}")
+            except Exception as e:
+                logger.error(f"💥 Failed to load protobuf for topic {topic_name}: {str(e)}")
+                logger.error(f"🔴 Error type: {type(e).__name__}")
+                logger.error(f"🔴 Traceback: {traceback.format_exc()}")
+                raise
         
         # Initialize graph builder
+        logger.info("🕸️  Initializing graph builder...")
         graph_builder = TraceGraphBuilder(
             topics_config_path=str(CONFIG_DIR / "topics.yaml"),
             max_traces=settings.get('max_traces', 1000)
         )
+        logger.info("✅ Graph builder initialized")
         
         # Initialize Kafka consumer
+        logger.info("🔌 Initializing Kafka consumer...")
         kafka_consumer = KafkaConsumerService(
             config_path=str(kafka_config_path),
             decoder=decoder,
             trace_header_field=settings.get('trace_header_field', 'trace_id')
         )
+        logger.info("✅ Kafka consumer initialized")
         
         # Register message handler
+        logger.info("🔗 Registering message handler...")
         kafka_consumer.add_message_handler(graph_builder.add_message)
+        logger.info("✅ Message handler registered")
         
         # Subscribe to all topics from graph
         all_topics = graph_builder.topic_graph.get_all_topics()
+        logger.info(f"📡 Subscribing to topics: {all_topics}")
         kafka_consumer.subscribe_to_topics(all_topics)
+        logger.info("✅ Topic subscription complete")
         
         # Start Kafka consumer in background
+        logger.info("🚀 Starting Kafka consumer in background...")
         asyncio.create_task(kafka_consumer.start_consuming_async())
+        logger.info("✅ Kafka consumer task created")
         
-        logger.info("Kafka trace viewer components initialized successfully")
+        logger.info("🎉 Kafka trace viewer components initialized successfully!")
         
     except Exception as e:
-        logger.error(f"Failed to initialize Kafka components: {e}")
+        logger.error(f"💥 Failed to initialize Kafka components: {str(e)}")
+        logger.error(f"🔴 Error type: {type(e).__name__}")
+        logger.error(f"🔴 Traceback: {traceback.format_exc()}")
         raise
 
 
