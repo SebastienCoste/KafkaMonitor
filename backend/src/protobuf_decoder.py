@@ -185,24 +185,19 @@ class TopicDecoder:
                 logger.debug(f"🔗 Relative proto path: {relative_proto_path}")
                 logger.debug(f"🎯 Temp proto file: {temp_proto_file}")
                 
-                # First, compile all dependency proto files (common/*.proto)
-                logger.info("🔧 Compiling dependency proto files first...")
-                dependency_files = []
-                for root, dirs, files in os.walk(temp_proto_dir):
-                    for file in files:
-                        if file.endswith('.proto'):
-                            full_path = Path(root) / file
-                            relative_path = full_path.relative_to(temp_proto_dir)
-                            dependency_files.append(str(relative_path))
+                # Find dependencies for this specific proto file
+                logger.info(f"🔧 Analyzing dependencies for {relative_proto_path}")
+                dependencies = self._find_dependencies(temp_proto_file, temp_proto_dir)
                 
-                logger.debug(f"📋 Found proto files: {dependency_files}")
+                # Compile only the required files (main + dependencies)
+                files_to_compile = [str(relative_proto_path)] + dependencies
+                logger.debug(f"📋 Files to compile: {files_to_compile}")
                 
-                # Compile all proto files at once to handle dependencies
                 cmd = [
                     'protoc',
                     f'--python_out={temp_dir}',
                     f'--proto_path={temp_proto_dir}',
-                ] + dependency_files
+                ] + files_to_compile
                 
                 logger.info(f"🚀 Running protoc command: {' '.join(cmd)}")
                 
