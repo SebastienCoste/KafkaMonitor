@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package kafka_trace.common;
+
+// Common base message types that can be referenced from other proto files
+message BaseHeader {
+    string trace_id = 1;
+    string message_id = 2;
+    int64 timestamp = 3;
+    string source_service = 4;
+    map<string, string> metadata = 5;
+}
+
+message ErrorInfo {
+    string error_code = 1;
+    string error_message = 2;
+    string error_details = 3;
+}
+
+message Status {
+    enum StatusCode {
+        UNKNOWN = 0;
+        SUCCESS = 1;
+        ERROR = 2;
+        PENDING = 3;
+        RETRY = 4;
+    }
+    
+    StatusCode code = 1;
+    string message = 2;
+    ErrorInfo error_info = 3;
+}

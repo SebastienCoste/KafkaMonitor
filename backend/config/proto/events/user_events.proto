@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package kafka_trace.events;
+
+// Import from common subfolder
+import "common/base.proto";
+import "common/address.proto";
+
+message UserEvent {
+    // Use imported BaseHeader
+    kafka_trace.common.BaseHeader header = 1;
+    
+    // Event-specific data
+    string user_id = 2;
+    string session_id = 3;
+    string event_type = 4;
+    
+    // Event data
+    string page_url = 5;
+    string user_agent = 6;
+    map<string, string> properties = 7;
+    
+    // Optional fields using imported types
+    string referrer = 8;
+    string ip_address = 9;
+    kafka_trace.common.ContactInfo user_contact = 10;
+}

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package kafka_trace.processing;
+
+// Import from common subfolder  
+import "common/base.proto";
+import "common/address.proto";
+
+message ProcessedEvent {
+    // Use imported BaseHeader
+    kafka_trace.common.BaseHeader header = 1;
+    
+    // Event metadata
+    string original_event_id = 2;
+    string processing_stage = 3;
+    
+    // Processing results
+    string processing_result = 4;
+    repeated string tags = 5;
+    double confidence_score = 6;
+    
+    // Processing status using imported type
+    kafka_trace.common.Status processing_status = 7;
+    
+    // Enriched data
+    map<string, string> enriched_properties = 8;
+    string user_segment = 9;
+    bool requires_notification = 10;
+}
