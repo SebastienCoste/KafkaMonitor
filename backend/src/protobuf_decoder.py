@@ -202,13 +202,47 @@ class TopicDecoder:
                 
                 logger.info(f"🎯 Found target Python file: {target_py_file}")
                 
-                # Import the compiled proto module
+                # Import the compiled proto module with proper Python path handling
                 module_name = f"{proto_name}_pb2"
                 spec = importlib.util.spec_from_file_location(module_name, target_py_file)
                 proto_module = importlib.util.module_from_spec(spec)
                 
                 logger.debug(f"📦 Loading module: {module_name}")
-                spec.loader.exec_module(proto_module)
+                
+                # Add the temp directory to Python path temporarily to handle imports
+                import sys
+                original_path = sys.path[:]
+                temp_dir_added = False
+                
+                try:
+                    # Add temp directory to sys.path for imports
+                    if temp_dir not in sys.path:
+                        sys.path.insert(0, temp_dir)
+                        temp_dir_added = True
+                        logger.debug(f"🔗 Added temp directory to Python path: {temp_dir}")
+                    
+                    # Add the directory containing the generated files to path
+                    generated_dir = os.path.dirname(target_py_file)
+                    if generated_dir not in sys.path:
+                        sys.path.insert(0, generated_dir)
+                        logger.debug(f"🔗 Added generated directory to Python path: {generated_dir}")
+                    
+                    # Also add the parent directory for relative imports
+                    parent_dir = os.path.dirname(generated_dir)
+                    if parent_dir not in sys.path:
+                        sys.path.insert(0, parent_dir)
+                        logger.debug(f"🔗 Added parent directory to Python path: {parent_dir}")
+                    
+                    logger.debug(f"🐍 Current Python path: {sys.path[:5]}...")  # Show first 5 entries
+                    
+                    spec.loader.exec_module(proto_module)
+                    logger.debug(f"✅ Module loaded successfully")
+                    
+                finally:
+                    # Restore original Python path
+                    if temp_dir_added:
+                        sys.path = original_path
+                        logger.debug(f"🔄 Restored original Python path")
                 
                 # Get the specific message class
                 if hasattr(proto_module, self.message_type):
