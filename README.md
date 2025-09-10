@@ -82,16 +82,156 @@ kafka-trace-viewer/
 - Python 3.11+
 - Node.js 18+
 - yarn package manager
+- Protocol Buffers compiler (`protoc`)
 
-### Installation
+### System Dependencies
+
+**For macOS (using Homebrew):**
+```bash
+# Install Protocol Buffers compiler
+brew install protobuf
+
+# Verify installation
+protoc --version
+```
+
+**For Ubuntu/Debian:**
+```bash
+# Install Protocol Buffers compiler
+sudo apt-get update
+sudo apt-get install protobuf-compiler
+
+# Verify installation
+protoc --version
+```
+
+### Installation & Setup
+
+#### Option 1: Container Environment (Recommended)
+If you're in the Emergent platform container:
 
 1. **Backend is already running on port 8001**
 2. **Frontend is already running on port 3000**
-
 3. **Access the application:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8001
+   - API Documentation: http://localhost:8001/docs
+
+#### Option 2: Local Development Setup
+
+**1. Clone and Setup Backend:**
+```bash
+cd backend
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Verify protoc is available
+protoc --version
+
+# Start backend server
+python server.py
+```
+
+**2. Setup Frontend:**
+```bash
+cd frontend
+
+# Install dependencies
+yarn install
+
+# Start frontend development server
+yarn start
+```
+
+**3. Access the application:**
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8001
 - API Documentation: http://localhost:8001/docs
+
+### 🐛 Troubleshooting Local Setup
+
+#### Backend Won't Start
+```bash
+# Check if you're in the right directory
+ls -la  # Should see config/ directory
+
+# Check Python environment
+python --version  # Should be 3.11+
+pip list | grep confluent-kafka  # Should show confluent-kafka
+
+# Check protoc installation
+protoc --version  # Should show libprotoc 3.x.x or higher
+
+# Run with verbose logging
+python server.py
+```
+
+#### Common Issues:
+
+**1. "Configuration directory not found"**
+```bash
+# Make sure you're running from backend/ directory
+cd backend
+python server.py
+```
+
+**2. "No module named 'confluent-kafka'"**
+```bash
+# Install missing dependencies
+pip install -r requirements.txt
+```
+
+**3. "protoc: command not found"**
+```bash
+# macOS
+brew install protobuf
+
+# Ubuntu/Debian
+sudo apt-get install protobuf-compiler
+```
+
+**4. "No module named 'common'" (Protobuf imports)**
+- This is automatically handled by the enhanced protobuf decoder
+- Make sure protoc is installed and working
+- Check logs for detailed protobuf compilation information
+
+### 🔧 Development Workflow
+
+#### Running Backend Only
+```bash
+cd backend
+source venv/bin/activate  # if using virtual environment
+python server.py
+```
+
+#### Running Frontend Only
+```bash
+cd frontend
+yarn start
+```
+
+#### Running Both (Development)
+```bash
+# Terminal 1 - Backend
+cd backend && python server.py
+
+# Terminal 2 - Frontend  
+cd frontend && yarn start
+```
+
+#### IDE Setup (IntelliJ/PyCharm)
+1. **Set Python Interpreter**: Point to your virtual environment or system Python 3.11+
+2. **Working Directory**: Set to `backend/` directory
+3. **Run Configuration**: 
+   - Script: `server.py`
+   - Working directory: `backend/`
+   - Environment variables: None required for mock mode
+4. **Dependencies**: Ensure all packages from `requirements.txt` are installed
 
 ## ⚙️ Configuration
 
