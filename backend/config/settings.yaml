@@ -1,0 +1,29 @@
+# Application configuration
+trace_header_field: "trace_id"  # Configurable trace header field name
+max_traces: 1000                 # Maximum traces to retain in memory
+cleanup_interval: 300            # Seconds between cleanup cycles
+
+# Web server settings
+web_server:
+  host: "0.0.0.0"
+  port: 8001
+  debug: true
+  cors_enabled: true
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Message processing settings
+message_processing:
+  batch_size: 100              # Messages to process in batch
+  processing_timeout: 30       # Seconds to wait for message processing
+  decode_errors: "ignore"      # ignore, raise, log
+
+# Mock data settings for development
+mock_data:
+  enabled: true
+  message_interval: 2.0        # Seconds between mock messages
+  traces_per_hour: 50         # Number of traces to generate per hour
+  topics_rotation: true       # Rotate through different topics

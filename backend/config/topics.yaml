@@ -1,0 +1,38 @@
+# Topic configuration with protobuf mappings
+topics:
+  user-events:
+    proto_file: "user_events.proto"
+    message_type: "UserEvent"
+    description: "Raw user interaction events"
+  
+  processed-events:
+    proto_file: "processed_events.proto"
+    message_type: "ProcessedEvent"
+    description: "Events after processing pipeline"
+  
+  notifications:
+    proto_file: "notifications.proto"
+    message_type: "NotificationEvent"
+    description: "User notification events"
+  
+  analytics:
+    proto_file: "analytics.proto"
+    message_type: "AnalyticsEvent"
+    description: "Analytics and metrics events"
+
+# Topic graph configuration - source to destination mappings
+topic_edges:
+  - source: "user-events"
+    destination: "processed-events"
+  - source: "processed-events"
+    destination: "notifications"
+  - source: "processed-events"
+    destination: "analytics"
+  - source: "notifications"
+    destination: "user-events"  # Example of loop for retries
+
+# Default topics to monitor (can be changed via UI)
+default_monitored_topics:
+  - "user-events"
+  - "processed-events"
+  - "notifications"
