@@ -85,7 +85,7 @@ function App() {
         websocket.close();
       }
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line
 
   const handleWebSocketMessage = (data) => {
     if (data.type === 'trace_update') {
