@@ -19,6 +19,16 @@ topics:
     proto_file: "analytics.proto"
     message_type: "AnalyticsEvent"
     description: "Analytics and metrics events"
+    
+  test-events:
+    proto_file: "event.proto"
+    message_type: "Event"
+    description: "Test event messages"
+    
+  test-processes:
+    proto_file: "process_event.proto"
+    message_type: "ProcessEvent"
+    description: "Test process event messages"
 
 # Topic graph configuration - source to destination mappings
 topic_edges:
