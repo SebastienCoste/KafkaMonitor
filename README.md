@@ -200,6 +200,42 @@ sudo apt-get install protobuf-compiler
 - Make sure protoc is installed and working
 - Check logs for detailed protobuf compilation information
 
+### 🐛 IntelliJ Debugging Issues - SOLVED
+
+**Your Specific Issue**: Process finishing with exit code 0 immediately in IntelliJ
+
+**Root Cause**: FastAPI deprecation warnings + wrong working directory
+
+**✅ SOLUTION:**
+
+1. **Use the new run_local.py script**:
+   ```bash
+   cd backend
+   python run_local.py
+   ```
+
+2. **Or fix IntelliJ configuration**:
+   - **Working Directory**: MUST be set to `backend/` folder (not project root)
+   - **Script**: Use `run_local.py` for better error handling
+   - **Python Interpreter**: Ensure you have Python 3.11+ with all dependencies
+
+3. **FastAPI Deprecation Warnings**: 
+   - These are now FIXED (converted to lifespan handlers)
+   - The warnings don't cause crashes, they're just informational
+
+4. **Verification Script**:
+   ```bash
+   cd backend
+   python -c "
+   import sys, os, subprocess
+   print('Python:', sys.version)
+   print('Working dir:', os.getcwd())
+   print('Config exists:', os.path.exists('config'))
+   result = subprocess.run(['protoc', '--version'], capture_output=True, text=True)
+   print('Protoc:', result.stdout.strip() if result.returncode == 0 else 'INSTALL NEEDED')
+   "
+   ```
+
 ### 🔧 Development Workflow
 
 #### Running Backend Only
