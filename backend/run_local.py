@@ -148,10 +148,10 @@ def main():
         # Add current directory to Python path
         sys.path.insert(0, str(Path.cwd()))
         
-        print("\n🌐 Starting server at:")
-        print("   - API: http://localhost:8001")
-        print("   - Health: http://localhost:8001/api/health") 
-        print("   - Docs: http://localhost:8001/docs")
+        print(f"\n🌐 Starting server at:")
+        print(f"   - API: http://localhost:{args.port}")
+        print(f"   - Health: http://localhost:{args.port}/api/health") 
+        print(f"   - Docs: http://localhost:{args.port}/docs")
         print("\n💡 Start the frontend separately with: cd frontend && yarn start")
         print("🛑 Press Ctrl+C to stop the server")
         print("\n" + "=" * 50)
