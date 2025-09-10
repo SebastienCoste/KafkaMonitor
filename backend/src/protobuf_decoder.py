@@ -115,13 +115,39 @@ class ProtobufDecoder:
         """Get list of topics with loaded protobuf decoders"""
         return list(self.topic_decoders.keys())
 
-class TopicDecoder:
-    """Handles protobuf decoding for a single topic"""
+class CachedTopicDecoder:
+    """Handles protobuf decoding using cached message class"""
     
-    def __init__(self, proto_file_path: str, message_type: str):
+    def __init__(self, topic: str, message_type: str, message_class):
+        self.topic = topic
+        self.message_type = message_type
+        self.message_class = message_class
+    
+    def decode_message(self, message_bytes: bytes) -> Dict[str, Any]:
+        """Decode protobuf message to dictionary using cached class"""
+        try:
+            message_obj = self.message_class()
+            message_obj.ParseFromString(message_bytes)
+            return self._message_to_dict(message_obj)
+        except Exception as e:
+            logger.error(f"Failed to decode protobuf message for {self.topic}: {e}")
+            raise
+    
+    def _message_to_dict(self, message: Message) -> Dict[str, Any]:
+        """Convert protobuf message to dictionary"""
+        from google.protobuf.json_format import MessageToDict
+        return MessageToDict(message, preserving_proto_field_name=True)
+
+class TopicDecoder:
+    """Handles protobuf decoding for a single topic with caching support"""
+    
+    def __init__(self, proto_file_path: str, message_type: str, cache=None, topic: str = None, proto_file: str = None):
         self.proto_file_path = proto_file_path
         self.message_type = message_type
         self.message_class = None
+        self.cache = cache
+        self.topic = topic
+        self.proto_file = proto_file
         self._load_proto_definition()
 
     def _load_proto_definition(self):
