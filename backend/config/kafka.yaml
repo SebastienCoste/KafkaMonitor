@@ -13,4 +13,4 @@ session_timeout_ms: 6000
 heartbeat_interval_ms: 3000
 
 # Mock mode for development/testing
-mock_mode: false  # Set to false when using real Kafka
+mock_mode: true  # Set to false when using real Kafka
