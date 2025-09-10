@@ -272,6 +272,34 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Serve static files (frontend)
+if os.path.exists("../frontend/build"):
+    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
+    
+    @app.get("/")
+    async def serve_frontend():
+        return FileResponse("../frontend/build/index.html")
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize Kafka components on startup"""
+    try:
+        await initialize_kafka_components()
+    except Exception as e:
+        logger.error(f"Failed to start Kafka components: {e}")
+        # Don't fail startup - allow manual initialization
+
 @app.on_event("shutdown")
-async def shutdown_db_client():
-    client.close()
+async def shutdown_event():
+    """Cleanup on shutdown"""
+    if kafka_consumer:
+        kafka_consumer.stop_consuming()
+    
+    # Close WebSocket connections
+    for websocket in websocket_connections:
+        try:
+            await websocket.close()
+        except:
+            pass
+    
+    logger.info("Application shutdown complete")
