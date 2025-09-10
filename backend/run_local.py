@@ -167,7 +167,7 @@ def main():
         )
         
         # Start the server (this will keep running)
-        uvicorn.run("server:app", host="0.0.0.0", port=8001, reload=False)
+        uvicorn.run("server:app", host="0.0.0.0", port=args.port, reload=False)
         
     except KeyboardInterrupt:
         print("\n\n🛑 Server stopped by user")
