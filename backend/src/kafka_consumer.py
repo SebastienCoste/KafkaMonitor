@@ -40,28 +40,41 @@ class KafkaConsumerService:
 
     def _load_config(self):
         """Load Kafka configuration from YAML file"""
-        with open(self.config_path, 'r') as f:
-            config = yaml.safe_load(f)
-
-        self.mock_mode = config.get('mock_mode', False)
+        logger.info(f"🔄 Loading Kafka configuration from: {self.config_path}")
         
-        if not self.mock_mode:
-            # Build confluent-kafka consumer config for real Kafka
-            self.kafka_config = {
-                'bootstrap.servers': config['bootstrap_servers'],
-                'security.protocol': config['security_protocol'],
-                'sasl.mechanism': config['sasl_mechanism'],
-                'sasl.username': config['sasl_username'],
-                'sasl.password': config['sasl_password'],
-                'group.id': config.get('group_id', 'kafka-trace-viewer'),
-                'auto.offset.reset': config.get('auto_offset_reset', 'latest'),
-                'enable.auto.commit': config.get('enable_auto_commit', True),
-                'session.timeout.ms': config.get('session_timeout_ms', 6000),
-                'heartbeat.interval.ms': config.get('heartbeat_interval_ms', 3000),
-            }
-            logger.info(f"Loaded Kafka config for {config['bootstrap_servers']}")
-        else:
-            logger.info("Running in mock mode - will generate fake messages")
+        try:
+            with open(self.config_path, 'r') as f:
+                config = yaml.safe_load(f)
+            
+            logger.debug(f"📋 Raw config loaded: {config}")
+            
+            self.mock_mode = config.get('mock_mode', False)
+            logger.info(f"🎭 Mock mode: {self.mock_mode}")
+            
+            if not self.mock_mode:
+                # Build confluent-kafka consumer config for real Kafka
+                self.kafka_config = {
+                    'bootstrap.servers': config['bootstrap_servers'],
+                    'security.protocol': config['security_protocol'],
+                    'sasl.mechanism': config['sasl_mechanism'],
+                    'sasl.username': config['sasl_username'],
+                    'sasl.password': config['sasl_password'],
+                    'group.id': config.get('group_id', 'kafka-trace-viewer'),
+                    'auto.offset.reset': config.get('auto_offset_reset', 'latest'),
+                    'enable.auto.commit': config.get('enable_auto_commit', True),
+                    'session.timeout.ms': config.get('session_timeout_ms', 6000),
+                    'heartbeat.interval.ms': config.get('heartbeat_interval_ms', 3000),
+                }
+                logger.info(f"🔗 Loaded Kafka config for {config['bootstrap_servers']}")
+                logger.debug(f"🔧 Kafka config (credentials hidden): {dict((k, '***' if 'password' in k.lower() else v) for k, v in self.kafka_config.items())}")
+            else:
+                logger.info("🎭 Running in mock mode - will generate fake messages")
+                
+        except Exception as e:
+            logger.error(f"💥 Failed to load Kafka configuration: {str(e)}")
+            logger.error(f"🔴 Error type: {type(e).__name__}")
+            logger.error(f"🔴 Traceback: {traceback.format_exc()}")
+            raise
 
     def add_message_handler(self, handler: Callable[[KafkaMessage], None]):
         """Add a message handler callback"""
