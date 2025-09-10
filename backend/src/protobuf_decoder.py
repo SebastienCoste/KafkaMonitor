@@ -23,11 +23,15 @@ class ProtobufDecodingError(Exception):
     pass
 
 class ProtobufDecoder:
-    """Handles protobuf message decoding for multiple topics"""
+    """Handles protobuf message decoding for multiple topics with caching"""
 
     def __init__(self, proto_dir: str):
         self.proto_dir = Path(proto_dir)
         self.topic_decoders: Dict[str, 'TopicDecoder'] = {}
+        
+        # Initialize cache
+        from src.protobuf_cache import ProtobufCache
+        self.cache = ProtobufCache(str(self.proto_dir))
         
     def load_topic_protobuf(self, topic: str, proto_file: str, message_type: str):
         """Load protobuf definition for a specific topic"""
