@@ -31,17 +31,55 @@ class ProtobufDecoder:
         
     def load_topic_protobuf(self, topic: str, proto_file: str, message_type: str):
         """Load protobuf definition for a specific topic"""
+        logger.info(f"🔄 Loading protobuf for topic: {topic}")
+        logger.info(f"📄 Proto file: {proto_file}")
+        logger.info(f"🎯 Message type: {message_type}")
+        logger.info(f"📂 Proto directory: {self.proto_dir}")
+        
         try:
-            proto_path = self.proto_dir / proto_file
-            if not proto_path.exists():
-                raise FileNotFoundError(f"Proto file not found: {proto_path}")
+            # Handle both direct files and subfolder files
+            proto_path = None
+            
+            # First try direct path
+            direct_path = self.proto_dir / proto_file
+            if direct_path.exists():
+                proto_path = direct_path
+                logger.debug(f"✅ Found proto file at direct path: {proto_path}")
+            else:
+                # Search in subdirectories
+                logger.debug(f"🔍 Direct path not found, searching subdirectories...")
+                for root, dirs, files in os.walk(self.proto_dir):
+                    for file in files:
+                        if file == proto_file or file == os.path.basename(proto_file):
+                            candidate_path = Path(root) / file
+                            logger.debug(f"🔍 Found candidate: {candidate_path}")
+                            if candidate_path.exists():
+                                proto_path = candidate_path
+                                logger.debug(f"✅ Found proto file in subdirectory: {proto_path}")
+                                break
+                    if proto_path:
+                        break
+            
+            if not proto_path or not proto_path.exists():
+                logger.error(f"❌ Proto file not found: {proto_file}")
+                logger.error(f"🔍 Searched in directory: {self.proto_dir}")
+                logger.error(f"🔍 Available files:")
+                for root, dirs, files in os.walk(self.proto_dir):
+                    for file in files:
+                        if file.endswith('.proto'):
+                            logger.error(f"  📄 {os.path.relpath(os.path.join(root, file), self.proto_dir)}")
+                raise FileNotFoundError(f"Proto file not found: {proto_file}")
                 
+            logger.info(f"🎯 Using proto file: {proto_path}")
             decoder = TopicDecoder(str(proto_path), message_type)
             self.topic_decoders[topic] = decoder
-            logger.info(f"Loaded protobuf decoder for topic '{topic}' with message type '{message_type}'")
+            logger.info(f"✅ Successfully loaded protobuf decoder for topic '{topic}' with message type '{message_type}'")
             
         except Exception as e:
-            logger.error(f"Failed to load protobuf for topic '{topic}': {e}")
+            logger.error(f"💥 Failed to load protobuf for topic '{topic}': {str(e)}")
+            logger.error(f"🔴 Error type: {type(e).__name__}")
+            if hasattr(e, '__cause__') and e.__cause__:
+                logger.error(f"🔴 Caused by: {e.__cause__}")
             raise
 
     def decode_message(self, topic: str, message_bytes: bytes) -> Dict[str, Any]:
