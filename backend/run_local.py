@@ -6,7 +6,9 @@ Handles setup and provides better error messages for local development
 import os
 import sys
 import subprocess
+import socket
 from pathlib import Path
+import argparse
 
 def check_system_requirements():
     """Check if all system requirements are met"""
