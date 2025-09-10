@@ -306,6 +306,8 @@ async def websocket_endpoint(websocket: WebSocket):
 # Note: App configuration moved after app creation
 
 from contextlib import asynccontextmanager
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
