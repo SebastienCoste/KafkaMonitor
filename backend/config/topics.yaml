@@ -46,3 +46,4 @@ default_monitored_topics:
   - "user-events"
   - "processed-events"
   - "notifications"
+  - "test-events"
