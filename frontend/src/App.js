@@ -624,6 +624,7 @@ function App() {
           </div>
         </div>
       </div>
+      <Toaster />
     </div>
   );
 }
