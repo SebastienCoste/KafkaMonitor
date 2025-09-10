@@ -26,11 +26,26 @@ This script will:
 
 ### Option 2: Configure IntelliJ Properly
 
+**⚠️ IMPORTANT: Handle Port Conflicts**
+
+If you're running in the Emergent container, the supervisor might already be using port 8001. You have two options:
+
+**Option A: Use Different Port**
+1. **Script Path**: `backend/run_local.py`
+2. **Working Directory**: `backend/`
+3. **Parameters**: Add `--port 8002` to use a different port
+
+**Option B: Stop Supervisor Backend** (Container only)
+```bash
+sudo supervisorctl stop backend
+# Then run your script
+```
+
 **Run Configuration Settings:**
 1. **Script Path**: `backend/run_local.py` (recommended) or `backend/server.py`
 2. **Working Directory**: `backend/` ⚠️ **CRITICAL - Must be backend folder, not project root**
 3. **Python Interpreter**: Your Python 3.11+ environment
-4. **Parameters**: None needed
+4. **Parameters**: `--port 8002` (if port 8001 is occupied)
 
 **Debug Configuration:**
 - Same as above but use Debug instead of Run
