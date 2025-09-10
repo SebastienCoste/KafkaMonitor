@@ -225,13 +225,31 @@ cd frontend && yarn start
 ```
 
 #### IDE Setup (IntelliJ/PyCharm)
+
+**Quick Setup Option:**
+```bash
+cd backend
+python run_local.py  # This checks all requirements and starts server
+```
+
+**Manual IDE Configuration:**
 1. **Set Python Interpreter**: Point to your virtual environment or system Python 3.11+
-2. **Working Directory**: Set to `backend/` directory
+2. **Working Directory**: CRITICAL - Set to `backend/` directory (not project root)
 3. **Run Configuration**: 
-   - Script: `server.py`
-   - Working directory: `backend/`
+   - Script: `server.py` or `run_local.py` (recommended)
+   - Working directory: `backend/` (must be backend folder)
    - Environment variables: None required for mock mode
 4. **Dependencies**: Ensure all packages from `requirements.txt` are installed
+
+**Debugging in IntelliJ:**
+- The FastAPI deprecation warnings are normal and don't affect functionality
+- Use `run_local.py` for better error messages and setup validation
+- Check the console output for detailed startup information with emoji markers (🚀, ✅, ❌)
+
+**Common IntelliJ Issues:**
+- **"Process finished with exit code 0"**: Usually means wrong working directory - set to `backend/`
+- **"Configuration directory not found"**: Set working directory to `backend/` folder
+- **Missing dependencies**: Run `pip install -r requirements.txt` in your Python environment
 
 ## ⚙️ Configuration
 
