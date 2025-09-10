@@ -15,6 +15,7 @@ import { Separator } from './components/ui/separator';
 import { Alert, AlertDescription } from './components/ui/alert';
 import { Checkbox } from './components/ui/checkbox';
 import { toast } from 'sonner';
+import { Toaster } from './components/ui/sonner';
 
 // Icons
 import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw } from 'lucide-react';
