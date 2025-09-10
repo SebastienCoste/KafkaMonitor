@@ -73,22 +73,22 @@ def check_dependencies():
     """Check Python dependencies"""
     print("\n🐍 Checking Python dependencies...")
     
-    required_packages = [
-        'fastapi',
-        'confluent-kafka',
-        'protobuf',
-        'pyyaml',
-        'websockets'
-    ]
+    package_mappings = {
+        'fastapi': 'fastapi',
+        'confluent-kafka': 'confluent_kafka',
+        'protobuf': 'google.protobuf',
+        'pyyaml': 'yaml', 
+        'websockets': 'websockets'
+    }
     
     missing_packages = []
-    for package in required_packages:
+    for package_name, import_name in package_mappings.items():
         try:
-            __import__(package.replace('-', '_'))
-            print(f"✅ {package}")
+            __import__(import_name)
+            print(f"✅ {package_name}")
         except ImportError:
-            missing_packages.append(package)
-            print(f"❌ {package}")
+            missing_packages.append(package_name)
+            print(f"❌ {package_name}")
     
     if missing_packages:
         print(f"\n💡 Install missing packages with: pip install {' '.join(missing_packages)}")
