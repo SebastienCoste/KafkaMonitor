@@ -303,31 +303,7 @@ async def websocket_endpoint(websocket: WebSocket):
         if websocket in websocket_connections:
             websocket_connections.remove(websocket)
 
-# Include the router in the main app
-app.include_router(api_router)
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-# Serve static files (frontend)
-if os.path.exists("../frontend/build"):
-    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
-    
-    @app.get("/")
-    async def serve_frontend():
-        return FileResponse("../frontend/build/index.html")
+# Note: App configuration moved after app creation
 
 from contextlib import asynccontextmanager
 
