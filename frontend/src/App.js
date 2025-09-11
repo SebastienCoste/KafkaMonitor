@@ -638,12 +638,12 @@ function App() {
                   </Card>
                 )}
 
-                {/* Message Timeline */}
-                <Card>
-                  <CardHeader>
+                {/* Message Timeline - Enhanced for Better Readability */}
+                <Card className="min-h-0 flex flex-col">
+                  <CardHeader className="flex-shrink-0">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle>Message Timeline</CardTitle>
+                        <CardTitle className="text-xl">Message Timeline</CardTitle>
                         <CardDescription>
                           Chronological view of all messages in this trace
                         </CardDescription>
@@ -658,61 +658,114 @@ function App() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-96">
-                      <div className="space-y-2">
+                  <CardContent className="flex-1 min-h-0 p-0">
+                    <div className="h-[600px] overflow-y-auto p-4">
+                      <div className="space-y-3">
                         {selectedTrace.messages.map((message, index) => (
-                          <Card key={index} className="border border-slate-200">
+                          <Card key={index} className="border border-slate-200 shadow-sm">
                             <CardContent className="p-0">
+                              {/* Message Header - Always Visible */}
                               <div
-                                className="p-4 cursor-pointer hover:bg-slate-50 transition-colors"
+                                className="p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100"
                                 onClick={() => toggleMessage(index)}
                               >
-                                <div className="flex items-center justify-between">
-                                  <div>
-                                    <div className="font-medium">
-                                      {message.topic}[{message.partition}]:{message.offset}
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center space-x-2 mb-2">
+                                      <Badge variant="outline" className="text-xs font-mono">
+                                        {message.topic}
+                                      </Badge>
+                                      <span className="text-xs text-gray-500">
+                                        [{message.partition}]:{message.offset}
+                                      </span>
                                     </div>
-                                    <div className="text-sm text-gray-500">
-                                      {formatTime(message.timestamp)}
-                                      {message.trace_id && <> • Trace: {message.trace_id}</>}
+                                    <div className="text-sm text-gray-600">
+                                      <div className="flex items-center space-x-4">
+                                        <span>{formatTime(message.timestamp)}</span>
+                                        {message.trace_id && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            {message.trace_id}
+                                          </Badge>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
-                                  <div className="text-gray-400">
-                                    {expandedMessages.has(index) ? '▼' : '▶'}
+                                  <div className="flex-shrink-0 ml-4">
+                                    <div className="text-gray-400 text-lg">
+                                      {expandedMessages.has(index) ? '▼' : '▶'}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
 
+                              {/* Expanded Message Content */}
                               {expandedMessages.has(index) && (
-                                <div className="border-t border-slate-200 p-4 bg-slate-50">
-                                  <div className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-4 text-sm">
-                                      <div><strong>Key:</strong> {message.key || '(null)'}</div>
-                                      <div><strong>Partition:</strong> {message.partition}</div>
-                                      <div><strong>Offset:</strong> {message.offset}</div>
-                                      <div><strong>Timestamp:</strong> {formatTime(message.timestamp)}</div>
+                                <div className="bg-slate-50">
+                                  <div className="p-4 space-y-4">
+                                    {/* Metadata Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                      <div className="space-y-2">
+                                        <div className="font-semibold text-gray-700">Message Info</div>
+                                        <div><span className="font-medium">Key:</span> {message.key || '(null)'}</div>
+                                        <div><span className="font-medium">Partition:</span> {message.partition}</div>
+                                        <div><span className="font-medium">Offset:</span> {message.offset}</div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="font-semibold text-gray-700">Timing</div>
+                                        <div><span className="font-medium">Timestamp:</span> {formatTime(message.timestamp)}</div>
+                                        <div><span className="font-medium">Topic:</span> {message.topic}</div>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <div className="font-semibold text-gray-700">Tracing</div>
+                                        <div><span className="font-medium">Trace ID:</span> {message.trace_id || '(none)'}</div>
+                                      </div>
                                     </div>
 
+                                    {/* Headers Section */}
                                     {message.headers && Object.keys(message.headers).length > 0 && (
                                       <div>
-                                        <strong className="text-sm">Headers:</strong>
-                                        <div className="mt-1 space-y-1">
-                                          {Object.entries(message.headers).map(([key, value]) => (
-                                            <div key={key} className="text-sm text-gray-600 ml-4">
-                                              <strong>{key}:</strong> {value}
-                                            </div>
-                                          ))}
+                                        <div className="flex items-center space-x-2 mb-2">
+                                          <h4 className="font-semibold text-gray-700">Headers</h4>
+                                          <Badge variant="outline" className="text-xs">
+                                            {Object.keys(message.headers).length} items
+                                          </Badge>
+                                        </div>
+                                        <div className="bg-white p-3 rounded border">
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                            {Object.entries(message.headers).map(([key, value]) => (
+                                              <div key={key} className="text-sm flex items-start">
+                                                <span className="font-medium text-blue-600 mr-2 flex-shrink-0">{key}:</span>
+                                                <span className="text-gray-700 break-all">{value}</span>
+                                              </div>
+                                            ))}
+                                          </div>
                                         </div>
                                       </div>
                                     )}
 
+                                    {/* Decoded Message - Priority Focus */}
                                     {message.decoded_value && (
                                       <div>
-                                        <strong className="text-sm">Decoded Message:</strong>
-                                        <pre className="mt-1 text-xs bg-white p-3 rounded border overflow-x-auto">
-                                          {JSON.stringify(message.decoded_value, null, 2)}
-                                        </pre>
+                                        <div className="flex items-center space-x-2 mb-2">
+                                          <h4 className="font-semibold text-gray-700">Decoded Message</h4>
+                                          <Button 
+                                            size="sm" 
+                                            variant="outline"
+                                            onClick={() => {
+                                              navigator.clipboard.writeText(JSON.stringify(message.decoded_value, null, 2));
+                                              toast.success('Message copied to clipboard');
+                                            }}
+                                          >
+                                            Copy JSON
+                                          </Button>
+                                        </div>
+                                        <div className="bg-white border rounded-lg overflow-hidden">
+                                          <div className="max-h-96 overflow-auto">
+                                            <pre className="p-4 text-sm font-mono leading-relaxed whitespace-pre-wrap break-words">
+                                              {JSON.stringify(message.decoded_value, null, 2)}
+                                            </pre>
+                                          </div>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -722,7 +775,7 @@ function App() {
                           </Card>
                         ))}
                       </div>
-                    </ScrollArea>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
