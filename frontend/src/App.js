@@ -465,48 +465,59 @@ function App() {
                         />
                       </div>
 
-                      <ScrollArea className="h-96">
-                        <div className="space-y-2">
+                      <div className="h-96 overflow-y-auto message-scroll">
+                        <div className="space-y-2 p-1">
                           {filteredTraces.length === 0 ? (
                             <div className="text-center py-8 text-gray-500">
                               <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               <p>No traces available</p>
+                              <p className="text-xs mt-1">Check your topic monitoring settings</p>
                             </div>
                           ) : (
                             filteredTraces.map((trace) => (
                               <Card
                                 key={trace.trace_id}
-                                className={`cursor-pointer transition-colors hover:bg-slate-50 ${
-                                  selectedTrace?.trace_id === trace.trace_id ? 'ring-2 ring-blue-500' : ''
+                                className={`cursor-pointer transition-all duration-200 hover:shadow-md message-card ${
+                                  selectedTrace?.trace_id === trace.trace_id 
+                                    ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                    : 'hover:bg-slate-50'
                                 }`}
                                 onClick={() => selectTrace(trace.trace_id)}
                               >
-                                <CardContent className="p-3">
-                                  <div className="font-medium text-sm mb-1">
-                                    {trace.trace_id}
-                                  </div>
-                                  <div className="flex flex-wrap gap-1 mb-2">
-                                    {trace.topics.map((topic) => (
-                                      <Badge key={topic} variant="outline" className="text-xs">
-                                        {topic}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                  <div className="text-xs text-gray-500">
-                                    {trace.message_count} messages
-                                    {trace.duration_ms && (
-                                      <> • {formatDuration(trace.duration_ms)}</>
-                                    )}
-                                    {trace.start_time && (
-                                      <> • {formatTime(trace.start_time)}</>
-                                    )}
+                                <CardContent className="p-4">
+                                  <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="font-medium text-sm font-mono">
+                                        {trace.trace_id}
+                                      </div>
+                                      {trace.duration_ms && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          {formatDuration(trace.duration_ms)}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    
+                                    <div className="flex flex-wrap gap-1">
+                                      {trace.topics.map((topic) => (
+                                        <Badge key={topic} variant="outline" className="text-xs">
+                                          {topic}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between text-xs text-gray-500">
+                                      <span>{trace.message_count} messages</span>
+                                      {trace.start_time && (
+                                        <span>{formatTime(trace.start_time)}</span>
+                                      )}
+                                    </div>
                                   </div>
                                 </CardContent>
                               </Card>
                             ))
                           )}
                         </div>
-                      </ScrollArea>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
