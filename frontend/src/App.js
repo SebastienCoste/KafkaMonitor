@@ -190,40 +190,119 @@ function App() {
     const container = document.getElementById('topic-graph');
     if (!container || !graphData) return;
 
-    const nodes = new DataSet(graphData.nodes.map(node => ({
-      id: node.id,
-      label: node.label,
-      shape: 'box',
-      color: {
-        background: node.monitored ? '#10b981' : '#6b7280',
-        border: node.monitored ? '#059669' : '#4b5563'
-      },
-      font: { color: 'white', size: 12 }
-    })));
+    // Clear previous network
+    if (topicNetwork) {
+      topicNetwork.destroy();
+    }
 
-    const edges = new DataSet(graphData.edges.map(edge => ({
-      from: edge.source,
-      to: edge.target,
-      arrows: 'to',
-      color: { color: '#6b7280' },
-      width: Math.max(1, edge.flow_count || 1)
-    })));
+    try {
+      const nodes = new DataSet(graphData.nodes.map(node => ({
+        id: node.id,
+        label: node.label,
+        shape: 'box',
+        color: {
+          background: node.monitored ? '#10b981' : '#6b7280',
+          border: node.monitored ? '#059669' : '#4b5563'
+        },
+        font: { color: 'white', size: 12 },
+        margin: 10
+      })));
 
-    const data = { nodes, edges };
-    const options = {
-      layout: {
-        hierarchical: {
-          enabled: true,
-          direction: 'UD',
-          sortMethod: 'directed'
+      const edges = new DataSet(graphData.edges.map((edge, index) => ({
+        id: `edge_${index}`,
+        from: edge.source,
+        to: edge.target,
+        arrows: { to: { enabled: true, scaleFactor: 1 } },
+        color: { color: '#6b7280' },
+        width: Math.max(2, edge.flow_count || 2),
+        smooth: { type: 'curvedCW', roundness: 0.2 }
+      })));
+
+      const data = { nodes, edges };
+      
+      // Check if graph has multiple components
+      const components = findGraphComponents(graphData);
+      
+      const options = {
+        layout: components.length > 1 ? {
+          // Use force-directed layout for multiple components
+          improvedLayout: true,
+          hierarchical: false
+        } : {
+          // Use hierarchical layout for single component
+          hierarchical: {
+            enabled: true,
+            direction: 'UD',
+            sortMethod: 'directed',
+            nodeSpacing: 200,
+            levelSeparation: 150
+          }
+        },
+        physics: {
+          enabled: components.length > 1,
+          stabilization: { iterations: 100 }
+        },
+        interaction: { 
+          dragNodes: true, 
+          zoomView: true,
+          selectConnectedEdges: false
+        },
+        nodes: {
+          borderWidth: 2,
+          shadow: true
+        },
+        edges: {
+          shadow: true,
+          smooth: true
         }
-      },
-      physics: { enabled: false },
-      interaction: { dragNodes: false, zoomView: true }
-    };
+      };
 
-    const network = new Network(container, data, options);
-    setTopicNetwork(network);
+      const network = new Network(container, data, options);
+      setTopicNetwork(network);
+
+      // Add click handlers
+      network.on("click", function (params) {
+        if (params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          console.log(`Clicked on topic: ${nodeId}`);
+        }
+      });
+
+    } catch (error) {
+      console.error('Error rendering topic graph:', error);
+    }
+  };
+
+  const findGraphComponents = (graphData) => {
+    // Simple component detection
+    const visited = new Set();
+    const components = [];
+    
+    const dfs = (nodeId, component) => {
+      if (visited.has(nodeId)) return;
+      visited.add(nodeId);
+      component.push(nodeId);
+      
+      // Find connected nodes
+      graphData.edges.forEach(edge => {
+        if (edge.source === nodeId && !visited.has(edge.target)) {
+          dfs(edge.target, component);
+        }
+        if (edge.target === nodeId && !visited.has(edge.source)) {
+          dfs(edge.source, component);
+        }
+      });
+    };
+    
+    graphData.nodes.forEach(node => {
+      if (!visited.has(node.id)) {
+        const component = [];
+        dfs(node.id, component);
+        components.push(component);
+      }
+    });
+    
+    return components;
   };
 
   const renderTraceFlowGraph = (flowData) => {
