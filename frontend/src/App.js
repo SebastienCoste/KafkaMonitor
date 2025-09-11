@@ -309,40 +309,66 @@ function App() {
     const container = document.getElementById('trace-flow-graph');
     if (!container || !flowData) return;
 
-    const nodes = new DataSet(flowData.nodes.map(node => ({
-      id: node.id,
-      label: node.label,
-      shape: 'box',
-      color: {
-        background: '#3b82f6',
-        border: '#1d4ed8'
-      },
-      font: { color: 'white', size: 12 }
-    })));
+    // Clear previous network
+    if (flowNetwork) {
+      flowNetwork.destroy();
+    }
 
-    const edges = new DataSet(flowData.edges.map((edge, index) => ({
-      id: index,
-      from: edge.source,
-      to: edge.target,
-      arrows: 'to',
-      color: { color: '#10b981' },
-      width: Math.max(2, edge.message_count || 2)
-    })));
+    try {
+      const nodes = new DataSet(flowData.nodes.map(node => ({
+        id: node.id,
+        label: node.label,
+        shape: 'box',
+        color: {
+          background: '#3b82f6',
+          border: '#1d4ed8'
+        },
+        font: { color: 'white', size: 12 },
+        margin: 10
+      })));
 
-    const data = { nodes, edges };
-    const options = {
-      layout: {
-        hierarchical: {
-          enabled: true,
-          direction: 'LR',
-          sortMethod: 'directed'
+      const edges = new DataSet(flowData.edges.map((edge, index) => ({
+        id: `flow_edge_${index}`,
+        from: edge.source,
+        to: edge.target,
+        arrows: { to: { enabled: true, scaleFactor: 1 } },
+        color: { color: '#10b981' },
+        width: Math.max(3, edge.message_count || 3),
+        smooth: { type: 'curvedCW', roundness: 0.1 }
+      })));
+
+      const data = { nodes, edges };
+      const options = {
+        layout: {
+          hierarchical: {
+            enabled: true,
+            direction: 'LR',
+            sortMethod: 'directed',
+            nodeSpacing: 150,
+            levelSeparation: 200
+          }
+        },
+        physics: { enabled: false },
+        interaction: { 
+          dragNodes: true, 
+          zoomView: true 
+        },
+        nodes: {
+          borderWidth: 2,
+          shadow: true
+        },
+        edges: {
+          shadow: true,
+          smooth: true
         }
-      },
-      physics: { enabled: false }
-    };
+      };
 
-    const network = new Network(container, data, options);
-    setFlowNetwork(network);
+      const network = new Network(container, data, options);
+      setFlowNetwork(network);
+
+    } catch (error) {
+      console.error('Error rendering trace flow graph:', error);
+    }
   };
 
   const toggleMessage = (index) => {
