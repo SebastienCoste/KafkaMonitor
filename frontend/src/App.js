@@ -469,7 +469,7 @@ function App() {
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-2">
+          <div className="xl:col-span-3">
             {selectedTrace ? (
               <div className="space-y-6">
                 {/* Trace Header */}
