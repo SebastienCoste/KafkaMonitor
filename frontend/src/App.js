@@ -417,6 +417,24 @@ function App() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
+                      {/* Select All/None Buttons */}
+                      <div className="flex gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => updateMonitoredTopics(availableTopics)}
+                        >
+                          Select All
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={() => updateMonitoredTopics([])}
+                        >
+                          Select None
+                        </Button>
+                      </div>
+                      
                       <div className="space-y-2">
                         {availableTopics.map((topic) => (
                           <div key={topic} className="flex items-center space-x-2">
