@@ -165,8 +165,8 @@ class GrpcProtoLoader:
         
         try:
             # Load IngressServer
-            ingress_pb2 = self._import_module("grpc.ingress_server.ingress_server_pb2")
-            ingress_grpc = self._import_module("grpc.ingress_server.ingress_server_pb2_grpc")
+            ingress_pb2 = self._import_module("kafka_monitor.grpc.ingress_server.ingress_server_pb2")
+            ingress_grpc = self._import_module("kafka_monitor.grpc.ingress_server.ingress_server_pb2_grpc")
             
             if ingress_pb2 and ingress_grpc:
                 self.compiled_modules['ingress_server'] = {
@@ -181,8 +181,8 @@ class GrpcProtoLoader:
                 return False
             
             # Load AssetStorageService
-            asset_pb2 = self._import_module("grpc.asset_storage.asset_storage_pb2")
-            asset_grpc = self._import_module("grpc.asset_storage.asset_storage_pb2_grpc")
+            asset_pb2 = self._import_module("kafka_monitor.grpc.asset_storage.asset_storage_pb2")
+            asset_grpc = self._import_module("kafka_monitor.grpc.asset_storage.asset_storage_pb2_grpc")
             
             if asset_pb2 and asset_grpc:
                 self.compiled_modules['asset_storage'] = {
