@@ -91,7 +91,7 @@ function App() {
         websocket.close();
       }
     };
-  }, []); // eslint-disable-line
+  }, []);
 
   const handleWebSocketMessage = (data) => {
     if (data.type === 'trace_update') {
