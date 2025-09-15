@@ -629,72 +629,8 @@ function App() {
                 )}
               </div>
 
-              <TabsContent value="topics" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Topic Monitoring</CardTitle>
-                    <CardDescription>
-                      Select which topics to monitor for traces
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Select All/None Buttons */}
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => updateMonitoredTopics(availableTopics)}
-                        >
-                          Select All
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => updateMonitoredTopics([])}
-                        >
-                          Select None
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {availableTopics.map((topic) => (
-                          <div key={topic} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={topic}
-                              checked={monitoredTopics.includes(topic)}
-                              onCheckedChange={(checked) => {
-                                const newTopics = checked
-                                  ? [...monitoredTopics, topic]
-                                  : monitoredTopics.filter(t => t !== topic);
-                                updateMonitoredTopics(newTopics);
-                              }}
-                            />
-                            <label htmlFor={topic} className="text-sm font-medium">
-                              {topic}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-
-                      <Separator />
-
-                      <div className="text-sm text-gray-600">
-                        Monitoring {monitoredTopics.length} of {availableTopics.length} topics
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="graph" className="space-y-4">
-                <EnhancedGraphVisualization />
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Main Content */}
-          <div className="xl:col-span-3">
+              {/* Main Content */}
+              <div className="xl:col-span-3">
             {selectedTrace ? (
               <div className="space-y-6">
                 {/* Trace Header */}
