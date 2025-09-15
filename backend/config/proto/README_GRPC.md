@@ -1,33 +1,41 @@
 # Proto Files Management
 
-**IMPORTANT**: Proto files are NOT committed to this repository. They must be provided by users at runtime.
+**MERGED STRUCTURE**: Proto files for both Kafka and gRPC services are now in the unified `/app/backend/config/proto/` directory.
 
 ## Directory Structure
 
-Place your proto files in this directory following this structure:
+The proto directory now contains both Kafka protobuf files and gRPC service definitions:
 
 ```
-/app/backend/config/protos/
-├── ingress_server/
-│   ├── ingress_server.proto          # Main service definition
-│   └── common/                       # Common message types
-│       ├── types.proto
-│       └── errors.proto
-├── asset_storage/
-│   ├── asset_storage.proto           # Main service definition
-│   └── common/                       # Common message types
-│       ├── asset_types.proto
-│       └── metadata.proto
-└── common/                           # Shared common types
-    ├── base.proto
-    └── timestamps.proto
+/app/backend/config/proto/
+├── grpc/                             # gRPC service proto files
+│   ├── common/                       # Common gRPC types
+│   │   ├── base.proto                # Base response types
+│   │   └── types.proto               # Common data types
+│   ├── ingress_server/
+│   │   └── ingress_server.proto      # IngressServer service definition
+│   └── asset_storage/
+│       └── asset_storage.proto       # AssetStorageService service definition
+├── common/                           # Kafka common types
+│   ├── address.proto
+│   └── base.proto
+├── events/                           # Kafka event types
+│   └── user_events.proto
+├── processing/                       # Kafka processing types
+│   └── processed_events.proto
+├── analytics.proto                   # Kafka analytics events
+├── event.proto                       # Kafka events
+├── notifications.proto               # Kafka notifications
+├── process_event.proto               # Kafka process events
+├── processed_events.proto            # Kafka processed events
+└── user_events.proto                 # Kafka user events
 ```
 
-## Required Services
+## gRPC Services (Now Committed)
 
 ### IngressServer Service
 - **Service Name**: `IngressServer`
-- **Proto File**: `ingress_server/ingress_server.proto`
+- **Proto File**: `grpc/ingress_server/ingress_server.proto`
 - **Required Methods**:
   - `UpsertContent(UpsertContentRequest) returns (UpsertContentResponse)`
   - `BatchCreateAssets(BatchCreateAssetsRequest) returns (BatchCreateAssetsResponse)`
@@ -36,37 +44,37 @@ Place your proto files in this directory following this structure:
 
 ### AssetStorageService Service
 - **Service Name**: `AssetStorageService`
-- **Proto File**: `asset_storage/asset_storage.proto`
+- **Proto File**: `grpc/asset_storage/asset_storage.proto`
 - **Required Methods**:
   - `BatchGetSignedUrls(BatchGetSignedUrlsRequest) returns (BatchGetSignedUrlsResponse)`
   - `BatchUpdateStatuses(BatchUpdateStatusesRequest) returns (BatchUpdateStatusesResponse)`
 
 ## Loading Process
 
-1. **User Responsibility**: Users must place the required proto files in the appropriate directories
-2. **Runtime Compilation**: Proto files are compiled to Python modules at runtime
-3. **Validation**: The system validates that all required services and methods are available
-4. **Error Handling**: Clear error messages are provided if proto files are missing or invalid
+1. **Unified Directory**: Both Kafka and gRPC proto files are now in the same directory tree
+2. **Runtime Compilation**: All proto files are compiled to Python modules at runtime
+3. **Automatic Detection**: The system automatically detects and validates gRPC service definitions
+4. **Improved Error Handling**: Clear error messages for missing or invalid proto files
 
-## Security Notes
+## Key Changes
 
-- Proto files may contain sensitive service definitions
-- Never commit proto files to version control
-- Proto files are loaded from local filesystem only
-- No network fetching of proto definitions
+- ✅ **Proto files are now committed** to the repository (as requested)
+- ✅ **Unified directory structure** under `/config/proto/`
+- ✅ **Complete gRPC service definitions** with all required methods
+- ✅ **Common types shared** between services
+- ✅ **Proper protobuf structure** with imports and packages
 
 ## Environment Setup
 
-Each environment (DEV/TEST/INT/LOAD/PROD) may require different proto file versions. Ensure you have the correct proto files for your target environment.
+Each environment (DEV/TEST/INT/LOAD/PROD) uses the same committed proto files. The gRPC client dynamically compiles these at runtime.
 
 ## Troubleshooting
 
 ### Common Issues:
 
-1. **Proto files not found**: Ensure files are placed in correct directory structure
-2. **Import errors**: Check that all imported proto files are present
-3. **Compilation errors**: Verify proto syntax and dependencies
-4. **Service not found**: Ensure service names match exactly
+1. **Import errors**: All proto files now use proper import paths (e.g., `grpc/common/base.proto`)
+2. **Service compilation**: The system validates that all required services and methods are available
+3. **Directory structure**: Ensure the proto directory structure matches the documented layout
 
 ### Debug Mode:
 
