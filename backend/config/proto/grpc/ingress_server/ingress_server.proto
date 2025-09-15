@@ -33,10 +33,10 @@ message UpsertContentRequest {
 }
 
 message UpsertContentResponse {
-  grpc.common.BaseResponse base = 1;
+  kafka_monitor.grpc.common.BaseResponse base = 1;
   string id = 2;
   google.protobuf.Timestamp event_time = 3;
-  grpc.common.ContentInfo content = 4;
+  kafka_monitor.grpc.common.ContentInfo content = 4;
 }
 
 // BatchCreateAssets messages
