@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package grpc.common;
+
+import "google/protobuf/timestamp.proto";
+
+// Common base types for gRPC services
+message BaseResponse {
+  bool success = 1;
+  string message = 2;
+  string error_code = 3;
+  google.protobuf.Timestamp timestamp = 4;
+}
+
+message PaginationRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message PaginationResponse {
+  int32 total_count = 1;
+  int32 page = 2;
+  int32 page_size = 3;
+  int32 total_pages = 4;
+}

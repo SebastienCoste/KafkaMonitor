@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package grpc.ingress_server;
+
+import "google/protobuf/timestamp.proto";
+import "grpc/common/base.proto";
+import "grpc/common/types.proto";
+
+// IngressServer service definition
+service IngressServer {
+  // Upsert content with optional random field injection
+  rpc UpsertContent(UpsertContentRequest) returns (UpsertContentResponse);
+  
+  // Create multiple assets and get upload URLs
+  rpc BatchCreateAssets(BatchCreateAssetsRequest) returns (BatchCreateAssetsResponse);
+  
+  // Add download counts for content (always increment by 1)
+  rpc BatchAddDownloadCounts(BatchAddDownloadCountsRequest) returns (BatchAddDownloadCountsResponse);
+  
+  // Add ratings for content
+  rpc BatchAddRatings(BatchAddRatingsRequest) returns (BatchAddRatingsResponse);
+}
+
+// UpsertContent messages
+message UpsertContentRequest {
+  string content_id = 1;
+  string title = 2;
+  string description = 3;
+  string category = 4;
+  repeated string tags = 5;
+  map<string, string> metadata = 6;
+  string random_field = 7; // Optional field for random string injection
+}
+
+message UpsertContentResponse {
+  grpc.common.BaseResponse base = 1;
+  string id = 2;
+  google.protobuf.Timestamp event_time = 3;
+  grpc.common.ContentInfo content = 4;
+}
+
+// BatchCreateAssets messages
+message AssetCreateRequest {
+  string name = 1;
+  string type = 2;
+  string content_type = 3;
+  int64 expected_size_bytes = 4;
+  map<string, string> metadata = 5;
+}
+
+message BatchCreateAssetsRequest {
+  repeated AssetCreateRequest assets = 1;
+}
+
+message AssetUploadUrl {
+  string asset_id = 1;
+  string upload_url = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  map<string, string> upload_headers = 4;
+}
+
+message BatchCreateAssetsResponse {
+  grpc.common.BaseResponse base = 1;
+  repeated AssetUploadUrl upload_urls = 2;
+}
+
+// BatchAddDownloadCounts messages
+message DownloadCountEntry {
+  string content_id = 1;
+  string player_id = 2;
+  int32 count = 3; // Always 1 as per requirement
+}
+
+message BatchAddDownloadCountsRequest {
+  repeated DownloadCountEntry download_counts = 1;
+}
+
+message BatchAddDownloadCountsResponse {
+  grpc.common.BaseResponse base = 1;
+  int32 total_added = 2;
+  repeated string failed_content_ids = 3;
+}
+
+// BatchAddRatings messages
+message RatingEntry {
+  string content_id = 1;
+  string player_id = 2;
+  int32 rating = 3; // 1-5 scale
+  string comment = 4;
+}
+
+message BatchAddRatingsRequest {
+  repeated RatingEntry ratings = 1;
+}
+
+message BatchAddRatingsResponse {
+  grpc.common.BaseResponse base = 1;
+  int32 total_added = 2;
+  repeated string failed_content_ids = 3;
+}

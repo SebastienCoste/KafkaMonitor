@@ -1,0 +1,63 @@
+syntax = "proto3";
+
+package grpc.asset_storage;
+
+import "google/protobuf/timestamp.proto";
+import "grpc/common/base.proto";
+import "grpc/common/types.proto";
+
+// AssetStorageService service definition
+service AssetStorageService {
+  // Get signed URLs for asset access and display as thumbnails
+  rpc BatchGetSignedUrls(BatchGetSignedUrlsRequest) returns (BatchGetSignedUrlsResponse);
+  
+  // Update statuses for multiple assets
+  rpc BatchUpdateStatuses(BatchUpdateStatusesRequest) returns (BatchUpdateStatusesResponse);
+}
+
+// BatchGetSignedUrls messages
+message BatchGetSignedUrlsRequest {
+  repeated string asset_ids = 1;
+  int32 expires_in_seconds = 2; // Default 3600 (1 hour)
+  string access_type = 3; // "read" or "write"
+}
+
+message AssetSignedUrl {
+  string asset_id = 1;
+  string signed_url = 2;
+  google.protobuf.Timestamp expires_at = 3;
+  grpc.common.AssetInfo asset_info = 4;
+}
+
+message BatchGetSignedUrlsResponse {
+  grpc.common.BaseResponse base = 1;
+  repeated AssetSignedUrl signed_urls = 2;
+  repeated string failed_asset_ids = 3;
+}
+
+// BatchUpdateStatuses messages
+message AssetStatusUpdate {
+  string asset_id = 1;
+  grpc.common.AssetStatus status = 2;
+  string reason = 3;
+  map<string, string> metadata = 4;
+}
+
+message BatchUpdateStatusesRequest {
+  repeated AssetStatusUpdate asset_updates = 1;
+}
+
+message AssetStatusResult {
+  string asset_id = 1;
+  bool success = 2;
+  string error_message = 3;
+  grpc.common.AssetStatus old_status = 4;
+  grpc.common.AssetStatus new_status = 5;
+}
+
+message BatchUpdateStatusesResponse {
+  grpc.common.BaseResponse base = 1;
+  repeated AssetStatusResult results = 2;
+  int32 total_updated = 3;
+  int32 total_failed = 4;
+}
