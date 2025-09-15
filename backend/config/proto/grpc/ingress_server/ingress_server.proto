@@ -76,7 +76,7 @@ message BatchAddDownloadCountsRequest {
 }
 
 message BatchAddDownloadCountsResponse {
-  grpc.common.BaseResponse base = 1;
+  kafka_monitor.grpc.common.BaseResponse base = 1;
   int32 total_added = 2;
   repeated string failed_content_ids = 3;
 }
