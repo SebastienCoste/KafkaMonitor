@@ -282,6 +282,197 @@ async def get_statistics():
         logger.error(f"Error getting statistics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# gRPC Integration Endpoints
+
+@api_router.get("/grpc/status")
+async def get_grpc_status():
+    """Get gRPC client status"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        return grpc_client.get_status()
+    except Exception as e:
+        logger.error(f"Error getting gRPC status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/initialize")
+async def initialize_grpc():
+    """Initialize gRPC client and load proto files"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        result = await grpc_client.initialize()
+        return result
+    except Exception as e:
+        logger.error(f"Error initializing gRPC client: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/grpc/environments")
+async def get_grpc_environments():
+    """Get list of available environments"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        environments = grpc_client.list_environments()
+        return {"environments": environments}
+    except Exception as e:
+        logger.error(f"Error getting environments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/environment")
+async def set_grpc_environment(request: Dict[str, str]):
+    """Set the current gRPC environment"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    environment = request.get('environment')
+    if not environment:
+        raise HTTPException(status_code=400, detail="Environment is required")
+    
+    try:
+        result = grpc_client.set_environment(environment)
+        return result
+    except Exception as e:
+        logger.error(f"Error setting environment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/credentials")
+async def set_grpc_credentials(request: Dict[str, str]):
+    """Set gRPC credentials (stored in memory only)"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    authorization = request.get('authorization', '')
+    x_pop_token = request.get('x_pop_token', '')
+    
+    try:
+        result = grpc_client.set_credentials(authorization, x_pop_token)
+        return result
+    except Exception as e:
+        logger.error(f"Error setting credentials: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# IngressServer Endpoints
+
+@api_router.post("/grpc/ingress/upsert-content")
+async def upsert_content(request: Dict[str, Any]):
+    """Call IngressServer.UpsertContent"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        content_data = request.get('content_data', {})
+        random_field = request.get('random_field')
+        
+        result = await grpc_client.upsert_content(content_data, random_field)
+        return result
+    except Exception as e:
+        logger.error(f"Error in upsert_content: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/ingress/batch-create-assets")
+async def batch_create_assets(request: Dict[str, Any]):
+    """Call IngressServer.BatchCreateAssets"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        assets_data = request.get('assets_data', [])
+        
+        result = await grpc_client.batch_create_assets(assets_data)
+        return result
+    except Exception as e:
+        logger.error(f"Error in batch_create_assets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/ingress/batch-add-download-counts")
+async def batch_add_download_counts(request: Dict[str, Any]):
+    """Call IngressServer.BatchAddDownloadCounts"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        player_id = request.get('player_id', '')
+        content_ids = request.get('content_ids', [])
+        
+        result = await grpc_client.batch_add_download_counts(player_id, content_ids)
+        return result
+    except Exception as e:
+        logger.error(f"Error in batch_add_download_counts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/ingress/batch-add-ratings")
+async def batch_add_ratings(request: Dict[str, Any]):
+    """Call IngressServer.BatchAddRatings"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        rating_data = request.get('rating_data', {})
+        
+        result = await grpc_client.batch_add_ratings(rating_data)
+        return result
+    except Exception as e:
+        logger.error(f"Error in batch_add_ratings: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# AssetStorageService Endpoints
+
+@api_router.post("/grpc/asset-storage/batch-get-signed-urls")
+async def batch_get_signed_urls(request: Dict[str, Any]):
+    """Call AssetStorageService.BatchGetSignedUrls"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        asset_ids = request.get('asset_ids', [])
+        
+        result = await grpc_client.batch_get_signed_urls(asset_ids)
+        return result
+    except Exception as e:
+        logger.error(f"Error in batch_get_signed_urls: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/asset-storage/batch-update-statuses")
+async def batch_update_statuses(request: Dict[str, Any]):
+    """Call AssetStorageService.BatchUpdateStatuses"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        asset_updates = request.get('asset_updates', [])
+        
+        result = await grpc_client.batch_update_statuses(asset_updates)
+        return result
+    except Exception as e:
+        logger.error(f"Error in batch_update_statuses: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# File Upload Endpoint for Assets
+
+@api_router.post("/grpc/upload-file")
+async def upload_file(file: bytes, upload_url: str):
+    """Upload file to a signed URL"""
+    try:
+        import httpx
+        
+        # Upload file to the provided signed URL
+        async with httpx.AsyncClient() as client:
+            response = await client.put(upload_url, content=file)
+            
+        return {
+            'success': response.status_code == 200,
+            'status_code': response.status_code,
+            'response': response.text if response.status_code != 200 else 'Upload successful'
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time updates"""
