@@ -22,6 +22,8 @@ class GrpcProtoLoader:
     
     def __init__(self, proto_dir: str):
         self.proto_dir = Path(proto_dir)
+        # The actual proto root should be the parent directory to handle imports correctly
+        self.proto_root = self.proto_dir.parent
         self.compiled_modules: Dict[str, Any] = {}
         self.service_stubs: Dict[str, Any] = {}
         self.temp_dir = None
@@ -30,6 +32,7 @@ class GrpcProtoLoader:
         self.proto_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"🔧 Initialized GrpcProtoLoader with proto directory: {self.proto_dir}")
+        logger.info(f"🔧 Proto root for imports: {self.proto_root}")
     
     def validate_proto_files(self) -> Dict[str, bool]:
         """Validate that required proto files are present"""
