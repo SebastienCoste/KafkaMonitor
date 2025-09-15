@@ -615,56 +615,7 @@ function App() {
               </TabsContent>
 
               <TabsContent value="graph" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Topic Graph Visualization</CardTitle>
-                    <CardDescription>
-                      Interactive network showing topic relationships and message flows
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div id="topic-graph" style={{ 
-                        height: '400px',
-                        width: '100%',
-                        border: '2px solid #e2e8f0', 
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'
-                      }} />
-                      
-                      {topicGraph && (
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Graph Statistics</div>
-                            <div className="text-gray-600">
-                              {topicGraph.stats.topic_count} topics • {topicGraph.stats.edge_count} connections
-                            </div>
-                            <div className="text-gray-600">
-                              {topicGraph.stats.monitored_count} monitored topics
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Legend</div>
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                                <span className="text-xs">Monitored</span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 bg-gray-500 rounded"></div>
-                                <span className="text-xs">Not Monitored</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-                        💡 Tip: Drag nodes to rearrange the graph. Multiple disconnected components may be shown if topics aren't all connected.
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <EnhancedGraphVisualization />
               </TabsContent>
             </Tabs>
           </div>
