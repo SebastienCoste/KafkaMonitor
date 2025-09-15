@@ -47,7 +47,7 @@ GRPC_PROTOS_DIR = CONFIG_DIR / "protos"
 async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
     logger.info("🚀 Starting Kafka trace viewer component initialization")
-    global graph_builder, kafka_consumer
+    global graph_builder, kafka_consumer, grpc_client
     
     # Check if required directories exist
     if not CONFIG_DIR.exists():
