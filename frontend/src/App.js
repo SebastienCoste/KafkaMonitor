@@ -38,6 +38,7 @@ function App() {
   const [availableTopics, setAvailableTopics] = useState([]);
   const [monitoredTopics, setMonitoredTopics] = useState([]);
   const [expandedMessages, setExpandedMessages] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
