@@ -206,8 +206,8 @@ frontend:
         comment: "Starting Phase 2 implementation: multiple disconnected graphs, real-time statistics, color coding by trace age"
 
   - task: "Backend Graph Statistics Engine"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "backend/src/graph_builder.py"
     stuck_count: 0
     priority: "high"
@@ -216,6 +216,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Need to implement real-time statistics, message rates, trace age calculations, and filtering"
+      - working: true
+        agent: "testing"
+        comment: "TESTED: Graph Age Calculation Fix verified successfully. Age calculations are now based on message timestamps within traces (oldest message to current message) instead of real-time increasing values. Age values are static and reasonable with proper P10, P50, P95 calculations. Both /api/graph/disconnected and /api/graph/filtered endpoints work correctly with all time filters."
 
   - task: "Mock Disconnected Graphs Generator"
     implemented: false
