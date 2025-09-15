@@ -1047,7 +1047,10 @@ function App() {
                                       <Button 
                                         size="sm" 
                                         variant="outline"
-                                        onClick={() => copyToClipboard(JSON.stringify(message.decoded_data, null, 2))}
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(JSON.stringify(message.decoded_data, null, 2));
+                                          toast.success('Message copied to clipboard');
+                                        }}
                                       >
                                         Copy JSON
                                       </Button>
