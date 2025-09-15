@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package grpc.common;
+package kafka_monitor.grpc.common;
 
 import "google/protobuf/timestamp.proto";
 
