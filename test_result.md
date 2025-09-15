@@ -195,12 +195,51 @@ frontend:
     working: "NA"
     file: "frontend/src/App.js"
     stuck_count: 0
-    priority: "medium"
+    priority: "high"
     needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Phase 2: Enhanced graph with real-time stats, multiple components, color coding"
+      - working: "NA"
+        agent: "main"
+        comment: "Starting Phase 2 implementation: multiple disconnected graphs, real-time statistics, color coding by trace age"
+
+  - task: "Backend Graph Statistics Engine"
+    implemented: false
+    working: "NA"
+    file: "backend/src/graph_builder.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to implement real-time statistics, message rates, trace age calculations, and filtering"
+
+  - task: "Mock Disconnected Graphs Generator"
+    implemented: false
+    working: "NA"
+    file: "backend/src/mock_graph_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Generate mock disconnected graphs with cyclic loops for testing visualization"
+
+  - task: "Enhanced Graph Visualization UI"
+    implemented: false
+    working: "NA"
+    file: "frontend/src/components/EnhancedGraphVisualization.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Multiple graphs displayed vertically, color coding, statistics panel, filtering controls"
 
 metadata:
   created_by: "main_agent"
