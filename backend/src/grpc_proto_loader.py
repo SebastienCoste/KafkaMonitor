@@ -41,7 +41,7 @@ class GrpcProtoLoader:
             'all_present': False
         }
         
-        # Check for required proto files
+        # Check for required proto files in the new structure
         ingress_proto = self.proto_dir / "ingress_server" / "ingress_server.proto"
         asset_proto = self.proto_dir / "asset_storage" / "asset_storage.proto"
         
@@ -59,7 +59,7 @@ class GrpcProtoLoader:
                 missing_files.append("asset_storage/asset_storage.proto")
             
             logger.warning(f"⚠️  Missing proto files: {missing_files}")
-            logger.info("💡 Please place the required proto files in the config/protos/ directory")
+            logger.info("💡 Proto files are now located in the config/proto/grpc/ directory")
         
         return validation_results
     
