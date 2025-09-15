@@ -56,7 +56,7 @@ message AssetStatusResult {
 }
 
 message BatchUpdateStatusesResponse {
-  grpc.common.BaseResponse base = 1;
+  kafka_monitor.grpc.common.BaseResponse base = 1;
   repeated AssetStatusResult results = 2;
   int32 total_updated = 3;
   int32 total_failed = 4;
