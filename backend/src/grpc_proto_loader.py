@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List
 import grpc
 from grpc_tools import protoc
+import grpc_tools
 import yaml
 
 logger = logging.getLogger(__name__)
