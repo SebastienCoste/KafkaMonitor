@@ -101,3 +101,98 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Develop two major features for Kafka Monitor: 1) gRPC Integration Page with environment configs, credential management, file uploads, and specific service endpoints for IngressServer and AssetStorageService. 2) Graph Visualization Evolution with real-time statistics, multiple disconnected graphs, color coding, and filtering. Priority: gRPC integration first, then graph visualization."
+
+backend:
+  - task: "gRPC Integration Backend"
+    implemented: false
+    working: "NA"
+    file: "backend/src/grpc_client.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Starting implementation of gRPC client with environment configs and service endpoints"
+
+  - task: "Environment Configuration System"
+    implemented: false
+    working: "NA"
+    file: "backend/config/environments/"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Need to create environment config files for DEV/TEST/INT/LOAD/PROD"
+
+  - task: "Proto File Loading System"
+    implemented: false
+    working: "NA"
+    file: "backend/src/grpc_proto_loader.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "System to load user-provided proto files without committing them to repo"
+
+frontend:
+  - task: "gRPC Integration Page UI"
+    implemented: false
+    working: "NA"
+    file: "frontend/src/components/GrpcIntegration.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "New dedicated page for gRPC calls with environment selection and credential management"
+
+  - task: "File Upload Component"
+    implemented: false
+    working: "NA"
+    file: "frontend/src/components/FileUpload.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Drag/drop file upload component for gRPC asset operations"
+
+  - task: "Graph Visualization Enhancement"
+    implemented: false
+    working: "NA"
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Phase 2: Enhanced graph with real-time stats, multiple components, color coding"
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "gRPC Integration Backend"
+    - "Environment Configuration System"
+    - "Proto File Loading System"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Starting Phase 1: gRPC Integration development. Will implement backend gRPC client, environment configs, proto loading, then frontend UI with file upload capabilities."
