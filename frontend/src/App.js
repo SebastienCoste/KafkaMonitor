@@ -655,56 +655,6 @@ function App() {
                   </CardHeader>
                 </Card>
 
-                {/* Flow Visualization - Enhanced */}
-                {traceFlow && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-xl">Message Flow Visualization</CardTitle>
-                      <CardDescription>
-                        Interactive trace showing how messages flow through topics over time
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div id="trace-flow-graph" style={{ 
-                          height: '450px',
-                          width: '100%',
-                          border: '2px solid #e2e8f0', 
-                          borderRadius: '12px',
-                          background: 'linear-gradient(135deg, #fefefe 0%, #f0f9ff 100%)'
-                        }} />
-                        
-                        {traceFlow.stats && (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-blue-600">
-                                {formatDuration(traceFlow.stats.duration_ms)}
-                              </div>
-                              <div className="text-sm text-gray-600">Total Duration</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">
-                                {traceFlow.stats.total_messages}
-                              </div>
-                              <div className="text-sm text-gray-600">Messages</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-purple-600">
-                                {traceFlow.stats.topic_count}
-                              </div>
-                              <div className="text-sm text-gray-600">Topics</div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="text-xs text-gray-500 bg-amber-50 p-2 rounded">
-                          💡 This shows the actual path messages took through your topic graph for this specific trace.
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-
                 {/* Message Timeline - Enhanced for Better Readability */}
                 <Card className="min-h-0 flex flex-col">
                   <CardHeader className="flex-shrink-0">
