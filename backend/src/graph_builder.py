@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Set, Any
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import yaml
-from src.models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
+from .models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
 
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)
