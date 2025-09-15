@@ -132,6 +132,27 @@ class GrpcProtoLoader:
         
         logger.debug(f"✅ Successfully compiled: {proto_file}")
     
+    def _create_init_files(self):
+        """Create __init__.py files for Python package structure"""
+        logger.debug("📦 Creating __init__.py files for package structure")
+        
+        # Create __init__.py files for all directories in the temp directory
+        for root, dirs, files in os.walk(self.temp_dir):
+            for dir_name in dirs:
+                init_file = Path(root) / dir_name / "__init__.py"
+                if not init_file.exists():
+                    init_file.touch()
+                    logger.debug(f"📄 Created: {init_file}")
+        
+        # Also create root __init__.py files
+        grpc_init = Path(self.temp_dir) / "grpc" / "__init__.py"
+        if not grpc_init.exists():
+            grpc_init.parent.mkdir(parents=True, exist_ok=True)
+            grpc_init.touch()
+            logger.debug(f"📄 Created: {grpc_init}")
+        
+        logger.debug("✅ Package structure created")
+    
     def load_service_modules(self) -> bool:
         """Load compiled service modules"""
         logger.info("📦 Loading service modules...")
