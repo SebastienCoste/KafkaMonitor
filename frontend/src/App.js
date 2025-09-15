@@ -631,7 +631,124 @@ function App() {
 
               {/* Main Content */}
               <div className="xl:col-span-3">
-            {selectedTrace ? (
+                {activeTab === 'topics' ? (
+                  // Topic Statistics Display
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-xl">Topic Statistics</CardTitle>
+                      <CardDescription>
+                        Real-time statistics and metrics per monitored topic
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-6">
+                        {monitoredTopics.length === 0 ? (
+                          <div className="text-center py-12">
+                            <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                              No Topics Monitored
+                            </h3>
+                            <p className="text-gray-600 mb-4">
+                              Select topics from the sidebar to view their statistics
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            {monitoredTopics.map((topic) => {
+                              const topicStats = statistics?.messages?.by_topic?.[topic] || 0;
+                              const topicTraces = traces.filter(trace => 
+                                trace.messages.some(msg => msg.topic === topic)
+                              ).length;
+                              
+                              return (
+                                <Card key={topic} className="border-l-4 border-l-blue-500">
+                                  <CardHeader className="pb-3">
+                                    <div className="flex items-center justify-between">
+                                      <CardTitle className="text-lg font-mono">{topic}</CardTitle>
+                                      <Badge variant={topicStats > 0 ? "default" : "outline"}>
+                                        {topicStats > 0 ? "Active" : "Inactive"}
+                                      </Badge>
+                                    </div>
+                                  </CardHeader>
+                                  <CardContent>
+                                    <div className="grid grid-cols-2 gap-4">
+                                      <div className="text-center">
+                                        <div className="text-3xl font-bold text-blue-600">
+                                          {topicStats}
+                                        </div>
+                                        <div className="text-sm text-gray-600">Messages</div>
+                                      </div>
+                                      <div className="text-center">
+                                        <div className="text-3xl font-bold text-green-600">
+                                          {topicTraces}
+                                        </div>
+                                        <div className="text-sm text-gray-600">Traces</div>
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                      <div className="text-sm space-y-2">
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Status:</span>
+                                          <span className={`font-medium ${topicStats > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                                            {topicStats > 0 ? 'Receiving messages' : 'No recent activity'}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-gray-600">Monitored:</span>
+                                          <span className="font-medium text-blue-600">Yes</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            })}
+                          </div>
+                        )}
+                        
+                        {/* Overall Statistics */}
+                        {statistics && monitoredTopics.length > 0 && (
+                          <Card className="bg-gradient-to-r from-blue-50 to-purple-50">
+                            <CardHeader>
+                              <CardTitle className="text-lg">Overall Statistics</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-blue-600">
+                                    {statistics.topics?.total || 0}
+                                  </div>
+                                  <div className="text-sm text-gray-600">Total Topics</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-green-600">
+                                    {statistics.topics?.monitored || 0}
+                                  </div>
+                                  <div className="text-sm text-gray-600">Monitored</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-purple-600">
+                                    {statistics.messages?.total || 0}
+                                  </div>
+                                  <div className="text-sm text-gray-600">Total Messages</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-orange-600">
+                                    {statistics.traces?.total || 0}
+                                  </div>
+                                  <div className="text-sm text-gray-600">Active Traces</div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  // Trace Content (existing logic)
+                  selectedTrace ? (
               <div className="space-y-6">
                 {/* Trace Header */}
                 <Card>
