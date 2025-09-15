@@ -163,9 +163,9 @@ class GrpcProtoLoader:
         logger.info("📦 Loading service modules...")
         
         try:
-            # Load IngressServer - try direct import without grpc prefix
-            ingress_pb2 = self._import_module("grpc_ingress_server_ingress_server_pb2")
-            ingress_grpc = self._import_module("grpc_ingress_server_ingress_server_pb2_grpc")
+            # Load IngressServer
+            ingress_pb2 = self._import_module("grpc.ingress_server.ingress_server_pb2")
+            ingress_grpc = self._import_module("grpc.ingress_server.ingress_server_pb2_grpc")
             
             if ingress_pb2 and ingress_grpc:
                 self.compiled_modules['ingress_server'] = {
