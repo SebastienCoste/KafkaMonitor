@@ -146,6 +146,11 @@ async def initialize_kafka_components():
         asyncio.create_task(kafka_consumer.start_consuming_async())
         logger.info("✅ Kafka consumer task created")
         
+        # Initialize gRPC client
+        logger.info("🔧 Initializing gRPC client...")
+        grpc_client = GrpcClient(str(GRPC_PROTOS_DIR), str(ENVIRONMENTS_DIR))
+        logger.info("✅ gRPC client initialized")
+        
         logger.info("🎉 Kafka trace viewer components initialized successfully!")
         
     except Exception as e:
