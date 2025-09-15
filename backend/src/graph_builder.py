@@ -1,12 +1,14 @@
 """
 Topic graph builder and trace management with FIFO eviction
+Enhanced for Phase 2: Multiple disconnected graphs, real-time statistics, trace age analysis
 """
 import logging
 import traceback
-from typing import Dict, List, Optional, Set, Any
+from typing import Dict, List, Optional, Set, Any, Tuple
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import yaml
+import numpy as np
 from src.models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
 
 # Set up extensive logging
