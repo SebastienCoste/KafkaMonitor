@@ -42,7 +42,7 @@ websocket_connections: List[WebSocket] = []
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
 ENVIRONMENTS_DIR = CONFIG_DIR / "environments"
-GRPC_PROTOS_DIR = CONFIG_DIR / "protos"
+GRPC_PROTOS_DIR = PROTO_DIR / "grpc"  # Updated to use subfolder under proto
 
 async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
