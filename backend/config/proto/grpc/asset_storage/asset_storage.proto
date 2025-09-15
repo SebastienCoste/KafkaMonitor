@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package grpc.asset_storage;
+package kafka_monitor.grpc.asset_storage;
 
 import "google/protobuf/timestamp.proto";
 import "grpc/common/base.proto";
