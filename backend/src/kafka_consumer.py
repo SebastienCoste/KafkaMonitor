@@ -6,6 +6,7 @@ import logging
 import random
 import time
 import traceback
+import os
 from typing import Dict, List, Callable, Optional
 from confluent_kafka import Consumer, KafkaError, KafkaException
 import yaml
