@@ -40,7 +40,7 @@ class KafkaConsumerService:
         logger.info(f"✅ KafkaConsumerService initialized successfully")
 
     def _load_config(self):
-        """Load Kafka configuration from YAML file"""
+        """Load Kafka configuration from YAML file and environment variables"""
         logger.info(f"🔄 Loading Kafka configuration from: {self.config_path}")
         
         try:
@@ -53,20 +53,38 @@ class KafkaConsumerService:
             logger.info(f"🎭 Mock mode: {self.mock_mode}")
             
             if not self.mock_mode:
+                # Override config with environment variables if available
+                bootstrap_servers = os.getenv('KAFKA_BOOTSTRAP_SERVERS', config.get('bootstrap_servers', 'localhost:9092'))
+                username = os.getenv('KAFKA_USERNAME', config.get('sasl_username', ''))
+                password = os.getenv('KAFKA_PASSWORD', config.get('sasl_password', ''))
+                security_protocol = os.getenv('KAFKA_SECURITY_PROTOCOL', config.get('security_protocol', 'PLAINTEXT'))
+                sasl_mechanism = os.getenv('KAFKA_SASL_MECHANISM', config.get('sasl_mechanism', ''))
+                
                 # Build confluent-kafka consumer config for real Kafka
                 self.kafka_config = {
-                    'bootstrap.servers': config['bootstrap_servers'],
-                    'security.protocol': config['security_protocol'],
-                    'sasl.mechanism': config['sasl_mechanism'],
-                    'sasl.username': config['sasl_username'],
-                    'sasl.password': config['sasl_password'],
+                    'bootstrap.servers': bootstrap_servers,
                     'group.id': config.get('group_id', 'kafka-trace-viewer'),
                     'auto.offset.reset': config.get('auto_offset_reset', 'latest'),
                     'enable.auto.commit': config.get('enable_auto_commit', True),
                     'session.timeout.ms': config.get('session_timeout_ms', 6000),
                     'heartbeat.interval.ms': config.get('heartbeat_interval_ms', 3000),
                 }
-                logger.info(f"🔗 Loaded Kafka config for {config['bootstrap_servers']}")
+                
+                # Add security configuration only if credentials are provided
+                if security_protocol and security_protocol != 'PLAINTEXT':
+                    self.kafka_config['security.protocol'] = security_protocol
+                    
+                    if sasl_mechanism:
+                        self.kafka_config['sasl.mechanism'] = sasl_mechanism
+                    
+                    if username:
+                        self.kafka_config['sasl.username'] = username
+                    
+                    if password:
+                        self.kafka_config['sasl.password'] = password
+                
+                logger.info(f"🔗 Loaded Kafka config for {bootstrap_servers}")
+                logger.info(f"🔧 Security protocol: {security_protocol}")
                 logger.debug(f"🔧 Kafka config (credentials hidden): {dict((k, '***' if 'password' in k.lower() else v) for k, v in self.kafka_config.items())}")
             else:
                 logger.info("🎭 Running in mock mode - will generate fake messages")
