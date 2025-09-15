@@ -206,10 +206,31 @@ class GrpcProtoLoader:
         """Import a compiled module"""
         try:
             logger.debug(f"📦 Importing module: {module_name}")
-            module = importlib.import_module(module_name)
-            logger.debug(f"✅ Successfully imported: {module_name}")
-            return module
-        except ImportError as e:
+            
+            # Try direct import first
+            try:
+                module = importlib.import_module(module_name)
+                logger.debug(f"✅ Successfully imported: {module_name}")
+                return module
+            except ImportError:
+                pass
+            
+            # If direct import fails, try to load from file path
+            if self.temp_dir:
+                # Convert module name to file path
+                file_path = Path(self.temp_dir) / f"{module_name.replace('.', '/')}.py"
+                if file_path.exists():
+                    spec = importlib.util.spec_from_file_location(module_name, file_path)
+                    if spec and spec.loader:
+                        module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(module)
+                        logger.debug(f"✅ Successfully loaded from file: {module_name}")
+                        return module
+            
+            logger.error(f"❌ Failed to import {module_name}: Module not found")
+            return None
+            
+        except Exception as e:
             logger.error(f"❌ Failed to import {module_name}: {str(e)}")
             return None
     
