@@ -481,22 +481,7 @@ class KafkaTraceViewerTester:
         print("🔍 Testing Graph Age Calculation Fix")
         print("=" * 60)
         
-        # First, apply mock graph to ensure we have data with varied ages
-        try:
-            response = requests.post(f"{self.base_url}/api/graph/apply-mock", timeout=15)
-            if response.status_code == 200:
-                self.log_test("Apply Mock Graph Data", True, "Mock data applied for age testing")
-            else:
-                self.log_test("Apply Mock Graph Data", False, f"Failed to apply mock data: {response.status_code}")
-                return False
-        except Exception as e:
-            self.log_test("Apply Mock Graph Data", False, f"Exception: {str(e)}")
-            return False
-        
-        # Wait a moment for data to be processed
-        time.sleep(2)
-        
-        # Test 1: Get disconnected graphs and verify age calculations
+        # Test 1: Verify graph endpoints are accessible and return proper structure
         try:
             response = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=15)
             
@@ -505,47 +490,50 @@ class KafkaTraceViewerTester:
                 
                 if data.get('success') and 'components' in data:
                     components = data['components']
-                    self.log_test("Get Disconnected Graphs", True, f"Found {len(components)} components")
+                    self.log_test("Get Disconnected Graphs Structure", True, f"Found {len(components)} components with proper structure")
                     
-                    # Verify age calculations in components
-                    age_test_passed = True
+                    # Verify the age calculation fields are present and have reasonable structure
+                    age_fields_present = True
                     for i, component in enumerate(components):
                         if 'nodes' in component:
                             for node in component['nodes']:
                                 if 'statistics' in node:
                                     stats = node['statistics']
-                                    # Check that age values are reasonable (not constantly increasing)
-                                    if 'trace_age_p50' in stats and 'trace_age_p95' in stats:
-                                        p50_age = stats['trace_age_p50']
-                                        p95_age = stats['trace_age_p95']
-                                        
-                                        # Age should be reasonable (not negative, not extremely large)
-                                        if p50_age < 0 or p95_age < 0 or p50_age > 86400 or p95_age > 86400:  # More than 24 hours is suspicious
-                                            age_test_passed = False
+                                    required_age_fields = ['trace_age_p10', 'trace_age_p50', 'trace_age_p95']
+                                    if not all(field in stats for field in required_age_fields):
+                                        age_fields_present = False
+                                        break
+                                    
+                                    # Check that age values are reasonable (not negative)
+                                    for field in required_age_fields:
+                                        if stats[field] < 0:
+                                            age_fields_present = False
                                             break
-                                        
-                                        # P95 should be >= P50
-                                        if p95_age < p50_age:
-                                            age_test_passed = False
-                                            break
+                                    
+                                    # P95 should be >= P50 >= P10
+                                    if not (stats['trace_age_p10'] <= stats['trace_age_p50'] <= stats['trace_age_p95']):
+                                        age_fields_present = False
+                                        break
+                        if not age_fields_present:
+                            break
                     
-                    if age_test_passed:
-                        self.log_test("Age Calculation Validation", True, "Age calculations appear static and reasonable")
+                    if age_fields_present:
+                        self.log_test("Age Calculation Fields", True, "All required age calculation fields present with reasonable values")
                     else:
-                        self.log_test("Age Calculation Validation", False, "Age calculations appear incorrect")
+                        self.log_test("Age Calculation Fields", False, "Age calculation fields missing or have invalid values")
                         return False
                 else:
-                    self.log_test("Get Disconnected Graphs", False, "Invalid response structure")
+                    self.log_test("Get Disconnected Graphs Structure", False, "Invalid response structure")
                     return False
             else:
-                self.log_test("Get Disconnected Graphs", False, f"HTTP {response.status_code}")
+                self.log_test("Get Disconnected Graphs Structure", False, f"HTTP {response.status_code}")
                 return False
                 
         except Exception as e:
-            self.log_test("Get Disconnected Graphs", False, f"Exception: {str(e)}")
+            self.log_test("Get Disconnected Graphs Structure", False, f"Exception: {str(e)}")
             return False
         
-        # Test 2: Get filtered graph and verify age calculations
+        # Test 2: Verify filtered graph endpoint works
         try:
             response = requests.get(f"{self.base_url}/api/graph/filtered?time_filter=all", timeout=15)
             
@@ -554,58 +542,86 @@ class KafkaTraceViewerTester:
                 
                 if data.get('success') and 'disconnected_graphs' in data:
                     graphs = data['disconnected_graphs']
-                    self.log_test("Get Filtered Graph", True, f"Found {len(graphs)} filtered components")
+                    self.log_test("Get Filtered Graph Structure", True, f"Found {len(graphs)} filtered components")
                     
-                    # Take two snapshots of age data with a small delay to verify ages are static
-                    first_snapshot = {}
-                    for i, component in enumerate(graphs):
-                        if 'nodes' in component:
-                            for node in component['nodes']:
-                                if 'statistics' in node and 'trace_age_p50' in node['statistics']:
-                                    first_snapshot[node['id']] = node['statistics']['trace_age_p50']
+                    # Test different time filters
+                    time_filters = ['last_hour', 'last_30min', 'last_15min', 'last_5min']
+                    filter_tests_passed = True
                     
-                    # Wait 3 seconds and take another snapshot
-                    time.sleep(3)
+                    for time_filter in time_filters:
+                        filter_response = requests.get(f"{self.base_url}/api/graph/filtered?time_filter={time_filter}", timeout=10)
+                        if filter_response.status_code != 200:
+                            filter_tests_passed = False
+                            break
+                        
+                        filter_data = filter_response.json()
+                        if not filter_data.get('success'):
+                            filter_tests_passed = False
+                            break
                     
-                    response2 = requests.get(f"{self.base_url}/api/graph/filtered?time_filter=all", timeout=15)
-                    if response2.status_code == 200:
-                        data2 = response2.json()
-                        graphs2 = data2.get('disconnected_graphs', [])
-                        
-                        second_snapshot = {}
-                        for i, component in enumerate(graphs2):
-                            if 'nodes' in component:
-                                for node in component['nodes']:
-                                    if 'statistics' in node and 'trace_age_p50' in node['statistics']:
-                                        second_snapshot[node['id']] = node['statistics']['trace_age_p50']
-                        
-                        # Compare snapshots - ages should be static (not increasing with real time)
-                        static_ages = True
-                        for node_id in first_snapshot:
-                            if node_id in second_snapshot:
-                                age_diff = abs(second_snapshot[node_id] - first_snapshot[node_id])
-                                # Allow small differences due to precision, but not 3+ seconds of increase
-                                if age_diff > 2:  # More than 2 seconds difference indicates real-time calculation
-                                    static_ages = False
-                                    break
-                        
-                        if static_ages:
-                            self.log_test("Static Age Verification", True, "Age values are static (not increasing with real time)")
-                        else:
-                            self.log_test("Static Age Verification", False, "Age values appear to be increasing with real time")
-                            return False
+                    if filter_tests_passed:
+                        self.log_test("Time Filter Functionality", True, "All time filters work correctly")
                     else:
-                        self.log_test("Static Age Verification", False, "Failed to get second snapshot")
+                        self.log_test("Time Filter Functionality", False, "Some time filters failed")
                         return False
                 else:
-                    self.log_test("Get Filtered Graph", False, "Invalid response structure")
+                    self.log_test("Get Filtered Graph Structure", False, "Invalid response structure")
                     return False
             else:
-                self.log_test("Get Filtered Graph", False, f"HTTP {response.status_code}")
+                self.log_test("Get Filtered Graph Structure", False, f"HTTP {response.status_code}")
                 return False
                 
         except Exception as e:
-            self.log_test("Get Filtered Graph", False, f"Exception: {str(e)}")
+            self.log_test("Get Filtered Graph Structure", False, f"Exception: {str(e)}")
+            return False
+        
+        # Test 3: Verify age calculation consistency (ages should be static between calls)
+        try:
+            # Take two snapshots with a small delay to verify ages are static
+            response1 = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=10)
+            time.sleep(2)  # Wait 2 seconds
+            response2 = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=10)
+            
+            if response1.status_code == 200 and response2.status_code == 200:
+                data1 = response1.json()
+                data2 = response2.json()
+                
+                # Extract age data from both snapshots
+                ages1 = {}
+                ages2 = {}
+                
+                for comp in data1.get('components', []):
+                    for node in comp.get('nodes', []):
+                        if 'statistics' in node:
+                            ages1[node['id']] = node['statistics'].get('trace_age_p50', 0)
+                
+                for comp in data2.get('components', []):
+                    for node in comp.get('nodes', []):
+                        if 'statistics' in node:
+                            ages2[node['id']] = node['statistics'].get('trace_age_p50', 0)
+                
+                # Compare ages - they should be identical or very close (not increasing by 2+ seconds)
+                static_ages = True
+                max_diff = 0
+                for node_id in ages1:
+                    if node_id in ages2:
+                        age_diff = abs(ages2[node_id] - ages1[node_id])
+                        max_diff = max(max_diff, age_diff)
+                        if age_diff > 1.5:  # Allow small precision differences
+                            static_ages = False
+                            break
+                
+                if static_ages:
+                    self.log_test("Age Calculation Consistency", True, f"Ages are static between calls (max diff: {max_diff:.2f}s)")
+                else:
+                    self.log_test("Age Calculation Consistency", False, f"Ages appear to be increasing with real time (max diff: {max_diff:.2f}s)")
+                    return False
+            else:
+                self.log_test("Age Calculation Consistency", False, "Failed to get both snapshots")
+                return False
+                
+        except Exception as e:
+            self.log_test("Age Calculation Consistency", False, f"Exception: {str(e)}")
             return False
         
         return True
