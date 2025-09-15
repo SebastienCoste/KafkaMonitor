@@ -38,7 +38,7 @@ message BatchGetSignedUrlsResponse {
 // BatchUpdateStatuses messages
 message AssetStatusUpdate {
   string asset_id = 1;
-  grpc.common.AssetStatus status = 2;
+  kafka_monitor.grpc.common.AssetStatus status = 2;
   string reason = 3;
   map<string, string> metadata = 4;
 }
