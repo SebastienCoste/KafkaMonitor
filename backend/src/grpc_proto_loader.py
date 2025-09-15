@@ -107,10 +107,14 @@ class GrpcProtoLoader:
         # Calculate relative path from proto_root (not proto_dir)
         rel_path = proto_file.relative_to(self.proto_root)
         
-        # Prepare protoc arguments - use proto_root as the proto_path
+        # Get the grpc_tools proto path for well-known types
+        grpc_tools_proto_path = Path(grpc_tools.__file__).parent / "_proto"
+        
+        # Prepare protoc arguments - use proto_root as the proto_path and include grpc_tools path
         args = [
             "grpc_tools.protoc",
             f"--proto_path={self.proto_root}",
+            f"--proto_path={grpc_tools_proto_path}",
             f"--python_out={self.temp_dir}",
             f"--grpc_python_out={self.temp_dir}",
             str(rel_path)
