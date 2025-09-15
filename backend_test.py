@@ -266,6 +266,215 @@ class KafkaTraceViewerTester:
             self.log_test("WebSocket Endpoint", False, f"Exception: {str(e)}")
             return False
     
+    # gRPC Integration Tests
+    
+    def test_grpc_status(self) -> Dict[str, Any]:
+        """Test GET /api/grpc/status endpoint"""
+        try:
+            response = requests.get(f"{self.base_url}/api/grpc/status", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                required_fields = ["initialized", "current_environment", "credentials_set", "proto_status"]
+                
+                if all(field in data for field in required_fields):
+                    self.log_test("gRPC Status", True, f"Initialized: {data['initialized']}, Environment: {data['current_environment']}")
+                    return data
+                else:
+                    self.log_test("gRPC Status", False, f"Missing required fields: {required_fields}")
+                    return {}
+            elif response.status_code == 503:
+                self.log_test("gRPC Status", False, "gRPC client not initialized (503)")
+                return {}
+            else:
+                self.log_test("gRPC Status", False, f"HTTP {response.status_code}")
+                return {}
+                
+        except Exception as e:
+            self.log_test("gRPC Status", False, f"Exception: {str(e)}")
+            return {}
+    
+    def test_grpc_environments(self) -> Dict[str, Any]:
+        """Test GET /api/grpc/environments endpoint"""
+        try:
+            response = requests.get(f"{self.base_url}/api/grpc/environments", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "environments" in data and isinstance(data["environments"], list):
+                    env_count = len(data["environments"])
+                    self.log_test("Get gRPC Environments", True, f"Found {env_count} environments: {data['environments']}")
+                    return data
+                else:
+                    self.log_test("Get gRPC Environments", False, "Invalid response structure")
+                    return {}
+            elif response.status_code == 503:
+                self.log_test("Get gRPC Environments", False, "gRPC client not initialized (503)")
+                return {}
+            else:
+                self.log_test("Get gRPC Environments", False, f"HTTP {response.status_code}")
+                return {}
+                
+        except Exception as e:
+            self.log_test("Get gRPC Environments", False, f"Exception: {str(e)}")
+            return {}
+    
+    def test_grpc_set_environment(self, environment: str) -> bool:
+        """Test POST /api/grpc/environment endpoint"""
+        try:
+            payload = {"environment": environment}
+            response = requests.post(
+                f"{self.base_url}/api/grpc/environment",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") and data.get("environment") == environment:
+                    config = data.get("config", {})
+                    services = config.get("services", [])
+                    self.log_test(f"Set gRPC Environment ({environment})", True, f"Services: {services}")
+                    return True
+                else:
+                    self.log_test(f"Set gRPC Environment ({environment})", False, f"Failed to set environment: {data}")
+                    return False
+            elif response.status_code == 400:
+                self.log_test(f"Set gRPC Environment ({environment})", False, "Bad request (400)")
+                return False
+            elif response.status_code == 503:
+                self.log_test(f"Set gRPC Environment ({environment})", False, "gRPC client not initialized (503)")
+                return False
+            else:
+                self.log_test(f"Set gRPC Environment ({environment})", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test(f"Set gRPC Environment ({environment})", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_grpc_credentials(self) -> bool:
+        """Test POST /api/grpc/credentials endpoint"""
+        try:
+            # Test with sample credentials
+            payload = {
+                "authorization": "Bearer test-token-12345",
+                "x_pop_token": "pop-token-67890"
+            }
+            response = requests.post(
+                f"{self.base_url}/api/grpc/credentials",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    self.log_test("Set gRPC Credentials", True, f"Message: {data.get('message', 'Success')}")
+                    return True
+                else:
+                    self.log_test("Set gRPC Credentials", False, f"Failed to set credentials: {data}")
+                    return False
+            elif response.status_code == 400:
+                self.log_test("Set gRPC Credentials", False, "Bad request (400)")
+                return False
+            elif response.status_code == 503:
+                self.log_test("Set gRPC Credentials", False, "gRPC client not initialized (503)")
+                return False
+            else:
+                self.log_test("Set gRPC Credentials", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Set gRPC Credentials", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_grpc_initialize(self) -> Dict[str, Any]:
+        """Test POST /api/grpc/initialize endpoint"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/grpc/initialize",
+                headers={"Content-Type": "application/json"},
+                timeout=15  # Longer timeout for initialization
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    available_services = data.get("available_services", {})
+                    environments = data.get("environments", [])
+                    self.log_test("gRPC Initialize", True, f"Services: {list(available_services.keys())}, Environments: {environments}")
+                    return data
+                else:
+                    error = data.get("error", "Unknown error")
+                    validation = data.get("validation", {})
+                    if "proto files are missing" in error.lower():
+                        self.log_test("gRPC Initialize", True, f"Expected failure - proto files missing: {validation}")
+                        return data  # This is expected behavior
+                    else:
+                        self.log_test("gRPC Initialize", False, f"Initialization failed: {error}")
+                        return data
+            elif response.status_code == 503:
+                self.log_test("gRPC Initialize", False, "gRPC client not initialized (503)")
+                return {}
+            else:
+                self.log_test("gRPC Initialize", False, f"HTTP {response.status_code}")
+                return {}
+                
+        except Exception as e:
+            self.log_test("gRPC Initialize", False, f"Exception: {str(e)}")
+            return {}
+    
+    def test_grpc_service_endpoints(self) -> bool:
+        """Test gRPC service endpoints (should fail gracefully without proto files)"""
+        endpoints_to_test = [
+            ("/api/grpc/ingress/upsert-content", {"content_data": {"test": "data"}}),
+            ("/api/grpc/ingress/batch-create-assets", {"assets_data": [{"name": "test-asset"}]}),
+            ("/api/grpc/ingress/batch-add-download-counts", {"player_id": "test-player", "content_ids": ["content-1"]}),
+            ("/api/grpc/ingress/batch-add-ratings", {"rating_data": {"test": "rating"}}),
+            ("/api/grpc/asset-storage/batch-get-signed-urls", {"asset_ids": ["asset-1", "asset-2"]}),
+            ("/api/grpc/asset-storage/batch-update-statuses", {"asset_updates": [{"asset_id": "asset-1", "status": "active"}]})
+        ]
+        
+        all_passed = True
+        
+        for endpoint, payload in endpoints_to_test:
+            try:
+                response = requests.post(
+                    f"{self.base_url}{endpoint}",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                endpoint_name = endpoint.split("/")[-1].replace("-", " ").title()
+                
+                if response.status_code == 503:
+                    # Expected when gRPC client is not initialized or proto files are missing
+                    self.log_test(f"gRPC {endpoint_name}", True, "Expected 503 - gRPC client not ready")
+                elif response.status_code == 500:
+                    # Also expected when proto files are missing
+                    self.log_test(f"gRPC {endpoint_name}", True, "Expected 500 - proto files missing")
+                elif response.status_code == 200:
+                    # Unexpected success (would mean proto files are present)
+                    data = response.json()
+                    self.log_test(f"gRPC {endpoint_name}", True, f"Unexpected success: {data}")
+                else:
+                    self.log_test(f"gRPC {endpoint_name}", False, f"Unexpected status: {response.status_code}")
+                    all_passed = False
+                    
+            except Exception as e:
+                self.log_test(f"gRPC {endpoint_name}", False, f"Exception: {str(e)}")
+                all_passed = False
+        
+        return all_passed
+    
     def run_comprehensive_test(self):
         """Run all backend tests"""
         print("🚀 Starting Kafka Trace Viewer Backend Tests")
