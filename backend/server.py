@@ -235,6 +235,61 @@ async def get_topics_graph():
         logger.error(f"Error getting topics graph: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/graph/disconnected")
+async def get_disconnected_graphs():
+    """Get all disconnected graph components with enhanced statistics"""
+    if not graph_builder:
+        raise HTTPException(status_code=503, detail="Graph builder not initialized")
+    
+    try:
+        disconnected_graphs = graph_builder.get_disconnected_graphs()
+        return {
+            'success': True,
+            'components': disconnected_graphs,
+            'total_components': len(disconnected_graphs)
+        }
+    except Exception as e:
+        logger.error(f"Error getting disconnected graphs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/graph/filtered")
+async def get_filtered_graph(time_filter: str = "all", custom_minutes: Optional[int] = None):
+    """Get filtered graph data based on time range"""
+    if not graph_builder:
+        raise HTTPException(status_code=503, detail="Graph builder not initialized")
+    
+    try:
+        filtered_data = graph_builder.get_filtered_graph_data(time_filter, custom_minutes)
+        return {
+            'success': True,
+            **filtered_data
+        }
+    except Exception as e:
+        logger.error(f"Error getting filtered graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/graph/apply-mock")
+async def apply_mock_graph():
+    """Apply mock graph configuration for testing disconnected graphs"""
+    if not graph_builder:
+        raise HTTPException(status_code=503, detail="Graph builder not initialized")
+    
+    try:
+        from src.mock_graph_generator import MockGraphGenerator
+        
+        mock_generator = MockGraphGenerator()
+        mock_generator.apply_mock_configuration(graph_builder)
+        
+        return {
+            'success': True,
+            'message': 'Mock graph configuration applied successfully',
+            'total_traces': len(graph_builder.traces),
+            'total_topics': len(graph_builder.topic_graph.get_all_topics())
+        }
+    except Exception as e:
+        logger.error(f"Error applying mock graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/topics")
 async def get_topics():
     """Get all available topics"""
