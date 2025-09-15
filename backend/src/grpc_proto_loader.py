@@ -113,6 +113,10 @@ class GrpcProtoLoader:
         # Get the grpc_tools proto path for well-known types
         grpc_tools_proto_path = Path(grpc_tools.__file__).parent / "_proto"
         
+        # Create a flattened module name to avoid conflicts
+        # grpc/ingress_server/ingress_server.proto -> grpc_ingress_server_ingress_server
+        module_name = str(rel_path).replace('/', '_').replace('.proto', '')
+        
         # Prepare protoc arguments - use proto_root as the proto_path and include grpc_tools path
         args = [
             "grpc_tools.protoc",
@@ -124,6 +128,7 @@ class GrpcProtoLoader:
         ]
         
         logger.debug(f"🛠️  Protoc command: {' '.join(args)}")
+        logger.debug(f"🏷️  Module name will be: {module_name}")
         
         # Run protoc
         result = protoc.main(args)
