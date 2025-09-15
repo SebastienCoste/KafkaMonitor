@@ -21,6 +21,7 @@ from src.models import KafkaMessage, TraceInfo, TopicConfig
 from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 from src.kafka_consumer import KafkaConsumerService
 from src.graph_builder import TraceGraphBuilder
+from src.grpc_client import GrpcClient
 
 
 ROOT_DIR = Path(__file__).parent
