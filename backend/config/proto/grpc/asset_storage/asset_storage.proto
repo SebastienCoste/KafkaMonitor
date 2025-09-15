@@ -51,8 +51,8 @@ message AssetStatusResult {
   string asset_id = 1;
   bool success = 2;
   string error_message = 3;
-  grpc.common.AssetStatus old_status = 4;
-  grpc.common.AssetStatus new_status = 5;
+  kafka_monitor.grpc.common.AssetStatus old_status = 4;
+  kafka_monitor.grpc.common.AssetStatus new_status = 5;
 }
 
 message BatchUpdateStatusesResponse {
