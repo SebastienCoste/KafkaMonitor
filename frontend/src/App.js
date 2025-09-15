@@ -40,6 +40,7 @@ function App() {
   const [monitoredTopics, setMonitoredTopics] = useState([]);
   const [expandedMessages, setExpandedMessages] = useState(new Set());
   const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
+  const [activeTab, setActiveTab] = useState('traces'); // New state for tracking active tab
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
