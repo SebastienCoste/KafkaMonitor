@@ -1,0 +1,17 @@
+# INT Environment Configuration
+name: "INT"
+description: "Integration Environment"
+
+grpc_services:
+  ingress_server:
+    url: "int-ingress.example.com:443"
+    secure: true
+    timeout: 30
+    
+  asset_storage_service:
+    url: "int-assets.example.com:443"
+    secure: true
+    timeout: 30
+
+# Note: Credentials are provided at runtime via UI
+# and stored in memory only - never in config files

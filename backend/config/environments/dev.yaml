@@ -1,0 +1,17 @@
+# DEV Environment Configuration
+name: "DEV"
+description: "Development Environment"
+
+grpc_services:
+  ingress_server:
+    url: "localhost:50051"
+    secure: false
+    timeout: 30
+    
+  asset_storage_service:
+    url: "localhost:50052"
+    secure: false
+    timeout: 30
+
+# Note: Credentials are provided at runtime via UI
+# and stored in memory only - never in config files

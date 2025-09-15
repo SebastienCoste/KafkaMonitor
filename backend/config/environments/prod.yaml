@@ -1,0 +1,17 @@
+# PROD Environment Configuration
+name: "PROD"
+description: "Production Environment"
+
+grpc_services:
+  ingress_server:
+    url: "prod-ingress.example.com:443"
+    secure: true
+    timeout: 45
+    
+  asset_storage_service:
+    url: "prod-assets.example.com:443"
+    secure: true
+    timeout: 45
+
+# Note: Credentials are provided at runtime via UI
+# and stored in memory only - never in config files

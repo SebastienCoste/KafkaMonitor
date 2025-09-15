@@ -1,0 +1,17 @@
+# LOAD Environment Configuration
+name: "LOAD"
+description: "Load Testing Environment"
+
+grpc_services:
+  ingress_server:
+    url: "load-ingress.example.com:443"
+    secure: true
+    timeout: 60
+    
+  asset_storage_service:
+    url: "load-assets.example.com:443"
+    secure: true
+    timeout: 60
+
+# Note: Credentials are provided at runtime via UI
+# and stored in memory only - never in config files

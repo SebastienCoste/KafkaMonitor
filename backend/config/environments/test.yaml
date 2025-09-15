@@ -1,0 +1,17 @@
+# TEST Environment Configuration
+name: "TEST"
+description: "Test Environment"
+
+grpc_services:
+  ingress_server:
+    url: "test-ingress.example.com:443"
+    secure: true
+    timeout: 30
+    
+  asset_storage_service:
+    url: "test-assets.example.com:443"
+    secure: true
+    timeout: 30
+
+# Note: Credentials are provided at runtime via UI
+# and stored in memory only - never in config files
