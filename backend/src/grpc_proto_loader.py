@@ -170,6 +170,8 @@ class GrpcProtoLoader:
                 logger.info("✅ IngressServer modules loaded")
             else:
                 logger.error("❌ Failed to load IngressServer modules")
+                # Let's try to debug what's available
+                self._debug_temp_directory()
                 return False
             
             # Load AssetStorageService
