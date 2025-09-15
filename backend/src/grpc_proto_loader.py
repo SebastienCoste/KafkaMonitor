@@ -47,7 +47,7 @@ class GrpcProtoLoader:
         
         validation_results['ingress_server'] = ingress_proto.exists()
         validation_results['asset_storage'] = asset_proto.exists()
-        validation_results['all_present'] = all(validation_results.values())
+        validation_results['all_present'] = validation_results['ingress_server'] and validation_results['asset_storage']
         
         logger.info(f"📋 Proto validation results: {validation_results}")
         
