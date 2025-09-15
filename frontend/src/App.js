@@ -469,17 +469,29 @@ function App() {
       {currentPage === 'traces' ? (
         // Existing Kafka Trace Viewer Content
         <div className="max-w-full mx-auto p-4">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-          {/* Sidebar */}
-          <div className="xl:col-span-1">
-            <Tabs defaultValue="traces" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+          {/* Tab Navigation */}
+          <div className="mb-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 max-w-md">
                 <TabsTrigger value="traces">Traces</TabsTrigger>
                 <TabsTrigger value="topics">Topics</TabsTrigger>
                 <TabsTrigger value="graph">Graph</TabsTrigger>
               </TabsList>
+            </Tabs>
+          </div>
 
-              <TabsContent value="traces" className="space-y-4">
+          {/* Dynamic Layout Based on Active Tab */}
+          {activeTab === 'graph' ? (
+            // Full-width Graph Layout
+            <div className="w-full">
+              <EnhancedGraphVisualization />
+            </div>
+          ) : (
+            // Original 4-column Layout for Traces and Topics
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+              {/* Sidebar */}
+              <div className="xl:col-span-1">
+                {activeTab === 'traces' && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Available Traces</CardTitle>
