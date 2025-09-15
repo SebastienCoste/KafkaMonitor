@@ -35,6 +35,7 @@ api_router = APIRouter(prefix="/api")
 # Global variables for Kafka trace viewer components
 graph_builder: Optional[TraceGraphBuilder] = None
 kafka_consumer: Optional[KafkaConsumerService] = None
+grpc_client: Optional[GrpcClient] = None
 websocket_connections: List[WebSocket] = []
 
 # Configuration paths
