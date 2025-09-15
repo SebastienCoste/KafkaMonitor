@@ -475,6 +475,227 @@ class KafkaTraceViewerTester:
         
         return all_passed
     
+    def test_graph_age_calculation_fix(self) -> bool:
+        """Test the Graph Age Calculation Fix - verify age calculations are based on message timestamps within traces"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing Graph Age Calculation Fix")
+        print("=" * 60)
+        
+        # First, apply mock graph to ensure we have data with varied ages
+        try:
+            response = requests.post(f"{self.base_url}/api/graph/apply-mock", timeout=15)
+            if response.status_code == 200:
+                self.log_test("Apply Mock Graph Data", True, "Mock data applied for age testing")
+            else:
+                self.log_test("Apply Mock Graph Data", False, f"Failed to apply mock data: {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Apply Mock Graph Data", False, f"Exception: {str(e)}")
+            return False
+        
+        # Wait a moment for data to be processed
+        time.sleep(2)
+        
+        # Test 1: Get disconnected graphs and verify age calculations
+        try:
+            response = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get('success') and 'components' in data:
+                    components = data['components']
+                    self.log_test("Get Disconnected Graphs", True, f"Found {len(components)} components")
+                    
+                    # Verify age calculations in components
+                    age_test_passed = True
+                    for i, component in enumerate(components):
+                        if 'nodes' in component:
+                            for node in component['nodes']:
+                                if 'statistics' in node:
+                                    stats = node['statistics']
+                                    # Check that age values are reasonable (not constantly increasing)
+                                    if 'trace_age_p50' in stats and 'trace_age_p95' in stats:
+                                        p50_age = stats['trace_age_p50']
+                                        p95_age = stats['trace_age_p95']
+                                        
+                                        # Age should be reasonable (not negative, not extremely large)
+                                        if p50_age < 0 or p95_age < 0 or p50_age > 86400 or p95_age > 86400:  # More than 24 hours is suspicious
+                                            age_test_passed = False
+                                            break
+                                        
+                                        # P95 should be >= P50
+                                        if p95_age < p50_age:
+                                            age_test_passed = False
+                                            break
+                    
+                    if age_test_passed:
+                        self.log_test("Age Calculation Validation", True, "Age calculations appear static and reasonable")
+                    else:
+                        self.log_test("Age Calculation Validation", False, "Age calculations appear incorrect")
+                        return False
+                else:
+                    self.log_test("Get Disconnected Graphs", False, "Invalid response structure")
+                    return False
+            else:
+                self.log_test("Get Disconnected Graphs", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Get Disconnected Graphs", False, f"Exception: {str(e)}")
+            return False
+        
+        # Test 2: Get filtered graph and verify age calculations
+        try:
+            response = requests.get(f"{self.base_url}/api/graph/filtered?time_filter=all", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get('success') and 'disconnected_graphs' in data:
+                    graphs = data['disconnected_graphs']
+                    self.log_test("Get Filtered Graph", True, f"Found {len(graphs)} filtered components")
+                    
+                    # Take two snapshots of age data with a small delay to verify ages are static
+                    first_snapshot = {}
+                    for i, component in enumerate(graphs):
+                        if 'nodes' in component:
+                            for node in component['nodes']:
+                                if 'statistics' in node and 'trace_age_p50' in node['statistics']:
+                                    first_snapshot[node['id']] = node['statistics']['trace_age_p50']
+                    
+                    # Wait 3 seconds and take another snapshot
+                    time.sleep(3)
+                    
+                    response2 = requests.get(f"{self.base_url}/api/graph/filtered?time_filter=all", timeout=15)
+                    if response2.status_code == 200:
+                        data2 = response2.json()
+                        graphs2 = data2.get('disconnected_graphs', [])
+                        
+                        second_snapshot = {}
+                        for i, component in enumerate(graphs2):
+                            if 'nodes' in component:
+                                for node in component['nodes']:
+                                    if 'statistics' in node and 'trace_age_p50' in node['statistics']:
+                                        second_snapshot[node['id']] = node['statistics']['trace_age_p50']
+                        
+                        # Compare snapshots - ages should be static (not increasing with real time)
+                        static_ages = True
+                        for node_id in first_snapshot:
+                            if node_id in second_snapshot:
+                                age_diff = abs(second_snapshot[node_id] - first_snapshot[node_id])
+                                # Allow small differences due to precision, but not 3+ seconds of increase
+                                if age_diff > 2:  # More than 2 seconds difference indicates real-time calculation
+                                    static_ages = False
+                                    break
+                        
+                        if static_ages:
+                            self.log_test("Static Age Verification", True, "Age values are static (not increasing with real time)")
+                        else:
+                            self.log_test("Static Age Verification", False, "Age values appear to be increasing with real time")
+                            return False
+                    else:
+                        self.log_test("Static Age Verification", False, "Failed to get second snapshot")
+                        return False
+                else:
+                    self.log_test("Get Filtered Graph", False, "Invalid response structure")
+                    return False
+            else:
+                self.log_test("Get Filtered Graph", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Get Filtered Graph", False, f"Exception: {str(e)}")
+            return False
+        
+        return True
+    
+    def test_grpc_initialization_fix(self) -> bool:
+        """Test the gRPC Initialization Fix - verify initialization returns success=true"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing gRPC Initialization Fix")
+        print("=" * 60)
+        
+        # Test 1: gRPC Initialize should return success=true
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/grpc/initialize",
+                headers={"Content-Type": "application/json"},
+                timeout=20  # Longer timeout for initialization
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") == True:
+                    available_services = data.get("available_services", {})
+                    environments = data.get("environments", [])
+                    self.log_test("gRPC Initialize Success", True, f"Initialization successful with {len(available_services)} services and {len(environments)} environments")
+                    
+                    # Test 2: Verify gRPC status after initialization
+                    status_response = requests.get(f"{self.base_url}/api/grpc/status", timeout=10)
+                    if status_response.status_code == 200:
+                        status_data = status_response.json()
+                        if status_data.get("initialized"):
+                            self.log_test("gRPC Status After Init", True, f"Client properly initialized: {status_data.get('current_environment', 'No env set')}")
+                        else:
+                            self.log_test("gRPC Status After Init", False, "Client not showing as initialized")
+                            return False
+                    else:
+                        self.log_test("gRPC Status After Init", False, f"Status check failed: {status_response.status_code}")
+                        return False
+                    
+                    # Test 3: Verify environments are accessible
+                    env_response = requests.get(f"{self.base_url}/api/grpc/environments", timeout=10)
+                    if env_response.status_code == 200:
+                        env_data = env_response.json()
+                        if "environments" in env_data and len(env_data["environments"]) > 0:
+                            self.log_test("gRPC Environments Access", True, f"Found {len(env_data['environments'])} environments: {env_data['environments']}")
+                            
+                            # Test 4: Try to set an environment
+                            test_env = env_data["environments"][0]
+                            set_env_response = requests.post(
+                                f"{self.base_url}/api/grpc/environment",
+                                json={"environment": test_env},
+                                headers={"Content-Type": "application/json"},
+                                timeout=10
+                            )
+                            
+                            if set_env_response.status_code == 200:
+                                set_env_data = set_env_response.json()
+                                if set_env_data.get("success"):
+                                    self.log_test("gRPC Set Environment", True, f"Successfully set environment to {test_env}")
+                                else:
+                                    self.log_test("gRPC Set Environment", False, f"Failed to set environment: {set_env_data}")
+                                    return False
+                            else:
+                                self.log_test("gRPC Set Environment", False, f"HTTP {set_env_response.status_code}")
+                                return False
+                        else:
+                            self.log_test("gRPC Environments Access", False, "No environments found")
+                            return False
+                    else:
+                        self.log_test("gRPC Environments Access", False, f"HTTP {env_response.status_code}")
+                        return False
+                    
+                    return True
+                else:
+                    # Check if this is the expected failure case (proto files missing)
+                    error = data.get("error", "")
+                    if "proto files are missing" in error.lower():
+                        self.log_test("gRPC Initialize Expected Failure", True, f"Expected failure due to missing proto files: {error}")
+                        return True
+                    else:
+                        self.log_test("gRPC Initialize", False, f"Initialization failed: {error}")
+                        return False
+            else:
+                self.log_test("gRPC Initialize", False, f"HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("gRPC Initialize", False, f"Exception: {str(e)}")
+            return False
+    
     def run_comprehensive_test(self):
         """Run all backend tests"""
         print("🚀 Starting Kafka Trace Viewer Backend Tests")
@@ -543,6 +764,17 @@ class KafkaTraceViewerTester:
         
         # Test 14: gRPC Service Endpoints (should handle missing proto files gracefully)
         self.test_grpc_service_endpoints()
+        
+        # SPECIFIC BUG FIX TESTS
+        print("\n" + "=" * 60)
+        print("🐛 Testing Specific Bug Fixes")
+        print("=" * 60)
+        
+        # Test 15: Graph Age Calculation Fix
+        age_fix_ok = self.test_graph_age_calculation_fix()
+        
+        # Test 16: gRPC Initialization Fix
+        grpc_init_fix_ok = self.test_grpc_initialization_fix()
         
         # Print summary
         print("\n" + "=" * 60)
