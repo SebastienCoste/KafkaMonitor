@@ -60,7 +60,7 @@ message AssetUploadUrl {
 }
 
 message BatchCreateAssetsResponse {
-  grpc.common.BaseResponse base = 1;
+  kafka_monitor.grpc.common.BaseResponse base = 1;
   repeated AssetUploadUrl upload_urls = 2;
 }
 
