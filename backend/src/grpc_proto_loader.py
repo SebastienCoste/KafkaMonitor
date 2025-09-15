@@ -144,8 +144,8 @@ class GrpcProtoLoader:
                 return False
             
             # Load AssetStorageService
-            asset_pb2 = self._import_module("asset_storage.asset_storage_pb2")
-            asset_grpc = self._import_module("asset_storage.asset_storage_pb2_grpc")
+            asset_pb2 = self._import_module("grpc.asset_storage.asset_storage_pb2")
+            asset_grpc = self._import_module("grpc.asset_storage.asset_storage_pb2_grpc")
             
             if asset_pb2 and asset_grpc:
                 self.compiled_modules['asset_storage'] = {
