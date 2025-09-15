@@ -30,7 +30,7 @@ message AssetSignedUrl {
 }
 
 message BatchGetSignedUrlsResponse {
-  grpc.common.BaseResponse base = 1;
+  kafka_monitor.grpc.common.BaseResponse base = 1;
   repeated AssetSignedUrl signed_urls = 2;
   repeated string failed_asset_ids = 3;
 }
