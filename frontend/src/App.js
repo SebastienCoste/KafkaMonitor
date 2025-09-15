@@ -419,26 +419,54 @@ function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <NetworkIcon className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Kafka Trace Viewer</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Kafka Monitor</h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Page Navigation */}
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-gray-600">
-                  {connected ? 'Connected' : 'Disconnected'}
-                </span>
+                <Button
+                  variant={currentPage === 'traces' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage('traces')}
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Trace Viewer
+                </Button>
+                <Button
+                  variant={currentPage === 'grpc' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage('grpc')}
+                >
+                  <Server className="h-4 w-4 mr-2" />
+                  gRPC Integration
+                </Button>
               </div>
-              {statistics && (
-                <Badge variant="secondary">
-                  {statistics.traces.total} traces
-                </Badge>
+              
+              {/* Status indicators - only for trace viewer */}
+              {currentPage === 'traces' && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-sm text-gray-600">
+                      {connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                  {statistics && (
+                    <Badge variant="secondary">
+                      {statistics.traces.total} traces
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-full mx-auto p-4">
+      {/* Main Content */}
+      {currentPage === 'traces' ? (
+        // Existing Kafka Trace Viewer Content
+        <div className="max-w-full mx-auto p-4">
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           {/* Sidebar */}
           <div className="xl:col-span-1">
