@@ -6,6 +6,7 @@ import './App.css';
 
 // Components
 import GrpcIntegration from './components/GrpcIntegration';
+import EnhancedGraphVisualization from './components/EnhancedGraphVisualization';
 
 // Shadcn UI components
 import { Button } from './components/ui/button';
