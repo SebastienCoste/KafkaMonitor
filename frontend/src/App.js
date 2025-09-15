@@ -4,6 +4,9 @@ import { Network } from 'vis-network';
 import { DataSet } from 'vis-data';
 import './App.css';
 
+// Components
+import GrpcIntegration from './components/GrpcIntegration';
+
 // Shadcn UI components
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
@@ -18,7 +21,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw } from 'lucide-react';
+import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
