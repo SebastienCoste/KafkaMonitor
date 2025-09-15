@@ -492,6 +492,142 @@ function App() {
               {/* Sidebar */}
               <div className="xl:col-span-1">
                 {activeTab === 'traces' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Available Traces</CardTitle>
+                      <CardDescription>
+                        Select a trace to view its message flow
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input
+                            placeholder="Search traces..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+
+                        <div className="h-96 overflow-y-auto message-scroll">
+                          <div className="space-y-2 p-1">
+                            {filteredTraces.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p>No traces available</p>
+                                <p className="text-xs mt-1">Check your topic monitoring settings</p>
+                              </div>
+                            ) : (
+                              filteredTraces.map((trace) => (
+                                <Card
+                                  key={trace.trace_id}
+                                  className={`cursor-pointer transition-all duration-200 hover:shadow-md message-card ${
+                                    selectedTrace?.trace_id === trace.trace_id 
+                                      ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                      : 'hover:bg-slate-50'
+                                  }`}
+                                  onClick={() => selectTrace(trace.trace_id)}
+                                >
+                                  <CardContent className="p-4">
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <div className="font-medium text-sm font-mono">
+                                          {trace.trace_id}
+                                        </div>
+                                        {trace.duration_ms && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            {formatDuration(trace.duration_ms)}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="text-xs text-gray-600">
+                                        {trace.message_count} messages • {trace.topics.length} topics
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <div className="flex flex-wrap gap-1">
+                                          {trace.topics.slice(0, 3).map((topic, idx) => (
+                                            <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0.5">
+                                              {topic}
+                                            </Badge>
+                                          ))}
+                                          {trace.topics.length > 3 && (
+                                            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                                              +{trace.topics.length - 3}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {activeTab === 'topics' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Topic Monitoring</CardTitle>
+                      <CardDescription>
+                        Configure which topics to monitor for traces
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateMonitoredTopics(availableTopics)}
+                          >
+                            Select All
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateMonitoredTopics([])}
+                          >
+                            Select None
+                          </Button>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {availableTopics.map((topic) => (
+                            <div key={topic} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={topic}
+                                checked={monitoredTopics.includes(topic)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    updateMonitoredTopics([...monitoredTopics, topic]);
+                                  } else {
+                                    updateMonitoredTopics(monitoredTopics.filter(t => t !== topic));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={topic}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                              >
+                                {topic}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Available Traces</CardTitle>
