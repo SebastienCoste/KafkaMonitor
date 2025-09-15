@@ -207,6 +207,31 @@ class GrpcProtoLoader:
             logger.error(f"❌ Failed to import {module_name}: {str(e)}")
             return None
     
+    def _debug_temp_directory(self):
+        """Debug what's in the temp directory"""
+        logger.info(f"🔍 Debugging temp directory: {self.temp_dir}")
+        if self.temp_dir and Path(self.temp_dir).exists():
+            for root, dirs, files in os.walk(self.temp_dir):
+                level = root.replace(self.temp_dir, '').count(os.sep)
+                indent = ' ' * 2 * level
+                logger.info(f"{indent}{os.path.basename(root)}/")
+                subindent = ' ' * 2 * (level + 1)
+                for file in files:
+                    logger.info(f"{subindent}{file}")
+        
+        # Also check what's in sys.path
+        logger.info(f"🔍 Python path includes temp dir: {self.temp_dir in sys.path}")
+        
+        # Try to list what's importable
+        try:
+            import pkgutil
+            logger.info("🔍 Available packages:")
+            for importer, modname, ispkg in pkgutil.iter_modules():
+                if 'grpc' in modname.lower():
+                    logger.info(f"  {modname} (package: {ispkg})")
+        except Exception as e:
+            logger.error(f"Failed to list packages: {e}")
+    
     def create_service_stub(self, service_name: str, channel: grpc.Channel) -> Optional[Any]:
         """Create a gRPC service stub"""
         logger.debug(f"🔗 Creating service stub for: {service_name}")
