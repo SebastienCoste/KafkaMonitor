@@ -92,6 +92,9 @@ class GrpcProtoLoader:
             for proto_file in proto_files:
                 self._compile_single_proto(proto_file)
             
+            # Create __init__.py files for Python package structure
+            self._create_init_files()
+            
             logger.info("✅ Proto compilation completed successfully")
             return True
             
