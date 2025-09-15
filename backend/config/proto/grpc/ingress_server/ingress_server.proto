@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package grpc.ingress_server;
+package kafka_monitor.grpc.ingress_server;
 
 import "google/protobuf/timestamp.proto";
 import "grpc/common/base.proto";
