@@ -517,6 +517,33 @@ class KafkaTraceViewerTester:
         # Test 8: WebSocket connectivity
         self.test_websocket_connectivity()
         
+        # gRPC Integration Tests
+        print("\n" + "=" * 60)
+        print("🔧 Starting gRPC Integration Tests")
+        print("=" * 60)
+        
+        # Test 9: gRPC Status
+        grpc_status = self.test_grpc_status()
+        
+        # Test 10: gRPC Environments
+        environments_data = self.test_grpc_environments()
+        
+        # Test 11: Set gRPC Environment (if environments exist)
+        if environments_data and environments_data.get("environments"):
+            test_env = environments_data["environments"][0]  # Use first available environment
+            self.test_grpc_set_environment(test_env)
+            
+            # Test 12: Set gRPC Credentials (after setting environment)
+            self.test_grpc_credentials()
+        else:
+            print("⚠️  No gRPC environments found - skipping environment and credential tests")
+        
+        # Test 13: gRPC Initialize (test proto file validation)
+        self.test_grpc_initialize()
+        
+        # Test 14: gRPC Service Endpoints (should handle missing proto files gracefully)
+        self.test_grpc_service_endpoints()
+        
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
