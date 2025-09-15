@@ -103,13 +103,13 @@ class GrpcProtoLoader:
         """Compile a single proto file"""
         logger.debug(f"🔨 Compiling proto file: {proto_file}")
         
-        # Calculate relative path from proto_dir
-        rel_path = proto_file.relative_to(self.proto_dir)
+        # Calculate relative path from proto_root (not proto_dir)
+        rel_path = proto_file.relative_to(self.proto_root)
         
-        # Prepare protoc arguments
+        # Prepare protoc arguments - use proto_root as the proto_path
         args = [
             "grpc_tools.protoc",
-            f"--proto_path={self.proto_dir}",
+            f"--proto_path={self.proto_root}",
             f"--python_out={self.temp_dir}",
             f"--grpc_python_out={self.temp_dir}",
             str(rel_path)
