@@ -459,14 +459,21 @@ class TraceGraphBuilder:
         
         # Collect all messages for this topic
         for trace in self.traces.values():
+            trace_messages_for_topic = []
             for msg in trace.messages:
                 if msg.topic == topic:
                     messages.append(msg)
-                    
-                    # Calculate trace age
-                    if trace.start_time:
-                        age_seconds = (now - trace.start_time).total_seconds()
-                        trace_ages.append(age_seconds)
+                    trace_messages_for_topic.append(msg)
+            
+            # Calculate trace age for this topic based on message timestamps within the trace
+            if trace_messages_for_topic and trace.messages:
+                # Find the oldest message in the entire trace (start of trace)
+                oldest_message_time = min(msg.timestamp for msg in trace.messages)
+                
+                # For each message in this topic, calculate age from trace start
+                for msg in trace_messages_for_topic:
+                    age_seconds = (msg.timestamp - oldest_message_time).total_seconds()
+                    trace_ages.append(age_seconds)
         
         if not messages:
             return {
