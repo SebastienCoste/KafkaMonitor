@@ -965,7 +965,7 @@ function App() {
                               {/* Message Header - Always Visible */}
                               <div
                                 className="p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100"
-                                onClick={() => toggleMessageExpansion(index)}
+                                onClick={() => toggleMessage(index)}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-3">
