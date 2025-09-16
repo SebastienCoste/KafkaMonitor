@@ -102,6 +102,7 @@ class KafkaConsumerService:
     def subscribe_to_topics(self, topics: List[str]):
         """Subscribe to specified topics with graceful handling of missing topics"""
         self.subscribed_topics = topics
+        self._original_topics = topics.copy()  # Store original list for retrying later
         
         if not self.mock_mode:
             try:
