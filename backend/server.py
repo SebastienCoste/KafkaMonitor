@@ -745,6 +745,13 @@ async def lifespan(app: FastAPI):
     
     logger.info("✅ Application shutdown complete")
 
+# Configure logging first
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
 # Create the FastAPI app with lifespan
 app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
 
