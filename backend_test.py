@@ -935,13 +935,73 @@ class KafkaTraceViewerTester:
         if hanging_detected:
             self.log_test("BatchGetSignedUrls Hanging Issue", False, "CRITICAL: BatchGetSignedUrls endpoint is hanging - requests timeout")
             print("🚨 CRITICAL ISSUE: BatchGetSignedUrls endpoint is hanging!")
-            print("   This confirms the reported issue in test_result.md")
+            print("   ROOT CAUSE: gRPC client has unlimited retries when connecting to localhost:50052")
+            print("   DETAILS: No actual gRPC server running, but client retries forever with exponential backoff")
+            print("   SOLUTION NEEDED: Add maximum retry limit or overall timeout to gRPC client")
             return False
         elif successful_responses > 0:
             self.log_test("BatchGetSignedUrls Hanging Issue", True, f"No hanging detected - {successful_responses} successful responses")
             return True
         else:
             self.log_test("BatchGetSignedUrls Hanging Issue", True, "No hanging detected - all requests failed quickly (expected without proto files)")
+            return True
+
+    def test_all_grpc_endpoints_hanging_behavior(self) -> bool:
+        """Test all gRPC endpoints for hanging behavior to identify which ones are affected"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing All gRPC Endpoints for Hanging Behavior")
+        print("=" * 60)
+        
+        endpoints_to_test = [
+            ("/api/grpc/ingress/upsert-content", {"content_data": {"test": "data"}}, "UpsertContent"),
+            ("/api/grpc/ingress/batch-create-assets", {"assets_data": [{"name": "test-asset"}]}, "BatchCreateAssets"),
+            ("/api/grpc/ingress/batch-add-download-counts", {"player_id": "test-player", "content_ids": ["content-1"]}, "BatchAddDownloadCounts"),
+            ("/api/grpc/ingress/batch-add-ratings", {"rating_data": {"test": "rating"}}, "BatchAddRatings"),
+            ("/api/grpc/asset-storage/batch-get-signed-urls", {"asset_ids": ["asset-1", "asset-2"]}, "BatchGetSignedUrls"),
+            ("/api/grpc/asset-storage/batch-update-statuses", {"asset_updates": [{"asset_id": "asset-1", "status": "active"}]}, "BatchUpdateStatuses")
+        ]
+        
+        hanging_endpoints = []
+        working_endpoints = []
+        
+        for endpoint, payload, name in endpoints_to_test:
+            try:
+                print(f"🔄 Testing {name}...")
+                start_time = time.time()
+                
+                response = requests.post(
+                    f"{self.base_url}{endpoint}",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10  # Short timeout to quickly identify hanging
+                )
+                
+                end_time = time.time()
+                response_time = end_time - start_time
+                
+                print(f"   Response time: {response_time:.2f}s, Status: {response.status_code}")
+                working_endpoints.append(name)
+                self.log_test(f"gRPC {name} Hanging Test", True, f"No hanging - responded in {response_time:.2f}s")
+                
+            except requests.exceptions.Timeout:
+                hanging_endpoints.append(name)
+                self.log_test(f"gRPC {name} Hanging Test", False, f"HANGING DETECTED - Timeout after 10s")
+                print(f"   ❌ {name} is hanging!")
+                
+            except Exception as e:
+                # Other exceptions are not hanging issues
+                working_endpoints.append(name)
+                self.log_test(f"gRPC {name} Hanging Test", True, f"No hanging - failed with exception: {str(e)[:50]}...")
+        
+        # Summary
+        if hanging_endpoints:
+            print(f"\n🚨 HANGING ENDPOINTS DETECTED: {hanging_endpoints}")
+            print(f"✅ WORKING ENDPOINTS: {working_endpoints}")
+            self.log_test("gRPC Endpoints Hanging Analysis", False, f"Hanging endpoints: {hanging_endpoints}, Working: {working_endpoints}")
+            return False
+        else:
+            print(f"\n✅ NO HANGING DETECTED - All endpoints responded quickly")
+            self.log_test("gRPC Endpoints Hanging Analysis", True, f"All {len(working_endpoints)} endpoints responded without hanging")
             return True
 
     def test_grpc_batch_get_signed_urls_message_class(self) -> bool:
