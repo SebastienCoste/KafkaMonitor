@@ -80,6 +80,10 @@ function GrpcIntegration() {
   const [uploadUrls, setUploadUrls] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState({});
   const [imageUrls, setImageUrls] = useState([]);
+  
+  // Asset-storage URL management
+  const [assetStorageUrls, setAssetStorageUrls] = useState({});
+  const [selectedAssetUrlType, setSelectedAssetUrlType] = useState('reader');
 
   // Load initial data
   useEffect(() => {
