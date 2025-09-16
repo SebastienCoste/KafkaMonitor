@@ -270,11 +270,13 @@ metadata:
 
 test_plan:
   current_focus:
+    - "gRPC Integration Backend"
     - "Graph Visualization Enhancement"
     - "Backend Graph Statistics Engine"
     - "Mock Disconnected Graphs Generator"
     - "Enhanced Graph Visualization UI"
-  stuck_tasks: []
+  stuck_tasks:
+    - "gRPC Integration Backend"
   test_all: true
   test_priority: "high_first"
 
