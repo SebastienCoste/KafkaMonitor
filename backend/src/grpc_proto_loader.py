@@ -376,13 +376,28 @@ class GrpcProtoLoader:
         try:
             if service_name not in self.compiled_modules:
                 logger.error(f"❌ Service module not loaded: {service_name}")
+                logger.debug(f"Available modules: {list(self.compiled_modules.keys())}")
                 return None
             
             pb2_module = self.compiled_modules[service_name]['pb2']
-            message_class = getattr(pb2_module, message_name, None)
+            
+            # Try different variations of the message name
+            possible_names = [
+                message_name,
+                f"{service_name}_{message_name}",
+                f"{service_name.title()}{message_name}",
+            ]
+            
+            message_class = None
+            for name in possible_names:
+                message_class = getattr(pb2_module, name, None)
+                if message_class:
+                    logger.debug(f"✅ Found message class with name: {name}")
+                    break
             
             if message_class is None:
                 logger.error(f"❌ Message class not found: {message_name}")
+                logger.debug(f"Available attributes in {service_name} module: {dir(pb2_module)}")
                 return None
             
             logger.debug(f"✅ Message class found: {message_name}")
