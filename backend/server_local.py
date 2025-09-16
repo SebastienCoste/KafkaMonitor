@@ -97,7 +97,29 @@ websocket_connections: List[WebSocket] = []
 
 @app.get("/api/health")
 async def health():
-    return {"status": "healthy", "message": "Local development server", "static_mounted": True}
+    return {
+        "status": "healthy", 
+        "message": "Local development server", 
+        "static_mounted": True,
+        "config_loaded": len(app_config['all_topics']) > 0,
+        "topics_found": len(app_config['all_topics'])
+    }
+
+@app.get("/api/config/debug")
+async def debug_config():
+    """Debug endpoint to check loaded configuration"""
+    return {
+        "config_files": {
+            "settings_exists": Path("config/settings.yaml").exists(),
+            "topics_exists": Path("config/topics.yaml").exists()
+        },
+        "loaded_config": {
+            "all_topics": app_config['all_topics'],
+            "monitored_topics": app_config['monitored_topics'],
+            "activate_all_on_startup": app_config['settings'].get('topic_monitoring', {}).get('activate_all_on_startup', True)
+        },
+        "settings_preview": app_config['settings']
+    }
 
 @app.get("/api/traces")
 async def get_traces():
