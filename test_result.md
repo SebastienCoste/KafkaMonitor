@@ -322,6 +322,17 @@ agent_communication:
     message: "BACKEND TESTING COMPLETED: Comprehensive testing of gRPC integration backend functionality completed successfully. All 21 tests passed including: gRPC status endpoint, environment management (5 environments), credential management, proto file validation, service initialization, and all service endpoints. System handles missing proto files gracefully as expected since they are user-provided. Error handling is robust with clear messages. Server remains stable during all operations."
   - agent: "testing"
     message: "BUG FIX TESTING COMPLETED: Both requested bug fixes have been successfully verified: 1) Graph Age Calculation Fix - Age calculations are now based on message timestamps within traces instead of real-time values, producing static and reasonable P10/P50/P95 age statistics. 2) gRPC Initialization Fix - POST /api/grpc/initialize now returns success=true with all services loaded and accessible. All existing Kafka trace functionality continues working normally with no regressions detected."
+  - task: "Apply Mock Data API Fix"
+    implemented: false
+    working: false
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "MINOR ISSUE IDENTIFIED: Apply Mock Data button in Enhanced Graph Visualization shows 'Failed to apply mock data' error with 500 Internal Server Error from /api/graph/apply-mock endpoint. This is a non-critical issue as all core graph functionality works perfectly without mock data. The error appears to be a backend API endpoint issue rather than frontend functionality."
   - agent: "testing"
     message: "CRITICAL gRPC HANGING ISSUE IDENTIFIED: Comprehensive testing revealed that 3 out of 6 gRPC endpoints are hanging indefinitely: BatchGetSignedUrls, BatchCreateAssets, and BatchAddDownloadCounts. ROOT CAUSE: gRPC client has unlimited retries when connecting to localhost:50051/50052 with no actual gRPC servers running. The _call_with_retry method loops forever with exponential backoff, causing HTTP requests to timeout. WORKING ENDPOINTS: UpsertContent, BatchAddRatings, BatchUpdateStatuses respond quickly with proper error handling. SOLUTION NEEDED: Add maximum retry limit or overall timeout to gRPC client _call_with_retry method. All other gRPC functionality (status, environments, credentials, initialization) works correctly."
   - agent: "testing"
