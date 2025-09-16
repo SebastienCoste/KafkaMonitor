@@ -316,6 +316,9 @@ test_plan:
     - "Environment Management Endpoints"
     - "Asset-Storage Multiple URLs"
     - "Configuration Structure Verification"
+    - "Static File Serving Fix"
+    - "Topic Activation Configuration Backend"
+    - "Frontend Integration Fix"
 
 agent_communication:
   - agent: "main"
