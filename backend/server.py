@@ -424,6 +424,33 @@ async def set_grpc_credentials(request: Dict[str, str]):
         logger.error(f"Error setting credentials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/grpc/asset-storage/urls")
+async def get_asset_storage_urls():
+    """Get available asset-storage URLs for current environment"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        result = grpc_client.get_asset_storage_urls()
+        return result
+    except Exception as e:
+        logger.error(f"Error getting asset-storage URLs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/asset-storage/set-url")
+async def set_asset_storage_url(request: Dict[str, str]):
+    """Set which asset-storage URL to use (reader or writer)"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    url_type = request.get('url_type', 'reader')
+    
+    try:
+        result = grpc_client.set_asset_storage_url(url_type)
+        return result
+    except Exception as e:
+        logger.error(f"Error setting asset-storage URL: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 # IngressServer Endpoints
 
 @api_router.post("/grpc/ingress/upsert-content")
