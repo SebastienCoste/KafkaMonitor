@@ -22,6 +22,7 @@ from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 from src.kafka_consumer import KafkaConsumerService
 from src.graph_builder import TraceGraphBuilder
 from src.grpc_client import GrpcClient
+from src.environment_manager import EnvironmentManager
 
 
 ROOT_DIR = Path(__file__).parent
