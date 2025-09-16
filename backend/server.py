@@ -865,11 +865,23 @@ async def serve_static_media(filename: str):
 # Frontend routes
 @app.get("/")
 async def serve_frontend():
-    """Serve the React app index.html"""
-    if os.path.exists("../frontend/build/index.html"):
-        return FileResponse("../frontend/build/index.html")
-    else:
+    """Serve the React app index.html with environment-aware static paths"""
+    index_path = "../frontend/build/index.html"
+    
+    if not os.path.exists(index_path):
         raise HTTPException(status_code=404, detail="Frontend build not found")
+    
+    # Read the index.html content
+    with open(index_path, 'r', encoding='utf-8') as f:
+        html_content = f.read()
+    
+    # In production/deployed environments, rewrite static paths to use API routes
+    if ENVIRONMENT != 'local':
+        html_content = html_content.replace('src="/static/', 'src="/api/static/')
+        html_content = html_content.replace('href="/static/', 'href="/api/static/')
+        logger.debug("🔄 Rewritten static paths for production environment")
+    
+    return Response(content=html_content, media_type="text/html")
 
 # Catch-all route for SPA routing - must be last
 @app.get("/{full_path:path}")
