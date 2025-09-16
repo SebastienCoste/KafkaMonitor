@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 class EnvironmentManager:
     """Manages environment switching for Kafka monitoring"""
     
-    def __init__(self, environments_dir: str, protobuf_decoder: ProtobufDecoder):
+    def __init__(self, environments_dir: str, protobuf_decoder: ProtobufDecoder, settings: dict = None):
         self.environments_dir = Path(environments_dir)
         self.protobuf_decoder = protobuf_decoder
+        self.settings = settings or {}
         self.current_environment = None
         self.current_config = None
         self.kafka_consumer = None
