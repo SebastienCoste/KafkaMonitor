@@ -748,6 +748,11 @@ async def lifespan(app: FastAPI):
 # Create the FastAPI app with lifespan
 app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
 
+# Mount static files FIRST for proper priority
+if os.path.exists("../frontend/build/static"):
+    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
+    logger.info("✅ Mounted static files from ../frontend/build/static")
+
 # Include the router in the main app
 app.include_router(api_router)
 
