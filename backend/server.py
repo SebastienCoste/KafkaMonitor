@@ -767,25 +767,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Serve static files (frontend)
-if os.path.exists("../frontend/build"):
-    # Mount static files directory for CSS, JS, and other assets
-    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
-    
-    @app.get("/")
-    async def serve_frontend():
+# Frontend routes must be defined at the end to avoid conflicts with API routes
+@app.get("/")
+async def serve_frontend():
+    """Serve the React app index.html"""
+    if os.path.exists("../frontend/build/index.html"):
         return FileResponse("../frontend/build/index.html")
+    else:
+        raise HTTPException(status_code=404, detail="Frontend build not found")
 
+# Catch-all route for SPA routing - must be last
+@app.get("/{full_path:path}")
+async def catch_all(full_path: str):
+    """Catch-all route for SPA routing - serve index.html for any non-API routes"""
+    # Don't interfere with API routes
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="API endpoint not found")
     
-    # Catch-all route for SPA routing - serve index.html for any non-API routes
-    @app.get("/{full_path:path}")
-    async def catch_all(full_path: str):
-        # Don't interfere with API routes or static files
-        if full_path.startswith("api/") or full_path.startswith("static/"):
-            raise HTTPException(status_code=404, detail="Resource not found")
-        
-        # For all other routes, serve the React app
+    # For all other routes, serve the React app (SPA routing)
+    if os.path.exists("../frontend/build/index.html"):
         return FileResponse("../frontend/build/index.html")
+    else:
+        raise HTTPException(status_code=404, detail="Frontend build not found")
+
+# Mount static files at the very end - this should have the highest priority for /static/* paths
+if os.path.exists("../frontend/build/static"):
+    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
 if __name__ == "__main__":
     import uvicorn
     
