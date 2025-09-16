@@ -32,6 +32,60 @@ if os.path.exists("../frontend/build/static"):
     app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
     print("✅ Mounted static files from ../frontend/build/static")
 
+# Load configuration files
+def load_config():
+    """Load configuration from YAML files"""
+    config = {}
+    
+    # Load settings
+    settings_path = Path("config/settings.yaml")
+    if settings_path.exists():
+        with open(settings_path, 'r') as f:
+            config['settings'] = yaml.safe_load(f)
+    else:
+        config['settings'] = {}
+    
+    # Load topics
+    topics_path = Path("config/topics.yaml")
+    if topics_path.exists():
+        with open(topics_path, 'r') as f:
+            topics_config = yaml.safe_load(f)
+            config['topics'] = topics_config
+            
+            # Extract topic information
+            all_topics = []
+            monitored_topics = []
+            
+            for topic_name, topic_info in topics_config.get('topics', {}).items():
+                all_topics.append(topic_name)
+                # Check if topic should be monitored by default
+                if topic_info.get('monitored', True):
+                    monitored_topics.append(topic_name)
+            
+            # Also check for default_monitored_topics
+            default_monitored = topics_config.get('default_monitored_topics', [])
+            for topic in default_monitored:
+                if topic not in monitored_topics:
+                    monitored_topics.append(topic)
+            
+            config['all_topics'] = all_topics
+            config['monitored_topics'] = monitored_topics
+    else:
+        config['topics'] = {}
+        config['all_topics'] = []
+        config['monitored_topics'] = []
+    
+    # Check activate_all_on_startup setting
+    activate_all = config['settings'].get('topic_monitoring', {}).get('activate_all_on_startup', True)
+    if activate_all:
+        config['monitored_topics'] = config['all_topics'].copy()
+    
+    return config
+
+# Load configuration on startup
+app_config = load_config()
+print(f"📋 Loaded configuration: {len(app_config['all_topics'])} topics, {len(app_config['monitored_topics'])} monitored")
+
 # For local development, we'll create essential endpoints
 from fastapi import WebSocket, WebSocketDisconnect
 import json
