@@ -616,7 +616,7 @@ logger = logging.getLogger(__name__)
 
 # Serve static files (frontend)
 if os.path.exists("../frontend/build"):
-    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
+    # app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")  # Commented out - directory doesn't exist
     
     @app.get("/")
     async def serve_frontend():
