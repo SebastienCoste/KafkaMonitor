@@ -83,6 +83,7 @@ frontend/node_modules/.cache/default-development/0.pack
 # Environment files
 *.env
 *.env.*
+frontend/node_modules/.cache/
 
 backend/config/proto/validate/
 backend/config/proto/eadp/

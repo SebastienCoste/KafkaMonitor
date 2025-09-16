@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package kafka_monitor.grpc.common;
+
+import "google/protobuf/timestamp.proto";
+
+// Common types used across gRPC services
+message AssetInfo {
+  string asset_id = 1;
+  string name = 2;
+  string type = 3;
+  int64 size_bytes = 4;
+  string content_type = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+message ContentInfo {
+  string content_id = 1;
+  string title = 2;
+  string description = 3;
+  string category = 4;
+  repeated string tags = 5;
+  google.protobuf.Timestamp created_at = 6;
+  google.protobuf.Timestamp updated_at = 7;
+}
+
+enum AssetStatus {
+  ASSET_STATUS_UNKNOWN = 0;
+  ASSET_STATUS_PENDING = 1;
+  ASSET_STATUS_PROCESSING = 2;
+  ASSET_STATUS_ACTIVE = 3;
+  ASSET_STATUS_INACTIVE = 4;
+  ASSET_STATUS_DELETED = 5;
+  ASSET_STATUS_ERROR = 6;
+}

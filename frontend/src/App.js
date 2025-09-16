@@ -4,6 +4,10 @@ import { Network } from 'vis-network';
 import { DataSet } from 'vis-data';
 import './App.css';
 
+// Components
+import GrpcIntegration from './components/GrpcIntegration';
+import EnhancedGraphVisualization from './components/EnhancedGraphVisualization';
+
 // Shadcn UI components
 import { Button } from './components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
@@ -18,7 +22,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw } from 'lucide-react';
+import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -35,6 +39,8 @@ function App() {
   const [availableTopics, setAvailableTopics] = useState([]);
   const [monitoredTopics, setMonitoredTopics] = useState([]);
   const [expandedMessages, setExpandedMessages] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
+  const [activeTab, setActiveTab] = useState('traces'); // New state for tracking active tab
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
@@ -85,7 +91,7 @@ function App() {
         websocket.close();
       }
     };
-  }, []); // eslint-disable-line
+  }, []);
 
   const handleWebSocketMessage = (data) => {
     if (data.type === 'trace_update') {
@@ -415,229 +421,216 @@ function App() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <NetworkIcon className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Kafka Trace Viewer</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Kafka Monitor</h1>
             </div>
             <div className="flex items-center space-x-4">
+              {/* Page Navigation */}
               <div className="flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-gray-600">
-                  {connected ? 'Connected' : 'Disconnected'}
-                </span>
+                <Button
+                  variant={currentPage === 'traces' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage('traces')}
+                >
+                  <Activity className="h-4 w-4 mr-2" />
+                  Trace Viewer
+                </Button>
+                <Button
+                  variant={currentPage === 'grpc' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage('grpc')}
+                >
+                  <Server className="h-4 w-4 mr-2" />
+                  gRPC Integration
+                </Button>
               </div>
-              {statistics && (
-                <Badge variant="secondary">
-                  {statistics.traces.total} traces
-                </Badge>
+              
+              {/* Status indicators - only for trace viewer */}
+              {currentPage === 'traces' && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+                    <span className="text-sm text-gray-600">
+                      {connected ? 'Connected' : 'Disconnected'}
+                    </span>
+                  </div>
+                  {statistics && (
+                    <Badge variant="secondary">
+                      {statistics.traces.total} traces
+                    </Badge>
+                  )}
+                </>
               )}
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-full mx-auto p-4">
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
-          {/* Sidebar */}
-          <div className="xl:col-span-1">
-            <Tabs defaultValue="traces" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+      {/* Main Content */}
+      {currentPage === 'traces' ? (
+        // Existing Kafka Trace Viewer Content
+        <div className="max-w-full mx-auto p-4">
+          {/* Tab Navigation */}
+          <div className="mb-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 max-w-md">
                 <TabsTrigger value="traces">Traces</TabsTrigger>
                 <TabsTrigger value="topics">Topics</TabsTrigger>
                 <TabsTrigger value="graph">Graph</TabsTrigger>
               </TabsList>
-
-              <TabsContent value="traces" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Available Traces</CardTitle>
-                    <CardDescription>
-                      Select a trace to view its message flow
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="relative">
-                        <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                        <Input
-                          placeholder="Search traces..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10"
-                        />
-                      </div>
-
-                      <div className="h-96 overflow-y-auto message-scroll">
-                        <div className="space-y-2 p-1">
-                          {filteredTraces.length === 0 ? (
-                            <div className="text-center py-8 text-gray-500">
-                              <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                              <p>No traces available</p>
-                              <p className="text-xs mt-1">Check your topic monitoring settings</p>
-                            </div>
-                          ) : (
-                            filteredTraces.map((trace) => (
-                              <Card
-                                key={trace.trace_id}
-                                className={`cursor-pointer transition-all duration-200 hover:shadow-md message-card ${
-                                  selectedTrace?.trace_id === trace.trace_id 
-                                    ? 'ring-2 ring-blue-500 bg-blue-50' 
-                                    : 'hover:bg-slate-50'
-                                }`}
-                                onClick={() => selectTrace(trace.trace_id)}
-                              >
-                                <CardContent className="p-4">
-                                  <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                      <div className="font-medium text-sm font-mono">
-                                        {trace.trace_id}
-                                      </div>
-                                      {trace.duration_ms && (
-                                        <Badge variant="secondary" className="text-xs">
-                                          {formatDuration(trace.duration_ms)}
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    
-                                    <div className="flex flex-wrap gap-1">
-                                      {trace.topics.map((topic) => (
-                                        <Badge key={topic} variant="outline" className="text-xs">
-                                          {topic}
-                                        </Badge>
-                                      ))}
-                                    </div>
-                                    
-                                    <div className="flex items-center justify-between text-xs text-gray-500">
-                                      <span>{trace.message_count} messages</span>
-                                      {trace.start_time && (
-                                        <span>{formatTime(trace.start_time)}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ))
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="topics" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Topic Monitoring</CardTitle>
-                    <CardDescription>
-                      Select which topics to monitor for traces
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {/* Select All/None Buttons */}
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => updateMonitoredTopics(availableTopics)}
-                        >
-                          Select All
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => updateMonitoredTopics([])}
-                        >
-                          Select None
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {availableTopics.map((topic) => (
-                          <div key={topic} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={topic}
-                              checked={monitoredTopics.includes(topic)}
-                              onCheckedChange={(checked) => {
-                                const newTopics = checked
-                                  ? [...monitoredTopics, topic]
-                                  : monitoredTopics.filter(t => t !== topic);
-                                updateMonitoredTopics(newTopics);
-                              }}
-                            />
-                            <label htmlFor={topic} className="text-sm font-medium">
-                              {topic}
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-
-                      <Separator />
-
-                      <div className="text-sm text-gray-600">
-                        Monitoring {monitoredTopics.length} of {availableTopics.length} topics
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="graph" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Topic Graph Visualization</CardTitle>
-                    <CardDescription>
-                      Interactive network showing topic relationships and message flows
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div id="topic-graph" style={{ 
-                        height: '400px',
-                        width: '100%',
-                        border: '2px solid #e2e8f0', 
-                        borderRadius: '12px',
-                        background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'
-                      }} />
-                      
-                      {topicGraph && (
-                        <div className="grid grid-cols-2 gap-4 text-sm">
-                          <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Graph Statistics</div>
-                            <div className="text-gray-600">
-                              {topicGraph.stats.topic_count} topics • {topicGraph.stats.edge_count} connections
-                            </div>
-                            <div className="text-gray-600">
-                              {topicGraph.stats.monitored_count} monitored topics
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="font-medium text-gray-700">Legend</div>
-                            <div className="flex items-center space-x-4">
-                              <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 bg-green-500 rounded"></div>
-                                <span className="text-xs">Monitored</span>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 bg-gray-500 rounded"></div>
-                                <span className="text-xs">Not Monitored</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-                        💡 Tip: Drag nodes to rearrange the graph. Multiple disconnected components may be shown if topics aren't all connected.
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs>
           </div>
 
-          {/* Main Content */}
-          <div className="xl:col-span-3">
+          {/* Dynamic Layout Based on Active Tab */}
+          {activeTab === 'graph' ? (
+            // Full-width Graph Layout
+            <div className="w-full">
+              <EnhancedGraphVisualization />
+            </div>
+          ) : (
+            // Original 4-column Layout for Traces and Topics
+            <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
+              {/* Sidebar */}
+              <div className="xl:col-span-1">
+                {activeTab === 'traces' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Available Traces</CardTitle>
+                      <CardDescription>
+                        Select a trace to view its message flow
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="relative">
+                          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                          <Input
+                            placeholder="Search traces..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                          />
+                        </div>
+
+                        <div className="h-96 overflow-y-auto message-scroll">
+                          <div className="space-y-2 p-1">
+                            {filteredTraces.length === 0 ? (
+                              <div className="text-center py-8 text-gray-500">
+                                <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p>No traces available</p>
+                                <p className="text-xs mt-1">Check your topic monitoring settings</p>
+                              </div>
+                            ) : (
+                              filteredTraces.map((trace) => (
+                                <Card
+                                  key={trace.trace_id}
+                                  className={`cursor-pointer transition-all duration-200 hover:shadow-md message-card ${
+                                    selectedTrace?.trace_id === trace.trace_id 
+                                      ? 'ring-2 ring-blue-500 bg-blue-50' 
+                                      : 'hover:bg-slate-50'
+                                  }`}
+                                  onClick={() => selectTrace(trace.trace_id)}
+                                >
+                                  <CardContent className="p-4">
+                                    <div className="space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <div className="font-medium text-sm font-mono">
+                                          {trace.trace_id}
+                                        </div>
+                                        {trace.duration_ms && (
+                                          <Badge variant="secondary" className="text-xs">
+                                            {formatDuration(trace.duration_ms)}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                      <div className="text-xs text-gray-600">
+                                        {trace.message_count} messages • {trace.topics.length} topics
+                                      </div>
+                                      <div className="flex items-center space-x-2">
+                                        <div className="flex flex-wrap gap-1">
+                                          {trace.topics.slice(0, 3).map((topic, idx) => (
+                                            <Badge key={idx} variant="outline" className="text-xs px-1.5 py-0.5">
+                                              {topic}
+                                            </Badge>
+                                          ))}
+                                          {trace.topics.length > 3 && (
+                                            <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                                              +{trace.topics.length - 3}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {activeTab === 'topics' && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Topic Monitoring</CardTitle>
+                      <CardDescription>
+                        Configure which topics to monitor for traces
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateMonitoredTopics(availableTopics)}
+                          >
+                            Select All
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => updateMonitoredTopics([])}
+                          >
+                            Select None
+                          </Button>
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {availableTopics.map((topic) => (
+                            <div key={topic} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={topic}
+                                checked={monitoredTopics.includes(topic)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    updateMonitoredTopics([...monitoredTopics, topic]);
+                                  } else {
+                                    updateMonitoredTopics(monitoredTopics.filter(t => t !== topic));
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={topic}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                              >
+                                {topic}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Main Content */}
+              <div className="xl:col-span-3">
             {selectedTrace ? (
               <div className="space-y-6">
                 {/* Trace Header */}
@@ -661,56 +654,6 @@ function App() {
                     </div>
                   </CardHeader>
                 </Card>
-
-                {/* Flow Visualization - Enhanced */}
-                {traceFlow && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-xl">Message Flow Visualization</CardTitle>
-                      <CardDescription>
-                        Interactive trace showing how messages flow through topics over time
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div id="trace-flow-graph" style={{ 
-                          height: '450px',
-                          width: '100%',
-                          border: '2px solid #e2e8f0', 
-                          borderRadius: '12px',
-                          background: 'linear-gradient(135deg, #fefefe 0%, #f0f9ff 100%)'
-                        }} />
-                        
-                        {traceFlow.stats && (
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-blue-600">
-                                {formatDuration(traceFlow.stats.duration_ms)}
-                              </div>
-                              <div className="text-sm text-gray-600">Total Duration</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-green-600">
-                                {traceFlow.stats.total_messages}
-                              </div>
-                              <div className="text-sm text-gray-600">Messages</div>
-                            </div>
-                            <div className="text-center">
-                              <div className="text-2xl font-bold text-purple-600">
-                                {traceFlow.stats.topic_count}
-                              </div>
-                              <div className="text-sm text-gray-600">Topics</div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="text-xs text-gray-500 bg-amber-50 p-2 rounded">
-                          💡 This shows the actual path messages took through your topic graph for this specific trace.
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
 
                 {/* Message Timeline - Enhanced for Better Readability */}
                 <Card className="min-h-0 flex flex-col">
@@ -872,8 +815,238 @@ function App() {
               </Card>
             )}
           </div>
+
+          {/* Main Content */}
+          <div className="xl:col-span-3">
+            {selectedTrace ? (
+              <div className="space-y-6">
+                {/* Trace Header */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl">{selectedTrace.trace_id}</CardTitle>
+                        <CardDescription>
+                          Trace details and message flow
+                        </CardDescription>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Badge variant="secondary">
+                          {selectedTrace.message_count} messages
+                        </Badge>
+                        <Badge variant="secondary">
+                          {selectedTrace.topics.length} topics
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardHeader>
+                </Card>
+
+                {/* Flow Visualization - Enhanced */}
+                {traceFlow && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-xl">Message Flow Visualization</CardTitle>
+                      <CardDescription>
+                        Interactive trace showing how messages flow through topics over time
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div id="trace-flow-graph" style={{ 
+                          height: '450px',
+                          width: '100%',
+                          border: '2px solid #e2e8f0', 
+                          borderRadius: '12px',
+                          background: 'linear-gradient(135deg, #fefefe 0%, #f0f9ff 100%)'
+                        }} />
+                        
+                        {traceFlow.stats && (
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-blue-600">{traceFlow.stats.node_count}</div>
+                              <div className="text-sm text-gray-600">Topics</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-green-600">{traceFlow.stats.edge_count}</div>
+                              <div className="text-sm text-gray-600">Connections</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-2xl font-bold text-purple-600">{selectedTrace.message_count}</div>
+                              <div className="text-sm text-gray-600">Messages</div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
+                          💡 Tip: Drag nodes to rearrange the flow. Hover over connections to see message details.
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Messages Display - Enhanced with Better Layout */}
+                <Card className="flex flex-col h-[700px]">
+                  <CardHeader className="flex-shrink-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-xl">Messages</CardTitle>
+                        <CardDescription>
+                          Detailed view of all messages in this trace, organized by topics and timeline
+                        </CardDescription>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Button size="sm" variant="outline" onClick={expandAllMessages}>
+                          Expand All
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={collapseAllMessages}>
+                          Collapse All
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 min-h-0 p-0">
+                    <div className="h-[600px] overflow-y-auto p-4">
+                      <div className="space-y-3">
+                        {selectedTrace.messages.map((message, index) => (
+                          <Card key={index} className="border border-slate-200 shadow-sm">
+                            <CardContent className="p-0">
+                              {/* Message Header - Always Visible */}
+                              <div
+                                className="p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100"
+                                onClick={() => toggleMessage(index)}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <Badge variant="outline" className="font-mono text-xs">
+                                      {message.topic}
+                                    </Badge>
+                                    <span className="text-sm text-gray-500 font-mono">
+                                      P{message.partition}:O{message.offset}
+                                    </span>
+                                    <Badge variant="secondary" className="text-xs">
+                                      {new Date(message.timestamp).toLocaleTimeString()}
+                                    </Badge>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    {message.key && (
+                                      <span className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded">
+                                        Key: {message.key}
+                                      </span>
+                                    )}
+                                    <Button size="sm" variant="ghost">
+                                      {expandedMessages.has(index) ? '▼' : '▶'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Message Details - Collapsible */}
+                              {expandedMessages.has(index) && (
+                                <div className="p-4 bg-gray-50">
+                                  {/* Message Info */}
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2">Message Info</h4>
+                                      <div className="space-y-1 text-xs">
+                                        <div><span className="font-medium">Topic:</span> {message.topic}</div>
+                                        <div><span className="font-medium">Partition:</span> {message.partition}</div>
+                                        <div><span className="font-medium">Offset:</span> {message.offset}</div>
+                                        {message.key && <div><span className="font-medium">Key:</span> {message.key}</div>}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <h4 className="font-medium text-sm mb-2">Timing</h4>
+                                      <div className="space-y-1 text-xs">
+                                        <div><span className="font-medium">Timestamp:</span> {new Date(message.timestamp).toLocaleString()}</div>
+                                        <div><span className="font-medium">Trace ID:</span> {message.trace_id}</div>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Tracing Information */}
+                                  {message.headers && Object.keys(message.headers).length > 0 && (
+                                    <div className="mb-4">
+                                      <h4 className="font-medium text-sm mb-2">Tracing</h4>
+                                      <div className="bg-white rounded p-2 font-mono text-xs overflow-x-auto">
+                                        {Object.entries(message.headers).map(([key, value]) => (
+                                          <div key={key} className="flex">
+                                            <span className="text-blue-600 min-w-0 flex-shrink-0">{key}:</span>
+                                            <span className="ml-2 text-gray-800 break-all">{value}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Headers */}
+                                  {message.headers && Object.keys(message.headers).length > 0 && (
+                                    <div className="mb-4">
+                                      <h4 className="font-medium text-sm mb-2">Headers</h4>
+                                      <div className="bg-white rounded p-2 font-mono text-xs overflow-x-auto">
+                                        <pre>{JSON.stringify(message.headers, null, 2)}</pre>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Decoded Message */}
+                                  <div className="mb-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <h4 className="font-medium text-sm">Decoded Message</h4>
+                                      <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(JSON.stringify(message.decoded_data, null, 2));
+                                          toast.success('Message copied to clipboard');
+                                        }}
+                                      >
+                                        Copy JSON
+                                      </Button>
+                                    </div>
+                                    <div className="bg-white rounded p-3 font-mono text-xs overflow-x-auto max-h-96 overflow-y-auto">
+                                      <pre className="whitespace-pre-wrap break-words">
+                                        {JSON.stringify(message.decoded_data, null, 2)}
+                                      </pre>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card className="h-96 flex items-center justify-center">
+                <CardContent className="text-center">
+                  <Activity className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Welcome to Kafka Trace Viewer
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Select a trace from the sidebar to view its message flow and details
+                  </p>
+                  <div className="text-sm text-gray-500">
+                    <div>• Traces are automatically collected as messages arrive</div>
+                    <div>• Click on a trace ID to view its details</div>
+                    <div>• Use the topic monitoring tab to select which topics to trace</div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
-      </div>
+      )}
+    </div>
+      ) : (
+        // gRPC Integration Page
+        <GrpcIntegration />
+      )}
       <Toaster />
     </div>
   );

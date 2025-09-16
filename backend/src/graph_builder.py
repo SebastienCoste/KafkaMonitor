@@ -1,13 +1,15 @@
 """
 Topic graph builder and trace management with FIFO eviction
+Enhanced for Phase 2: Multiple disconnected graphs, real-time statistics, trace age analysis
 """
 import logging
 import traceback
-from typing import Dict, List, Optional, Set, Any
+from typing import Dict, List, Optional, Set, Any, Tuple
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import yaml
-from .models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
+import numpy as np
+from src.models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
 
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)
@@ -356,3 +358,295 @@ class TraceGraphBuilder:
             stats['time_range']['latest'] = latest_time.isoformat()
 
         return stats
+
+    # Phase 2: Enhanced Graph Visualization Methods
+    
+    def get_disconnected_graphs(self) -> List[Dict[str, Any]]:
+        """Get all disconnected graph components, ordered by size"""
+        logger.info("🔄 Building disconnected graph components...")
+        
+        # Find all connected components using DFS
+        all_topics = set(self.topic_graph.get_all_topics())
+        visited = set()
+        components = []
+        
+        def dfs(topic: str, component: Set[str]):
+            if topic in visited:
+                return
+            visited.add(topic)
+            component.add(topic)
+            
+            # Find connected topics through edges
+            for edge in self.topic_graph.edges:
+                if edge.source == topic and edge.destination not in visited:
+                    dfs(edge.destination, component)
+                elif edge.destination == topic and edge.source not in visited:
+                    dfs(edge.source, component)
+        
+        # Build components
+        for topic in all_topics:
+            if topic not in visited:
+                component = set()
+                dfs(topic, component)
+                if component:
+                    components.append(component)
+        
+        # Sort components by size (largest first)
+        components.sort(key=len, reverse=True)
+        
+        # Build graph data for each component
+        graph_components = []
+        for i, component in enumerate(components):
+            component_data = self._build_component_graph_data(component, i)
+            graph_components.append(component_data)
+        
+        logger.info(f"✅ Found {len(graph_components)} disconnected graph components")
+        return graph_components
+    
+    def _build_component_graph_data(self, component_topics: Set[str], component_index: int) -> Dict[str, Any]:
+        """Build graph data for a single component"""
+        nodes = []
+        edges = []
+        now = datetime.now()
+        
+        # Build nodes with enhanced statistics
+        for topic in component_topics:
+            node_stats = self._calculate_topic_statistics(topic, now)
+            
+            nodes.append({
+                'id': topic,
+                'label': f"{topic}\n{node_stats['message_count']} msgs\n{node_stats['rate']:.1f}/min",
+                'type': 'topic',
+                'component': component_index,
+                'monitored': topic in self.monitored_topics,
+                'statistics': node_stats,
+                'color': self._get_node_color_by_age(node_stats['median_trace_age']),
+                'size': max(20, min(80, node_stats['message_count'] / 10))  # Size based on message count
+            })
+        
+        # Build edges within this component
+        for edge in self.topic_graph.edges:
+            if edge.source in component_topics and edge.destination in component_topics:
+                edge_stats = self._calculate_edge_statistics(edge.source, edge.destination)
+                
+                edges.append({
+                    'source': edge.source,
+                    'target': edge.destination,
+                    'type': 'flow',
+                    'component': component_index,
+                    'flow_count': edge_stats['flow_count'],
+                    'message_rate': edge_stats['message_rate'],
+                    'width': max(2, min(10, edge_stats['flow_count'] / 5))  # Width based on flow
+                })
+        
+        # Calculate component statistics
+        component_stats = self._calculate_component_statistics(component_topics, now)
+        
+        return {
+            'component_id': component_index,
+            'topics': list(component_topics),
+            'topic_count': len(component_topics),
+            'nodes': nodes,
+            'edges': edges,
+            'statistics': component_stats,
+            'layout_type': 'hierarchical' if len(component_topics) > 10 else 'force_directed'
+        }
+    
+    def _calculate_topic_statistics(self, topic: str, now: datetime) -> Dict[str, Any]:
+        """Calculate comprehensive statistics for a topic"""
+        messages = []
+        trace_ages = []
+        
+        # Collect all messages for this topic
+        for trace in self.traces.values():
+            trace_messages_for_topic = []
+            for msg in trace.messages:
+                if msg.topic == topic:
+                    messages.append(msg)
+                    trace_messages_for_topic.append(msg)
+            
+            # Calculate trace age for this topic based on message timestamps within the trace
+            if trace_messages_for_topic and trace.messages:
+                # Find the oldest message in the entire trace (start of trace)
+                oldest_message_time = min(msg.timestamp for msg in trace.messages)
+                
+                # For each message in this topic, calculate age from trace start
+                for msg in trace_messages_for_topic:
+                    age_seconds = (msg.timestamp - oldest_message_time).total_seconds()
+                    trace_ages.append(age_seconds)
+        
+        if not messages:
+            return {
+                'message_count': 0,
+                'rate': 0.0,
+                'median_trace_age': 0,
+                'trace_age_p10': 0,
+                'trace_age_p50': 0,
+                'trace_age_p95': 0,
+                'last_message_time': None
+            }
+        
+        # Calculate message rate (messages per minute)
+        if len(messages) > 1:
+            time_span = (messages[-1].timestamp - messages[0].timestamp).total_seconds() / 60
+            rate = len(messages) / max(time_span, 1)  # Avoid division by zero
+        else:
+            rate = 0.0
+        
+        # Calculate trace age percentiles
+        if trace_ages:
+            p10 = np.percentile(trace_ages, 10)
+            p50 = np.percentile(trace_ages, 50)  # median
+            p95 = np.percentile(trace_ages, 95)
+        else:
+            p10 = p50 = p95 = 0
+        
+        return {
+            'message_count': len(messages),
+            'rate': rate,
+            'median_trace_age': p50,
+            'trace_age_p10': p10,
+            'trace_age_p50': p50,
+            'trace_age_p95': p95,
+            'last_message_time': messages[-1].timestamp.isoformat() if messages else None
+        }
+    
+    def _calculate_edge_statistics(self, source_topic: str, dest_topic: str) -> Dict[str, Any]:
+        """Calculate statistics for an edge between two topics"""
+        flow_count = 0
+        message_times = []
+        
+        for trace in self.traces.values():
+            source_messages = [msg for msg in trace.messages if msg.topic == source_topic]
+            dest_messages = [msg for msg in trace.messages if msg.topic == dest_topic]
+            
+            if source_messages and dest_messages:
+                flow_count += 1
+                message_times.extend([msg.timestamp for msg in source_messages + dest_messages])
+        
+        # Calculate message rate for this edge
+        if len(message_times) > 1:
+            message_times.sort()
+            time_span = (message_times[-1] - message_times[0]).total_seconds() / 60
+            message_rate = len(message_times) / max(time_span, 1)
+        else:
+            message_rate = 0.0
+        
+        return {
+            'flow_count': flow_count,
+            'message_rate': message_rate
+        }
+    
+    def _calculate_component_statistics(self, component_topics: Set[str], now: datetime) -> Dict[str, Any]:
+        """Calculate statistics for an entire component"""
+        total_messages = 0
+        all_trace_ages = []
+        active_traces = 0
+        
+        for trace in self.traces.values():
+            component_messages = [msg for msg in trace.messages if msg.topic in component_topics]
+            if component_messages:
+                total_messages += len(component_messages)
+                active_traces += 1
+                
+                if trace.start_time:
+                    age_seconds = (now - trace.start_time).total_seconds()
+                    all_trace_ages.append(age_seconds)
+        
+        # Calculate overall statistics
+        if all_trace_ages:
+            median_age = np.percentile(all_trace_ages, 50)
+            p95_age = np.percentile(all_trace_ages, 95)
+        else:
+            median_age = p95_age = 0
+        
+        return {
+            'total_messages': total_messages,
+            'active_traces': active_traces,
+            'median_trace_age': median_age,
+            'p95_trace_age': p95_age,
+            'health_score': self._calculate_health_score(median_age, total_messages)
+        }
+    
+    def _get_node_color_by_age(self, median_age_seconds: float) -> Dict[str, str]:
+        """Get node color based on median trace age"""
+        if median_age_seconds < 30:  # Less than 30 seconds - green (newest)
+            return {
+                'background': '#10b981',  # green-500
+                'border': '#059669'       # green-600
+            }
+        elif median_age_seconds < 300:  # Less than 5 minutes - orange (mid-age)
+            return {
+                'background': '#f59e0b',  # amber-500
+                'border': '#d97706'       # amber-600
+            }
+        else:  # Older than 5 minutes - red (old)
+            return {
+                'background': '#ef4444',  # red-500
+                'border': '#dc2626'       # red-600
+            }
+    
+    def _calculate_health_score(self, median_age: float, message_count: int) -> float:
+        """Calculate a health score for the component (0-100)"""
+        # Factor in trace age (newer is better) and message activity
+        age_score = max(0, 100 - (median_age / 60))  # Decrease score as age increases
+        activity_score = min(100, message_count / 10)  # Up to 100 for 1000+ messages
+        
+        return (age_score * 0.7 + activity_score * 0.3)  # Weighted average
+    
+    def get_filtered_graph_data(self, time_filter: str = "all", custom_minutes: Optional[int] = None) -> Dict[str, Any]:
+        """Get graph data with time-based filtering"""
+        logger.info(f"🔄 Applying time filter: {time_filter}")
+        
+        # Determine filter datetime
+        now = datetime.now()
+        if time_filter == "all":
+            filter_time = None
+        elif time_filter == "last_hour":
+            filter_time = now - timedelta(hours=1)
+        elif time_filter == "last_30min":
+            filter_time = now - timedelta(minutes=30)
+        elif time_filter == "last_15min":
+            filter_time = now - timedelta(minutes=15)
+        elif time_filter == "last_5min":
+            filter_time = now - timedelta(minutes=5)
+        elif time_filter == "custom" and custom_minutes:
+            filter_time = now - timedelta(minutes=custom_minutes)
+        else:
+            filter_time = now - timedelta(hours=24)  # Default to last 24 hours
+        
+        # Filter traces based on time
+        filtered_traces = {}
+        if filter_time:
+            for trace_id, trace in self.traces.items():
+                if trace.start_time and trace.start_time >= filter_time:
+                    filtered_traces[trace_id] = trace
+        else:
+            filtered_traces = self.traces
+        
+        # Temporarily replace traces for calculation
+        original_traces = self.traces
+        self.traces = filtered_traces
+        
+        try:
+            # Get disconnected graphs with filtered data
+            disconnected_graphs = self.get_disconnected_graphs()
+            
+            # Calculate overall filtered statistics
+            filtered_stats = {
+                'total_traces': len(filtered_traces),
+                'total_messages': sum(len(trace.messages) for trace in filtered_traces.values()),
+                'time_filter': time_filter,
+                'filter_start': filter_time.isoformat() if filter_time else None,
+                'components_count': len(disconnected_graphs)
+            }
+            
+            return {
+                'disconnected_graphs': disconnected_graphs,
+                'statistics': filtered_stats,
+                'filter_applied': time_filter
+            }
+            
+        finally:
+            # Restore original traces
+            self.traces = original_traces
