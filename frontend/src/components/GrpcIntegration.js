@@ -175,6 +175,37 @@ function GrpcIntegration() {
     }
   };
 
+  const loadAssetStorageUrls = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/grpc/asset-storage/urls`);
+      
+      if (response.data.success) {
+        setAssetStorageUrls(response.data.urls);
+        setSelectedAssetUrlType(response.data.current_selection);
+      }
+    } catch (error) {
+      console.error('Error loading asset-storage URLs:', error);
+    }
+  };
+
+  const setAssetStorageUrl = async (urlType) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/grpc/asset-storage/set-url`, {
+        url_type: urlType
+      });
+      
+      if (response.data.success) {
+        setSelectedAssetUrlType(urlType);
+        toast.success(`Asset-storage URL set to ${urlType}`);
+        loadGrpcStatus(); // Refresh status
+      } else {
+        toast.error(`Failed to set asset-storage URL: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error setting asset-storage URL:', error);
+      toast.error('Failed to set asset-storage URL');
+    }
+  };
   // gRPC method calls
   const callUpsertContent = async () => {
     setLoading(true);
