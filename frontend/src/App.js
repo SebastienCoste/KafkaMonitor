@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server } from 'lucide-react';
+import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
