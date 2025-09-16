@@ -114,6 +114,64 @@ class KafkaConsumerService:
                 # Verify topics exist by getting metadata (with timeout)
                 try:
                     metadata = self.consumer.list_topics(timeout=5.0)
+    def refresh_topic_subscription(self):
+        """Refresh topic subscription to pick up newly created topics"""
+        if self.mock_mode or not self.consumer:
+            return
+            
+        try:
+            # Get current metadata to see if new topics are available
+            metadata = self.consumer.list_topics(timeout=5.0)
+            existing_topics = set(metadata.topics.keys())
+            
+            # Find topics from our original list that now exist
+            originally_requested = getattr(self, '_original_topics', self.subscribed_topics)
+            newly_available = [topic for topic in originally_requested if topic in existing_topics and topic not in self.subscribed_topics]
+            
+            if newly_available:
+                # Add newly available topics to subscription
+                updated_topics = self.subscribed_topics + newly_available
+                self.consumer.subscribe(updated_topics)
+                self.subscribed_topics = updated_topics
+                logger.info(f"✅ Added newly available topics: {newly_available}")
+                logger.info(f"📡 Now subscribed to: {updated_topics}")
+                
+        except Exception as e:
+            logger.warning(f"⚠️  Error refreshing topic subscription: {e}")
+    
+    def get_subscription_status(self):
+        """Get current subscription status and topic availability"""
+        if self.mock_mode:
+            return {
+                'mode': 'mock',
+                'subscribed_topics': self.subscribed_topics,
+                'status': 'All topics available in mock mode'
+            }
+            
+        if not self.consumer:
+            return {
+                'mode': 'real',
+                'subscribed_topics': [],
+                'status': 'Consumer not initialized'
+            }
+            
+        try:
+            metadata = self.consumer.list_topics(timeout=5.0)
+            existing_topics = set(metadata.topics.keys())
+            
+            return {
+                'mode': 'real',
+                'subscribed_topics': self.subscribed_topics,
+                'existing_topics': list(existing_topics),
+                'missing_topics': [topic for topic in getattr(self, '_original_topics', self.subscribed_topics) if topic not in existing_topics],
+                'status': f'Subscribed to {len(self.subscribed_topics)} topics'
+            }
+        except Exception as e:
+            return {
+                'mode': 'real',
+                'subscribed_topics': self.subscribed_topics,
+                'status': f'Error getting topic info: {e}'
+            }
                     existing_topics = set(metadata.topics.keys())
                     missing_topics = [topic for topic in topics if topic not in existing_topics]
                     
