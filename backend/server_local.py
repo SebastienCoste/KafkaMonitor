@@ -145,6 +145,26 @@ async def get_statistics():
         "message": f"Local development mode - {monitored_count}/{total_topics} topics monitored"
     }
 
+@app.post("/api/config/reload")
+async def reload_config():
+    """Reload configuration from files"""
+    global app_config
+    try:
+        app_config = load_config()
+        return {
+            "success": True,
+            "message": "Configuration reloaded",
+            "topics": {
+                "total": len(app_config['all_topics']),
+                "monitored": len(app_config['monitored_topics'])
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @app.get("/api/graph")
 async def get_graph():
     return {
