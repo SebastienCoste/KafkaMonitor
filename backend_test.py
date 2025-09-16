@@ -880,6 +880,70 @@ class KafkaTraceViewerTester:
             self.log_test("gRPC Initialize", False, f"Exception: {str(e)}")
             return False
 
+    def test_grpc_batch_get_signed_urls_hanging_issue(self) -> bool:
+        """Test BatchGetSignedUrls endpoint for hanging issues - SPECIFIC FOCUS"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing BatchGetSignedUrls Hanging Issue - SPECIFIC FOCUS")
+        print("=" * 60)
+        
+        # Test with different timeout values to identify hanging behavior
+        timeout_tests = [
+            (5, "Short timeout test"),
+            (15, "Medium timeout test"),
+            (30, "Long timeout test")
+        ]
+        
+        hanging_detected = False
+        successful_responses = 0
+        
+        for timeout_val, test_desc in timeout_tests:
+            try:
+                print(f"🔄 {test_desc} (timeout: {timeout_val}s)...")
+                start_time = time.time()
+                
+                response = requests.post(
+                    f"{self.base_url}/api/grpc/asset-storage/batch-get-signed-urls",
+                    json={"asset_ids": ["test-asset-123", "test-asset-456"]},
+                    headers={"Content-Type": "application/json"},
+                    timeout=timeout_val
+                )
+                
+                end_time = time.time()
+                response_time = end_time - start_time
+                
+                print(f"   Response time: {response_time:.2f}s, Status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    successful_responses += 1
+                    self.log_test(f"BatchGetSignedUrls {test_desc}", True, f"Success in {response_time:.2f}s: {data.get('success', 'unknown')}")
+                elif response.status_code in [500, 503]:
+                    # Expected if proto files are missing or service unavailable
+                    self.log_test(f"BatchGetSignedUrls {test_desc}", True, f"Expected failure in {response_time:.2f}s (HTTP {response.status_code})")
+                else:
+                    self.log_test(f"BatchGetSignedUrls {test_desc}", False, f"Unexpected status in {response_time:.2f}s: {response.status_code}")
+                    
+            except requests.exceptions.Timeout:
+                hanging_detected = True
+                self.log_test(f"BatchGetSignedUrls {test_desc}", False, f"HANGING DETECTED - Request timed out after {timeout_val}s")
+                print(f"   ❌ HANGING ISSUE CONFIRMED - Timeout after {timeout_val}s")
+                
+            except Exception as e:
+                self.log_test(f"BatchGetSignedUrls {test_desc}", False, f"Exception: {str(e)}")
+        
+        # Summary of hanging issue test
+        if hanging_detected:
+            self.log_test("BatchGetSignedUrls Hanging Issue", False, "CRITICAL: BatchGetSignedUrls endpoint is hanging - requests timeout")
+            print("🚨 CRITICAL ISSUE: BatchGetSignedUrls endpoint is hanging!")
+            print("   This confirms the reported issue in test_result.md")
+            return False
+        elif successful_responses > 0:
+            self.log_test("BatchGetSignedUrls Hanging Issue", True, f"No hanging detected - {successful_responses} successful responses")
+            return True
+        else:
+            self.log_test("BatchGetSignedUrls Hanging Issue", True, "No hanging detected - all requests failed quickly (expected without proto files)")
+            return True
+
     def test_grpc_batch_get_signed_urls_message_class(self) -> bool:
         """Test that BatchGetSignedUrlsRequest message class can be found and used"""
         print("\n" + "=" * 60)
