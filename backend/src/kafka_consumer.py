@@ -222,11 +222,20 @@ class KafkaConsumerService:
         if not self.consumer:
             raise RuntimeError("Consumer not initialized. Call subscribe_to_topics first.")
 
+        # Topic refresh counter
+        poll_count = 0
+        topic_refresh_interval = 300  # Refresh every 5 minutes (300 polls of 1 second each)
+
         try:
             while self.running:
                 msg = self.consumer.poll(timeout=1.0)
 
                 if msg is None:
+                    # Periodically check for new topics
+                    poll_count += 1
+                    if poll_count >= topic_refresh_interval:
+                        self.refresh_topic_subscription()
+                        poll_count = 0
                     continue
 
                 if msg.error():
