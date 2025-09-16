@@ -1,5 +1,5 @@
 # Application configuration
-trace_header_field: "trace_id"  # Configurable trace header field name
+trace_header_field: "traceparent"  # Configurable trace header field name
 max_traces: 1000                 # Maximum traces to retain in memory
 cleanup_interval: 300            # Seconds between cleanup cycles
 
