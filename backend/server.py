@@ -710,11 +710,6 @@ async def debug_static_test():
         result["css_files"] = os.listdir(css_dir)
     
     return result
-        result = await grpc_client.batch_update_statuses(asset_updates)
-        return result
-    except Exception as e:
-        logger.error(f"Error in batch_update_statuses: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 # File Upload Endpoint for Assets
 
