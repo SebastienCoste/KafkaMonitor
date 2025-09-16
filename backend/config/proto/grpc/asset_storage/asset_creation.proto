@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package eadp.cadie.shared.storageinterface.v1;
+
+option java_multiple_files = true;
+option java_package = "eadp.cadie.shared.storageinterface.v1";
+option java_outer_classname = "AssetProto";
+
+message AssetCreation {
+  string bucket_id = 1; // A bucket storage ID unique for each integrator. For MCR: it corresponds to the source ID.
+  string asset_id = 2; //An ID unique to all assets for the integrator
+  string mime_type = 3;
+}
