@@ -1671,16 +1671,19 @@ class KafkaTraceViewerTester:
         print("🆕 Testing New Features from Review Request")
         print("=" * 60)
         
-        # Test 2: Kafka Offset Issue Fix
+        # Test 2: Kafka Topic Availability Fix (NEW - Primary focus)
+        kafka_topic_fix_ok = self.test_kafka_topic_availability_fix()
+        
+        # Test 3: Kafka Offset Issue Fix
         kafka_offset_ok = self.test_kafka_offset_configuration()
         
-        # Test 3: Environment Management
+        # Test 4: Environment Management
         env_management_ok = self.test_environment_management_endpoints()
         
-        # Test 4: Asset-Storage Multiple URLs
+        # Test 5: Asset-Storage Multiple URLs
         asset_storage_ok = self.test_asset_storage_url_management()
         
-        # Test 5: Configuration Structure
+        # Test 6: Configuration Structure
         config_structure_ok = self.test_configuration_structure()
         
         # EXISTING TESTS
