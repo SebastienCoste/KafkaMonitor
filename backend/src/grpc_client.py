@@ -202,7 +202,16 @@ class GrpcClient:
             return None
         
         try:
-            url = service_config['url']
+            # Handle multiple URLs for asset_storage (reader/writer)
+            if service_name == 'asset_storage' and 'urls' in service_config:
+                # For asset_storage, use the selected URL or default to reader
+                selected_type = getattr(self, 'selected_asset_storage_type', 'reader')
+                url = service_config['urls'].get(selected_type, service_config['urls']['reader'])
+                logger.info(f"🔗 Using {selected_type} asset_storage URL: {url}")
+            else:
+                # For other services or backward compatibility
+                url = service_config.get('url', '')
+            
             secure = service_config.get('secure', True)
             
             logger.info(f"🔗 Creating channel for {service_name}: {url} (secure: {secure})")
