@@ -1072,6 +1072,9 @@ class KafkaTraceViewerTester:
         # Test 16: gRPC Initialization Fix
         grpc_init_fix_ok = self.test_grpc_initialization_fix()
         
+        # Test 17: BatchGetSignedUrls Hanging Issue (SPECIFIC FOCUS)
+        batch_hanging_ok = self.test_grpc_batch_get_signed_urls_hanging_issue()
+        
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
