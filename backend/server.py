@@ -726,6 +726,12 @@ async def upload_file(file: bytes, upload_url: str):
         return {
             'success': response.status_code == 200,
             'status_code': response.status_code,
+            'content_length': len(file),
+        }
+    except Exception as e:
+        logger.error(f"Error uploading file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/debug/environment")
 async def debug_environment():
     """Debug endpoint to check environment and HTML content"""
