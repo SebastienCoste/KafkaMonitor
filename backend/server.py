@@ -826,6 +826,34 @@ app.add_middleware(
 
 # Static file routes moved to API router to bypass infrastructure routing
 
+# Static file routes - handle both deployed and local environments
+@app.get("/static/js/{filename}")
+async def serve_static_js(filename: str):
+    """Serve JavaScript files from /static/ path (redirect to API route or serve directly)"""
+    file_path = f"../frontend/build/static/js/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="application/javascript")
+    else:
+        raise HTTPException(status_code=404, detail="JavaScript file not found")
+
+@app.get("/static/css/{filename}")
+async def serve_static_css(filename: str):
+    """Serve CSS files from /static/ path (redirect to API route or serve directly)"""
+    file_path = f"../frontend/build/static/css/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="text/css")
+    else:
+        raise HTTPException(status_code=404, detail="CSS file not found")
+
+@app.get("/static/media/{filename}")
+async def serve_static_media(filename: str):
+    """Serve media files from /static/ path (redirect to API route or serve directly)"""
+    file_path = f"../frontend/build/static/media/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    else:
+        raise HTTPException(status_code=404, detail="Media file not found")
+
 # Frontend routes
 @app.get("/")
 async def serve_frontend():
