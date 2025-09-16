@@ -54,22 +54,15 @@ def load_config():
             
             # Extract topic information
             all_topics = []
-            monitored_topics = []
             
             for topic_name, topic_info in topics_config.get('topics', {}).items():
                 all_topics.append(topic_name)
-                # Check if topic should be monitored by default
-                if topic_info.get('monitored', True):
-                    monitored_topics.append(topic_name)
             
-            # Also check for default_monitored_topics
+            # Get default monitored topics from config
             default_monitored = topics_config.get('default_monitored_topics', [])
-            for topic in default_monitored:
-                if topic not in monitored_topics:
-                    monitored_topics.append(topic)
             
             config['all_topics'] = all_topics
-            config['monitored_topics'] = monitored_topics
+            config['default_monitored_topics'] = default_monitored
     else:
         config['topics'] = {}
         config['all_topics'] = []
