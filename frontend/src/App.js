@@ -657,7 +657,7 @@ function App() {
                             {monitoredTopics.map((topic) => {
                               const topicStats = statistics?.messages?.by_topic?.[topic] || 0;
                               const topicTraces = traces.filter(trace => 
-                                trace.messages.some(msg => msg.topic === topic)
+                                trace.messages && trace.messages.some(msg => msg.topic === topic)
                               ).length;
                               
                               return (
