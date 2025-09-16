@@ -549,9 +549,15 @@ class TraceGraphBuilder:
                 total_messages += len(component_messages)
                 active_traces += 1
                 
-                if trace.start_time:
-                    age_seconds = (now - trace.start_time).total_seconds()
-                    all_trace_ages.append(age_seconds)
+                # Calculate trace age based on message timestamps within the trace
+                if trace.messages:
+                    # Find the oldest message in the entire trace (start of trace)
+                    oldest_message_time = min(msg.timestamp for msg in trace.messages)
+                    
+                    # For component messages, calculate age from trace start
+                    for msg in component_messages:
+                        age_seconds = (msg.timestamp - oldest_message_time).total_seconds()
+                        all_trace_ages.append(age_seconds)
         
         # Calculate overall statistics
         if all_trace_ages:
