@@ -159,12 +159,14 @@ class MockGraphGenerator:
                 msg_time = start_time + timedelta(seconds=j * random.uniform(1, 30))
                 
                 # Create mock message
+                mock_value = self._generate_mock_message_value(topic)
                 message = KafkaMessage(
                     topic=topic,
                     partition=random.randint(0, 2),
                     offset=random.randint(1000, 9999),
                     key=f"key-{i}-{j}",
-                    value=self._generate_mock_message_value(topic),
+                    raw_value=mock_value,
+                    decoded_value=json.loads(mock_value.decode('utf-8')),
                     headers={'trace_id': trace_id, 'component': f"comp-{random.randint(0, 3)}"},
                     timestamp=msg_time,
                     trace_id=trace_id
