@@ -99,8 +99,11 @@ function App() {
 
   const handleWebSocketMessage = (data) => {
     if (data.type === 'trace_update') {
-      // Refresh traces if new ones are available
+      // Refresh traces and statistics when new messages arrive
       loadTraces();
+      loadStatistics();
+      // Also update topics data to reflect latest topic info
+      loadTopics();
     } else if (data.type === 'environment_change') {
       // Handle environment change from server
       setCurrentEnvironment(data.environment);
