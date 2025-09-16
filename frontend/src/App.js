@@ -122,6 +122,46 @@ function App() {
       toast.error('Failed to load initial data');
     }
   };
+  const loadEnvironments = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/environments`);
+      setEnvironments(response.data.available_environments || []);
+      setCurrentEnvironment(response.data.current_environment || '');
+    } catch (error) {
+      console.error('Error loading environments:', error);
+    }
+  };
+
+  const switchEnvironment = async (environment) => {
+    setEnvironmentLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/environments/switch`, {
+        environment
+      });
+      
+      if (response.data.success) {
+        setCurrentEnvironment(environment);
+        toast.success(`Switched to ${environment} environment`);
+        
+        // Clear existing data and reload
+        setTraces([]);
+        setSelectedTrace(null);
+        setTraceFlow(null);
+        setTopicGraph(null);
+        setStatistics(null);
+        
+        // Reload all data for new environment
+        await loadInitialData();
+      } else {
+        toast.error(`Failed to switch environment: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error switching environment:', error);
+      toast.error('Failed to switch environment');
+    } finally {
+      setEnvironmentLoading(false);
+    }
+  };
 
   const loadTraces = async () => {
     try {
