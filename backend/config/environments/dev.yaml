@@ -2,6 +2,14 @@
 name: "DEV"
 description: "Development Environment"
 
+# Kafka Configuration for this environment
+kafka:
+  bootstrap_servers: "localhost:9092"
+  security_protocol: "PLAINTEXT"
+  sasl_mechanism: ""
+  username: ""
+  password: ""
+
 grpc_services:
   ingress_server:
     url: "localhost:50051"
@@ -9,9 +17,12 @@ grpc_services:
     timeout: 30
     
   asset_storage:
-    url: "localhost:50052"
+    # Multiple URLs for asset storage with reader/writer labels
+    urls:
+      reader: "localhost:50052"
+      writer: "localhost:50053"
     secure: false
     timeout: 30
 
-# Note: Credentials are provided at runtime via UI
+# Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files
