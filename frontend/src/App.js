@@ -158,6 +158,32 @@ function App() {
         
         // Reload all data for new environment
         await loadInitialData();
+  const loadKafkaSubscriptionStatus = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/kafka/subscription-status`);
+      return response.data;
+    } catch (error) {
+      console.error('Error loading Kafka subscription status:', error);
+      return null;
+    }
+  };
+
+  const refreshKafkaSubscription = async () => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/kafka/refresh-subscription`);
+      if (response.data.success) {
+        toast.success('Kafka subscription refreshed');
+        return response.data;
+      } else {
+        toast.error('Failed to refresh Kafka subscription');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error refreshing Kafka subscription:', error);
+      toast.error('Failed to refresh Kafka subscription');
+      return null;
+    }
+  };
       } else {
         toast.error(`Failed to switch environment: ${response.data.error}`);
       }
@@ -526,6 +552,33 @@ function App() {
                       {statistics.traces.total} traces
                     </Badge>
                   )}
+                  
+                  {/* Kafka Topic Status Indicator */}
+                  <button
+                    onClick={async () => {
+                      try {
+                        const response = await axios.get(`${API_BASE_URL}/api/kafka/subscription-status`);
+                        const status = response.data;
+                        if (status && status.success) {
+                          const subscribed = status.subscribed_topics ? status.subscribed_topics.length : 0;
+                          const missing = status.missing_topics ? status.missing_topics.length : 0;
+                          const message = missing > 0 
+                            ? `Subscribed to ${subscribed} topics (${missing} missing)`
+                            : `Subscribed to ${subscribed} topics (all available)`;
+                          toast.info(message);
+                        } else {
+                          toast.warning('Unable to get Kafka subscription status');
+                        }
+                      } catch (error) {
+                        console.error('Error checking Kafka status:', error);
+                        toast.error('Failed to check Kafka subscription status');
+                      }
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    title="Click to check Kafka topic status"
+                  >
+                    📡 Topics
+                  </button>
                 </>
               )}
             </div>

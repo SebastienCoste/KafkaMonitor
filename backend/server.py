@@ -314,6 +314,39 @@ async def get_trace_flow(trace_id: str):
     except Exception as e:
         logger.error(f"Error getting trace flow {trace_id}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+@api_router.get("/kafka/subscription-status")
+async def get_kafka_subscription_status():
+    """Get Kafka subscription status and topic availability"""
+    if not kafka_consumer:
+        raise HTTPException(status_code=503, detail="Kafka consumer not initialized")
+    
+    try:
+        status = kafka_consumer.get_subscription_status()
+        return {
+            'success': True,
+            **status
+        }
+    except Exception as e:
+        logger.error(f"Error getting subscription status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/kafka/refresh-subscription")
+async def refresh_kafka_subscription():
+    """Manually refresh Kafka topic subscription to pick up new topics"""
+    if not kafka_consumer:
+        raise HTTPException(status_code=503, detail="Kafka consumer not initialized")
+    
+    try:
+        kafka_consumer.refresh_topic_subscription()
+        status = kafka_consumer.get_subscription_status()
+        return {
+            'success': True,
+            'message': 'Topic subscription refreshed',
+            **status
+        }
+    except Exception as e:
+        logger.error(f"Error refreshing subscription: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/topics/graph")
 async def get_topics_graph():

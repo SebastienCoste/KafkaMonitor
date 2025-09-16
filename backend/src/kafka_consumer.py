@@ -100,19 +100,113 @@ class KafkaConsumerService:
         self.message_handlers.append(handler)
 
     def subscribe_to_topics(self, topics: List[str]):
-        """Subscribe to specified topics"""
+        """Subscribe to specified topics with graceful handling of missing topics"""
         self.subscribed_topics = topics
+        self._original_topics = topics.copy()  # Store original list for retrying later
         
         if not self.mock_mode:
             try:
                 self.consumer = Consumer(self.kafka_config)
+                
+                # Try to subscribe to all topics first
                 self.consumer.subscribe(topics)
-                logger.info(f"Subscribed to topics: {topics}")
+                logger.info(f"✅ Successfully subscribed to topics: {topics}")
+                
+                # Verify topics exist by getting metadata (with timeout)
+                try:
+                    metadata = self.consumer.list_topics(timeout=5.0)
+                    existing_topics = set(metadata.topics.keys())
+                    missing_topics = [topic for topic in topics if topic not in existing_topics]
+                    
+                    if missing_topics:
+                        logger.warning(f"⚠️  Topics not found on broker: {missing_topics}")
+                        logger.info(f"📋 Available topics on broker: {list(existing_topics)}")
+                        
+                        # Filter to only existing topics
+                        valid_topics = [topic for topic in topics if topic in existing_topics]
+                        
+                        if valid_topics:
+                            # Re-subscribe to only valid topics
+                            self.consumer.subscribe(valid_topics)
+                            self.subscribed_topics = valid_topics
+                            logger.info(f"✅ Re-subscribed to existing topics only: {valid_topics}")
+                        else:
+                            logger.warning("⚠️  No valid topics found - consumer will be in standby mode")
+                            self.subscribed_topics = []
+                    else:
+                        logger.info(f"✅ All topics exist on broker: {topics}")
+                        
+                except Exception as metadata_error:
+                    logger.warning(f"⚠️  Could not verify topic existence: {metadata_error}")
+                    logger.info("📡 Proceeding with subscription - will handle missing topics during consumption")
+                    
             except Exception as e:
-                logger.error(f"Failed to subscribe to topics: {e}")
-                raise
+                logger.error(f"❌ Failed to subscribe to topics: {e}")
+                # Don't raise the exception - allow system to continue in mock mode
+                logger.warning("🔄 Switching to mock mode due to subscription failure")
+                self.mock_mode = True
+                self.subscribed_topics = topics
         else:
-            logger.info(f"Mock mode: Would subscribe to topics: {topics}")
+            logger.info(f"🎭 Mock mode: Would subscribe to topics: {topics}")
+
+    def refresh_topic_subscription(self):
+        """Refresh topic subscription to pick up newly created topics"""
+        if self.mock_mode or not self.consumer:
+            return
+            
+        try:
+            # Get current metadata to see if new topics are available
+            metadata = self.consumer.list_topics(timeout=5.0)
+            existing_topics = set(metadata.topics.keys())
+            
+            # Find topics from our original list that now exist
+            originally_requested = getattr(self, '_original_topics', self.subscribed_topics)
+            newly_available = [topic for topic in originally_requested if topic in existing_topics and topic not in self.subscribed_topics]
+            
+            if newly_available:
+                # Add newly available topics to subscription
+                updated_topics = self.subscribed_topics + newly_available
+                self.consumer.subscribe(updated_topics)
+                self.subscribed_topics = updated_topics
+                logger.info(f"✅ Added newly available topics: {newly_available}")
+                logger.info(f"📡 Now subscribed to: {updated_topics}")
+                
+        except Exception as e:
+            logger.warning(f"⚠️  Error refreshing topic subscription: {e}")
+    
+    def get_subscription_status(self):
+        """Get current subscription status and topic availability"""
+        if self.mock_mode:
+            return {
+                'mode': 'mock',
+                'subscribed_topics': self.subscribed_topics,
+                'status': 'All topics available in mock mode'
+            }
+            
+        if not self.consumer:
+            return {
+                'mode': 'real',
+                'subscribed_topics': [],
+                'status': 'Consumer not initialized'
+            }
+            
+        try:
+            metadata = self.consumer.list_topics(timeout=5.0)
+            existing_topics = set(metadata.topics.keys())
+            
+            return {
+                'mode': 'real',
+                'subscribed_topics': self.subscribed_topics,
+                'existing_topics': list(existing_topics),
+                'missing_topics': [topic for topic in getattr(self, '_original_topics', self.subscribed_topics) if topic not in existing_topics],
+                'status': f'Subscribed to {len(self.subscribed_topics)} topics'
+            }
+        except Exception as e:
+            return {
+                'mode': 'real',
+                'subscribed_topics': self.subscribed_topics,
+                'status': f'Error getting topic info: {e}'
+            }
 
     def start_consuming(self):
         """Start consuming messages"""
@@ -129,18 +223,39 @@ class KafkaConsumerService:
         if not self.consumer:
             raise RuntimeError("Consumer not initialized. Call subscribe_to_topics first.")
 
+        # Topic refresh counter
+        poll_count = 0
+        topic_refresh_interval = 300  # Refresh every 5 minutes (300 polls of 1 second each)
+
         try:
             while self.running:
                 msg = self.consumer.poll(timeout=1.0)
 
                 if msg is None:
+                    # Periodically check for new topics
+                    poll_count += 1
+                    if poll_count >= topic_refresh_interval:
+                        self.refresh_topic_subscription()
+                        poll_count = 0
                     continue
 
                 if msg.error():
-                    if msg.error().code() == KafkaError._PARTITION_EOF:
+                    error_code = msg.error().code()
+                    error_msg = str(msg.error())
+                    
+                    if error_code == KafkaError._PARTITION_EOF:
                         logger.debug(f"Reached end of partition {msg.topic()}[{msg.partition()}]")
+                    elif error_code == KafkaError.UNKNOWN_TOPIC_OR_PART:
+                        # Handle unknown topic or partition error gracefully
+                        logger.warning(f"⚠️  Topic/partition not available: {error_msg}")
+                        logger.info("💡 This is expected when topics are configured but not yet created on the broker")
+                        # Don't log this as an error repeatedly - it's handled gracefully
+                    elif "Unknown topic" in error_msg or "topic not available" in error_msg.lower():
+                        # Handle various forms of topic not found errors
+                        logger.warning(f"⚠️  Topic availability issue: {error_msg}")
+                        logger.info("💡 Continuing consumption - this topic may be created later")
                     else:
-                        logger.error(f"Consumer error: {msg.error()}")
+                        logger.error(f"❌ Consumer error: {error_msg}")
                     continue
 
                 # Process message
