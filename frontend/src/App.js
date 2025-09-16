@@ -815,12 +815,14 @@ function App() {
                                         <div className="flex justify-between">
                                           <span className="text-gray-600">Status:</span>
                                           <span className={`font-medium ${topicStats > 0 ? 'text-green-600' : 'text-gray-400'}`}>
-                                            {topicStats > 0 ? 'Receiving messages' : 'No recent activity'}
+                                            {topicStatus}
                                           </span>
                                         </div>
                                         <div className="flex justify-between">
                                           <span className="text-gray-600">Monitored:</span>
-                                          <span className="font-medium text-blue-600">Yes</span>
+                                          <span className="font-medium text-blue-600">
+                                            {topicDetails?.monitored ? 'Yes' : 'No'}
+                                          </span>
                                         </div>
                                       </div>
                                     </div>
