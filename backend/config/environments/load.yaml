@@ -8,7 +8,7 @@ grpc_services:
     secure: true
     timeout: 60
     
-  asset_storage_service:
+  asset_storage:
     url: "load-assets.example.com:443"
     secure: true
     timeout: 60
