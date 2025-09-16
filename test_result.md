@@ -246,6 +246,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "FIXED: Added null safety check for trace.messages in topic statistics calculation. Topics tab now displays correct statistics per monitored topic with message counts, trace counts, and monitoring status."
+      - working: true
+        agent: "testing"
+        comment: "TOPIC STATISTICS FULLY VERIFIED: Topics tab displays comprehensive statistics correctly. Topic monitoring controls (Select All/Select None) function perfectly and update statistics in real-time. Individual topic cards show accurate data: analytics (259 messages, 0 traces), notifications (429 messages, 0 traces), both marked as Active and Receiving messages. Overall Statistics panel displays: 4 Total Topics, 2 Monitored, 1028 Total Messages, 127 Active Traces. All statistics are properly calculated and displayed with appropriate status indicators and color coding. No runtime errors detected."
 
   - task: "Backend Graph Statistics Engine"
     implemented: true
