@@ -327,6 +327,16 @@ class GrpcClient:
                 
                 logger.warning(f"⚠️  {method_key} failed (attempt {retry_count}): {error_details}")
                 
+                # Check if we've exceeded maximum retries
+                if retry_count > max_retry_limit:
+                    logger.error(f"❌ {method_key} failed after {max_retry_limit} retries: {error_details}")
+                    return {
+                        'success': False,
+                        'error': f'gRPC call failed after {max_retry_limit} retries: {error_details["details"]}',
+                        'retry_count': retry_count - 1,
+                        'grpc_code': error_details['code']
+                    }
+                
                 # Wait before retry (exponential backoff with jitter)
                 wait_time = min(60, 2 ** min(retry_count, 6)) + random.uniform(0, 1)
                 logger.debug(f"⏳ Waiting {wait_time:.2f}s before retry...")
@@ -336,8 +346,25 @@ class GrpcClient:
                 retry_count += 1
                 logger.error(f"💥 Unexpected error in {method_key} (attempt {retry_count}): {str(e)}")
                 
+                # Check if we've exceeded maximum retries for general exceptions
+                if retry_count > max_retry_limit:
+                    logger.error(f"❌ {method_key} failed after {max_retry_limit} retries due to unexpected error: {str(e)}")
+                    return {
+                        'success': False,
+                        'error': f'gRPC call failed after {max_retry_limit} retries: {str(e)}',
+                        'retry_count': retry_count - 1
+                    }
+                
                 # Wait before retry
                 await asyncio.sleep(min(30, retry_count * 2))
+        
+        # This should never be reached due to the retry limit, but safety fallback
+        logger.error(f"❌ {method_key} exhausted all {max_retry_limit} retries")
+        return {
+            'success': False,
+            'error': f'gRPC call exhausted all {max_retry_limit} retries',
+            'retry_count': max_retry_limit
+        }
     
     # IngressServer Methods
     
