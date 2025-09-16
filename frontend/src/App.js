@@ -552,6 +552,25 @@ function App() {
                       {statistics.traces.total} traces
                     </Badge>
                   )}
+                  
+                  {/* Kafka Topic Status Indicator */}
+                  <button
+                    onClick={async () => {
+                      const status = await loadKafkaSubscriptionStatus();
+                      if (status) {
+                        const subscribed = status.subscribed_topics ? status.subscribed_topics.length : 0;
+                        const missing = status.missing_topics ? status.missing_topics.length : 0;
+                        const message = missing > 0 
+                          ? `Subscribed to ${subscribed} topics (${missing} missing)`
+                          : `Subscribed to ${subscribed} topics`;
+                        toast.info(message);
+                      }
+                    }}
+                    className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                    title="Click to check Kafka topic status"
+                  >
+                    📡 Topics
+                  </button>
                 </>
               )}
             </div>
