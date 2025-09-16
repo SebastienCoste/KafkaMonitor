@@ -22,6 +22,7 @@ from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 from src.kafka_consumer import KafkaConsumerService
 from src.graph_builder import TraceGraphBuilder
 from src.grpc_client import GrpcClient
+from src.environment_manager import EnvironmentManager
 
 
 ROOT_DIR = Path(__file__).parent
@@ -36,6 +37,7 @@ api_router = APIRouter(prefix="/api")
 graph_builder: Optional[TraceGraphBuilder] = None
 kafka_consumer: Optional[KafkaConsumerService] = None
 grpc_client: Optional[GrpcClient] = None
+environment_manager: Optional[EnvironmentManager] = None
 websocket_connections: List[WebSocket] = []
 
 # Configuration paths
@@ -47,7 +49,7 @@ GRPC_PROTOS_DIR = PROTO_DIR / "grpc"  # Updated to use subfolder under proto
 async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
     logger.info("🚀 Starting Kafka trace viewer component initialization")
-    global graph_builder, kafka_consumer, grpc_client
+    global graph_builder, kafka_consumer, grpc_client, environment_manager
     
     # Check if required directories exist
     if not CONFIG_DIR.exists():
@@ -113,38 +115,34 @@ async def initialize_kafka_components():
                 logger.error(f"🔴 Traceback: {traceback.format_exc()}")
                 raise
         
-        # Initialize graph builder
-        logger.info("🕸️  Initializing graph builder...")
-        graph_builder = TraceGraphBuilder(
-            topics_config_path=str(CONFIG_DIR / "topics.yaml"),
-            max_traces=settings.get('max_traces', 1000)
+        # Initialize Environment Manager
+        logger.info("🌍 Initializing Environment Manager...")
+        environment_manager = EnvironmentManager(
+            environments_dir=str(CONFIG_DIR / "environments"),
+            protobuf_decoder=decoder
         )
-        logger.info("✅ Graph builder initialized")
+        logger.info("✅ Environment Manager initialized")
         
-        # Initialize Kafka consumer
-        logger.info("🔌 Initializing Kafka consumer...")
-        kafka_consumer = KafkaConsumerService(
-            config_path=str(kafka_config_path),
-            decoder=decoder,
-            trace_header_field=settings.get('trace_header_field', 'trace_id')
-        )
-        logger.info("✅ Kafka consumer initialized")
+        # Default to DEV environment (or first available)
+        available_envs = environment_manager.list_environments()
+        default_env = 'DEV' if 'DEV' in available_envs else (available_envs[0] if available_envs else None)
         
-        # Register message handler
-        logger.info("🔗 Registering message handler...")
-        kafka_consumer.add_message_handler(graph_builder.add_message)
-        logger.info("✅ Message handler registered")
-        
-        # Subscribe to all topics from graph
-        all_topics = graph_builder.topic_graph.get_all_topics()
-        logger.info(f"📡 Subscribing to topics: {all_topics}")
-        kafka_consumer.subscribe_to_topics(all_topics)
-        logger.info("✅ Topic subscription complete")
-        
-        # Start Kafka consumer in background
-        logger.info("🚀 Starting Kafka consumer in background...")
-        asyncio.create_task(kafka_consumer.start_consuming_async())
-        logger.info("✅ Kafka consumer task created")
+        if default_env:
+            logger.info(f"🔄 Switching to default environment: {default_env}")
+            result = environment_manager.switch_environment(default_env)
+            
+            if result['success']:
+                # Get references to the services created by environment manager
+                graph_builder = environment_manager.graph_builder
+                kafka_consumer = environment_manager.kafka_consumer
+                
+                # Start Kafka consumer
+                environment_manager.start_kafka_consumer()
+                logger.info(f"✅ Default environment {default_env} initialized and started")
+            else:
+                logger.error(f"❌ Failed to initialize default environment: {result.get('error')}")
+        else:
+            logger.warning("⚠️  No environments found - services will be initialized on first environment switch")
         
         # Initialize gRPC client
         logger.info("🔧 Initializing gRPC client...")
@@ -184,9 +182,89 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "timestamp": datetime.now().isoformat(),
         "traces_count": len(graph_builder.traces) if graph_builder else 0
     }
+
+# Environment Management Endpoints
+
+@api_router.get("/environments")
+async def list_environments():
+    """Get list of available environments"""
+    if not environment_manager:
+        raise HTTPException(status_code=503, detail="Environment manager not initialized")
+    
+    try:
+        result = environment_manager.get_current_environment()
+        return result
+    except Exception as e:
+        logger.error(f"Error listing environments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/environments/switch")
+async def switch_environment(request: Dict[str, str]):
+    """Switch to a different environment"""
+    if not environment_manager:
+        raise HTTPException(status_code=503, detail="Environment manager not initialized")
+    
+    environment = request.get('environment')
+    if not environment:
+        raise HTTPException(status_code=400, detail="Environment name is required")
+    
+    try:
+        global graph_builder, kafka_consumer
+        
+        result = environment_manager.switch_environment(environment)
+        
+        if result['success']:
+            # Update global references
+            graph_builder = environment_manager.graph_builder
+            kafka_consumer = environment_manager.kafka_consumer
+            
+            # Start Kafka consumer for new environment
+            environment_manager.start_kafka_consumer()
+            
+            # Notify WebSocket clients about environment change
+            await broadcast_environment_change(environment)
+            
+        return result
+    except Exception as e:
+        logger.error(f"Error switching environment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/environments/{environment}/config")
+async def get_environment_config(environment: str):
+    """Get configuration for a specific environment"""
+    if not environment_manager:
+        raise HTTPException(status_code=503, detail="Environment manager not initialized")
+    
+    try:
+        result = environment_manager.get_environment_config(environment)
+        return result
+    except Exception as e:
+        logger.error(f"Error getting environment config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def broadcast_environment_change(environment: str):
+    """Broadcast environment change to all WebSocket clients"""
+    if websocket_connections:
+        message = {
+            'type': 'environment_change',
+            'environment': environment,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Send to all connected clients
+        disconnected = []
+        for websocket in websocket_connections:
+            try:
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.warning(f"Failed to send environment change to WebSocket client: {e}")
+                disconnected.append(websocket)
+        
+        # Remove disconnected clients
+        for ws in disconnected:
+            websocket_connections.remove(ws)
 
 @api_router.get("/traces")
 async def get_traces():
@@ -424,6 +502,33 @@ async def set_grpc_credentials(request: Dict[str, str]):
         logger.error(f"Error setting credentials: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/grpc/asset-storage/urls")
+async def get_asset_storage_urls():
+    """Get available asset-storage URLs for current environment"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        result = grpc_client.get_asset_storage_urls()
+        return result
+    except Exception as e:
+        logger.error(f"Error getting asset-storage URLs: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/grpc/asset-storage/set-url")
+async def set_asset_storage_url(request: Dict[str, str]):
+    """Set which asset-storage URL to use (reader or writer)"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    url_type = request.get('url_type', 'reader')
+    
+    try:
+        result = grpc_client.set_asset_storage_url(url_type)
+        return result
+    except Exception as e:
+        logger.error(f"Error setting asset-storage URL: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 # IngressServer Endpoints
 
 @api_router.post("/grpc/ingress/upsert-content")

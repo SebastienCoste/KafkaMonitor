@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server } from 'lucide-react';
+import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -41,6 +41,10 @@ function App() {
   const [expandedMessages, setExpandedMessages] = useState(new Set());
   const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
   const [activeTab, setActiveTab] = useState('traces'); // New state for tracking active tab
+  // Environment management
+  const [environments, setEnvironments] = useState([]);
+  const [currentEnvironment, setCurrentEnvironment] = useState('');
+  const [environmentLoading, setEnvironmentLoading] = useState(false);
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
@@ -97,6 +101,11 @@ function App() {
     if (data.type === 'trace_update') {
       // Refresh traces if new ones are available
       loadTraces();
+    } else if (data.type === 'environment_change') {
+      // Handle environment change from server
+      setCurrentEnvironment(data.environment);
+      toast.info(`Environment changed to ${data.environment}`);
+      loadInitialData();
     }
   };
 
@@ -108,6 +117,7 @@ function App() {
   const loadInitialData = async () => {
     try {
       await Promise.all([
+        loadEnvironments(),
         loadTraces(),
         loadTopicGraph(),
         loadTopics(),
@@ -116,6 +126,46 @@ function App() {
     } catch (error) {
       console.error('Error loading initial data:', error);
       toast.error('Failed to load initial data');
+    }
+  };
+  const loadEnvironments = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/environments`);
+      setEnvironments(response.data.available_environments || []);
+      setCurrentEnvironment(response.data.current_environment || '');
+    } catch (error) {
+      console.error('Error loading environments:', error);
+    }
+  };
+
+  const switchEnvironment = async (environment) => {
+    setEnvironmentLoading(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/environments/switch`, {
+        environment
+      });
+      
+      if (response.data.success) {
+        setCurrentEnvironment(environment);
+        toast.success(`Switched to ${environment} environment`);
+        
+        // Clear existing data and reload
+        setTraces([]);
+        setSelectedTrace(null);
+        setTraceFlow(null);
+        setTopicGraph(null);
+        setStatistics(null);
+        
+        // Reload all data for new environment
+        await loadInitialData();
+      } else {
+        toast.error(`Failed to switch environment: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error switching environment:', error);
+      toast.error('Failed to switch environment');
+    } finally {
+      setEnvironmentLoading(false);
     }
   };
 
@@ -447,6 +497,24 @@ function App() {
               {/* Status indicators - only for trace viewer */}
               {currentPage === 'traces' && (
                 <>
+                  {/* Environment Switcher */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Environment:</span>
+                    <select
+                      value={currentEnvironment}
+                      onChange={(e) => switchEnvironment(e.target.value)}
+                      disabled={environmentLoading}
+                      className="text-sm border rounded px-2 py-1 bg-white"
+                    >
+                      {environments.map(env => (
+                        <option key={env} value={env}>{env}</option>
+                      ))}
+                    </select>
+                    {environmentLoading && (
+                      <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+                    )}
+                  </div>
+                  
                   <div className="flex items-center space-x-2">
                     <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
                     <span className="text-sm text-gray-600">

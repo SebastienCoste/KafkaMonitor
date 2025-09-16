@@ -2,6 +2,14 @@
 name: "TEST"
 description: "Test Environment"
 
+# Kafka Configuration for this environment
+kafka:
+  bootstrap_servers: "test-kafka.example.com:9092"
+  security_protocol: "SASL_SSL"
+  sasl_mechanism: "SCRAM-SHA-256"
+  username: "test-kafka-user"
+  password: "test-kafka-password"
+
 grpc_services:
   ingress_server:
     url: "test-ingress.example.com:443"
@@ -9,9 +17,12 @@ grpc_services:
     timeout: 30
     
   asset_storage:
-    url: "test-assets.example.com:443"
+    # Multiple URLs for asset storage with reader/writer labels
+    urls:
+      reader: "test-assets-reader.example.com:443"
+      writer: "test-assets-writer.example.com:443"
     secure: true
     timeout: 30
 
-# Note: Credentials are provided at runtime via UI
+# Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files

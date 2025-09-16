@@ -2,6 +2,14 @@
 name: "LOAD"
 description: "Load Testing Environment"
 
+# Kafka Configuration for this environment
+kafka:
+  bootstrap_servers: "load-kafka.example.com:9092"
+  security_protocol: "SASL_SSL"
+  sasl_mechanism: "SCRAM-SHA-256"
+  username: "load-kafka-user"
+  password: "load-kafka-password"
+
 grpc_services:
   ingress_server:
     url: "load-ingress.example.com:443"
@@ -9,9 +17,12 @@ grpc_services:
     timeout: 60
     
   asset_storage:
-    url: "load-assets.example.com:443"
+    # Multiple URLs for asset storage with reader/writer labels
+    urls:
+      reader: "load-assets-reader.example.com:443"
+      writer: "load-assets-writer.example.com:443"
     secure: true
     timeout: 60
 
-# Note: Credentials are provided at runtime via UI
+# Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files

@@ -80,6 +80,10 @@ function GrpcIntegration() {
   const [uploadUrls, setUploadUrls] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState({});
   const [imageUrls, setImageUrls] = useState([]);
+  
+  // Asset-storage URL management
+  const [assetStorageUrls, setAssetStorageUrls] = useState({});
+  const [selectedAssetUrlType, setSelectedAssetUrlType] = useState('reader');
 
   // Load initial data
   useEffect(() => {
@@ -144,6 +148,7 @@ function GrpcIntegration() {
         setUploadUrls([]);
         setImageUrls([]);
         loadGrpcStatus();
+        loadAssetStorageUrls();
       } else {
         toast.error(`Failed to set environment: ${response.data.error}`);
       }
@@ -171,6 +176,37 @@ function GrpcIntegration() {
     }
   };
 
+  const loadAssetStorageUrls = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/grpc/asset-storage/urls`);
+      
+      if (response.data.success) {
+        setAssetStorageUrls(response.data.urls);
+        setSelectedAssetUrlType(response.data.current_selection);
+      }
+    } catch (error) {
+      console.error('Error loading asset-storage URLs:', error);
+    }
+  };
+
+  const setAssetStorageUrl = async (urlType) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/grpc/asset-storage/set-url`, {
+        url_type: urlType
+      });
+      
+      if (response.data.success) {
+        setSelectedAssetUrlType(urlType);
+        toast.success(`Asset-storage URL set to ${urlType}`);
+        loadGrpcStatus(); // Refresh status
+      } else {
+        toast.error(`Failed to set asset-storage URL: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('Error setting asset-storage URL:', error);
+      toast.error('Failed to set asset-storage URL');
+    }
+  };
   // gRPC method calls
   const callUpsertContent = async () => {
     setLoading(true);
@@ -464,6 +500,36 @@ function GrpcIntegration() {
               </Badge>
             </div>
           </div>
+          
+          {/* Asset-Storage URL Selection */}
+          {Object.keys(assetStorageUrls).length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+              <div>
+                <Label>Asset-Storage URL Type</Label>
+                <Select value={selectedAssetUrlType} onValueChange={setAssetStorageUrl}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select URL type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(assetStorageUrls).map(urlType => (
+                      <SelectItem key={urlType} value={urlType}>
+                        {urlType.charAt(0).toUpperCase() + urlType.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-end">
+                <div className="text-sm">
+                  <div className="font-medium">Current URL:</div>
+                  <div className="text-gray-600 font-mono text-xs">
+                    {assetStorageUrls[selectedAssetUrlType] || 'Not selected'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Separator />
 
