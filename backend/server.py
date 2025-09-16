@@ -891,11 +891,22 @@ async def catch_all(full_path: str):
     if full_path.startswith("api/"):
         raise HTTPException(status_code=404, detail="API endpoint not found")
     
-    # For all other routes, serve the React app (SPA routing)
-    if os.path.exists("../frontend/build/index.html"):
-        return FileResponse("../frontend/build/index.html")
-    else:
+    # For all other routes, serve the React app (SPA routing) with environment-aware paths
+    index_path = "../frontend/build/index.html"
+    
+    if not os.path.exists(index_path):
         raise HTTPException(status_code=404, detail="Frontend build not found")
+    
+    # Read the index.html content
+    with open(index_path, 'r', encoding='utf-8') as f:
+        html_content = f.read()
+    
+    # In production/deployed environments, rewrite static paths to use API routes
+    if ENVIRONMENT != 'local':
+        html_content = html_content.replace('src="/static/', 'src="/api/static/')
+        html_content = html_content.replace('href="/static/', 'href="/api/static/')
+    
+    return Response(content=html_content, media_type="text/html")
 if __name__ == "__main__":
     import uvicorn
     
