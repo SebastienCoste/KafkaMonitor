@@ -7,6 +7,7 @@ including cyclic loops, for testing the enhanced graph visualization.
 import logging
 import random
 import string
+import json
 from typing import Dict, List, Set, Tuple
 from datetime import datetime, timedelta
 from src.models import KafkaMessage, TraceInfo
