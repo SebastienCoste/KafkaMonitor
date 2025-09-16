@@ -79,6 +79,9 @@ def load_config():
     activate_all = config['settings'].get('topic_monitoring', {}).get('activate_all_on_startup', True)
     if activate_all:
         config['monitored_topics'] = config['all_topics'].copy()
+    # If not activating all, use only the default monitored topics
+    elif not config['monitored_topics']:
+        config['monitored_topics'] = config['topics'].get('default_monitored_topics', [])
     
     return config
 
