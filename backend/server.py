@@ -653,6 +653,12 @@ async def batch_update_statuses(request: Dict[str, Any]):
     try:
         asset_updates = request.get('asset_updates', [])
         
+        result = await grpc_client.batch_update_statuses(asset_updates)
+        return result
+    except Exception as e:
+        logger.error(f"Error in batch_update_statuses: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Static file serving through API routes to bypass infrastructure SPA routing
 @api_router.get("/static/js/{filename}")
 async def serve_js(filename: str):
