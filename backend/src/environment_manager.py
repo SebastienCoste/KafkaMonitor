@@ -130,8 +130,7 @@ class EnvironmentManager:
             
             # Initialize graph builder
             self.graph_builder = TraceGraphBuilder(
-                topic_config_path="config/topics.yaml",
-                trace_header_field=self.trace_header_field
+                topics_config_path="config/topics.yaml"
             )
             
             # Initialize Kafka consumer with temporary config
