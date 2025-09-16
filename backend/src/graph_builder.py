@@ -48,10 +48,21 @@ class TraceGraphBuilder:
 
             # Load default monitored topics
             default_topics = config.get('default_monitored_topics', [])
-            self.monitored_topics = set(default_topics)
+            
+            # Check if we should activate all topics on startup (from settings.yaml)
+            activate_all = self.settings.get('topic_monitoring', {}).get('activate_all_on_startup', True)
+            
+            if activate_all:
+                # Monitor all configured topics
+                all_topics = self.topic_graph.get_all_topics()
+                self.monitored_topics = set(all_topics)
+                logger.info(f"🔄 Activating all topics on startup: {self.monitored_topics}")
+            else:
+                # Use only default topics
+                self.monitored_topics = set(default_topics)
+                logger.info(f"📋 Using default monitored topics only: {self.monitored_topics}")
 
             logger.info(f"Loaded topic graph with {len(self.topic_graph.edges)} edges")
-            logger.info(f"Default monitored topics: {self.monitored_topics}")
             logger.debug(f"All topics in graph: {self.topic_graph.get_all_topics()}")
 
         except Exception as e:
