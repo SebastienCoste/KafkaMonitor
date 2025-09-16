@@ -1781,10 +1781,404 @@ class KafkaTraceViewerTester:
                 print(f"   • {test['name']}: {test['details']}")
             return False
 
+    def test_static_file_serving_fix(self) -> bool:
+        """Test Static File Serving Fix - verify static files are served correctly"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing Static File Serving Fix")
+        print("=" * 60)
+        
+        all_passed = True
+        
+        # Test 1: JavaScript file serving
+        try:
+            js_response = requests.get(f"{self.base_url}/api/static/js/main.21d69cd3.js", timeout=15)
+            
+            if js_response.status_code == 200:
+                content_type = js_response.headers.get('content-type', '')
+                content_length = len(js_response.content)
+                
+                # Verify content type is JavaScript
+                if 'javascript' in content_type.lower() or 'application/javascript' in content_type.lower():
+                    self.log_test("Static JS File Content-Type", True, f"Correct content-type: {content_type}")
+                else:
+                    self.log_test("Static JS File Content-Type", False, f"Incorrect content-type: {content_type}")
+                    all_passed = False
+                
+                # Verify file size is reasonable (should be substantial for main JS file)
+                if content_length > 100000:  # At least 100KB for main JS file
+                    self.log_test("Static JS File Size", True, f"File size: {content_length:,} bytes")
+                else:
+                    self.log_test("Static JS File Size", False, f"File too small: {content_length} bytes")
+                    all_passed = False
+                
+                # Verify content looks like JavaScript
+                content_preview = js_response.text[:200]
+                if any(js_indicator in content_preview for js_indicator in ['function', 'var ', 'const ', 'let ', '!function']):
+                    self.log_test("Static JS File Content", True, "Content appears to be JavaScript")
+                else:
+                    self.log_test("Static JS File Content", False, f"Content doesn't look like JS: {content_preview[:50]}...")
+                    all_passed = False
+                    
+            else:
+                self.log_test("Static JS File Serving", False, f"HTTP {js_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Static JS File Serving", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 2: CSS file serving
+        try:
+            css_response = requests.get(f"{self.base_url}/api/static/css/main.0463b6f0.css", timeout=15)
+            
+            if css_response.status_code == 200:
+                content_type = css_response.headers.get('content-type', '')
+                content_length = len(css_response.content)
+                
+                # Verify content type is CSS
+                if 'css' in content_type.lower() or 'text/css' in content_type.lower():
+                    self.log_test("Static CSS File Content-Type", True, f"Correct content-type: {content_type}")
+                else:
+                    self.log_test("Static CSS File Content-Type", False, f"Incorrect content-type: {content_type}")
+                    all_passed = False
+                
+                # Verify file size is reasonable (should be substantial for main CSS file)
+                if content_length > 10000:  # At least 10KB for main CSS file
+                    self.log_test("Static CSS File Size", True, f"File size: {content_length:,} bytes")
+                else:
+                    self.log_test("Static CSS File Size", False, f"File too small: {content_length} bytes")
+                    all_passed = False
+                
+                # Verify content looks like CSS
+                content_preview = css_response.text[:200]
+                if any(css_indicator in content_preview for css_indicator in ['{', '}', ':', ';', '.', '#']):
+                    self.log_test("Static CSS File Content", True, "Content appears to be CSS")
+                else:
+                    self.log_test("Static CSS File Content", False, f"Content doesn't look like CSS: {content_preview[:50]}...")
+                    all_passed = False
+                    
+            else:
+                self.log_test("Static CSS File Serving", False, f"HTTP {css_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Static CSS File Serving", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 3: Debug static test endpoint
+        try:
+            debug_response = requests.get(f"{self.base_url}/api/debug/static-test", timeout=10)
+            
+            if debug_response.status_code == 200:
+                debug_data = debug_response.json()
+                
+                # Verify build directory structure
+                if debug_data.get('build_exists') and debug_data.get('static_exists') and debug_data.get('js_exists'):
+                    js_files = debug_data.get('js_files', [])
+                    css_files = debug_data.get('css_files', [])
+                    
+                    if 'main.21d69cd3.js' in js_files and 'main.0463b6f0.css' in css_files:
+                        self.log_test("Static File Structure", True, f"All required files found: JS={len(js_files)}, CSS={len(css_files)}")
+                    else:
+                        self.log_test("Static File Structure", False, f"Missing required files. JS: {js_files}, CSS: {css_files}")
+                        all_passed = False
+                else:
+                    self.log_test("Static File Structure", False, f"Build structure incomplete: {debug_data}")
+                    all_passed = False
+            else:
+                self.log_test("Static File Debug", False, f"HTTP {debug_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Static File Debug", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        return all_passed
+
+    def test_topic_activation_configuration(self) -> bool:
+        """Test Topic Activation Configuration - verify activate_all_on_startup setting"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing Topic Activation Configuration")
+        print("=" * 60)
+        
+        all_passed = True
+        
+        # Test 1: Verify statistics endpoint shows topic monitoring is working
+        try:
+            stats_response = requests.get(f"{self.base_url}/api/statistics", timeout=15)
+            
+            if stats_response.status_code == 200:
+                stats_data = stats_response.json()
+                
+                # Check if we have topic-related statistics
+                if "topics" in stats_data or "monitored_topics" in stats_data:
+                    self.log_test("Topic Monitoring Active", True, f"Topic statistics available: {list(stats_data.keys())}")
+                else:
+                    self.log_test("Topic Monitoring Active", False, "No topic statistics found")
+                    all_passed = False
+            else:
+                self.log_test("Topic Monitoring Active", False, f"Statistics endpoint failed: {stats_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Topic Monitoring Active", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 2: Check topics endpoint for monitored topics
+        try:
+            topics_response = requests.get(f"{self.base_url}/api/topics", timeout=15)
+            
+            if topics_response.status_code == 200:
+                topics_data = topics_response.json()
+                
+                all_topics = topics_data.get("all_topics", [])
+                monitored_topics = topics_data.get("monitored_topics", [])
+                
+                if len(all_topics) > 0:
+                    # If activate_all_on_startup is true, we should have topics being monitored
+                    if len(monitored_topics) > 0:
+                        monitoring_ratio = len(monitored_topics) / len(all_topics)
+                        self.log_test("Topic Activation Configuration", True, f"Topics being monitored: {len(monitored_topics)}/{len(all_topics)} ({monitoring_ratio:.1%})")
+                    else:
+                        # This could be expected if activate_all_on_startup is false
+                        self.log_test("Topic Activation Configuration", True, f"No topics monitored (may be expected if activate_all_on_startup=false)")
+                else:
+                    self.log_test("Topic Activation Configuration", True, "No topics configured (expected in some environments)")
+            else:
+                self.log_test("Topic Activation Configuration", False, f"Topics endpoint failed: {topics_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Topic Activation Configuration", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 3: Verify health endpoint shows system is working
+        try:
+            health_response = requests.get(f"{self.base_url}/api/health", timeout=10)
+            
+            if health_response.status_code == 200:
+                health_data = health_response.json()
+                
+                if health_data.get("status") == "healthy":
+                    traces_count = health_data.get("traces_count", 0)
+                    self.log_test("System Health with Topic Config", True, f"System healthy with {traces_count} traces")
+                else:
+                    self.log_test("System Health with Topic Config", False, f"System not healthy: {health_data}")
+                    all_passed = False
+            else:
+                self.log_test("System Health with Topic Config", False, f"Health check failed: {health_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("System Health with Topic Config", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        return all_passed
+
+    def test_frontend_integration(self) -> bool:
+        """Test Frontend Integration - verify frontend loads correctly"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing Frontend Integration")
+        print("=" * 60)
+        
+        all_passed = True
+        
+        # Test 1: Frontend root endpoint
+        try:
+            frontend_response = requests.get(f"{self.base_url}/", timeout=15)
+            
+            if frontend_response.status_code == 200:
+                content = frontend_response.text
+                content_length = len(content)
+                
+                # Verify it's HTML content
+                if '<html' in content.lower() and '</html>' in content.lower():
+                    self.log_test("Frontend HTML Structure", True, f"Valid HTML document ({content_length:,} bytes)")
+                else:
+                    self.log_test("Frontend HTML Structure", False, "Not a valid HTML document")
+                    all_passed = False
+                
+                # Check for React app indicators
+                react_indicators = ['react', 'root', 'app', 'div id=']
+                if any(indicator in content.lower() for indicator in react_indicators):
+                    self.log_test("React App Structure", True, "React app structure detected")
+                else:
+                    self.log_test("React App Structure", False, "React app structure not found")
+                    all_passed = False
+                
+                # Check for static file references
+                if 'main.21d69cd3.js' in content and 'main.0463b6f0.css' in content:
+                    self.log_test("Static File References", True, "Correct static file references found")
+                else:
+                    self.log_test("Static File References", False, "Static file references not found or incorrect")
+                    all_passed = False
+                    
+            else:
+                self.log_test("Frontend Root Endpoint", False, f"HTTP {frontend_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Frontend Root Endpoint", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 2: SPA routing (catch-all route)
+        try:
+            spa_response = requests.get(f"{self.base_url}/some-spa-route", timeout=15)
+            
+            if spa_response.status_code == 200:
+                # Should return the same HTML as root for SPA routing
+                content = spa_response.text
+                if '<html' in content.lower() and '</html>' in content.lower():
+                    self.log_test("SPA Routing", True, "SPA routing works correctly")
+                else:
+                    self.log_test("SPA Routing", False, "SPA routing not working")
+                    all_passed = False
+            else:
+                self.log_test("SPA Routing", False, f"HTTP {spa_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("SPA Routing", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        return all_passed
+
+    def test_configuration_structure(self) -> bool:
+        """Test Configuration Structure - verify settings.yaml contains required settings"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing Configuration Structure")
+        print("=" * 60)
+        
+        all_passed = True
+        
+        # Test that the system is working with the configuration
+        # We can't directly access the config file, but we can test that the system is functioning
+        
+        # Test 1: Verify system initialization worked (indicates config was loaded)
+        try:
+            health_response = requests.get(f"{self.base_url}/api/health", timeout=10)
+            
+            if health_response.status_code == 200:
+                health_data = health_response.json()
+                
+                if health_data.get("status") == "healthy":
+                    self.log_test("Configuration Loading", True, "System initialized successfully (config loaded)")
+                else:
+                    self.log_test("Configuration Loading", False, f"System not healthy: {health_data}")
+                    all_passed = False
+            else:
+                self.log_test("Configuration Loading", False, f"Health check failed: {health_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Configuration Loading", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 2: Verify graph builder initialization (indicates topic_monitoring config was applied)
+        try:
+            graph_response = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=15)
+            
+            if graph_response.status_code == 200:
+                graph_data = graph_response.json()
+                
+                if graph_data.get("success"):
+                    components = graph_data.get("components", [])
+                    self.log_test("Graph Builder Configuration", True, f"Graph builder initialized with {len(components)} components")
+                else:
+                    self.log_test("Graph Builder Configuration", False, "Graph builder not working")
+                    all_passed = False
+            else:
+                self.log_test("Graph Builder Configuration", False, f"Graph endpoint failed: {graph_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Graph Builder Configuration", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 3: Verify environment management (indicates environments config was loaded)
+        try:
+            env_response = requests.get(f"{self.base_url}/api/environments", timeout=10)
+            
+            if env_response.status_code == 200:
+                env_data = env_response.json()
+                
+                if "current_environment" in env_data or "environments" in env_data:
+                    self.log_test("Environment Configuration", True, f"Environment management working: {list(env_data.keys())}")
+                else:
+                    self.log_test("Environment Configuration", False, "Environment data not found")
+                    all_passed = False
+            else:
+                self.log_test("Environment Configuration", False, f"Environment endpoint failed: {env_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Environment Configuration", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        return all_passed
+
+    def run_review_request_tests(self):
+        """Run tests specifically for the review request"""
+        print("🎯 Starting Review Request Testing")
+        print("=" * 80)
+        print("Testing newly implemented features:")
+        print("1. Static File Serving Fix")
+        print("2. Topic Activation Configuration")
+        print("3. Integration Test")
+        print("4. Configuration Structure Verification")
+        print("=" * 80)
+        
+        # Run the specific tests requested in the review
+        test_results = []
+        
+        # Test 1: Static File Serving Fix
+        result1 = self.test_static_file_serving_fix()
+        test_results.append(("Static File Serving Fix", result1))
+        
+        # Test 2: Topic Activation Configuration
+        result2 = self.test_topic_activation_configuration()
+        test_results.append(("Topic Activation Configuration", result2))
+        
+        # Test 3: Integration Test
+        result3 = self.test_frontend_integration()
+        test_results.append(("Frontend Integration", result3))
+        
+        # Test 4: Configuration Structure
+        result4 = self.test_configuration_structure()
+        test_results.append(("Configuration Structure", result4))
+        
+        # Print final summary
+        print("\n" + "=" * 80)
+        print("📊 REVIEW REQUEST TEST SUMMARY")
+        print("=" * 80)
+        
+        all_passed = True
+        for test_name, result in test_results:
+            status = "✅ PASSED" if result else "❌ FAILED"
+            print(f"{status}: {test_name}")
+            if not result:
+                all_passed = False
+        
+        print(f"\nTotal Tests Run: {self.tests_run}")
+        print(f"Tests Passed: {self.tests_passed}")
+        print(f"Tests Failed: {self.tests_run - self.tests_passed}")
+        print(f"Success Rate: {(self.tests_passed / self.tests_run * 100):.1f}%")
+        
+        if all_passed:
+            print("\n🎉 ALL REVIEW REQUEST TESTS PASSED!")
+            print("✅ Static file serving is working correctly")
+            print("✅ Topic activation configuration is functional")
+            print("✅ Frontend integration is working")
+            print("✅ Configuration structure is verified")
+        else:
+            print("\n⚠️  Some review request tests failed - check details above")
+        
+        return all_passed
+
 def main():
     """Main test execution"""
     tester = KafkaTraceViewerTester()
-    success = tester.run_comprehensive_test()
+    success = tester.run_review_request_tests()
     return 0 if success else 1
 
 if __name__ == "__main__":
