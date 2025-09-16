@@ -796,6 +796,30 @@ async def serve_media(filename: str):
     """Serve media files"""
     file_path = f"../frontend/build/static/media/{filename}"
     if os.path.exists(file_path):
+# Test route to debug static file serving
+@app.get("/debug/static-test")
+async def debug_static_test():
+    """Debug route to test static file serving"""
+    build_dir = "../frontend/build"
+    static_dir = f"{build_dir}/static"
+    js_dir = f"{static_dir}/js"
+    
+    result = {
+        "build_exists": os.path.exists(build_dir),
+        "static_exists": os.path.exists(static_dir),
+        "js_exists": os.path.exists(js_dir),
+        "js_files": [],
+        "css_files": []
+    }
+    
+    if os.path.exists(js_dir):
+        result["js_files"] = os.listdir(js_dir)
+    
+    css_dir = f"{static_dir}/css"
+    if os.path.exists(css_dir):
+        result["css_files"] = os.listdir(css_dir)
+    
+    return result
         return FileResponse(file_path)
     else:
         raise HTTPException(status_code=404, detail="Media file not found")
