@@ -265,9 +265,6 @@ async def broadcast_environment_change(environment: str):
         # Remove disconnected clients
         for ws in disconnected:
             websocket_connections.remove(ws)
-        "timestamp": datetime.now().isoformat(),
-        "traces_count": len(graph_builder.traces) if graph_builder else 0
-    }
 
 @api_router.get("/traces")
 async def get_traces():
