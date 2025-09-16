@@ -364,6 +364,27 @@ class TraceGraphBuilder:
 
         stats['topics']['with_messages'] = len(topics_with_messages)
         
+        # Add detailed per-topic statistics
+        stats['topics']['details'] = {}
+        all_topics = self.topic_graph.get_all_topics()
+        
+        for topic in all_topics:
+            topic_traces = []
+            topic_message_count = stats['messages']['by_topic'].get(topic, 0)
+            
+            # Find traces that contain messages from this topic
+            for trace_id, trace in self.traces.items():
+                if any(msg.topic == topic for msg in trace.messages):
+                    topic_traces.append(trace_id)
+            
+            stats['topics']['details'][topic] = {
+                'message_count': topic_message_count,
+                'trace_count': len(topic_traces),
+                'monitored': topic in self.monitored_topics,
+                'status': 'Receiving messages' if topic_message_count > 0 else 'No messages',
+                'traces': topic_traces
+            }
+        
         if earliest_time:
             stats['time_range']['earliest'] = earliest_time.isoformat()
         if latest_time:
