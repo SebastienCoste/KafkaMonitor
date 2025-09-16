@@ -310,6 +310,11 @@ test_plan:
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
+  completed_features:
+    - "Kafka Offset Issue Fix"
+    - "Environment Management Endpoints"
+    - "Asset-Storage Multiple URLs"
+    - "Configuration Structure Verification"
 
 agent_communication:
   - agent: "main"
