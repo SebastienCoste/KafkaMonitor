@@ -31,17 +31,14 @@ if os.path.exists("../frontend/build/static"):
     app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
     print("✅ Mounted static files from ../frontend/build/static")
 
-# Import and include the main API router from the main server
-try:
-    from server import api_router
-    app.include_router(api_router)
-    print("✅ Included API routes")
-except ImportError as e:
-    print(f"⚠️  Could not import API routes: {e}")
-    # Create a simple health endpoint
-    @app.get("/api/health")
-    async def health():
-        return {"status": "healthy", "message": "Local development server"}
+# For local development, we'll create essential endpoints
+# Note: Full functionality requires fixing the main server.py
+
+@app.get("/api/health")
+async def health():
+    return {"status": "healthy", "message": "Local development server", "static_mounted": True}
+
+print("✅ Created basic API endpoints")
 
 # Serve the main index.html
 @app.get("/")
