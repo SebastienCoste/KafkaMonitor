@@ -212,8 +212,8 @@ frontend:
         comment: "RESOLVED: Frontend build now successful, all pages loading correctly. Trace Viewer and gRPC Integration both functional."
 
   - task: "Graph Visualization Enhancement"
-    implemented: false
-    working: "NA"
+    implemented: true
+    working: true
     file: "frontend/src/App.js"
     stuck_count: 0
     priority: "high"
@@ -225,6 +225,24 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Starting Phase 2 implementation: multiple disconnected graphs, real-time statistics, color coding by trace age"
+      - working: true
+        agent: "main"
+        comment: "COMPLETED: Graph visualization evolution fully implemented. Integration with EnhancedGraphVisualization component working perfectly, displaying real-time statistics, color-coded nodes, P95/median age calculations, and interactive network visualization."
+
+  - task: "Topic Statistics Display Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Runtime error in Topics tab - 'Cannot read properties of undefined' when accessing trace.messages"
+      - working: true
+        agent: "main"
+        comment: "FIXED: Added null safety check for trace.messages in topic statistics calculation. Topics tab now displays correct statistics per monitored topic with message counts, trace counts, and monitoring status."
 
   - task: "Backend Graph Statistics Engine"
     implemented: true
