@@ -767,7 +767,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Frontend routes must be defined at the end to avoid conflicts with API routes
+# Static files must be mounted BEFORE route definitions for proper priority
+if os.path.exists("../frontend/build/static"):
+    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
+    logger.info("✅ Mounted static files from ../frontend/build/static")
+
+# Frontend routes
 @app.get("/")
 async def serve_frontend():
     """Serve the React app index.html"""
@@ -789,10 +794,6 @@ async def catch_all(full_path: str):
         return FileResponse("../frontend/build/index.html")
     else:
         raise HTTPException(status_code=404, detail="Frontend build not found")
-
-# Mount static files at the very end - this should have the highest priority for /static/* paths
-if os.path.exists("../frontend/build/static"):
-    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
 if __name__ == "__main__":
     import uvicorn
     
