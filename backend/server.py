@@ -772,57 +772,7 @@ app.add_middleware(
 
 # Logging already configured above
 
-# Static file routes - explicit handling
-@app.get("/static/js/{filename}")
-async def serve_js(filename: str):
-    """Serve JavaScript files"""
-    file_path = f"../frontend/build/static/js/{filename}"
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="application/javascript")
-    else:
-        raise HTTPException(status_code=404, detail="JavaScript file not found")
-
-@app.get("/static/css/{filename}")
-async def serve_css(filename: str):
-    """Serve CSS files"""
-    file_path = f"../frontend/build/static/css/{filename}"
-    if os.path.exists(file_path):
-        return FileResponse(file_path, media_type="text/css")
-    else:
-        raise HTTPException(status_code=404, detail="CSS file not found")
-
-@app.get("/static/media/{filename}")
-async def serve_media(filename: str):
-    """Serve media files"""
-    file_path = f"../frontend/build/static/media/{filename}"
-    if os.path.exists(file_path):
-# Test route to debug static file serving
-@app.get("/debug/static-test")
-async def debug_static_test():
-    """Debug route to test static file serving"""
-    build_dir = "../frontend/build"
-    static_dir = f"{build_dir}/static"
-    js_dir = f"{static_dir}/js"
-    
-    result = {
-        "build_exists": os.path.exists(build_dir),
-        "static_exists": os.path.exists(static_dir),
-        "js_exists": os.path.exists(js_dir),
-        "js_files": [],
-        "css_files": []
-    }
-    
-    if os.path.exists(js_dir):
-        result["js_files"] = os.listdir(js_dir)
-    
-    css_dir = f"{static_dir}/css"
-    if os.path.exists(css_dir):
-        result["css_files"] = os.listdir(css_dir)
-    
-    return result
-        return FileResponse(file_path)
-    else:
-        raise HTTPException(status_code=404, detail="Media file not found")
+# Static file routes moved to API router to bypass infrastructure routing
 
 # Frontend routes
 @app.get("/")
