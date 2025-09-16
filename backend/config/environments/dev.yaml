@@ -8,7 +8,7 @@ grpc_services:
     secure: false
     timeout: 30
     
-  asset_storage_service:
+  asset_storage:
     url: "localhost:50052"
     secure: false
     timeout: 30
