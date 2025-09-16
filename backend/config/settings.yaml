@@ -27,3 +27,7 @@ mock_data:
   message_interval: 2.0        # Seconds between mock messages
   traces_per_hour: 50         # Number of traces to generate per hour
   topics_rotation: true       # Rotate through different topics
+
+# Topic monitoring settings
+topic_monitoring:
+  activate_all_on_startup: true  # Whether to monitor all configured topics on startup
