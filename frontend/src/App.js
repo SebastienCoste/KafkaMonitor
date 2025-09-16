@@ -971,23 +971,23 @@ function App() {
                                             </div>
                                           )}
                                           
-                                          {message.decoded_content && (
+                                          {message.decoded_value && (
                                             <div>
                                               <div className="text-sm font-medium text-gray-700 mb-1">Content:</div>
                                               <div className="text-xs bg-green-50 p-2 rounded font-mono whitespace-pre-wrap">
-                                                {typeof message.decoded_content === 'object' 
-                                                  ? JSON.stringify(message.decoded_content, null, 2)
-                                                  : message.decoded_content
+                                                {typeof message.decoded_value === 'object' 
+                                                  ? JSON.stringify(message.decoded_value, null, 2)
+                                                  : message.decoded_value
                                                 }
                                               </div>
                                             </div>
                                           )}
                                           
-                                          {message.raw_content && !message.decoded_content && (
+                                          {message.raw_value && !message.decoded_value && (
                                             <div>
                                               <div className="text-sm font-medium text-gray-700 mb-1">Raw Content:</div>
                                               <div className="text-xs bg-gray-100 p-2 rounded font-mono">
-                                                {message.raw_content}
+                                                {typeof message.raw_value === 'string' ? message.raw_value : String(message.raw_value)}
                                               </div>
                                             </div>
                                           )}
