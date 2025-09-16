@@ -182,6 +182,86 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
+# Environment Management Endpoints
+
+@api_router.get("/environments")
+async def list_environments():
+    """Get list of available environments"""
+    if not environment_manager:
+        raise HTTPException(status_code=503, detail="Environment manager not initialized")
+    
+    try:
+        result = environment_manager.get_current_environment()
+        return result
+    except Exception as e:
+        logger.error(f"Error listing environments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/environments/switch")
+async def switch_environment(request: Dict[str, str]):
+    """Switch to a different environment"""
+    if not environment_manager:
+        raise HTTPException(status_code=503, detail="Environment manager not initialized")
+    
+    environment = request.get('environment')
+    if not environment:
+        raise HTTPException(status_code=400, detail="Environment name is required")
+    
+    try:
+        global graph_builder, kafka_consumer
+        
+        result = environment_manager.switch_environment(environment)
+        
+        if result['success']:
+            # Update global references
+            graph_builder = environment_manager.graph_builder
+            kafka_consumer = environment_manager.kafka_consumer
+            
+            # Start Kafka consumer for new environment
+            environment_manager.start_kafka_consumer()
+            
+            # Notify WebSocket clients about environment change
+            await broadcast_environment_change(environment)
+            
+        return result
+    except Exception as e:
+        logger.error(f"Error switching environment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/environments/{environment}/config")
+async def get_environment_config(environment: str):
+    """Get configuration for a specific environment"""
+    if not environment_manager:
+        raise HTTPException(status_code=503, detail="Environment manager not initialized")
+    
+    try:
+        result = environment_manager.get_environment_config(environment)
+        return result
+    except Exception as e:
+        logger.error(f"Error getting environment config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def broadcast_environment_change(environment: str):
+    """Broadcast environment change to all WebSocket clients"""
+    if websocket_connections:
+        message = {
+            'type': 'environment_change',
+            'environment': environment,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        # Send to all connected clients
+        disconnected = []
+        for websocket in websocket_connections:
+            try:
+                await websocket.send_text(json.dumps(message))
+            except Exception as e:
+                logger.warning(f"Failed to send environment change to WebSocket client: {e}")
+                disconnected.append(websocket)
+        
+        # Remove disconnected clients
+        for ws in disconnected:
+            websocket_connections.remove(ws)
         "timestamp": datetime.now().isoformat(),
         "traces_count": len(graph_builder.traces) if graph_builder else 0
     }
