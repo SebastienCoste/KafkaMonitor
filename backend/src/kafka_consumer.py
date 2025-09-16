@@ -171,10 +171,22 @@ class KafkaConsumerService:
                     continue
 
                 if msg.error():
-                    if msg.error().code() == KafkaError._PARTITION_EOF:
+                    error_code = msg.error().code()
+                    error_msg = str(msg.error())
+                    
+                    if error_code == KafkaError._PARTITION_EOF:
                         logger.debug(f"Reached end of partition {msg.topic()}[{msg.partition()}]")
+                    elif error_code == KafkaError.UNKNOWN_TOPIC_OR_PART:
+                        # Handle unknown topic or partition error gracefully
+                        logger.warning(f"⚠️  Topic/partition not available: {error_msg}")
+                        logger.info("💡 This is expected when topics are configured but not yet created on the broker")
+                        # Don't log this as an error repeatedly - it's handled gracefully
+                    elif "Unknown topic" in error_msg or "topic not available" in error_msg.lower():
+                        # Handle various forms of topic not found errors
+                        logger.warning(f"⚠️  Topic availability issue: {error_msg}")
+                        logger.info("💡 Continuing consumption - this topic may be created later")
                     else:
-                        logger.error(f"Consumer error: {msg.error()}")
+                        logger.error(f"❌ Consumer error: {error_msg}")
                     continue
 
                 # Process message
