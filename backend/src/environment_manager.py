@@ -9,9 +9,9 @@ import yaml
 import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from src.kafka_consumer import KafkaConsumerService
-from src.graph_builder import TraceGraphBuilder
-from src.protobuf_decoder import ProtobufDecoder
+from .kafka_consumer import KafkaConsumerService
+from .graph_builder import TraceGraphBuilder
+from .protobuf_decoder import ProtobufDecoder
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class EnvironmentManager:
         self.current_config = None
         self.kafka_consumer = None
         self.graph_builder = None
-        self.trace_header_field = "trace_id"  # Default trace header field
+        self.trace_header_field = "traceparent"  # Default trace header field
         
         logger.info(f"🌍 EnvironmentManager initialized with directory: {environments_dir}")
     

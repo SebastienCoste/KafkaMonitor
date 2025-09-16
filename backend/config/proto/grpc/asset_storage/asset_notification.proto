@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package eadp.cadie.shared.storageinterface.v1;
+
+import "eadp/cadie/shared/storageinterface/v1/asset_identifier.proto";
+
+option java_multiple_files = true;
+option java_package = "eadp.cadie.shared.storageinterface.v1";
+option java_outer_classname = "AssetNotificationProto";
+
+message AssetNotifications {
+  string service_identifier = 1; //Ex: EA.EADP.MCR
+  repeated AssetNotification notifications = 2;
+  // CADIE will not define anything on addresses 100 to 199
+}
+
+message AssetNotification {
+  AssetIdentifier asset_identifier = 1;
+  uint64 timestamp = 2; //To distinguish versions if the asset gets updated
+  AssetReview review = 3;
+  string reason = 4;
+  // CADIE will not define anything on addresses 100 to 199
+}
+
+enum AssetReview {
+  ASSET_REVIEW_UNSPECIFIED = 0;
+  ASSET_REVIEW_PASSED = 1;
+  ASSET_REVIEW_FAILED = 2;
+  ASSET_REVIEW_ERRORED = 3;
+}
