@@ -6,6 +6,7 @@ This server properly serves static files for local development
 
 import os
 import sys
+import yaml
 from pathlib import Path
 
 # Add current directory to Python path
