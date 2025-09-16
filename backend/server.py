@@ -182,6 +182,9 @@ async def health_check():
     """Health check endpoint"""
     return {
         "status": "healthy",
+        "traces_count": len(graph_builder.traces) if graph_builder else 0
+    }
+
 # Environment Management Endpoints
 
 @api_router.get("/environments")
