@@ -101,6 +101,11 @@ function App() {
     if (data.type === 'trace_update') {
       // Refresh traces if new ones are available
       loadTraces();
+    } else if (data.type === 'environment_change') {
+      // Handle environment change from server
+      setCurrentEnvironment(data.environment);
+      toast.info(`Environment changed to ${data.environment}`);
+      loadInitialData();
     }
   };
 
