@@ -11,8 +11,8 @@ from typing import Dict, List, Callable, Optional
 from confluent_kafka import Consumer, KafkaError, KafkaException
 import yaml
 from datetime import datetime
-from src.models import KafkaMessage
-from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
+from .models import KafkaMessage
+from .protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)
@@ -216,6 +216,8 @@ class KafkaConsumerService:
         trace_id_value = None
         if self.trace_header_field in decoded_value:
             trace_id_value = decoded_value[self.trace_header_field]
+        # elif self.trace_header_field in headers:
+        #     trace_id_value = headers[self.trace_header_field]
         
         return KafkaMessage(
             topic=topic,
@@ -242,11 +244,18 @@ class KafkaConsumerService:
             decoded_value = self.decoder.decode_message(msg.topic(), msg.value())
 
             # Extract trace ID from headers or decoded message
+            raw_trace_id = None
             trace_id = None
             if self.trace_header_field in headers:
-                trace_id = headers[self.trace_header_field]
+                raw_trace_id = headers[self.trace_header_field]
             elif self.trace_header_field in decoded_value:
-                trace_id = decoded_value[self.trace_header_field]
+                raw_trace_id = decoded_value[self.trace_header_field]
+            if raw_trace_id:
+                parts = raw_trace_id.split('-')
+                if len(parts) >= 3:
+                    trace_id = parts[1]
+                else:
+                    trace_id = raw_trace_id
 
             # Create KafkaMessage object
             kafka_msg = KafkaMessage(

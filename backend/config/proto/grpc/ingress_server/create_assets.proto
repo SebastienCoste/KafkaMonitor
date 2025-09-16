@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package eadp.cadie.ingressserver.v1;
+
+import "eadp/cadie/shared/v1/content_identifier.proto";
+
+option java_multiple_files = true;
+option java_package = "eadp.cadie.ingressserver.v1";
+option java_outer_classname = "CreateAssetProto";
+
+message BatchCreateAssetsRequest {
+  eadp.cadie.shared.v1.ContentIdentifier identifier = 1;
+  repeated AssetsByStorage assets = 2;
+}
+
+message AssetsByStorage {
+  //[OPTIONAL if only 1 storage is in the config]
+  string storage_identifier = 1; //Ex EA.EADP.MCR
+  //[OPTIONAL if only 1 storage is in the config]
+  string override_integration_id = 2;
+  repeated InitialAsset assets = 3;
+}
+
+message InitialAsset {
+  string asset_name = 1; //A name unique to the integration for a given BSS
+  string mime_type = 2;
+}
+
+message BatchCreateAssetsResponse {
+  repeated UploadUrlsByStorage response = 1;
+}
+
+message UploadUrlsByStorage {
+  string storage_identifier = 1; //Ex: EA.EADP.MCR
+  repeated UploadUrl urls = 2;
+}
+
+message UploadUrl {
+  string asset_name = 1; //The initial name
+  string upload_url = 2;
+  string asset_identifier = 3; //The ID unique to a BSS across all integrations
+  //Just like Ingress Server provides the event_time, more informative than required
+  uint64 asset_timestamp = 4; //Used as chronological versioning (the most recent prevails)
+}

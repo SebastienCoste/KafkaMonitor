@@ -60,10 +60,6 @@ kafka-trace-viewer/
 │   │   ├── topics.yaml           # Topic configuration and graph
 │   │   ├── settings.yaml         # Application settings
 │   │   └── proto/                # Protobuf schema definitions
-│   │       ├── user_events.proto
-│   │       ├── processed_events.proto
-│   │       ├── notifications.proto
-│   │       └── analytics.proto
 │   ├── server.py                 # Main FastAPI application
 │   ├── app.py                    # Standalone consumer for testing
 │   └── requirements.txt
