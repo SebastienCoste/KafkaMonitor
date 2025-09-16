@@ -140,9 +140,16 @@ class EnvironmentManager:
             # Set up message handling
             self.kafka_consumer.add_message_handler(self.graph_builder.add_message)
             
-            # Subscribe to all topics
+            # Subscribe to all topics (with graceful handling of missing topics)
             all_topics = self.graph_builder.topic_graph.get_all_topics()
+            logger.info(f"📡 Attempting to subscribe to {len(all_topics)} configured topics: {all_topics}")
+            
             self.kafka_consumer.subscribe_to_topics(all_topics)
+            
+            # Log subscription status
+            if hasattr(self.kafka_consumer, 'get_subscription_status'):
+                status = self.kafka_consumer.get_subscription_status()
+                logger.info(f"📊 Subscription status: {status['status']}")
             
             logger.info(f"✅ Services initialized for environment: {self.current_environment}")
             return {
