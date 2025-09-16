@@ -772,11 +772,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Static files must be mounted BEFORE route definitions for proper priority
-if os.path.exists("../frontend/build/static"):
-    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
-    logger.info("✅ Mounted static files from ../frontend/build/static")
-
 # Frontend routes
 @app.get("/")
 async def serve_frontend():
