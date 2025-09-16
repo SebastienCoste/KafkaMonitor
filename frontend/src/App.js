@@ -158,6 +158,32 @@ function App() {
         
         // Reload all data for new environment
         await loadInitialData();
+  const loadKafkaSubscriptionStatus = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/kafka/subscription-status`);
+      return response.data;
+    } catch (error) {
+      console.error('Error loading Kafka subscription status:', error);
+      return null;
+    }
+  };
+
+  const refreshKafkaSubscription = async () => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/kafka/refresh-subscription`);
+      if (response.data.success) {
+        toast.success('Kafka subscription refreshed');
+        return response.data;
+      } else {
+        toast.error('Failed to refresh Kafka subscription');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error refreshing Kafka subscription:', error);
+      toast.error('Failed to refresh Kafka subscription');
+      return null;
+    }
+  };
       } else {
         toast.error(`Failed to switch environment: ${response.data.error}`);
       }
