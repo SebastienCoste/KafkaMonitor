@@ -775,6 +775,16 @@ if os.path.exists("../frontend/build"):
     async def serve_frontend():
         return FileResponse("../frontend/build/index.html")
 
+    
+    # Catch-all route for SPA routing - serve index.html for any non-API routes
+    @app.get("/{full_path:path}")
+    async def catch_all(full_path: str):
+        # Don't interfere with API routes
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail="API endpoint not found")
+        
+        # For all other routes, serve the React app
+        return FileResponse("../frontend/build/index.html")
 if __name__ == "__main__":
     import uvicorn
     
