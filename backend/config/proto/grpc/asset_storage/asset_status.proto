@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package eadp.cadie.shared.storageinterface.v1;
+
+option java_multiple_files = true;
+option java_package = "eadp.cadie.shared.storageinterface.v1";
+option java_outer_classname = "AssetStatusProto";
+
+enum AssetStatus {
+  ASSET_STATUS_UNSPECIFIED = 0;
+  ASSET_STATUS_ACTIVATE = 1;
+  ASSET_STATUS_DEACTIVATE = 2;
+}

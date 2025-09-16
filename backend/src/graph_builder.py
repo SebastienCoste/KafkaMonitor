@@ -9,7 +9,7 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import yaml
 import numpy as np
-from src.models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
+from .models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
 
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)

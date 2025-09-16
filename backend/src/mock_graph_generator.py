@@ -10,7 +10,7 @@ import string
 import json
 from typing import Dict, List, Set, Tuple
 from datetime import datetime, timedelta
-from src.models import KafkaMessage, TraceInfo
+from .models import KafkaMessage, TraceInfo
 
 logger = logging.getLogger(__name__)
 
