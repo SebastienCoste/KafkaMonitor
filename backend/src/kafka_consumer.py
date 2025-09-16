@@ -100,19 +100,53 @@ class KafkaConsumerService:
         self.message_handlers.append(handler)
 
     def subscribe_to_topics(self, topics: List[str]):
-        """Subscribe to specified topics"""
+        """Subscribe to specified topics with graceful handling of missing topics"""
         self.subscribed_topics = topics
         
         if not self.mock_mode:
             try:
                 self.consumer = Consumer(self.kafka_config)
+                
+                # Try to subscribe to all topics first
                 self.consumer.subscribe(topics)
-                logger.info(f"Subscribed to topics: {topics}")
+                logger.info(f"✅ Successfully subscribed to topics: {topics}")
+                
+                # Verify topics exist by getting metadata (with timeout)
+                try:
+                    metadata = self.consumer.list_topics(timeout=5.0)
+                    existing_topics = set(metadata.topics.keys())
+                    missing_topics = [topic for topic in topics if topic not in existing_topics]
+                    
+                    if missing_topics:
+                        logger.warning(f"⚠️  Topics not found on broker: {missing_topics}")
+                        logger.info(f"📋 Available topics on broker: {list(existing_topics)}")
+                        
+                        # Filter to only existing topics
+                        valid_topics = [topic for topic in topics if topic in existing_topics]
+                        
+                        if valid_topics:
+                            # Re-subscribe to only valid topics
+                            self.consumer.subscribe(valid_topics)
+                            self.subscribed_topics = valid_topics
+                            logger.info(f"✅ Re-subscribed to existing topics only: {valid_topics}")
+                        else:
+                            logger.warning("⚠️  No valid topics found - consumer will be in standby mode")
+                            self.subscribed_topics = []
+                    else:
+                        logger.info(f"✅ All topics exist on broker: {topics}")
+                        
+                except Exception as metadata_error:
+                    logger.warning(f"⚠️  Could not verify topic existence: {metadata_error}")
+                    logger.info("📡 Proceeding with subscription - will handle missing topics during consumption")
+                    
             except Exception as e:
-                logger.error(f"Failed to subscribe to topics: {e}")
-                raise
+                logger.error(f"❌ Failed to subscribe to topics: {e}")
+                # Don't raise the exception - allow system to continue in mock mode
+                logger.warning("🔄 Switching to mock mode due to subscription failure")
+                self.mock_mode = True
+                self.subscribed_topics = topics
         else:
-            logger.info(f"Mock mode: Would subscribe to topics: {topics}")
+            logger.info(f"🎭 Mock mode: Would subscribe to topics: {topics}")
 
     def start_consuming(self):
         """Start consuming messages"""
