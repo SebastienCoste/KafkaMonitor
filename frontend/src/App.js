@@ -41,6 +41,10 @@ function App() {
   const [expandedMessages, setExpandedMessages] = useState(new Set());
   const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
   const [activeTab, setActiveTab] = useState('traces'); // New state for tracking active tab
+  // Environment management
+  const [environments, setEnvironments] = useState([]);
+  const [currentEnvironment, setCurrentEnvironment] = useState('');
+  const [environmentLoading, setEnvironmentLoading] = useState(false);
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
