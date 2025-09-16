@@ -780,9 +780,9 @@ if os.path.exists("../frontend/build"):
     # Catch-all route for SPA routing - serve index.html for any non-API routes
     @app.get("/{full_path:path}")
     async def catch_all(full_path: str):
-        # Don't interfere with API routes
-        if full_path.startswith("api/"):
-            raise HTTPException(status_code=404, detail="API endpoint not found")
+        # Don't interfere with API routes or static files
+        if full_path.startswith("api/") or full_path.startswith("static/"):
+            raise HTTPException(status_code=404, detail="Resource not found")
         
         # For all other routes, serve the React app
         return FileResponse("../frontend/build/index.html")
