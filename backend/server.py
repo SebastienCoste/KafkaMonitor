@@ -755,10 +755,8 @@ logger = logging.getLogger(__name__)
 # Create the FastAPI app with lifespan
 app = FastAPI(title="Kafka Trace Viewer", version="1.0.0", lifespan=lifespan)
 
-# Mount static files FIRST for proper priority
-if os.path.exists("../frontend/build/static"):
-    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
-    logger.info("✅ Mounted static files from ../frontend/build/static")
+# Static files will be handled through explicit routes instead of mounting
+# due to potential conflicts with reverse proxy configuration
 
 # Include the router in the main app
 app.include_router(api_router)
