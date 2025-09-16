@@ -112,6 +112,7 @@ function App() {
   const loadInitialData = async () => {
     try {
       await Promise.all([
+        loadEnvironments(),
         loadTraces(),
         loadTopicGraph(),
         loadTopics(),
