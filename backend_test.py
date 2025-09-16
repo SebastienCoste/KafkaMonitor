@@ -1209,6 +1209,150 @@ class KafkaTraceViewerTester:
             self.log_test("Kafka Offset Configuration", False, f"Exception: {str(e)}")
             return False
 
+    def test_kafka_topic_availability_fix(self) -> bool:
+        """Test Kafka Topic Availability Fix - graceful handling of missing topics"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing Kafka Topic Availability Fix")
+        print("=" * 60)
+        
+        all_passed = True
+        
+        # Test 1: GET /api/kafka/subscription-status - New endpoint
+        try:
+            response = requests.get(f"{self.base_url}/api/kafka/subscription-status", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Should return subscription status information
+                required_fields = ["success"]
+                if all(field in data for field in required_fields):
+                    success = data.get("success", False)
+                    
+                    # Check for topic subscription information
+                    if "subscribed_topics" in data or "topic_status" in data or "available_topics" in data:
+                        self.log_test("GET /api/kafka/subscription-status", True, f"Subscription status available: {list(data.keys())}")
+                    else:
+                        self.log_test("GET /api/kafka/subscription-status", True, f"Basic subscription status working (success: {success})")
+                else:
+                    self.log_test("GET /api/kafka/subscription-status", False, f"Missing required fields: {required_fields}")
+                    all_passed = False
+            elif response.status_code == 503:
+                self.log_test("GET /api/kafka/subscription-status", False, "Kafka consumer not initialized (503)")
+                all_passed = False
+            else:
+                self.log_test("GET /api/kafka/subscription-status", False, f"HTTP {response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("GET /api/kafka/subscription-status", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 2: POST /api/kafka/refresh-subscription - New endpoint
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/kafka/refresh-subscription",
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    message = data.get("message", "")
+                    if "refresh" in message.lower():
+                        self.log_test("POST /api/kafka/refresh-subscription", True, f"Subscription refreshed: {message}")
+                    else:
+                        self.log_test("POST /api/kafka/refresh-subscription", True, f"Refresh successful: {data}")
+                else:
+                    self.log_test("POST /api/kafka/refresh-subscription", False, f"Refresh failed: {data}")
+                    all_passed = False
+            elif response.status_code == 503:
+                self.log_test("POST /api/kafka/refresh-subscription", False, "Kafka consumer not initialized (503)")
+                all_passed = False
+            else:
+                self.log_test("POST /api/kafka/refresh-subscription", False, f"HTTP {response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("POST /api/kafka/refresh-subscription", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 3: System Resilience - verify system continues working despite missing topics
+        try:
+            # Test that basic endpoints still work (indicating system didn't crash)
+            health_response = requests.get(f"{self.base_url}/api/health", timeout=10)
+            stats_response = requests.get(f"{self.base_url}/api/statistics", timeout=10)
+            
+            if health_response.status_code == 200 and stats_response.status_code == 200:
+                health_data = health_response.json()
+                stats_data = stats_response.json()
+                
+                # System should be healthy and providing statistics
+                if health_data.get("status") == "healthy":
+                    self.log_test("System Resilience Check", True, f"System remains healthy with {health_data.get('traces_count', 0)} traces")
+                else:
+                    self.log_test("System Resilience Check", False, f"System not healthy: {health_data}")
+                    all_passed = False
+            else:
+                self.log_test("System Resilience Check", False, f"Basic endpoints failing: health={health_response.status_code}, stats={stats_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("System Resilience Check", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        # Test 4: Environment Integration - verify environment switching still works
+        try:
+            # Get current environments
+            env_response = requests.get(f"{self.base_url}/api/environments", timeout=10)
+            
+            if env_response.status_code == 200:
+                env_data = env_response.json()
+                available_envs = env_data.get("available_environments", [])
+                current_env = env_data.get("current_environment")
+                
+                if len(available_envs) > 1:
+                    # Try switching to a different environment
+                    target_env = None
+                    for env in available_envs:
+                        if env != current_env:
+                            target_env = env
+                            break
+                    
+                    if target_env:
+                        switch_response = requests.post(
+                            f"{self.base_url}/api/environments/switch",
+                            json={"environment": target_env},
+                            headers={"Content-Type": "application/json"},
+                            timeout=15
+                        )
+                        
+                        if switch_response.status_code == 200:
+                            switch_data = switch_response.json()
+                            if switch_data.get("success"):
+                                self.log_test("Environment Integration", True, f"Environment switching works: {current_env} -> {target_env}")
+                            else:
+                                self.log_test("Environment Integration", False, f"Environment switch failed: {switch_data}")
+                                all_passed = False
+                        else:
+                            self.log_test("Environment Integration", False, f"Environment switch HTTP {switch_response.status_code}")
+                            all_passed = False
+                    else:
+                        self.log_test("Environment Integration", True, f"Only one environment available: {current_env}")
+                else:
+                    self.log_test("Environment Integration", True, f"Single environment setup: {current_env}")
+            else:
+                self.log_test("Environment Integration", False, f"Environment endpoint failed: {env_response.status_code}")
+                all_passed = False
+                
+        except Exception as e:
+            self.log_test("Environment Integration", False, f"Exception: {str(e)}")
+            all_passed = False
+        
+        return all_passed
+
     def test_environment_management_endpoints(self) -> bool:
         """Test Environment Management endpoints"""
         print("\n" + "=" * 60)
