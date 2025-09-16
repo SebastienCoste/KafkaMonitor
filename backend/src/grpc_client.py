@@ -225,6 +225,24 @@ class GrpcClient:
         if service_name in self.stubs:
             return self.stubs[service_name]
         
+        # Auto-initialize if not already done
+        if not self.proto_loader.compiled_modules:
+            logger.info("🔄 Auto-initializing gRPC client...")
+            try:
+                # Compile and load proto files
+                if not self.proto_loader.compile_proto_files():
+                    logger.error("❌ Failed to compile proto files")
+                    return None
+                
+                if not self.proto_loader.load_service_modules():
+                    logger.error("❌ Failed to load service modules")
+                    return None
+                    
+                logger.info("✅ Auto-initialization completed")
+            except Exception as e:
+                logger.error(f"❌ Auto-initialization failed: {str(e)}")
+                return None
+        
         channel = self._get_channel(service_name)
         if not channel:
             return None
