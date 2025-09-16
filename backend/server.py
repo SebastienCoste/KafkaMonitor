@@ -753,12 +753,6 @@ async def debug_environment():
             if 'static/' in line or 'src=' in line or 'href=' in line
         ][:5]
     }
-            'response': response.text if response.status_code != 200 else 'Upload successful'
-        }
-        
-    except Exception as e:
-        logger.error(f"Error uploading file: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
