@@ -115,6 +115,40 @@ class KafkaConsumerService:
                 # Verify topics exist by getting metadata (with timeout)
                 try:
                     metadata = self.consumer.list_topics(timeout=5.0)
+                    existing_topics = set(metadata.topics.keys())
+                    missing_topics = [topic for topic in topics if topic not in existing_topics]
+                    
+                    if missing_topics:
+                        logger.warning(f"⚠️  Topics not found on broker: {missing_topics}")
+                        logger.info(f"📋 Available topics on broker: {list(existing_topics)}")
+                        
+                        # Filter to only existing topics
+                        valid_topics = [topic for topic in topics if topic in existing_topics]
+                        
+                        if valid_topics:
+                            # Re-subscribe to only valid topics
+                            self.consumer.subscribe(valid_topics)
+                            self.subscribed_topics = valid_topics
+                            logger.info(f"✅ Re-subscribed to existing topics only: {valid_topics}")
+                        else:
+                            logger.warning("⚠️  No valid topics found - consumer will be in standby mode")
+                            self.subscribed_topics = []
+                    else:
+                        logger.info(f"✅ All topics exist on broker: {topics}")
+                        
+                except Exception as metadata_error:
+                    logger.warning(f"⚠️  Could not verify topic existence: {metadata_error}")
+                    logger.info("📡 Proceeding with subscription - will handle missing topics during consumption")
+                    
+            except Exception as e:
+                logger.error(f"❌ Failed to subscribe to topics: {e}")
+                # Don't raise the exception - allow system to continue in mock mode
+                logger.warning("🔄 Switching to mock mode due to subscription failure")
+                self.mock_mode = True
+                self.subscribed_topics = topics
+        else:
+            logger.info(f"🎭 Mock mode: Would subscribe to topics: {topics}")
+
     def refresh_topic_subscription(self):
         """Refresh topic subscription to pick up newly created topics"""
         if self.mock_mode or not self.consumer:
@@ -173,39 +207,6 @@ class KafkaConsumerService:
                 'subscribed_topics': self.subscribed_topics,
                 'status': f'Error getting topic info: {e}'
             }
-                    existing_topics = set(metadata.topics.keys())
-                    missing_topics = [topic for topic in topics if topic not in existing_topics]
-                    
-                    if missing_topics:
-                        logger.warning(f"⚠️  Topics not found on broker: {missing_topics}")
-                        logger.info(f"📋 Available topics on broker: {list(existing_topics)}")
-                        
-                        # Filter to only existing topics
-                        valid_topics = [topic for topic in topics if topic in existing_topics]
-                        
-                        if valid_topics:
-                            # Re-subscribe to only valid topics
-                            self.consumer.subscribe(valid_topics)
-                            self.subscribed_topics = valid_topics
-                            logger.info(f"✅ Re-subscribed to existing topics only: {valid_topics}")
-                        else:
-                            logger.warning("⚠️  No valid topics found - consumer will be in standby mode")
-                            self.subscribed_topics = []
-                    else:
-                        logger.info(f"✅ All topics exist on broker: {topics}")
-                        
-                except Exception as metadata_error:
-                    logger.warning(f"⚠️  Could not verify topic existence: {metadata_error}")
-                    logger.info("📡 Proceeding with subscription - will handle missing topics during consumption")
-                    
-            except Exception as e:
-                logger.error(f"❌ Failed to subscribe to topics: {e}")
-                # Don't raise the exception - allow system to continue in mock mode
-                logger.warning("🔄 Switching to mock mode due to subscription failure")
-                self.mock_mode = True
-                self.subscribed_topics = topics
-        else:
-            logger.info(f"🎭 Mock mode: Would subscribe to topics: {topics}")
 
     def start_consuming(self):
         """Start consuming messages"""
