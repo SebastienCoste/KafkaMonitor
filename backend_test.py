@@ -1135,6 +1135,9 @@ class KafkaTraceViewerTester:
         # Test 17: BatchGetSignedUrls Hanging Issue (SPECIFIC FOCUS)
         batch_hanging_ok = self.test_grpc_batch_get_signed_urls_hanging_issue()
         
+        # Test 18: All gRPC Endpoints Hanging Behavior
+        all_grpc_hanging_ok = self.test_all_grpc_endpoints_hanging_behavior()
+        
         # Print summary
         print("\n" + "=" * 60)
         print(f"📊 Test Summary: {self.tests_passed}/{self.tests_run} tests passed")
