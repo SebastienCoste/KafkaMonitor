@@ -106,18 +106,21 @@ async def get_traces():
 @app.get("/api/topics")
 async def get_topics():
     return {
-        "monitored_topics": ["user-events", "processed-events", "analytics", "notifications"],
-        "all_topics": ["user-events", "processed-events", "analytics", "notifications"],
-        "message": "Local development mode"
+        "monitored_topics": app_config['monitored_topics'],
+        "all_topics": app_config['all_topics'],
+        "message": f"Local development mode - loaded from config files"
     }
 
 @app.get("/api/statistics")
 async def get_statistics():
+    total_topics = len(app_config['all_topics'])
+    monitored_count = len(app_config['monitored_topics'])
+    
     return {
         "traces": {"total": 0, "active": 0},
-        "topics": {"total": 4, "monitored": 4},
+        "topics": {"total": total_topics, "monitored": monitored_count},
         "messages": {"total": 0, "rate": 0},
-        "message": "Local development mode"
+        "message": f"Local development mode - {monitored_count}/{total_topics} topics monitored"
     }
 
 @app.get("/api/graph")
