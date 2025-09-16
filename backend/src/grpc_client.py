@@ -266,7 +266,7 @@ class GrpcClient:
         return metadata
     
     async def _call_with_retry(self, service_name: str, method_name: str, request, max_retries: int = None) -> Dict[str, Any]:
-        """Call a gRPC method with unlimited retries"""
+        """Call a gRPC method with limited retries and timeout"""
         logger.info(f"📞 Calling {service_name}.{method_name}")
         
         stub = self._get_stub(service_name)
@@ -279,10 +279,12 @@ class GrpcClient:
         metadata = self._create_metadata()
         timeout = self.environment_config.get('grpc_services', {}).get(service_name, {}).get('timeout', 30)
         
+        # Set maximum retry limit (default 3, configurable)
+        max_retry_limit = max_retries if max_retries is not None else 3
         retry_count = 0
         method_key = f"{service_name}.{method_name}"
         
-        while True:  # Unlimited retries
+        while retry_count <= max_retry_limit:
             try:
                 self.call_statistics['total_calls'] += 1
                 
