@@ -963,8 +963,8 @@ function App() {
                   </div>
                 </CardContent>
               </Card>
-            )
-          )}
+            )}
+          </div>
         </div>
       ) : (
         // gRPC Integration Page
