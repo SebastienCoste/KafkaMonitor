@@ -726,6 +726,27 @@ async def upload_file(file: bytes, upload_url: str):
         return {
             'success': response.status_code == 200,
             'status_code': response.status_code,
+@api_router.get("/debug/environment")
+async def debug_environment():
+    """Debug endpoint to check environment and HTML content"""
+    index_path = "../frontend/build/index.html"
+    
+    # Read current HTML content
+    html_preview = "File not found"
+    if os.path.exists(index_path):
+        with open(index_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+            html_preview = html_content[:500]  # First 500 characters
+            
+    return {
+        "environment": os.environ.get('ENVIRONMENT', 'local'),
+        "environment_var_set": 'ENVIRONMENT' in os.environ,
+        "html_preview": html_preview,
+        "static_references": [
+            line.strip() for line in html_preview.split('\n') 
+            if 'static/' in line or 'src=' in line or 'href=' in line
+        ][:5]
+    }
             'response': response.text if response.status_code != 200 else 'Upload successful'
         }
         
