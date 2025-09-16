@@ -871,16 +871,139 @@ function App() {
                   // Trace Content
                   selectedTrace ? (
                     <div className="space-y-6">
-                      {/* Existing trace content... */}
-                      <Card className="h-96 flex items-center justify-center">
-                        <CardContent className="text-center">
-                          <Activity className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            Trace Details
-                          </h3>
-                          <p className="text-gray-600">
-                            Selected trace: {selectedTrace.trace_id}
-                          </p>
+                      {/* Trace Header */}
+                      <Card>
+                        <CardHeader>
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <CardTitle className="text-xl">Trace Details</CardTitle>
+                              <CardDescription>
+                                Trace ID: {selectedTrace.trace_id}
+                              </CardDescription>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="outline" onClick={expandAllMessages}>
+                                Expand All
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={collapseAllMessages}>
+                                Collapse All
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                              <span className="text-gray-600">Messages:</span>
+                              <span className="ml-2 font-medium">{selectedTrace.messages?.length || 0}</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Topics:</span>
+                              <span className="ml-2 font-medium">
+                                {[...new Set(selectedTrace.messages?.map(m => m.topic) || [])].length}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">Status:</span>
+                              <span className="ml-2 font-medium text-green-600">Active</span>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Messages Display */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-lg">Messages by Topic</CardTitle>
+                          <CardDescription>
+                            All messages in this trace, organized by topic
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          {selectedTrace.messages && selectedTrace.messages.length > 0 ? (
+                            <div className="space-y-4">
+                              {Object.entries(
+                                selectedTrace.messages.reduce((acc, message, index) => {
+                                  const topic = message.topic || 'unknown';
+                                  if (!acc[topic]) acc[topic] = [];
+                                  acc[topic].push({ ...message, index });
+                                  return acc;
+                                }, {})
+                              ).map(([topic, messages]) => (
+                                <div key={topic} className="border rounded-lg p-4">
+                                  <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-medium text-lg">
+                                      📡 {topic}
+                                    </h4>
+                                    <Badge variant="secondary">
+                                      {messages.length} message{messages.length !== 1 ? 's' : ''}
+                                    </Badge>
+                                  </div>
+                                  
+                                  <div className="space-y-2">
+                                    {messages.map((message) => (
+                                      <div key={message.index} className="border rounded p-3 bg-gray-50">
+                                        <div className="flex justify-between items-start mb-2">
+                                          <div className="text-sm text-gray-600">
+                                            Message #{message.index + 1}
+                                          </div>
+                                          <div className="text-xs text-gray-500">
+                                            {new Date(message.timestamp).toLocaleString()}
+                                          </div>
+                                        </div>
+                                        
+                                        <div className="space-y-2">
+                                          {message.headers && Object.keys(message.headers).length > 0 && (
+                                            <div>
+                                              <div className="text-sm font-medium text-gray-700 mb-1">Headers:</div>
+                                              <div className="text-xs bg-blue-50 p-2 rounded font-mono">
+                                                {Object.entries(message.headers).map(([key, value]) => (
+                                                  <div key={key}>
+                                                    <span className="text-blue-600">{key}:</span> {value}
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                          
+                                          {message.decoded_content && (
+                                            <div>
+                                              <div className="text-sm font-medium text-gray-700 mb-1">Content:</div>
+                                              <div className="text-xs bg-green-50 p-2 rounded font-mono whitespace-pre-wrap">
+                                                {typeof message.decoded_content === 'object' 
+                                                  ? JSON.stringify(message.decoded_content, null, 2)
+                                                  : message.decoded_content
+                                                }
+                                              </div>
+                                            </div>
+                                          )}
+                                          
+                                          {message.raw_content && !message.decoded_content && (
+                                            <div>
+                                              <div className="text-sm font-medium text-gray-700 mb-1">Raw Content:</div>
+                                              <div className="text-xs bg-gray-100 p-2 rounded font-mono">
+                                                {message.raw_content}
+                                              </div>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8">
+                              <Activity className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                No Messages
+                              </h3>
+                              <p className="text-gray-600">
+                                This trace doesn't contain any messages yet.
+                              </p>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     </div>
