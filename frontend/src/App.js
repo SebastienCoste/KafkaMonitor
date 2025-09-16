@@ -966,6 +966,7 @@ function App() {
             )}
           </div>
         </div>
+        )}
       ) : (
         // gRPC Integration Page
         <GrpcIntegration />
