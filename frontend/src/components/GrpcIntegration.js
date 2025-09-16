@@ -148,6 +148,7 @@ function GrpcIntegration() {
         setUploadUrls([]);
         setImageUrls([]);
         loadGrpcStatus();
+        loadAssetStorageUrls();
       } else {
         toast.error(`Failed to set environment: ${response.data.error}`);
       }
