@@ -772,6 +772,34 @@ app.add_middleware(
 
 # Logging already configured above
 
+# Static file routes - explicit handling
+@app.get("/static/js/{filename}")
+async def serve_js(filename: str):
+    """Serve JavaScript files"""
+    file_path = f"../frontend/build/static/js/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="application/javascript")
+    else:
+        raise HTTPException(status_code=404, detail="JavaScript file not found")
+
+@app.get("/static/css/{filename}")
+async def serve_css(filename: str):
+    """Serve CSS files"""
+    file_path = f"../frontend/build/static/css/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type="text/css")
+    else:
+        raise HTTPException(status_code=404, detail="CSS file not found")
+
+@app.get("/static/media/{filename}")
+async def serve_media(filename: str):
+    """Serve media files"""
+    file_path = f"../frontend/build/static/media/{filename}"
+    if os.path.exists(file_path):
+        return FileResponse(file_path)
+    else:
+        raise HTTPException(status_code=404, detail="Media file not found")
+
 # Frontend routes
 @app.get("/")
 async def serve_frontend():
