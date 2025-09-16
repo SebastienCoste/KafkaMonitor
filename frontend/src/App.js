@@ -779,10 +779,10 @@ function App() {
                         ) : (
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {monitoredTopics.map((topic) => {
-                              const topicStats = statistics?.messages?.by_topic?.[topic] || 0;
-                              const topicTraces = traces.filter(trace => 
-                                trace.messages && trace.messages.some(msg => msg.topic === topic)
-                              ).length;
+                              const topicDetails = statistics?.topics?.details?.[topic];
+                              const topicStats = topicDetails?.message_count || 0;
+                              const topicTraces = topicDetails?.trace_count || 0;
+                              const topicStatus = topicDetails?.status || 'No messages';
                               
                               return (
                                 <Card key={topic} className="border-l-4 border-l-blue-500">
