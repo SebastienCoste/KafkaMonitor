@@ -500,6 +500,36 @@ function GrpcIntegration() {
               </Badge>
             </div>
           </div>
+          
+          {/* Asset-Storage URL Selection */}
+          {Object.keys(assetStorageUrls).length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 bg-blue-50 rounded-lg">
+              <div>
+                <Label>Asset-Storage URL Type</Label>
+                <Select value={selectedAssetUrlType} onValueChange={setAssetStorageUrl}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select URL type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.keys(assetStorageUrls).map(urlType => (
+                      <SelectItem key={urlType} value={urlType}>
+                        {urlType.charAt(0).toUpperCase() + urlType.slice(1)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-end">
+                <div className="text-sm">
+                  <div className="font-medium">Current URL:</div>
+                  <div className="text-gray-600 font-mono text-xs">
+                    {assetStorageUrls[selectedAssetUrlType] || 'Not selected'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <Separator />
 
