@@ -119,7 +119,8 @@ async def initialize_kafka_components():
         logger.info("🌍 Initializing Environment Manager...")
         environment_manager = EnvironmentManager(
             environments_dir=str(CONFIG_DIR / "environments"),
-            protobuf_decoder=decoder
+            protobuf_decoder=decoder,
+            settings=settings
         )
         logger.info("✅ Environment Manager initialized")
         
