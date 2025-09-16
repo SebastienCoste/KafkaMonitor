@@ -311,6 +311,7 @@ test_plan:
   test_all: false
   test_priority: "high_first"
   completed_features:
+    - "Kafka Topic Availability Fix"
     - "Kafka Offset Issue Fix"
     - "Environment Management Endpoints"
     - "Asset-Storage Multiple URLs"
