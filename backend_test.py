@@ -1249,10 +1249,13 @@ class KafkaTraceViewerTester:
         # Test 16: gRPC Initialization Fix
         grpc_init_fix_ok = self.test_grpc_initialization_fix()
         
-        # Test 17: BatchGetSignedUrls Hanging Issue (SPECIFIC FOCUS)
-        batch_hanging_ok = self.test_grpc_batch_get_signed_urls_hanging_issue()
+        # Test 17: gRPC Retry Fix - Previously Hanging Endpoints
+        retry_fix_hanging_ok = self.test_grpc_retry_fix_hanging_endpoints()
         
-        # Test 18: All gRPC Endpoints Hanging Behavior
+        # Test 18: gRPC Retry Fix - Previously Working Endpoints
+        retry_fix_working_ok = self.test_grpc_retry_fix_working_endpoints()
+        
+        # Test 19: All gRPC Endpoints Hanging Behavior (Legacy test)
         all_grpc_hanging_ok = self.test_all_grpc_endpoints_hanging_behavior()
         
         # Print summary
