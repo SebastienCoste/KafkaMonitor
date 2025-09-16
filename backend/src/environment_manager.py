@@ -129,9 +129,10 @@ class EnvironmentManager:
                 'auto_offset_reset': 'latest'  # Always start from latest to avoid offset issues
             }
             
-            # Initialize graph builder
+            # Initialize graph builder with settings
             self.graph_builder = TraceGraphBuilder(
-                topics_config_path="config/topics.yaml"
+                topics_config_path="config/topics.yaml",
+                settings=self.settings
             )
             
             # Initialize Kafka consumer with temporary config
