@@ -149,7 +149,21 @@ async def initialize_kafka_components():
         # Initialize gRPC client
         logger.info("🔧 Initializing gRPC client...")
         grpc_client = GrpcClient(str(GRPC_PROTOS_DIR), str(ENVIRONMENTS_DIR))
-        logger.info("✅ gRPC client initialized")
+        
+        # Try to auto-initialize proto files if they exist
+        try:
+            logger.info("🔄 Attempting auto-initialization of gRPC proto files...")
+            init_result = await grpc_client.initialize()
+            if init_result.get('success'):
+                logger.info("✅ gRPC client proto files auto-initialized successfully")
+            else:
+                logger.warning(f"⚠️  gRPC proto auto-initialization failed: {init_result.get('error', 'Unknown error')}")
+                logger.info("💡 gRPC client created but will need manual initialization via /api/grpc/initialize")
+        except Exception as e:
+            logger.warning(f"⚠️  gRPC auto-initialization error: {str(e)}")
+            logger.info("💡 gRPC client created but will need manual initialization via /api/grpc/initialize")
+        
+        logger.info("✅ gRPC client setup completed")
         
         logger.info("🎉 Kafka trace viewer components initialized successfully!")
         
