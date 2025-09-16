@@ -492,6 +492,24 @@ function App() {
               {/* Status indicators - only for trace viewer */}
               {currentPage === 'traces' && (
                 <>
+                  {/* Environment Switcher */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">Environment:</span>
+                    <select
+                      value={currentEnvironment}
+                      onChange={(e) => switchEnvironment(e.target.value)}
+                      disabled={environmentLoading}
+                      className="text-sm border rounded px-2 py-1 bg-white"
+                    >
+                      {environments.map(env => (
+                        <option key={env} value={env}>{env}</option>
+                      ))}
+                    </select>
+                    {environmentLoading && (
+                      <RefreshCw className="h-4 w-4 animate-spin text-gray-400" />
+                    )}
+                  </div>
+                  
                   <div className="flex items-center space-x-2">
                     <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
                     <span className="text-sm text-gray-600">
