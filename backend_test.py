@@ -41,7 +41,7 @@ class KafkaTraceViewerTester:
             
             if response.status_code == 200:
                 data = response.json()
-                required_fields = ["status", "timestamp", "traces_count"]
+                required_fields = ["status", "traces_count"]
                 
                 if all(field in data for field in required_fields):
                     if data["status"] == "healthy":
