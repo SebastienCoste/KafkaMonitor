@@ -18,13 +18,14 @@ logger = logging.getLogger(__name__)
 class TraceGraphBuilder:
     """Manages topic graph and trace collection with FIFO eviction"""
 
-    def __init__(self, topics_config_path: str, max_traces: int = 1000):
+    def __init__(self, topics_config_path: str, max_traces: int = 1000, settings: dict = None):
         logger.info(f"🔄 Initializing TraceGraphBuilder")
         logger.info(f"📄 Topics config path: {topics_config_path}")
         logger.info(f"📊 Max traces: {max_traces}")
         
         self.topics_config_path = topics_config_path
         self.max_traces = max_traces
+        self.settings = settings or {}
         self.topic_graph = TopicGraph()
         self.traces: Dict[str, TraceInfo] = {}
         self.trace_order = deque()  # For FIFO eviction
