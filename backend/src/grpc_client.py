@@ -277,7 +277,8 @@ class GrpcClient:
             }
         
         metadata = self._create_metadata()
-        timeout = self.environment_config.get('grpc_services', {}).get(service_name, {}).get('timeout', 30)
+        # Use shorter timeout to prevent hanging (configurable, default 10 seconds)
+        timeout = self.environment_config.get('grpc_services', {}).get(service_name, {}).get('timeout', 10)
         
         # Set maximum retry limit (default 3, configurable)
         max_retry_limit = max_retries if max_retries is not None else 3
