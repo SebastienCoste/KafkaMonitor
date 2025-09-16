@@ -107,9 +107,9 @@ user_problem_statement: "Develop two major features for Kafka Monitor: 1) gRPC I
 backend:
   - task: "gRPC Integration Backend"
     implemented: true
-    working: true
+    working: false
     file: "backend/src/grpc_client.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -122,6 +122,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "TESTED: gRPC Initialization Fix verified successfully. POST /api/grpc/initialize endpoint now returns success=true with all gRPC service endpoints accessible after initialization. Proto file loading and module compilation working correctly. All 5 environments (DEV, TEST, INT, LOAD, PROD) are accessible and environment switching works properly. System handles missing proto files gracefully as expected since they are user-provided."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL HANGING ISSUE IDENTIFIED: 3 out of 6 gRPC service endpoints are hanging indefinitely (BatchGetSignedUrls, BatchCreateAssets, BatchAddDownloadCounts). ROOT CAUSE: gRPC client _call_with_retry method has unlimited retries when connecting to localhost:50051/50052 with no actual gRPC servers running. HTTP requests timeout waiting for gRPC calls that never complete. WORKING: UpsertContent, BatchAddRatings, BatchUpdateStatuses, status, environments, credentials, initialization. NEEDS FIX: Add maximum retry limit or overall timeout to _call_with_retry method."
 
   - task: "Environment Configuration System"
     implemented: true
