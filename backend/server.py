@@ -37,6 +37,7 @@ api_router = APIRouter(prefix="/api")
 graph_builder: Optional[TraceGraphBuilder] = None
 kafka_consumer: Optional[KafkaConsumerService] = None
 grpc_client: Optional[GrpcClient] = None
+environment_manager: Optional[EnvironmentManager] = None
 websocket_connections: List[WebSocket] = []
 
 # Configuration paths
