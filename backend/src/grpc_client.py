@@ -160,6 +160,78 @@ class GrpcClient:
             'message': 'Credentials stored in memory'
         }
     
+    
+    def get_asset_storage_urls(self) -> Dict[str, Any]:
+        """Get available asset-storage URLs for current environment"""
+        if not self.current_environment or not self.environment_config:
+            return {
+                'success': False,
+                'error': 'No environment selected'
+            }
+        
+        asset_config = self.environment_config.get('grpc_services', {}).get('asset_storage', {})
+        
+        if 'urls' in asset_config:
+            return {
+                'success': True,
+                'urls': asset_config['urls'],
+                'current_selection': getattr(self, 'selected_asset_storage_type', 'reader')
+            }
+        else:
+            # Backward compatibility
+            url = asset_config.get('url', '')
+            return {
+                'success': True,
+                'urls': {'reader': url, 'writer': url},
+                'current_selection': 'reader'
+            }
+    
+    def set_asset_storage_url(self, url_type: str) -> Dict[str, Any]:
+        """Set which asset-storage URL to use (reader or writer)"""
+        logger.info(f"🔗 Setting asset-storage URL type to: {url_type}")
+        
+        if not self.current_environment or not self.environment_config:
+            return {
+                'success': False,
+                'error': 'No environment selected'
+            }
+        
+        asset_config = self.environment_config.get('grpc_services', {}).get('asset_storage', {})
+        
+        if 'urls' in asset_config:
+            available_types = list(asset_config['urls'].keys())
+            if url_type not in available_types:
+                return {
+                    'success': False,
+                    'error': f'Invalid URL type. Available: {available_types}'
+                }
+        elif url_type not in ['reader', 'writer']:
+            return {
+                'success': False,
+                'error': 'Invalid URL type. Must be reader or writer'
+            }
+        
+        # Set the selected type
+        self.selected_asset_storage_type = url_type
+        
+        # Clear asset_storage channel to force recreation with new URL
+        if 'asset_storage' in self.channels:
+            try:
+                self.channels['asset_storage'].close()
+            except:
+                pass
+            del self.channels['asset_storage']
+        
+        # Clear asset_storage stub to force recreation
+        if 'asset_storage' in self.stubs:
+            del self.stubs['asset_storage']
+        
+        logger.info(f"✅ Asset-storage URL type set to: {url_type}")
+        return {
+            'success': True,
+            'url_type': url_type,
+            'message': f'Asset-storage URL type set to {url_type}'
+        }
     def _reset_environment_state(self):
         """Reset all environment-specific state"""
         logger.info("🔄 Resetting environment state...")
