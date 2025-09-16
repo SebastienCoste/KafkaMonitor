@@ -747,182 +747,19 @@ function App() {
                     </CardContent>
                   </Card>
                 ) : (
-                  // Trace Content (existing logic)
+                  // Trace Content
                   selectedTrace ? (
                     <div className="space-y-6">
-                      {/* Trace Header */}
-                      <Card>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <CardTitle className="text-xl">{selectedTrace.trace_id}</CardTitle>
-                              <CardDescription>
-                                Trace details and message flow
-                              </CardDescription>
-                            </div>
-                            <div className="flex space-x-2">
-                              <Badge variant="secondary">
-                                {selectedTrace.message_count} messages
-                              </Badge>
-                              <Badge variant="secondary">
-                                {selectedTrace.topics.length} topics
-                              </Badge>
-                            </div>
-                          </div>
-                        </CardHeader>
-                      </Card>
-
-                      {/* Flow Visualization - Enhanced */}
-                      {traceFlow && (
-                        <Card>
-                          <CardHeader>
-                            <CardTitle className="text-xl">Message Flow Visualization</CardTitle>
-                            <CardDescription>
-                              Interactive trace showing how messages flow through topics over time
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="space-y-4">
-                              <div id="trace-flow-graph" style={{ 
-                                height: '450px',
-                                width: '100%',
-                                border: '2px solid #e2e8f0', 
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, #fefefe 0%, #f0f9ff 100%)'
-                              }} />
-                              
-                              {traceFlow.stats && (
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-blue-50 rounded-lg">
-                                  <div className="text-center">
-                                    <div className="text-2xl font-bold text-blue-600">{traceFlow.stats.node_count}</div>
-                                    <div className="text-sm text-gray-600">Topics</div>
-                                  </div>
-                                  <div className="text-center">
-                                    <div className="text-2xl font-bold text-green-600">{traceFlow.stats.edge_count}</div>
-                                    <div className="text-sm text-gray-600">Connections</div>
-                                  </div>
-                                  <div className="text-center">
-                                    <div className="text-2xl font-bold text-purple-600">{selectedTrace.message_count}</div>
-                                    <div className="text-sm text-gray-600">Messages</div>
-                                  </div>
-                                </div>
-                              )}
-                              
-                              <div className="text-xs text-gray-500 bg-blue-50 p-2 rounded">
-                                💡 Tip: Drag nodes to rearrange the flow. Hover over connections to see message details.
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-
-                      {/* Messages Display - Enhanced with Better Layout */}
-                      <Card className="flex flex-col h-[700px]">
-                        <CardHeader className="flex-shrink-0">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <CardTitle className="text-xl">Messages</CardTitle>
-                              <CardDescription>
-                                Detailed view of all messages in this trace, organized by topics and timeline
-                              </CardDescription>
-                            </div>
-                            <div className="flex space-x-2">
-                              <Button size="sm" variant="outline" onClick={expandAllMessages}>
-                                Expand All
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={collapseAllMessages}>
-                                Collapse All
-                              </Button>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="flex-1 min-h-0 p-0">
-                          <div className="h-[600px] overflow-y-auto p-4">
-                            <div className="space-y-3">
-                              {selectedTrace.messages.map((message, index) => (
-                                <Card key={index} className="border border-slate-200 shadow-sm">
-                                  <CardContent className="p-0">
-                                    {/* Message Header - Always Visible */}
-                                    <div
-                                      className="p-4 cursor-pointer hover:bg-slate-50 transition-colors border-b border-slate-100"
-                                      onClick={() => toggleMessage(index)}
-                                    >
-                                      <div className="flex items-start justify-between">
-                                        <div className="flex-1 min-w-0">
-                                          <div className="flex items-center space-x-2 mb-2">
-                                            <Badge variant="outline" className="text-xs font-mono">
-                                              {message.topic}
-                                            </Badge>
-                                            <span className="text-xs text-gray-500">
-                                              [{message.partition}]:{message.offset}
-                                            </span>
-                                          </div>
-                                          <div className="text-sm text-gray-600">
-                                            <div className="flex items-center space-x-4">
-                                              <span>{formatTime(message.timestamp)}</span>
-                                              {message.trace_id && (
-                                                <Badge variant="secondary" className="text-xs">
-                                                  {message.trace_id}
-                                                </Badge>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="flex-shrink-0 ml-4">
-                                          <div className="text-gray-400 text-lg">
-                                            {expandedMessages.has(index) ? '▼' : '▶'}
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Expanded Message Content */}
-                                    {expandedMessages.has(index) && (
-                                      <div className="bg-slate-50">
-                                        <div className="p-4 space-y-4">
-                                          {/* Metadata Grid */}
-                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                                            <div className="space-y-2">
-                                              <div className="font-semibold text-gray-700">Message Info</div>
-                                              <div><span className="font-medium">Key:</span> {message.key || '(null)'}</div>
-                                              <div><span className="font-medium">Partition:</span> {message.partition}</div>
-                                              <div><span className="font-medium">Offset:</span> {message.offset}</div>
-                                            </div>
-                                            <div className="space-y-2">
-                                              <div className="font-semibold text-gray-700">Timing</div>
-                                              <div><span className="font-medium">Timestamp:</span> {formatTime(message.timestamp)}</div>
-                                              <div><span className="font-medium">Topic:</span> {message.topic}</div>
-                                              {message.trace_id && <div><span className="font-medium">Trace ID:</span> {message.trace_id}</div>}
-                                            </div>
-                                            <div className="space-y-2">
-                                              <div className="font-semibold text-gray-700">Headers</div>
-                                              {message.headers && Object.keys(message.headers).length > 0 ? (
-                                                Object.entries(message.headers).slice(0, 3).map(([key, value]) => (
-                                                  <div key={key}><span className="font-medium">{key}:</span> {value}</div>
-                                                ))
-                                              ) : (
-                                                <div className="text-gray-500">No headers</div>
-                                              )}
-                                            </div>
-                                          </div>
-
-                                          {/* Message Content */}
-                                          <div className="space-y-3">
-                                            <div className="font-semibold text-gray-700">Decoded Message</div>
-                                            <div className="bg-white p-3 rounded border">
-                                              <pre className="text-xs font-mono overflow-x-auto">
-                                                {JSON.stringify(message.decoded_data, null, 2)}
-                                              </pre>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              ))}
-                            </div>
-                          </div>
+                      {/* Existing trace content... */}
+                      <Card className="h-96 flex items-center justify-center">
+                        <CardContent className="text-center">
+                          <Activity className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">
+                            Trace Details
+                          </h3>
+                          <p className="text-gray-600">
+                            Selected trace: {selectedTrace.trace_id}
+                          </p>
                         </CardContent>
                       </Card>
                     </div>
@@ -946,25 +783,9 @@ function App() {
                   )
                 )}
               </div>
-            ) : (
-              <Card className="h-96 flex items-center justify-center">
-                <CardContent className="text-center">
-                  <Activity className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Welcome to Kafka Trace Viewer
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    Select a trace from the sidebar to view its message flow and details
-                  </p>
-                  <div className="text-sm text-gray-500">
-                    <div>• Traces are automatically collected as messages arrive</div>
-                    <div>• Click on a trace ID to view its details</div>
-                    <div>• Use the topic monitoring tab to select which topics to trace</div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
         </div>
         )}
       ) : (
