@@ -115,38 +115,34 @@ async def initialize_kafka_components():
                 logger.error(f"🔴 Traceback: {traceback.format_exc()}")
                 raise
         
-        # Initialize graph builder
-        logger.info("🕸️  Initializing graph builder...")
-        graph_builder = TraceGraphBuilder(
-            topics_config_path=str(CONFIG_DIR / "topics.yaml"),
-            max_traces=settings.get('max_traces', 1000)
+        # Initialize Environment Manager
+        logger.info("🌍 Initializing Environment Manager...")
+        environment_manager = EnvironmentManager(
+            environments_dir=str(CONFIG_DIR / "environments"),
+            protobuf_decoder=decoder
         )
-        logger.info("✅ Graph builder initialized")
+        logger.info("✅ Environment Manager initialized")
         
-        # Initialize Kafka consumer
-        logger.info("🔌 Initializing Kafka consumer...")
-        kafka_consumer = KafkaConsumerService(
-            config_path=str(kafka_config_path),
-            decoder=decoder,
-            trace_header_field=settings.get('trace_header_field', 'trace_id')
-        )
-        logger.info("✅ Kafka consumer initialized")
+        # Default to DEV environment (or first available)
+        available_envs = environment_manager.list_environments()
+        default_env = 'DEV' if 'DEV' in available_envs else (available_envs[0] if available_envs else None)
         
-        # Register message handler
-        logger.info("🔗 Registering message handler...")
-        kafka_consumer.add_message_handler(graph_builder.add_message)
-        logger.info("✅ Message handler registered")
-        
-        # Subscribe to all topics from graph
-        all_topics = graph_builder.topic_graph.get_all_topics()
-        logger.info(f"📡 Subscribing to topics: {all_topics}")
-        kafka_consumer.subscribe_to_topics(all_topics)
-        logger.info("✅ Topic subscription complete")
-        
-        # Start Kafka consumer in background
-        logger.info("🚀 Starting Kafka consumer in background...")
-        asyncio.create_task(kafka_consumer.start_consuming_async())
-        logger.info("✅ Kafka consumer task created")
+        if default_env:
+            logger.info(f"🔄 Switching to default environment: {default_env}")
+            result = environment_manager.switch_environment(default_env)
+            
+            if result['success']:
+                # Get references to the services created by environment manager
+                graph_builder = environment_manager.graph_builder
+                kafka_consumer = environment_manager.kafka_consumer
+                
+                # Start Kafka consumer
+                environment_manager.start_kafka_consumer()
+                logger.info(f"✅ Default environment {default_env} initialized and started")
+            else:
+                logger.error(f"❌ Failed to initialize default environment: {result.get('error')}")
+        else:
+            logger.warning("⚠️  No environments found - services will be initialized on first environment switch")
         
         # Initialize gRPC client
         logger.info("🔧 Initializing gRPC client...")
