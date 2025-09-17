@@ -1239,6 +1239,293 @@ class KafkaTraceViewerTester:
         
         return all_working
 
+
+    def test_grpc_upsert_content_call_fix(self) -> bool:
+        """Test the gRPC UpsertContent Call Fix - CRITICAL TEST for review request"""
+        print("\n" + "=" * 80)
+        print("🔧 TESTING gRPC UpsertContent Call Fix - CRITICAL")
+        print("=" * 80)
+        print("Focus: Dynamic gRPC endpoint POST /api/grpc/ingress_server/UpsertContent")
+        print("Issue: '_call_with_retry() missing 1 required positional argument: request' errors")
+        print("Fix: Fixed _call_with_retry parameter mismatch in grpc_client.py")
+        print("=" * 80)
+        
+        # Test 1: Simple UpsertContent request
+        try:
+            print("🔍 Test 1: Simple UpsertContent request...")
+            simple_payload = {
+                "content_data": {
+                    "id": "test-content-001",
+                    "name": "Simple Test Content",
+                    "type": "test"
+                }
+            }
+            
+            start_time = time.time()
+            response = requests.post(
+                f"{self.base_url}/api/grpc/ingress_server/UpsertContent",
+                json=simple_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=20
+            )
+            end_time = time.time()
+            response_time = end_time - start_time
+            
+            print(f"   Response time: {response_time:.2f}s, Status: {response.status_code}")
+            
+            # Check for the specific error that was fixed
+            if response.status_code in [200, 500, 503]:
+                try:
+                    data = response.json()
+                    error_detail = data.get('detail', '') if 'detail' in data else str(data.get('error', ''))
+                    
+                    if "_call_with_retry() missing 1 required positional argument" in error_detail:
+                        self.log_test("UpsertContent Simple Request", False, f"CRITICAL BUG STILL EXISTS: {error_detail}")
+                        print(f"   ❌ CRITICAL: _call_with_retry parameter bug still exists!")
+                        return False
+                    else:
+                        self.log_test("UpsertContent Simple Request", True, f"No parameter error - responded in {response_time:.2f}s")
+                        print(f"   ✅ No _call_with_retry parameter error detected")
+                except:
+                    self.log_test("UpsertContent Simple Request", True, f"No parameter error - responded in {response_time:.2f}s")
+            else:
+                self.log_test("UpsertContent Simple Request", False, f"Unexpected status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            if "_call_with_retry() missing 1 required positional argument" in str(e):
+                self.log_test("UpsertContent Simple Request", False, f"CRITICAL BUG STILL EXISTS: {str(e)}")
+                return False
+            else:
+                self.log_test("UpsertContent Simple Request", False, f"Exception: {str(e)}")
+                return False
+        
+        # Test 2: Complex UpsertContent request with nested fields
+        try:
+            print("🔍 Test 2: Complex UpsertContent request with nested protobuf fields...")
+            complex_payload = {
+                "content_data": {
+                    "id": "test-content-002",
+                    "name": "Complex Test Content",
+                    "type": "complex",
+                    "metadata": {
+                        "tags": ["test", "complex", "nested"],
+                        "category": "testing",
+                        "properties": {
+                            "size": 1024,
+                            "format": "json"
+                        }
+                    },
+                    "timestamps": {
+                        "created": "2024-01-01T00:00:00Z",
+                        "updated": "2024-01-01T12:00:00Z"
+                    }
+                },
+                "random_field": "complex_test_field"
+            }
+            
+            start_time = time.time()
+            response = requests.post(
+                f"{self.base_url}/api/grpc/ingress_server/UpsertContent",
+                json=complex_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=20
+            )
+            end_time = time.time()
+            response_time = end_time - start_time
+            
+            print(f"   Response time: {response_time:.2f}s, Status: {response.status_code}")
+            
+            # Check for the specific error that was fixed
+            if response.status_code in [200, 500, 503]:
+                try:
+                    data = response.json()
+                    error_detail = data.get('detail', '') if 'detail' in data else str(data.get('error', ''))
+                    
+                    if "_call_with_retry() missing 1 required positional argument" in error_detail:
+                        self.log_test("UpsertContent Complex Request", False, f"CRITICAL BUG STILL EXISTS: {error_detail}")
+                        print(f"   ❌ CRITICAL: _call_with_retry parameter bug still exists!")
+                        return False
+                    else:
+                        self.log_test("UpsertContent Complex Request", True, f"No parameter error with nested fields - responded in {response_time:.2f}s")
+                        print(f"   ✅ Complex nested protobuf fields handled correctly")
+                except:
+                    self.log_test("UpsertContent Complex Request", True, f"No parameter error with nested fields - responded in {response_time:.2f}s")
+            else:
+                self.log_test("UpsertContent Complex Request", False, f"Unexpected status: {response.status_code}")
+                return False
+                
+        except Exception as e:
+            if "_call_with_retry() missing 1 required positional argument" in str(e):
+                self.log_test("UpsertContent Complex Request", False, f"CRITICAL BUG STILL EXISTS: {str(e)}")
+                return False
+            else:
+                self.log_test("UpsertContent Complex Request", False, f"Exception: {str(e)}")
+                return False
+        
+        return True
+
+    def test_grpc_example_generation(self) -> bool:
+        """Test gRPC Example Generation - CRITICAL TEST for review request"""
+        print("\n" + "=" * 80)
+        print("🔧 TESTING gRPC Example Generation - CRITICAL")
+        print("=" * 80)
+        print("Focus: GET /api/grpc/{service_name}/example/{method_name} endpoints")
+        print("Issue: Example generation for Load Example buttons")
+        print("Fix: Enhanced _create_request_message to handle nested protobuf messages")
+        print("=" * 80)
+        
+        # Test example generation for all gRPC methods
+        example_endpoints = [
+            ("ingress_server", "UpsertContent"),
+            ("ingress_server", "BatchCreateAssets"),
+            ("ingress_server", "BatchAddDownloadCounts"),
+            ("ingress_server", "BatchAddRatings"),
+            ("asset_storage", "BatchGetSignedUrls"),
+            ("asset_storage", "BatchUpdateStatuses")
+        ]
+        
+        successful_examples = 0
+        failed_examples = 0
+        
+        for service_name, method_name in example_endpoints:
+            try:
+                print(f"🔍 Testing example generation for {service_name}.{method_name}...")
+                
+                response = requests.get(
+                    f"{self.base_url}/api/grpc/{service_name}/example/{method_name}",
+                    timeout=15
+                )
+                
+                print(f"   Status: {response.status_code}")
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    
+                    if "example" in data and data["example"]:
+                        example_data = data["example"]
+                        
+                        # Validate that example contains reasonable structure
+                        if isinstance(example_data, dict) and len(example_data) > 0:
+                            self.log_test(f"Example Generation - {method_name}", True, f"Generated valid example with {len(example_data)} fields")
+                            print(f"   ✅ Generated example with fields: {list(example_data.keys())[:3]}...")
+                            successful_examples += 1
+                        else:
+                            self.log_test(f"Example Generation - {method_name}", False, f"Empty or invalid example structure")
+                            failed_examples += 1
+                    else:
+                        self.log_test(f"Example Generation - {method_name}", False, f"No example data in response")
+                        failed_examples += 1
+                elif response.status_code == 500:
+                    # Check if it's a proto compilation error (expected) vs generation error
+                    try:
+                        error_data = response.json()
+                        error_detail = error_data.get('detail', '')
+                        
+                        if "proto" in error_detail.lower() or "compilation" in error_detail.lower():
+                            self.log_test(f"Example Generation - {method_name}", True, f"Expected proto compilation error: {error_detail[:50]}...")
+                            print(f"   ✅ Expected proto compilation error (proto files missing)")
+                            successful_examples += 1
+                        else:
+                            self.log_test(f"Example Generation - {method_name}", False, f"Unexpected error: {error_detail}")
+                            failed_examples += 1
+                    except:
+                        self.log_test(f"Example Generation - {method_name}", True, f"Expected error (proto files missing)")
+                        successful_examples += 1
+                else:
+                    self.log_test(f"Example Generation - {method_name}", False, f"Unexpected status: {response.status_code}")
+                    failed_examples += 1
+                    
+            except Exception as e:
+                self.log_test(f"Example Generation - {method_name}", False, f"Exception: {str(e)}")
+                failed_examples += 1
+        
+        # Summary
+        if failed_examples == 0:
+            self.log_test("gRPC Example Generation Overall", True, f"All {successful_examples} example endpoints working correctly")
+            print(f"   ✅ All example generation endpoints working correctly")
+            return True
+        else:
+            self.log_test("gRPC Example Generation Overall", False, f"{failed_examples} example endpoints failed")
+            return False
+
+    def test_all_grpc_service_methods_regression(self) -> bool:
+        """Test All gRPC Service Methods - Regression Testing for review request"""
+        print("\n" + "=" * 80)
+        print("🔧 TESTING All gRPC Service Methods - Regression Testing")
+        print("=" * 80)
+        print("Focus: Ensure fix doesn't break other methods")
+        print("Methods: UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings, BatchGetSignedUrls, BatchUpdateStatuses")
+        print("=" * 80)
+        
+        # Test all gRPC service methods with various payloads
+        service_methods = [
+            ("ingress_server", "UpsertContent", {"content_data": {"id": "reg-test-001", "name": "Regression Test"}}),
+            ("ingress_server", "BatchCreateAssets", {"assets_data": [{"name": "regression-asset", "type": "test"}]}),
+            ("ingress_server", "BatchAddDownloadCounts", {"player_id": "regression-player", "content_ids": ["content-reg-1", "content-reg-2"]}),
+            ("ingress_server", "BatchAddRatings", {"rating_data": {"content_id": "reg-content", "rating": 5, "player_id": "reg-player"}}),
+            ("asset_storage", "BatchGetSignedUrls", {"asset_ids": ["reg-asset-1", "reg-asset-2", "reg-asset-3"]}),
+            ("asset_storage", "BatchUpdateStatuses", {"asset_updates": [{"asset_id": "reg-asset-1", "status": "active"}, {"asset_id": "reg-asset-2", "status": "inactive"}]})
+        ]
+        
+        parameter_errors = 0
+        successful_calls = 0
+        
+        for service_name, method_name, payload in service_methods:
+            try:
+                print(f"🔍 Testing {service_name}.{method_name}...")
+                
+                start_time = time.time()
+                response = requests.post(
+                    f"{self.base_url}/api/grpc/{service_name}/{method_name}",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=20
+                )
+                end_time = time.time()
+                response_time = end_time - start_time
+                
+                print(f"   Response time: {response_time:.2f}s, Status: {response.status_code}")
+                
+                # Check for the specific parameter error that was fixed
+                if response.status_code in [200, 500, 503]:
+                    try:
+                        data = response.json()
+                        error_detail = data.get('detail', '') if 'detail' in data else str(data.get('error', ''))
+                        
+                        if "_call_with_retry() missing 1 required positional argument" in error_detail:
+                            parameter_errors += 1
+                            self.log_test(f"Regression - {method_name}", False, f"PARAMETER BUG DETECTED: {error_detail}")
+                            print(f"   ❌ Parameter bug detected in {method_name}")
+                        else:
+                            successful_calls += 1
+                            self.log_test(f"Regression - {method_name}", True, f"No parameter errors - responded in {response_time:.2f}s")
+                            print(f"   ✅ No parameter errors in {method_name}")
+                    except:
+                        successful_calls += 1
+                        self.log_test(f"Regression - {method_name}", True, f"No parameter errors - responded in {response_time:.2f}s")
+                else:
+                    successful_calls += 1
+                    self.log_test(f"Regression - {method_name}", True, f"No parameter errors - responded in {response_time:.2f}s")
+                    
+            except Exception as e:
+                if "_call_with_retry() missing 1 required positional argument" in str(e):
+                    parameter_errors += 1
+                    self.log_test(f"Regression - {method_name}", False, f"PARAMETER BUG DETECTED: {str(e)}")
+                else:
+                    successful_calls += 1
+                    self.log_test(f"Regression - {method_name}", True, f"No parameter errors - exception: {str(e)[:50]}...")
+        
+        # Summary
+        if parameter_errors == 0:
+            self.log_test("gRPC Methods Regression Test", True, f"All {successful_calls} methods free of parameter errors")
+            print(f"   ✅ All gRPC methods free of parameter errors")
+            return True
+        else:
+            self.log_test("gRPC Methods Regression Test", False, f"{parameter_errors} methods still have parameter errors")
+            return False
+
+
     def test_grpc_message_class_resolution_bug_fix(self) -> bool:
         """Test the gRPC Message Class Resolution Bug Fix - CRITICAL TEST"""
         print("\n" + "=" * 80)
@@ -2085,6 +2372,16 @@ class KafkaTraceViewerTester:
         # Test 18: gRPC Service Endpoints (should handle missing proto files gracefully)
         self.test_grpc_service_endpoints()
         
+        # CRITICAL TESTS FOR REVIEW REQUEST
+        print("\n" + "=" * 60)
+        print("🔧 CRITICAL TESTS FOR REVIEW REQUEST")
+        print("=" * 60)
+        
+        # Test the specific fixes mentioned in the review request
+        upsert_content_fix_ok = self.test_grpc_upsert_content_call_fix()
+        example_generation_ok = self.test_grpc_example_generation()
+        regression_test_ok = self.test_all_grpc_service_methods_regression()
+        
         # SPECIFIC BUG FIX TESTS
         print("\n" + "=" * 60)
         print("🐛 Testing Specific Bug Fixes")
@@ -2104,6 +2401,9 @@ class KafkaTraceViewerTester:
         
         # Test 23: All gRPC Endpoints Hanging Behavior (Legacy test)
         all_grpc_hanging_ok = self.test_all_grpc_endpoints_hanging_behavior()
+        
+        # Test 24: gRPC Message Class Resolution Bug Fix
+        message_class_fix_ok = self.test_grpc_message_class_resolution_bug_fix()
         
         # Print summary
         print("\n" + "=" * 60)

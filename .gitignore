@@ -83,6 +83,7 @@ android-sdk/
 *.env
 *.env.*
 
+
 frontend/node_modules/.cache/
 
 backend/config/.protobuf_cache
