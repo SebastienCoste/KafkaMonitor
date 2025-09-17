@@ -13,7 +13,7 @@ from grpc_proto_loader import GrpcProtoLoader
 def main():
     print("🔧 Testing gRPC proto loading...")
     
-    loader = GrpcProtoLoader("/app/backend/config/proto/grpc", "/app/backend/config/proto")
+    loader = GrpcProtoLoader("/app/backend/config/proto/grpc")
     
     print("📋 Validating proto files...")
     validation = loader.validate_proto_files()
