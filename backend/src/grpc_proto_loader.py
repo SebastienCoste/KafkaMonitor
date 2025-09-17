@@ -487,39 +487,45 @@ def first_version_is_lower(version1, version2):
             return False
     
     def _try_fallback_module_loading(self, service_name: str) -> bool:
-        """Try to load modules using fallback/legacy paths"""
-        try:
-            logger.info(f"🔄 Trying fallback module loading for {service_name}")
-            
-            # Legacy paths for backward compatibility
-            fallback_paths = {
-                'ingress_server': {
-                    'pb2': 'proto_gen.ingress_server.ingress_server_pb2',
-                    'grpc': 'proto_gen.ingress_server.ingress_server_pb2_grpc'
-                },
-                'asset_storage': {
-                    'pb2': 'proto_gen.asset_storage.asset_storage_pb2',
-                    'grpc': 'proto_gen.asset_storage.asset_storage_pb2_grpc'
-                }
+        """Try fallback module loading with known service module mappings"""
+        logger.debug(f"🔄 Attempting fallback loading for {service_name}")
+        
+        # Known module mappings for the new structure
+        service_module_mappings = {
+            'ingress_server': {
+                'pb2': 'proto_gen.eadp.cadie.ingressserver.v1.ingress_service_pb2',
+                'grpc': 'proto_gen.eadp.cadie.ingressserver.v1.ingress_service_pb2_grpc'
+            },
+            'asset_storage': {
+                'pb2': 'proto_gen.eadp.cadie.shared.storageinterface.v1.storage_service_admin_pb2',
+                'grpc': 'proto_gen.eadp.cadie.shared.storageinterface.v1.storage_service_admin_pb2_grpc'
             }
-            
-            if service_name in fallback_paths:
-                pb2_module = self._import_module(fallback_paths[service_name]['pb2'])
-                grpc_module = self._import_module(fallback_paths[service_name]['grpc'])
-                
-                if pb2_module and grpc_module:
-                    self.compiled_modules[service_name] = {
-                        'pb2': pb2_module,
-                        'grpc': grpc_module
-                    }
-                    logger.info(f"✅ Successfully loaded {service_name} using fallback paths")
-                    return True
-            
-            logger.error(f"❌ Fallback loading failed for {service_name}")
+        }
+        
+        if service_name not in service_module_mappings:
+            logger.warning(f"⚠️  No fallback mapping for service: {service_name}")
             return False
+        
+        mapping = service_module_mappings[service_name]
+        
+        try:
+            # Try to load the mapped modules
+            pb2_module = self._import_module(mapping['pb2'])
+            grpc_module = self._import_module(mapping['grpc'])
             
+            if pb2_module and grpc_module:
+                self.compiled_modules[service_name] = {
+                    'pb2': pb2_module,
+                    'grpc': grpc_module
+                }
+                logger.info(f"✅ Fallback loading successful for {service_name}")
+                return True
+            else:
+                logger.error(f"❌ Failed to load fallback modules for {service_name}")
+                return False
+                
         except Exception as e:
-            logger.error(f"❌ Fallback loading error for {service_name}: {str(e)}")
+            logger.error(f"❌ Fallback loading failed for {service_name}: {str(e)}")
             return False
     def _import_module(self, module_name: str) -> Optional[Any]:
         """Import a compiled module with simplified import handling"""
