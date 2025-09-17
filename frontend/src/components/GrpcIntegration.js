@@ -936,6 +936,7 @@ function GrpcIntegration() {
                             <Button 
                               variant="outline"
                               disabled={loading}
+                              onClick={() => setCurrentSaveContext({ serviceName, methodName })}
                             >
                               <Save className="mr-2 h-4 w-4" />
                               Save As...
