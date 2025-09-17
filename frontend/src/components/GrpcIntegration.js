@@ -859,10 +859,33 @@ function GrpcIntegration() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => loadMethodExample(serviceName, methodName)}
+                            onClick={() => loadMethodDefault(serviceName, methodName)}
                           >
-                            Load Example
+                            Load Default
                           </Button>
+                          
+                          {/* Load Named Examples Dropdown */}
+                          {namedSaves[`${serviceName}_${methodName}`] && 
+                           Object.keys(namedSaves[`${serviceName}_${methodName}`]).length > 0 && (
+                            <Select
+                              value={selectedSaveToLoad}
+                              onValueChange={(value) => {
+                                setSelectedSaveToLoad(value);
+                                loadNamedExample(serviceName, methodName, value);
+                              }}
+                            >
+                              <SelectTrigger className="w-32 h-8">
+                                <SelectValue placeholder="Load Save" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {Object.keys(namedSaves[`${serviceName}_${methodName}`] || {}).map((saveName) => (
+                                  <SelectItem key={saveName} value={saveName}>
+                                    {saveName}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         </div>
                       </CardTitle>
                       <CardDescription>
