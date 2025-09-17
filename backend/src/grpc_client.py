@@ -482,7 +482,7 @@ class GrpcClient:
         
         while retry_count <= max_retry_limit:
             try:
-                self.call_statistics['total_calls'] += 1
+                self.call_stats['total_calls'] += 1
                 
                 # Get the method from stub
                 grpc_method = getattr(stub, method_name, None)
