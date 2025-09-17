@@ -204,6 +204,52 @@ class GrpcProtoLoader:
         logger.debug(f"📋 Available services: {services}")
         return services
     
+    def get_message_class(self, service_name: str, message_name: str):
+        """Get a message class from the compiled modules"""
+        logger.debug(f"📝 Getting message class: {service_name}.{message_name}")
+        
+        if service_name not in self.compiled_modules:
+            logger.error(f"❌ Service not found: {service_name}")
+            return None
+        
+        # Try to find the message in pb2 module
+        pb2_module = self.compiled_modules[service_name].get('pb2')
+        if pb2_module and hasattr(pb2_module, message_name):
+            logger.debug(f"✅ Found message class: {message_name}")
+            return getattr(pb2_module, message_name)
+        
+        # Try to find in any imported modules
+        for module_name, module in self.compiled_modules[service_name].items():
+            if hasattr(module, message_name):
+                logger.debug(f"✅ Found message class in {module_name}: {message_name}")
+                return getattr(module, message_name)
+        
+        # Search in the temp directory modules more broadly
+        if self.temp_dir:
+            try:
+                # Try to find any module that has this message class
+                for py_file in Path(self.temp_dir).rglob("*_pb2.py"):
+                    module_path = py_file.relative_to(Path(self.temp_dir))
+                    module_name = str(module_path).replace('/', '.').replace('.py', '')
+                    
+                    try:
+                        module = self._import_module(module_name)
+                        if module and hasattr(module, message_name):
+                            logger.debug(f"✅ Found message class in {module_name}: {message_name}")
+                            return getattr(module, message_name)
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.debug(f"🔍 Error during broad search: {e}")
+        
+        logger.error(f"❌ Message class not found: {message_name}")
+        if service_name in self.compiled_modules and 'pb2' in self.compiled_modules[service_name]:
+            pb2_module = self.compiled_modules[service_name]['pb2']
+            available_attrs = [attr for attr in dir(pb2_module) if not attr.startswith('_')]
+            logger.debug(f"Available attributes in {service_name} module: {available_attrs}")
+        
+        return None
+    
     def _create_utilities_module(self):
         """Create missing _utilities.py module for gRPC version checking"""
         logger.debug("🔧 Creating _utilities.py module...")
