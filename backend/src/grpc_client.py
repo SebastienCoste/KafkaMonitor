@@ -828,52 +828,130 @@ class GrpcClient:
             from google.protobuf.descriptor import FieldDescriptor
             
             if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
-                # Handle nested message fields
-                if isinstance(field_value, dict):
-                    # Create the nested message
-                    nested_message_class = field_descriptor.message_type._concrete_class
-                    nested_message = nested_message_class()
+                # Check if this is a repeated field
+                if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+                    logger.debug(f"🔄 Handling repeated message field {field_name}")
                     
-                    # Fill the nested message recursively
-                    for nested_field_name, nested_field_value in field_value.items():
-                        self._set_message_field(nested_message, nested_field_name, nested_field_value)
-                    
-                    # For oneof fields, we need special handling
-                    if field_descriptor.containing_oneof:
-                        logger.debug(f"🔄 Setting oneof field {field_name} in group {field_descriptor.containing_oneof.name}")
-                        # Clear the oneof group first
-                        message.ClearField(field_descriptor.containing_oneof.name)
-                        # Set the field directly
-                        getattr(message, field_name).CopyFrom(nested_message)
+                    if isinstance(field_value, list):
+                        # Clear the repeated field first
+                        repeated_field = getattr(message, field_name)
+                        del repeated_field[:]
+                        
+                        # Add each item in the list
+                        for item in field_value:
+                            if isinstance(item, dict):
+                                # Create nested message for each item
+                                nested_message_class = field_descriptor.message_type._concrete_class
+                                nested_message = nested_message_class()
+                                
+                                # Fill the nested message
+                                for nested_field_name, nested_field_value in item.items():
+                                    self._set_message_field(nested_message, nested_field_name, nested_field_value)
+                                
+                                # Add to repeated field
+                                repeated_field.append(nested_message)
+                            else:
+                                logger.warning(f"⚠️  Expected dict for repeated message item, got {type(item)}")
+                        
+                        logger.debug(f"✅ Set repeated message field {field_name} with {len(field_value)} items")
+                        return True
                     else:
-                        # Regular message field
-                        getattr(message, field_name).CopyFrom(nested_message)
-                    
-                    logger.debug(f"✅ Set nested message field {field_name}")
-                    return True
+                        logger.warning(f"⚠️  Expected list for repeated field {field_name}, got {type(field_value)}")
+                        return False
+                
                 else:
-                    logger.warning(f"⚠️  Expected dict for message field {field_name}, got {type(field_value)}")
-                    return False
-                    
+                    # Single message field
+                    if isinstance(field_value, dict):
+                        # Create the nested message
+                        nested_message_class = field_descriptor.message_type._concrete_class
+                        nested_message = nested_message_class()
+                        
+                        # Fill the nested message recursively
+                        for nested_field_name, nested_field_value in field_value.items():
+                            self._set_message_field(nested_message, nested_field_name, nested_field_value)
+                        
+                        # For oneof fields, we need special handling
+                        if field_descriptor.containing_oneof:
+                            logger.debug(f"🔄 Setting oneof field {field_name} in group {field_descriptor.containing_oneof.name}")
+                            # Clear the oneof group first
+                            message.ClearField(field_descriptor.containing_oneof.name)
+                            # Set the field directly
+                            getattr(message, field_name).CopyFrom(nested_message)
+                        else:
+                            # Regular message field
+                            getattr(message, field_name).CopyFrom(nested_message)
+                        
+                        logger.debug(f"✅ Set nested message field {field_name}")
+                        return True
+                    else:
+                        logger.warning(f"⚠️  Expected dict for message field {field_name}, got {type(field_value)}")
+                        return False
+                        
             elif field_descriptor.type == FieldDescriptor.TYPE_STRING:
-                setattr(message, field_name, str(field_value))
-                logger.debug(f"✅ Set string field {field_name}")
-                return True
+                # Handle repeated string fields
+                if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+                    if isinstance(field_value, list):
+                        repeated_field = getattr(message, field_name)
+                        del repeated_field[:]
+                        repeated_field.extend(field_value)
+                        logger.debug(f"✅ Set repeated string field {field_name}")
+                        return True
+                    else:
+                        logger.warning(f"⚠️  Expected list for repeated string field {field_name}, got {type(field_value)}")
+                        return False
+                else:
+                    setattr(message, field_name, str(field_value))
+                    logger.debug(f"✅ Set string field {field_name}")
+                    return True
                 
             elif field_descriptor.type in [FieldDescriptor.TYPE_INT32, FieldDescriptor.TYPE_INT64]:
-                setattr(message, field_name, int(field_value))
-                logger.debug(f"✅ Set integer field {field_name}")
-                return True
+                # Handle repeated integer fields
+                if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+                    if isinstance(field_value, list):
+                        repeated_field = getattr(message, field_name)
+                        del repeated_field[:]
+                        repeated_field.extend([int(v) for v in field_value])
+                        logger.debug(f"✅ Set repeated integer field {field_name}")
+                        return True
+                    else:
+                        logger.warning(f"⚠️  Expected list for repeated integer field {field_name}, got {type(field_value)}")
+                        return False
+                else:
+                    setattr(message, field_name, int(field_value))
+                    logger.debug(f"✅ Set integer field {field_name}")
+                    return True
                 
             elif field_descriptor.type == FieldDescriptor.TYPE_BOOL:
-                setattr(message, field_name, bool(field_value))
-                logger.debug(f"✅ Set boolean field {field_name}")
-                return True
+                if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+                    if isinstance(field_value, list):
+                        repeated_field = getattr(message, field_name)
+                        del repeated_field[:]
+                        repeated_field.extend([bool(v) for v in field_value])
+                        logger.debug(f"✅ Set repeated boolean field {field_name}")
+                        return True
+                    else:
+                        logger.warning(f"⚠️  Expected list for repeated boolean field {field_name}, got {type(field_value)}")
+                        return False
+                else:
+                    setattr(message, field_name, bool(field_value))
+                    logger.debug(f"✅ Set boolean field {field_name}")
+                    return True
                 
             elif field_descriptor.type in [FieldDescriptor.TYPE_DOUBLE, FieldDescriptor.TYPE_FLOAT]:
-                setattr(message, field_name, float(field_value))
-                logger.debug(f"✅ Set float field {field_name}")
-                return True
+                if field_descriptor.label == FieldDescriptor.LABEL_REPEATED:
+                    if isinstance(field_value, list):
+                        repeated_field = getattr(message, field_name)
+                        del repeated_field[:]
+                        repeated_field.extend([float(v) for v in field_value])
+                        logger.debug(f"✅ Set repeated float field {field_name}")
+                        return True
+                    else:
+                        logger.warning(f"⚠️  Expected list for repeated float field {field_name}, got {type(field_value)}")
+                        return False
+                else:
+                    setattr(message, field_name, float(field_value))
+                    logger.debug(f"✅ Set float field {field_name}")
+                    return True
                 
             else:
                 # Try direct assignment for other types
