@@ -121,18 +121,111 @@ function GrpcIntegration() {
   const loadMethodExample = async (serviceName, methodName) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/grpc/${serviceName}/example/${methodName}`);
-      const inputKey = `${serviceName}_${methodName}`;
-      const exampleJson = JSON.stringify(response.data.example, null, 2);
-      
-      setDynamicInputs(prev => ({
-        ...prev,
-        [inputKey]: exampleJson
-      }));
-      
-      toast.success(`Example loaded for ${methodName}`);
+      if (response.data.example) {
+        setDynamicInputs(prev => ({
+          ...prev,
+          [`${serviceName}_${methodName}`]: JSON.stringify(response.data.example, null, 2)
+        }));
+        toast.success(`Example loaded for ${methodName}`);
+      }
     } catch (error) {
       console.error(`Error loading example for ${methodName}:`, error);
       toast.error(`Failed to load example for ${methodName}`);
+    }
+  };
+
+  // Load default values for a method (REQ2)
+  const loadMethodDefault = async (serviceName, methodName) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/grpc/${serviceName}/example/${methodName}`);
+      if (response.data.example) {
+        setDynamicInputs(prev => ({
+          ...prev,
+          [`${serviceName}_${methodName}`]: JSON.stringify(response.data.example, null, 2)
+        }));
+        toast.success(`Default values loaded for ${methodName}`);
+      }
+    } catch (error) {
+      console.error(`Error loading default for ${methodName}:`, error);
+      toast.error(`Failed to load default for ${methodName}`);
+    }
+  };
+
+  // Save named example (REQ3)
+  const saveNamedExample = (serviceName, methodName) => {
+    if (!saveName.trim()) {
+      toast.error('Please enter a name for this save');
+      return;
+    }
+    
+    try {
+      const key = `${serviceName}_${methodName}`;
+      const currentData = dynamicInputs[key] || '{}';
+      
+      const newNamedSaves = {
+        ...namedSaves,
+        [key]: {
+          ...namedSaves[key],
+          [saveName]: {
+            data: currentData,
+            timestamp: new Date().toISOString(),
+            serviceName,
+            methodName
+          }
+        }
+      };
+      
+      localStorage.setItem('grpcNamedSaves', JSON.stringify(newNamedSaves));
+      setNamedSaves(newNamedSaves);
+      setSaveName('');
+      setSaveDialogOpen(false);
+      toast.success(`Saved example as "${saveName}"`);
+    } catch (error) {
+      console.error('Error saving named example:', error);
+      toast.error('Failed to save named example');
+    }
+  };
+
+  // Load named example (REQ3)
+  const loadNamedExample = (serviceName, methodName, saveName) => {
+    try {
+      const key = `${serviceName}_${methodName}`;
+      const namedSave = namedSaves[key]?.[saveName];
+      
+      if (namedSave) {
+        setDynamicInputs(prev => ({
+          ...prev,
+          [key]: namedSave.data
+        }));
+        toast.success(`Loaded example "${saveName}"`);
+      } else {
+        toast.error('Named example not found');
+      }
+    } catch (error) {
+      console.error('Error loading named example:', error);
+      toast.error('Failed to load named example');
+    }
+  };
+
+  // Delete named example
+  const deleteNamedExample = (serviceName, methodName, saveName) => {
+    try {
+      const key = `${serviceName}_${methodName}`;
+      const newNamedSaves = { ...namedSaves };
+      
+      if (newNamedSaves[key]) {
+        delete newNamedSaves[key][saveName];
+        if (Object.keys(newNamedSaves[key]).length === 0) {
+          delete newNamedSaves[key];
+        }
+      }
+      
+      localStorage.setItem('grpcNamedSaves', JSON.stringify(newNamedSaves));
+      setNamedSaves(newNamedSaves);
+      toast.success(`Deleted example "${saveName}"`);
+    } catch (error) {
+      console.error('Error deleting named example:', error);
+      toast.error('Failed to delete named example');
     }
   };
 
