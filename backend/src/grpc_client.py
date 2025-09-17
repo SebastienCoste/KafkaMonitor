@@ -497,10 +497,10 @@ class GrpcClient:
                 response = grpc_method(request, metadata=metadata, timeout=timeout)
                 
                 # Success
-                self.call_statistics['successful_calls'] += 1
-                if method_key not in self.call_statistics['retry_counts']:
-                    self.call_statistics['retry_counts'][method_key] = []
-                self.call_statistics['retry_counts'][method_key].append(retry_count)
+                self.call_stats['successful_calls'] += 1
+                if method_key not in self.call_stats['retry_counts']:
+                    self.call_stats['retry_counts'][method_key] = []
+                self.call_stats['retry_counts'][method_key].append(retry_count)
                 
                 logger.info(f"✅ {method_key} succeeded after {retry_count} retries")
                 
