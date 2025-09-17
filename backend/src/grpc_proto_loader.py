@@ -639,40 +639,6 @@ def first_version_is_lower(version1, version2):
     
 
     
-    def list_available_services(self) -> Dict[str, List[str]]:
-        """List available services and their methods"""
-        services = {}
-        
-        for service_name, modules in self.compiled_modules.items():
-            try:
-                grpc_module = modules['grpc']
-                service_methods = []
-                
-                # Get service class name
-                if service_name == 'ingress_server':
-                    service_class_name = 'IngressServerStub'
-                elif service_name == 'asset_storage':
-                    service_class_name = 'AssetStorageServiceStub'
-                else:
-                    continue
-                
-                # Get service class and list methods
-                service_class = getattr(grpc_module, service_class_name, None)
-                if service_class:
-                    # This is a simplified method listing - in practice you'd need to inspect the proto
-                    if service_name == 'ingress_server':
-                        service_methods = ['UpsertContent', 'BatchCreateAssets', 'BatchAddDownloadCounts', 'BatchAddRatings']
-                    elif service_name == 'asset_storage':
-                        service_methods = ['BatchGetSignedUrls', 'BatchUpdateStatuses']
-                
-                services[service_name] = service_methods
-                
-            except Exception as e:
-                logger.error(f"Error listing methods for {service_name}: {str(e)}")
-                services[service_name] = []
-        
-        return services
-    
     def cleanup(self):
         """Cleanup temporary files and modules"""
         logger.info("🧹 Cleaning up proto loader...")
