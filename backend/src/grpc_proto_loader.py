@@ -38,8 +38,8 @@ class GrpcProtoLoader:
         logger.info(f"🔧 Initialized GrpcProtoLoader with proto directory: {self.proto_dir}")
         logger.info(f"🔧 Proto root for imports: {self.proto_root}")
     
-    def validate_proto_files(self) -> Dict[str, bool]:
-        """Validate that required proto files are present"""
+    def validate_proto_files(self, environment_config: dict = None) -> Dict[str, bool]:
+        """Validate that required proto files are present based on environment configuration"""
         logger.info("🔍 Validating proto files...")
         
         validation_results = {
@@ -48,25 +48,44 @@ class GrpcProtoLoader:
             'all_present': False
         }
         
-        # Check for required proto files in the new structure
-        ingress_proto = self.proto_dir / "ingress_server" / "ingress_server.proto"
-        asset_proto = self.proto_dir / "asset_storage" / "asset_storage.proto"
+        # Use service_proto paths from environment configuration if available
+        if environment_config and 'grpc_services' in environment_config:
+            grpc_services = environment_config['grpc_services']
+            
+            # Check ingress_server
+            if 'ingress_server' in grpc_services and 'service_proto' in grpc_services['ingress_server']:
+                ingress_proto_path = self.proto_root / grpc_services['ingress_server']['service_proto']
+                validation_results['ingress_server'] = ingress_proto_path.exists()
+                logger.debug(f"🔍 Checking ingress_server proto: {ingress_proto_path} -> {validation_results['ingress_server']}")
+            
+            # Check asset_storage
+            if 'asset_storage' in grpc_services and 'service_proto' in grpc_services['asset_storage']:
+                asset_proto_path = self.proto_root / grpc_services['asset_storage']['service_proto']
+                validation_results['asset_storage'] = asset_proto_path.exists()
+                logger.debug(f"🔍 Checking asset_storage proto: {asset_proto_path} -> {validation_results['asset_storage']}")
+        else:
+            # Fallback to default paths
+            logger.info("🔄 Using default proto paths for validation")
+            ingress_proto = self.proto_root / "eadp/cadie/ingressserver/v1/ingress_service.proto"
+            asset_proto = self.proto_root / "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
+            
+            validation_results['ingress_server'] = ingress_proto.exists()
+            validation_results['asset_storage'] = asset_proto.exists()
+            logger.debug(f"🔍 Default paths - ingress: {ingress_proto.exists()}, asset: {asset_proto.exists()}")
         
-        validation_results['ingress_server'] = ingress_proto.exists()
-        validation_results['asset_storage'] = asset_proto.exists()
         validation_results['all_present'] = validation_results['ingress_server'] and validation_results['asset_storage']
         
         logger.info(f"📋 Proto validation results: {validation_results}")
         
         if not validation_results['all_present']:
-            missing_files = []
+            missing_services = []
             if not validation_results['ingress_server']:
-                missing_files.append("ingress_server/ingress_server.proto")
+                missing_services.append("ingress_server")
             if not validation_results['asset_storage']:
-                missing_files.append("asset_storage/asset_storage.proto")
+                missing_services.append("asset_storage")
             
-            logger.warning(f"⚠️  Missing proto files: {missing_files}")
-            logger.info("💡 Proto files are now located in the config/proto/grpc/ directory")
+            logger.warning(f"⚠️  Missing proto files for services: {missing_services}")
+            logger.info("💡 Proto files should be configured in environment service_proto paths")
         
         return validation_results
     
