@@ -677,7 +677,6 @@ function GrpcIntegration() {
           </CardContent>
         </Card>
       )}
-      </Tabs>
 
       {/* Status Display */}
       {grpcStatus && (
