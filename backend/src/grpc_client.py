@@ -51,8 +51,8 @@ class GrpcClient:
         logger.info("🔄 Initializing gRPC client...")
         
         try:
-            # Validate proto files
-            validation = self.proto_loader.validate_proto_files()
+            # Validate proto files with environment configuration
+            validation = self.proto_loader.validate_proto_files(self.environment_config)
             if not validation['all_present']:
                 return {
                     'success': False,
