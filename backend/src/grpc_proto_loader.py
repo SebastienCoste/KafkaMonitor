@@ -277,11 +277,16 @@ class GrpcProtoLoader:
                     if service_name == 'ingress_server':
                         # Convert method name to module pattern
                         method_base = message_name.replace('Request', '').replace('Response', '')
-                        if method_base.lower() in attr_name.lower():
+                        # Convert camelCase to snake_case for matching
+                        import re
+                        method_snake = re.sub('([A-Z])', r'_\1', method_base).lower().lstrip('_')
+                        method_pattern = method_snake.replace('_', '__')
+                        
+                        if method_pattern in attr_name.lower():
                             # This might be the right module, check all its attributes
                             for msg_attr in dir(imported_module):
                                 if msg_attr == message_name:
-                                    logger.debug(f"✅ Found message class by pattern matching: {message_name}")
+                                    logger.debug(f"✅ Found message class by pattern matching: {message_name} in {attr_name}")
                                     return getattr(imported_module, msg_attr)
         
         logger.error(f"❌ Message class not found: {message_name}")
