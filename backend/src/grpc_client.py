@@ -700,29 +700,34 @@ class GrpcClient:
                     logger.debug(f"📨 Response converted using MessageToDict: {response_dict}")
                 except Exception as dict_error:
                     logger.warning(f"⚠️  MessageToDict failed: {dict_error}")
+                
+                # If MessageToDict didn't work or returned empty, try manual field extraction
+                if not response_dict and response:
+                    logger.debug(f"🔍 Response type: {type(response)}")
+                    response_attrs = [attr for attr in dir(response) if not attr.startswith('_') and not callable(getattr(response, attr, None))]
+                    logger.debug(f"🔍 Response non-callable attributes: {response_attrs}")
                     
-                    # Fallback to manual field extraction
-                    if hasattr(response, 'ListFields'):
+                    # Try to get all non-private, non-callable attributes
+                    for attr_name in response_attrs:
+                        try:
+                            attr_value = getattr(response, attr_name)
+                            if attr_value is not None:  # Include all non-None values
+                                # Convert protobuf values to JSON-serializable types
+                                converted_value = self._convert_proto_value(attr_value)
+                                if converted_value:  # Only include non-empty values
+                                    response_dict[attr_name] = converted_value
+                                    logger.debug(f"🔍 Extracted attribute {attr_name}: {type(converted_value)}")
+                        except Exception as attr_error:
+                            logger.debug(f"🔍 Could not get attribute {attr_name}: {attr_error}")
+                
+                # Fallback to ListFields if still empty
+                if not response_dict and hasattr(response, 'ListFields'):
+                    try:
                         for field, value in response.ListFields():
                             response_dict[field.name] = self._convert_proto_value(value)
                         logger.debug(f"📨 Response converted using ListFields: {response_dict}")
-                    else:
-                        logger.warning(f"⚠️  Response has no ListFields: {type(response)}")
-                
-                # If still empty, try to extract all attributes
-                if not response_dict and response:
-                    logger.debug(f"🔍 Response type: {type(response)}")
-                    logger.debug(f"🔍 Response dir: {[attr for attr in dir(response) if not attr.startswith('_')]}")
-                    
-                    # Try to get all non-private attributes
-                    for attr_name in dir(response):
-                        if not attr_name.startswith('_') and not callable(getattr(response, attr_name)):
-                            try:
-                                attr_value = getattr(response, attr_name)
-                                if attr_value:  # Only include non-empty values
-                                    response_dict[attr_name] = self._convert_proto_value(attr_value)
-                            except Exception as attr_error:
-                                logger.debug(f"🔍 Could not get attribute {attr_name}: {attr_error}")
+                    except Exception as list_error:
+                        logger.warning(f"⚠️  ListFields failed: {list_error}")
                 
                 logger.info(f"📨 Final response data: {response_dict}")
                 
