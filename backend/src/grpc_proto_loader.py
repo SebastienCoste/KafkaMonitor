@@ -22,22 +22,24 @@ logger = logging.getLogger(__name__)
 class GrpcProtoLoader:
     """Manages loading and compilation of user-provided proto files"""
     
-    def __init__(self, proto_dir: str):
-        self.proto_dir = Path(proto_dir)
-        # The actual proto root should be the parent directory to handle imports correctly
-        self.proto_root = self.proto_dir.parent
+    def __init__(self, proto_root_dir: str):
+        """Initialize the gRPC proto loader with the entire proto root directory"""
+        self.proto_root = Path(proto_root_dir)
+        self.proto_dir = self.proto_root / "grpc"  # gRPC proto files subdirectory
+        self.temp_dir = None
         self.compiled_modules: Dict[str, Any] = {}
         self.service_stubs: Dict[str, Any] = {}
-        self.temp_dir = None
+        self.service_definitions: Dict[str, Dict] = {}  # Store parsed service definitions
         
-        # Create proto directory if it doesn't exist
+        # Ensure proto root exists
+        self.proto_root.mkdir(parents=True, exist_ok=True)
         self.proto_dir.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"🔧 Initialized GrpcProtoLoader with proto directory: {self.proto_dir}")
         logger.info(f"🔧 Proto root for imports: {self.proto_root}")
     
-    def validate_proto_files(self) -> Dict[str, bool]:
-        """Validate that required proto files are present"""
+    def validate_proto_files(self, environment_config: dict = None) -> Dict[str, bool]:
+        """Validate that required proto files are present based on environment configuration"""
         logger.info("🔍 Validating proto files...")
         
         validation_results = {
@@ -46,25 +48,44 @@ class GrpcProtoLoader:
             'all_present': False
         }
         
-        # Check for required proto files in the new structure
-        ingress_proto = self.proto_dir / "ingress_server" / "ingress_server.proto"
-        asset_proto = self.proto_dir / "asset_storage" / "asset_storage.proto"
+        # Use service_proto paths from environment configuration if available
+        if environment_config and 'grpc_services' in environment_config:
+            grpc_services = environment_config['grpc_services']
+            
+            # Check ingress_server
+            if 'ingress_server' in grpc_services and 'service_proto' in grpc_services['ingress_server']:
+                ingress_proto_path = self.proto_root / grpc_services['ingress_server']['service_proto']
+                validation_results['ingress_server'] = ingress_proto_path.exists()
+                logger.debug(f"🔍 Checking ingress_server proto: {ingress_proto_path} -> {validation_results['ingress_server']}")
+            
+            # Check asset_storage
+            if 'asset_storage' in grpc_services and 'service_proto' in grpc_services['asset_storage']:
+                asset_proto_path = self.proto_root / grpc_services['asset_storage']['service_proto']
+                validation_results['asset_storage'] = asset_proto_path.exists()
+                logger.debug(f"🔍 Checking asset_storage proto: {asset_proto_path} -> {validation_results['asset_storage']}")
+        else:
+            # Fallback to default paths
+            logger.info("🔄 Using default proto paths for validation")
+            ingress_proto = self.proto_root / "eadp/cadie/ingressserver/v1/ingress_service.proto"
+            asset_proto = self.proto_root / "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
+            
+            validation_results['ingress_server'] = ingress_proto.exists()
+            validation_results['asset_storage'] = asset_proto.exists()
+            logger.debug(f"🔍 Default paths - ingress: {ingress_proto.exists()}, asset: {asset_proto.exists()}")
         
-        validation_results['ingress_server'] = ingress_proto.exists()
-        validation_results['asset_storage'] = asset_proto.exists()
         validation_results['all_present'] = validation_results['ingress_server'] and validation_results['asset_storage']
         
         logger.info(f"📋 Proto validation results: {validation_results}")
         
         if not validation_results['all_present']:
-            missing_files = []
+            missing_services = []
             if not validation_results['ingress_server']:
-                missing_files.append("ingress_server/ingress_server.proto")
+                missing_services.append("ingress_server")
             if not validation_results['asset_storage']:
-                missing_files.append("asset_storage/asset_storage.proto")
+                missing_services.append("asset_storage")
             
-            logger.warning(f"⚠️  Missing proto files: {missing_files}")
-            logger.info("💡 Proto files are now located in the config/proto/grpc/ directory")
+            logger.warning(f"⚠️  Missing proto files for services: {missing_services}")
+            logger.info("💡 Proto files should be configured in environment service_proto paths")
         
         return validation_results
     
@@ -166,23 +187,111 @@ class GrpcProtoLoader:
         logger.debug("✅ Package structure created")
     
     def _rename_grpc_to_proto_gen(self):
-        """Rename 'grpc' directory to 'proto_gen' to avoid conflicts with system grpc package"""
-        logger.debug("🔄 Renaming grpc directory to proto_gen...")
+        """Move all generated files to proto_gen directory to avoid conflicts with system grpc package"""
+        logger.debug("🔄 Moving generated files to proto_gen directory...")
         
-        grpc_dir = Path(self.temp_dir) / "grpc"
-        proto_gen_dir = Path(self.temp_dir) / "proto_gen"
+        temp_path = Path(self.temp_dir)
+        proto_gen_dir = temp_path / "proto_gen"
         
-        if grpc_dir.exists():
-            # Move the directory
-            grpc_dir.rename(proto_gen_dir)
-            logger.debug(f"📁 Renamed {grpc_dir} to {proto_gen_dir}")
+        # Create proto_gen directory
+        proto_gen_dir.mkdir(exist_ok=True)
+        
+        # Create __init__.py for proto_gen
+        (proto_gen_dir / "__init__.py").touch()
+        
+        # Move all generated directories and files to proto_gen
+        for item in temp_path.iterdir():
+            if item.name == 'proto_gen':
+                continue  # Skip the proto_gen directory itself
+                
+            target_path = proto_gen_dir / item.name
             
-            # Update all Python import statements in the generated files
-            for py_file in proto_gen_dir.rglob("*.py"):
-                if py_file.name != "__init__.py":
-                    self._update_imports_in_file(py_file)
+            try:
+                if target_path.exists():
+                    # If target exists, remove it first
+                    import shutil
+                    if target_path.is_dir():
+                        shutil.rmtree(target_path)
+                    else:
+                        target_path.unlink()
+                
+                # Move the item
+                item.rename(target_path)
+                logger.debug(f"📁 Moved {item.name} to proto_gen/{item.name}")
+                
+            except Exception as e:
+                logger.warning(f"⚠️  Failed to move {item.name}: {e}")
         
-        logger.debug("✅ Directory rename completed")
+        # Update all Python import statements in the generated files
+        for py_file in proto_gen_dir.rglob("*.py"):
+            if py_file.name != "__init__.py":
+                self._update_imports_in_file(py_file)
+        
+        logger.debug("✅ Directory restructuring completed")
+    
+    def list_available_services(self) -> Dict[str, List[str]]:
+        """List all available services and their methods from parsed service definitions"""
+        services = {}
+        
+        for service_name, service_data in self.service_definitions.items():
+            service_methods = []
+            
+            # Extract methods from all services in the definition
+            for svc_name, svc_def in service_data.items():
+                if 'methods' in svc_def:
+                    for method in svc_def['methods']:
+                        service_methods.append(method['name'])
+            
+            services[service_name] = service_methods
+        
+        logger.debug(f"📋 Available services: {services}")
+        return services
+    
+    def get_message_class(self, service_name: str, message_name: str):
+        """Get a message class from the compiled modules"""
+        logger.debug(f"📝 Getting message class: {service_name}.{message_name}")
+        
+        if service_name not in self.compiled_modules:
+            logger.error(f"❌ Service not found: {service_name}")
+            return None
+        
+        # Try to find the message in pb2 module
+        pb2_module = self.compiled_modules[service_name].get('pb2')
+        if pb2_module and hasattr(pb2_module, message_name):
+            logger.debug(f"✅ Found message class: {message_name}")
+            return getattr(pb2_module, message_name)
+        
+        # Try to find in any imported modules
+        for module_name, module in self.compiled_modules[service_name].items():
+            if hasattr(module, message_name):
+                logger.debug(f"✅ Found message class in {module_name}: {message_name}")
+                return getattr(module, message_name)
+        
+        # Search in the temp directory modules more broadly
+        if self.temp_dir:
+            try:
+                # Try to find any module that has this message class
+                for py_file in Path(self.temp_dir).rglob("*_pb2.py"):
+                    module_path = py_file.relative_to(Path(self.temp_dir))
+                    module_name = str(module_path).replace('/', '.').replace('.py', '')
+                    
+                    try:
+                        module = self._import_module(module_name)
+                        if module and hasattr(module, message_name):
+                            logger.debug(f"✅ Found message class in {module_name}: {message_name}")
+                            return getattr(module, message_name)
+                    except Exception:
+                        continue
+            except Exception as e:
+                logger.debug(f"🔍 Error during broad search: {e}")
+        
+        logger.error(f"❌ Message class not found: {message_name}")
+        if service_name in self.compiled_modules and 'pb2' in self.compiled_modules[service_name]:
+            pb2_module = self.compiled_modules[service_name]['pb2']
+            available_attrs = [attr for attr in dir(pb2_module) if not attr.startswith('_')]
+            logger.debug(f"Available attributes in {service_name} module: {available_attrs}")
+        
+        return None
     
     def _create_utilities_module(self):
         """Create missing _utilities.py module for gRPC version checking"""
@@ -224,9 +333,24 @@ def first_version_is_lower(version1, version2):
             with open(py_file, 'r') as f:
                 content = f.read()
             
+            # Replace imports to add proto_gen prefix for all relevant imports
+            updated_content = content
+            
             # Replace imports from 'grpc.' to 'proto_gen.'
-            updated_content = content.replace('from grpc.', 'from proto_gen.')
+            updated_content = updated_content.replace('from grpc.', 'from proto_gen.')
             updated_content = updated_content.replace('import grpc.', 'import proto_gen.')
+            
+            # Replace imports from 'eadp.' to 'proto_gen.eadp.'
+            updated_content = updated_content.replace('from eadp.', 'from proto_gen.eadp.')
+            updated_content = updated_content.replace('import eadp.', 'import proto_gen.eadp.')
+            
+            # Replace imports from 'common.' to 'proto_gen.common.'
+            updated_content = updated_content.replace('from common.', 'from proto_gen.common.')
+            updated_content = updated_content.replace('import common.', 'import proto_gen.common.')
+            
+            # Replace imports from 'events.' to 'proto_gen.events.'
+            updated_content = updated_content.replace('from events.', 'from proto_gen.events.')
+            updated_content = updated_content.replace('import events.', 'import proto_gen.events.')
             
             if content != updated_content:
                 with open(py_file, 'w') as f:
@@ -236,46 +360,26 @@ def first_version_is_lower(version1, version2):
         except Exception as e:
             logger.warning(f"⚠️  Failed to update imports in {py_file}: {e}")
         
-        logger.debug("✅ Package structure created")
+        logger.debug("✅ Imports updated")
     
-    def load_service_modules(self) -> bool:
-        """Load compiled service modules"""
-        logger.info("📦 Loading service modules...")
-        
+    def load_service_modules(self, environment_config: dict = None) -> bool:
+        """Load gRPC service modules based on environment configuration"""
         try:
-            # Load IngressServer - use the actual compiled module paths
-            ingress_pb2 = self._import_module("proto_gen.ingress_server.ingress_server_pb2")
-            ingress_grpc = self._import_module("proto_gen.ingress_server.ingress_server_pb2_grpc")
+            # Clear existing modules
+            self.compiled_modules.clear()
+            self.service_definitions.clear()
             
-            if ingress_pb2 and ingress_grpc:
-                self.compiled_modules['ingress_server'] = {
-                    'pb2': ingress_pb2,
-                    'grpc': ingress_grpc
-                }
-                logger.info("✅ IngressServer modules loaded")
-            else:
-                logger.error("❌ Failed to load IngressServer modules")
-                # Let's try to debug what's available
-                self._debug_temp_directory()
+            if not self.temp_dir or not Path(self.temp_dir).exists():
+                logger.error("❌ Proto files not compiled yet - call compile_proto_files() first")
                 return False
             
-            # Load AssetStorageService - use the actual compiled module paths
-            asset_pb2 = self._import_module("proto_gen.asset_storage.asset_storage_pb2")
-            asset_grpc = self._import_module("proto_gen.asset_storage.asset_storage_pb2_grpc")
-            
-            if asset_pb2 and asset_grpc:
-                self.compiled_modules['asset_storage'] = {
-                    'pb2': asset_pb2,
-                    'grpc': asset_grpc
-                }
-                logger.info("✅ AssetStorageService modules loaded")
+            # Load service definitions from environment config if provided
+            if environment_config and 'grpc_services' in environment_config:
+                return self._load_services_from_config(environment_config['grpc_services'])
             else:
-                logger.error("❌ Failed to load AssetStorageService modules")
-                return False
-            
-            logger.info("🎉 All service modules loaded successfully")
-            return True
-            
+                # Fallback to default service loading
+                return self._load_default_services()
+                
         except Exception as e:
             logger.error(f"💥 Failed to load service modules: {str(e)}")
             logger.error(f"🔴 Error type: {type(e).__name__}")
@@ -283,6 +387,185 @@ def first_version_is_lower(version1, version2):
             logger.error(f"🔴 Traceback: {traceback.format_exc()}")
             return False
     
+    def _load_services_from_config(self, grpc_services_config: dict) -> bool:
+        """Load services based on configuration with service_proto paths"""
+        try:
+            for service_name, service_config in grpc_services_config.items():
+                if 'service_proto' not in service_config:
+                    logger.warning(f"⚠️  No service_proto defined for {service_name}, skipping")
+                    continue
+                
+                service_proto_path = service_config['service_proto']
+                logger.info(f"📦 Loading {service_name} from {service_proto_path}")
+                
+                # Parse the service definition to extract methods
+                service_def = self._parse_service_definition(service_proto_path)
+                if service_def:
+                    self.service_definitions[service_name] = service_def
+                
+                # Load the compiled modules
+                if not self._load_service_modules_for_service(service_name, service_proto_path):
+                    logger.error(f"❌ Failed to load modules for {service_name}")
+                    return False
+            
+            logger.info(f"✅ Successfully loaded {len(self.compiled_modules)} services")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load services from config: {str(e)}")
+            return False
+    
+    def _load_default_services(self) -> bool:
+        """Fallback method for loading services without configuration"""
+        logger.info("🔄 Loading services with default paths...")
+        
+        # Try to load from standard paths
+        default_services = {
+            'ingress_server': 'eadp/cadie/ingressserver/v1/ingress_service.proto',
+            'asset_storage': 'eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto'
+        }
+        
+        success = True
+        for service_name, proto_path in default_services.items():
+            logger.info(f"📦 Loading {service_name} from default path {proto_path}")
+            
+            # Parse the service definition
+            service_def = self._parse_service_definition(proto_path)
+            if service_def:
+                self.service_definitions[service_name] = service_def
+                
+            # Load the compiled modules
+            if not self._load_service_modules_for_service(service_name, proto_path):
+                logger.warning(f"⚠️  Failed to load modules for {service_name} from default path")
+                success = False
+        
+        return success
+    
+    
+    def _parse_service_definition(self, service_proto_path: str) -> Optional[Dict]:
+        """Parse a proto file to extract service definition and methods"""
+        try:
+            proto_file_path = self.proto_root / service_proto_path
+            if not proto_file_path.exists():
+                logger.warning(f"⚠️  Proto file not found: {proto_file_path}")
+                return None
+            
+            logger.debug(f"📖 Parsing service definition from: {proto_file_path}")
+            
+            # Read and parse the proto file
+            with open(proto_file_path, 'r') as f:
+                proto_content = f.read()
+            
+            # Extract service definitions using simple regex
+            import re
+            service_pattern = r'service\s+(\w+)\s*\{([^}]+)\}'
+            method_pattern = r'rpc\s+(\w+)\s*\(([^)]+)\)\s*returns\s*\(([^)]+)\)'
+            
+            services = {}
+            for service_match in re.finditer(service_pattern, proto_content, re.DOTALL):
+                service_name = service_match.group(1)
+                service_body = service_match.group(2)
+                
+                methods = []
+                for method_match in re.finditer(method_pattern, service_body):
+                    method_name = method_match.group(1)
+                    request_type = method_match.group(2).strip()
+                    response_type = method_match.group(3).strip()
+                    
+                    methods.append({
+                        'name': method_name,
+                        'request_type': request_type,
+                        'response_type': response_type
+                    })
+                
+                services[service_name] = {
+                    'methods': methods,
+                    'proto_path': service_proto_path
+                }
+            
+            logger.debug(f"✅ Parsed {len(services)} services from {proto_file_path}")
+            return services
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to parse service definition from {service_proto_path}: {str(e)}")
+            return None
+    
+    def _load_service_modules_for_service(self, service_name: str, service_proto_path: str) -> bool:
+        """Load compiled modules for a specific service"""
+        try:
+            logger.debug(f"📦 Loading modules for service: {service_name}")
+            
+            # Convert proto path to module path
+            # e.g., eadp/cadie/ingressserver/v1/ingress_service.proto -> proto_gen.eadp.cadie.ingressserver.v1.ingress_service_pb2
+            proto_path_parts = Path(service_proto_path).with_suffix('').parts
+            module_base = 'proto_gen.' + '.'.join(proto_path_parts)
+            
+            pb2_module_name = f"{module_base}_pb2"
+            grpc_module_name = f"{module_base}_pb2_grpc"
+            
+            logger.debug(f"🔍 Attempting to load: {pb2_module_name} and {grpc_module_name}")
+            
+            # Try to import the modules
+            pb2_module = self._import_module(pb2_module_name)
+            grpc_module = self._import_module(grpc_module_name)
+            
+            if pb2_module and grpc_module:
+                self.compiled_modules[service_name] = {
+                    'pb2': pb2_module,
+                    'grpc': grpc_module
+                }
+                logger.info(f"✅ Successfully loaded modules for {service_name}")
+                return True
+            else:
+                logger.error(f"❌ Failed to load one or both modules for {service_name}")
+                # Try fallback paths for backward compatibility
+                return self._try_fallback_module_loading(service_name)
+                
+        except Exception as e:
+            logger.error(f"❌ Error loading modules for {service_name}: {str(e)}")
+            return False
+    
+    def _try_fallback_module_loading(self, service_name: str) -> bool:
+        """Try fallback module loading with known service module mappings"""
+        logger.debug(f"🔄 Attempting fallback loading for {service_name}")
+        
+        # Known module mappings for the new structure
+        service_module_mappings = {
+            'ingress_server': {
+                'pb2': 'proto_gen.eadp.cadie.ingressserver.v1.ingress_service_pb2',
+                'grpc': 'proto_gen.eadp.cadie.ingressserver.v1.ingress_service_pb2_grpc'
+            },
+            'asset_storage': {
+                'pb2': 'proto_gen.eadp.cadie.shared.storageinterface.v1.storage_service_admin_pb2',
+                'grpc': 'proto_gen.eadp.cadie.shared.storageinterface.v1.storage_service_admin_pb2_grpc'
+            }
+        }
+        
+        if service_name not in service_module_mappings:
+            logger.warning(f"⚠️  No fallback mapping for service: {service_name}")
+            return False
+        
+        mapping = service_module_mappings[service_name]
+        
+        try:
+            # Try to load the mapped modules
+            pb2_module = self._import_module(mapping['pb2'])
+            grpc_module = self._import_module(mapping['grpc'])
+            
+            if pb2_module and grpc_module:
+                self.compiled_modules[service_name] = {
+                    'pb2': pb2_module,
+                    'grpc': grpc_module
+                }
+                logger.info(f"✅ Fallback loading successful for {service_name}")
+                return True
+            else:
+                logger.error(f"❌ Failed to load fallback modules for {service_name}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"❌ Fallback loading failed for {service_name}: {str(e)}")
+            return False
     def _import_module(self, module_name: str) -> Optional[Any]:
         """Import a compiled module with simplified import handling"""
         try:

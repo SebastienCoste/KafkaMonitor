@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package eadp.cadie.shared.storageinterface.v1;
 
-import "grpc/asset_storage/asset_identifier.proto";
+import "eadp/cadie/shared/storageinterface/v1/asset_identifier.proto";
 
 option java_multiple_files = true;
 option java_package = "eadp.cadie.shared.storageinterface.v1";

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package eadp.cadie.shared.storageinterface.v1;
+
+option java_multiple_files = true;
+option java_package = "eadp.cadie.shared.storageinterface.v1";
+option java_outer_classname = "AssetEmbargoStatusProto";
+
+message AssetEmbargoStatus {
+  string asset_id = 1;
+  bool is_embargoed = 2;
+  string embargo_reason = 3;
+  uint64 embargo_timestamp = 4;
+  uint64 embargo_end_timestamp = 5;
+}

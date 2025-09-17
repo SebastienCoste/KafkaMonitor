@@ -145,9 +145,9 @@ async def initialize_kafka_components():
         else:
             logger.warning("⚠️  No environments found - services will be initialized on first environment switch")
         
-        # Initialize gRPC client
+        # Initialize gRPC client with entire proto directory
         logger.info("🔧 Initializing gRPC client...")
-        grpc_client = GrpcClient(str(GRPC_PROTOS_DIR), str(ENVIRONMENTS_DIR))
+        grpc_client = GrpcClient(str(PROTO_DIR), str(ENVIRONMENTS_DIR))
         
         # Try to auto-initialize proto files if they exist
         try:

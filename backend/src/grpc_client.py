@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 class GrpcClient:
     """Main gRPC client for Kafka Monitor services"""
     
-    def __init__(self, proto_dir: str, environments_dir: str):
-        self.proto_loader = GrpcProtoLoader(proto_dir)
+    def __init__(self, proto_root_dir: str, environments_dir: str):
+        self.proto_loader = GrpcProtoLoader(proto_root_dir)
         self.environments_dir = Path(environments_dir)
         
         # Runtime state
@@ -51,8 +51,8 @@ class GrpcClient:
         logger.info("🔄 Initializing gRPC client...")
         
         try:
-            # Validate proto files
-            validation = self.proto_loader.validate_proto_files()
+            # Validate proto files with environment configuration
+            validation = self.proto_loader.validate_proto_files(self.environment_config)
             if not validation['all_present']:
                 return {
                     'success': False,
@@ -67,8 +67,8 @@ class GrpcClient:
                     'error': 'Failed to compile proto files'
                 }
             
-            # Load service modules
-            if not self.proto_loader.load_service_modules():
+            # Load service modules with environment configuration
+            if not self.proto_loader.load_service_modules(self.environment_config):
                 return {
                     'success': False,
                     'error': 'Failed to load service modules'

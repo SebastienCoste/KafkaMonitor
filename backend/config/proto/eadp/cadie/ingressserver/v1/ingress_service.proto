@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package eadp.cadie.ingressserver.v1;
 
-import "grpc/ingress_server/upsert_content.proto";
-import "grpc/ingress_server/delete_content.proto";
-import "grpc/ingress_server/create_assets.proto";
-import "grpc/ingress_server/add_download_counts.proto";
-import "grpc/ingress_server/add_ratings.proto";
+import "eadp/cadie/ingressserver/v1/upsert_content.proto";
+import "eadp/cadie/ingressserver/v1/delete_content.proto";
+import "eadp/cadie/ingressserver/v1/create_assets.proto";
+import "eadp/cadie/ingressserver/v1/add_download_counts.proto";
+import "eadp/cadie/ingressserver/v1/add_ratings.proto";
 
 option java_multiple_files = true;
 option java_package = "eadp.cadie.ingressserver.v1";

@@ -7,14 +7,16 @@ kafka:
   bootstrap_servers: "load-kafka.example.com:9092"
   security_protocol: "SASL_SSL"
   sasl_mechanism: "SCRAM-SHA-256"
-  username: "load-kafka-user"
-  password: "load-kafka-password"
+  username: "load-user"
+  password: "load-password"
 
 grpc_services:
   ingress_server:
     url: "load-ingress.example.com:443"
     secure: true
-    timeout: 60
+    timeout: 30
+    # Path to the service definition proto file
+    service_proto: "eadp/cadie/ingressserver/v1/ingress_service.proto"
     
   asset_storage:
     # Multiple URLs for asset storage with reader/writer labels
@@ -22,7 +24,9 @@ grpc_services:
       reader: "load-assets-reader.example.com:443"
       writer: "load-assets-writer.example.com:443"
     secure: true
-    timeout: 60
+    timeout: 30
+    # Path to the service definition proto file
+    service_proto: "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
 
 # Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files
