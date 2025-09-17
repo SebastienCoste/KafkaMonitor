@@ -215,9 +215,9 @@ function GrpcIntegration() {
   const callGrpcMethod = async (serviceName, methodName) => {
     setLoading(true);
     try {
-      // Get the textarea value for this specific method
-      const textarea = document.querySelector(`textarea[placeholder*="${methodName}"]`);
-      const textareaValue = textarea?.value || '{}';
+      // Get the input value for this specific method
+      const inputKey = `${serviceName}_${methodName}`;
+      const textareaValue = dynamicInputs[inputKey] || '{}';
       
       let requestData;
       try {
