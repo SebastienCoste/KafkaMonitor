@@ -265,43 +265,20 @@ class GrpcProtoLoader:
             logger.debug(f"✅ Found message class directly: {message_name}")
             return getattr(pb2_module, message_name)
         
-        # Hardcoded mappings for known message patterns
-        message_module_mappings = {
-            'ingress_server': {
-                'UpsertContentRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2',
-                'UpsertContentResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2',
-                'BatchCreateAssetsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_create__assets__pb2',
-                'BatchCreateAssetsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_create__assets__pb2',
-                'BatchAddDownloadCountsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__download__counts__pb2',
-                'BatchAddDownloadCountsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__download__counts__pb2',
-                'BatchAddRatingsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__ratings__pb2',
-                'BatchAddRatingsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__ratings__pb2',
-            }
-        }
-        
-        # Check hardcoded mappings
-        if service_name in message_module_mappings:
-            mapping = message_module_mappings[service_name]
-            if message_name in mapping:
-                module_name = mapping[message_name]
-                if hasattr(pb2_module, module_name):
-                    imported_module = getattr(pb2_module, module_name)
-                    if hasattr(imported_module, message_name):
-                        logger.debug(f"✅ Found message class via mapping: {message_name} in {module_name}")
-                        return getattr(imported_module, message_name)
-        
-        # Fallback: search all imported modules
+        # Search all imported modules that contain pb2 in their name
         for attr_name in dir(pb2_module):
             if not attr_name.startswith('_') and 'pb2' in attr_name:
                 try:
                     imported_module = getattr(pb2_module, attr_name)
                     if hasattr(imported_module, message_name):
-                        logger.debug(f"✅ Found message class in fallback search: {message_name} in {attr_name}")
+                        logger.debug(f"✅ Found message class in imported module {attr_name}: {message_name}")
                         return getattr(imported_module, message_name)
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"🔍 Error accessing module {attr_name}: {e}")
                     continue
         
         logger.error(f"❌ Message class not found: {message_name}")
+        logger.debug(f"Available pb2 modules: {[attr for attr in dir(pb2_module) if 'pb2' in attr]}")
         return None
     
     def _create_utilities_module(self):
