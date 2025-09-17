@@ -196,24 +196,31 @@ class GrpcProtoLoader:
         # Create proto_gen directory
         proto_gen_dir.mkdir(exist_ok=True)
         
-        # Move all generated directories to proto_gen
+        # Create __init__.py for proto_gen
+        (proto_gen_dir / "__init__.py").touch()
+        
+        # Move all generated directories and files to proto_gen
         for item in temp_path.iterdir():
-            if item.is_dir() and item.name not in ['proto_gen', '__pycache__']:
-                target_path = proto_gen_dir / item.name
-                if target_path.exists():
-                    # If target exists, merge directories
-                    import shutil
-                    shutil.rmtree(target_path)
+            if item.name == 'proto_gen':
+                continue  # Skip the proto_gen directory itself
                 
+            target_path = proto_gen_dir / item.name
+            
+            try:
+                if target_path.exists():
+                    # If target exists, remove it first
+                    import shutil
+                    if target_path.is_dir():
+                        shutil.rmtree(target_path)
+                    else:
+                        target_path.unlink()
+                
+                # Move the item
                 item.rename(target_path)
                 logger.debug(f"📁 Moved {item.name} to proto_gen/{item.name}")
-        
-        # Move all Python files directly in temp_dir to proto_gen
-        for item in temp_path.iterdir():
-            if item.is_file() and item.suffix == '.py' and item.name != '__init__.py':
-                target_path = proto_gen_dir / item.name
-                item.rename(target_path)
-                logger.debug(f"📝 Moved {item.name} to proto_gen/")
+                
+            except Exception as e:
+                logger.warning(f"⚠️  Failed to move {item.name}: {e}")
         
         # Update all Python import statements in the generated files
         for py_file in proto_gen_dir.rglob("*.py"):
