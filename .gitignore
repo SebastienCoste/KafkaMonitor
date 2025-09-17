@@ -292,3 +292,7 @@ backend/config/proto/eadp
 # Environment files
 *.env
 *.env.*
+-e 
+# Environment files
+*.env
+*.env.*
