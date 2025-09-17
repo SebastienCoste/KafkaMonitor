@@ -195,6 +195,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Fix gRPC Message Class Resolution Bug"
     - "P10/P50/P95 Message Age Metrics Backend"
     - "P10/P50/P95 Display on Topics Page"
     - "Graph Visualization Window Size Fix"
