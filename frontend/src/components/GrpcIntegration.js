@@ -649,6 +649,11 @@ function GrpcIntegration() {
                           rows={5}
                           className="font-mono"
                           placeholder={`Enter ${methodName} request parameters as JSON`}
+                          value={dynamicInputs[`${serviceName}_${methodName}`] || '{}'}
+                          onChange={(e) => setDynamicInputs(prev => ({
+                            ...prev,
+                            [`${serviceName}_${methodName}`]: e.target.value
+                          }))}
                         />
                       </div>
                       
