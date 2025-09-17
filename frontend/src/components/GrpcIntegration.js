@@ -575,14 +575,60 @@ function GrpcIntegration() {
       </Card>
 
       {/* Service Operations */}
-      <Tabs defaultValue="ingress" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="ingress">IngressServer</TabsTrigger>
-          <TabsTrigger value="asset-storage">AssetStorageService</TabsTrigger>
+      <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
+        <TabsList className={`grid w-full grid-cols-${Math.min(Object.keys(availableServices).length, 4)}`}>
+          {Object.keys(availableServices).map(serviceName => (
+            <TabsTrigger key={serviceName} value={serviceName}>
+              {serviceName === 'ingress_server' ? 'IngressServer' : 
+               serviceName === 'asset_storage' ? 'AssetStorageService' : 
+               serviceName}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
-        {/* IngressServer Tab */}
-        <TabsContent value="ingress" className="space-y-6">
+        {/* Dynamic Service Tabs */}
+        {Object.entries(availableServices).map(([serviceName, methods]) => (
+          <TabsContent key={serviceName} value={serviceName} className="space-y-6">
+            <h3 className="text-xl font-semibold mb-4">
+              {serviceName === 'ingress_server' ? 'IngressServer' : 
+               serviceName === 'asset_storage' ? 'AssetStorageService' : 
+               serviceName} Methods
+            </h3>
+            
+            {methods.map(methodName => (
+              <Card key={methodName}>
+                <CardHeader>
+                  <CardTitle>{methodName}</CardTitle>
+                  <CardDescription>
+                    {serviceName} service method
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label>Request Data (JSON)</Label>
+                    <Textarea
+                      rows={5}
+                      className="font-mono"
+                      placeholder={`Enter ${methodName} request parameters as JSON`}
+                    />
+                  </div>
+                  
+                  <Button 
+                    onClick={() => callGrpcMethod(serviceName, methodName)}
+                    disabled={loading}
+                  >
+                    {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                    Call {methodName}
+                  </Button>
+                  
+                  {results[`${serviceName}_${methodName}`] && 
+                    renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
+                  }
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+        ))}
           {/* UpsertContent */}
           <Card>
             <CardHeader>
