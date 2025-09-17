@@ -333,9 +333,39 @@ def first_version_is_lower(version1, version2):
             with open(py_file, 'r') as f:
                 content = f.read()
             
+            # Replace imports to add proto_gen prefix
+            updated_content = content
+            
             # Replace imports from 'grpc.' to 'proto_gen.'
-            updated_content = content.replace('from grpc.', 'from proto_gen.')
+            updated_content = updated_content.replace('from grpc.', 'from proto_gen.')
             updated_content = updated_content.replace('import grpc.', 'import proto_gen.')
+            
+            # Replace imports from 'eadp.' to 'proto_gen.eadp.'
+            updated_content = updated_content.replace('from eadp.', 'from proto_gen.eadp.')
+            updated_content = updated_content.replace('import eadp.', 'import proto_gen.eadp.')
+            
+            # Replace imports from other top-level directories that should be under proto_gen
+            for line in content.split('\n'):
+                if line.strip().startswith('from ') and ' import ' in line:
+                    # Extract the module path
+                    import_line = line.strip()
+                    if 'from proto_gen.' not in import_line and import_line.startswith('from '):
+                        module_part = import_line.split(' import ')[0][5:]  # Remove 'from '
+                        
+                        # Check if this is a relative import that should be under proto_gen
+                        if not module_part.startswith('proto_gen') and not module_part.startswith('.') and not module_part.startswith('google') and not module_part.startswith('grpc'):
+                            # Check if this module exists in our proto_gen structure
+                            proto_gen_path = py_file.parent
+                            while proto_gen_path.name != 'proto_gen' and proto_gen_path.parent != proto_gen_path:
+                                proto_gen_path = proto_gen_path.parent
+                            
+                            # Convert module path to file path and check if it exists
+                            module_file_path = proto_gen_path / module_part.replace('.', '/')
+                            if module_file_path.exists() or (module_file_path.parent / f"{module_file_path.name}_pb2.py").exists():
+                                updated_content = updated_content.replace(
+                                    f'from {module_part}',
+                                    f'from proto_gen.{module_part}'
+                                )
             
             if content != updated_content:
                 with open(py_file, 'w') as f:
@@ -345,7 +375,7 @@ def first_version_is_lower(version1, version2):
         except Exception as e:
             logger.warning(f"⚠️  Failed to update imports in {py_file}: {e}")
         
-        logger.debug("✅ Package structure created")
+        logger.debug("✅ Imports updated")
     
     def load_service_modules(self, environment_config: dict = None) -> bool:
         """Load gRPC service modules based on environment configuration"""
