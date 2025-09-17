@@ -88,6 +88,64 @@ function GrpcIntegration() {
   const [assetStorageUrls, setAssetStorageUrls] = useState({});
   const [selectedAssetUrlType, setSelectedAssetUrlType] = useState('reader');
 
+  // Load saved requests on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('grpcSavedRequests');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setSavedRequests(parsed);
+        setDynamicInputs(parsed);
+      } catch (error) {
+        console.error('Error loading saved requests:', error);
+      }
+    }
+  }, []);
+
+  // Load example data for a method
+  const loadMethodExample = async (serviceName, methodName) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/grpc/${serviceName}/example/${methodName}`);
+      const inputKey = `${serviceName}_${methodName}`;
+      const exampleJson = JSON.stringify(response.data.example, null, 2);
+      
+      setDynamicInputs(prev => ({
+        ...prev,
+        [inputKey]: exampleJson
+      }));
+      
+      toast.success(`Example loaded for ${methodName}`);
+    } catch (error) {
+      console.error(`Error loading example for ${methodName}:`, error);
+      toast.error(`Failed to load example for ${methodName}`);
+    }
+  };
+
+  // Save current request data
+  const saveRequestData = () => {
+    try {
+      localStorage.setItem('grpcSavedRequests', JSON.stringify(dynamicInputs));
+      setSavedRequests(dynamicInputs);
+      toast.success('Request data saved successfully');
+    } catch (error) {
+      console.error('Error saving request data:', error);
+      toast.error('Failed to save request data');
+    }
+  };
+
+  // Clear saved data
+  const clearSavedData = () => {
+    try {
+      localStorage.removeItem('grpcSavedRequests');
+      setSavedRequests({});
+      setDynamicInputs({});
+      toast.success('Saved data cleared');
+    } catch (error) {
+      console.error('Error clearing saved data:', error);
+      toast.error('Failed to clear saved data');
+    }
+  };
+
   // Load initial data
   useEffect(() => {
     loadGrpcStatus();
