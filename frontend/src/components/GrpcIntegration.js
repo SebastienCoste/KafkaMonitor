@@ -194,7 +194,7 @@ function GrpcIntegration() {
         ...namedSaves,
         [key]: {
           ...namedSaves[key],
-          [saveName]: {
+          [saveNameValue]: {
             data: currentData,
             timestamp: new Date().toISOString(),
             serviceName,
@@ -205,9 +205,9 @@ function GrpcIntegration() {
       
       localStorage.setItem('grpcNamedSaves', JSON.stringify(newNamedSaves));
       setNamedSaves(newNamedSaves);
-      setSaveName('');
-      setSaveDialogOpen(false);
-      toast.success(`Saved example as "${saveName}" for ${methodName}`);
+      setSaveName(prev => ({ ...prev, [methodKey]: '' }));
+      setSaveDialogOpen(prev => ({ ...prev, [methodKey]: false }));
+      toast.success(`Saved example as "${saveNameValue}" for ${methodName}`);
     } catch (error) {
       console.error('Error saving named example:', error);
       toast.error('Failed to save named example');
