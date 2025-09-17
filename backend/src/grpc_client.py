@@ -495,14 +495,27 @@ class GrpcClient:
                 # Make the call
                 logger.debug(f"🔄 Attempt {retry_count + 1} for {method_key}")
                 
-                # Debug: Log the actual request message content
+                # Debug: Log the actual request message content AND serialized bytes
                 try:
                     from google.protobuf.json_format import MessageToDict
                     request_dict = MessageToDict(request)
                     logger.debug(f"📤 Sending request payload: {request_dict}")
+                    
+                    # Also log the serialized size and some byte info
+                    serialized = request.SerializeToString()
+                    logger.debug(f"📦 Serialized message size: {len(serialized)} bytes")
+                    if len(serialized) == 0:
+                        logger.error(f"🚨 CRITICAL: Serialized message is EMPTY! Message: {request}")
+                        # Log field by field
+                        logger.debug(f"🔍 Message fields:")
+                        for field, value in request.ListFields():
+                            logger.debug(f"  - {field.name}: {value}")
+                    else:
+                        logger.debug(f"📦 First 50 bytes: {serialized[:50]}")
                 except Exception as debug_error:
                     logger.debug(f"📤 Could not serialize request for debug: {debug_error}")
                     logger.debug(f"📤 Request type: {type(request)}")
+                    logger.debug(f"📤 Request dir: {dir(request)}")
                 
                 response = grpc_method(request, metadata=metadata, timeout=timeout)
                 
