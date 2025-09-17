@@ -114,9 +114,14 @@ class GrpcProtoLoader:
         # Get the grpc_tools proto path for well-known types
         grpc_tools_proto_path = Path(grpc_tools.__file__).parent / "_proto"
         
+        # Create output path by replacing 'grpc' with 'proto_gen' to avoid conflicts
+        proto_relative_path = str(rel_path)
+        if proto_relative_path.startswith('grpc/'):
+            proto_relative_path = proto_relative_path.replace('grpc/', 'proto_gen/', 1)
+        
         # Create a flattened module name to avoid conflicts
-        # grpc/ingress_server/ingress_server.proto -> grpc_ingress_server_ingress_server
-        module_name = str(rel_path).replace('/', '_').replace('.proto', '')
+        # grpc/ingress_server/ingress_server.proto -> proto_gen_ingress_server_ingress_server
+        module_name = proto_relative_path.replace('/', '_').replace('.proto', '')
         
         # Prepare protoc arguments - use proto_root as the proto_path and include grpc_tools path
         args = [
