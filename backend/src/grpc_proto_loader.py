@@ -247,107 +247,15 @@ class GrpcProtoLoader:
             return False
     
     def _import_module(self, module_name: str) -> Optional[Any]:
-        """Import a compiled module with enhanced import handling"""
+        """Import a compiled module with simplified import handling"""
         try:
             logger.debug(f"📦 Importing module: {module_name}")
             
-            # If temp_dir is available, try loading from file path first to avoid conflicts
-            if self.temp_dir:
-                # Convert module name to file path
-                file_path = Path(self.temp_dir) / f"{module_name.replace('.', '/')}.py"
-                if file_path.exists():
-                    logger.debug(f"📁 Loading from file: {file_path}")
-                    spec = importlib.util.spec_from_file_location(module_name, file_path)
-                    if spec and spec.loader:
-                        module = importlib.util.module_from_spec(spec)
-                        
-                        # Temporarily modify sys.modules to handle nested imports
-                        old_modules = {}
-                        temp_modules = {}
-                        
-                        # Save current modules that might conflict
-                        conflicting_names = ['proto_gen.common', 'proto_gen.asset_storage', 'proto_gen.ingress_server']
-                        for name in conflicting_names:
-                            if name in sys.modules:
-                                old_modules[name] = sys.modules[name]
-                        
-                        try:
-                            # Load all our proto modules first
-                            proto_modules = [
-                                ('proto_gen.common.base_pb2', 'proto_gen/common/base_pb2.py'),
-                                ('proto_gen.common.types_pb2', 'proto_gen/common/types_pb2.py'),
-                                ('proto_gen.asset_storage.asset_storage_pb2', 'proto_gen/asset_storage/asset_storage_pb2.py'),
-                                ('proto_gen.ingress_server.ingress_server_pb2', 'proto_gen/ingress_server/ingress_server_pb2.py'),
-                                ('proto_gen.asset_storage.asset_storage_pb2_grpc', 'proto_gen/asset_storage/asset_storage_pb2_grpc.py'),
-                                ('proto_gen.ingress_server.ingress_server_pb2_grpc', 'proto_gen/ingress_server/ingress_server_pb2_grpc.py'),
-                            ]
-                            
-                            # Create parent modules
-                            if 'proto_gen' not in sys.modules:
-                                proto_gen_mod = importlib.util.module_from_spec(
-                                    importlib.util.spec_from_loader('proto_gen', loader=None)
-                                )
-                                sys.modules['proto_gen'] = proto_gen_mod
-                                temp_modules['proto_gen'] = proto_gen_mod
-                            
-                            if 'grpc.common' not in sys.modules:
-                                common_mod = importlib.util.module_from_spec(
-                                    importlib.util.spec_from_loader('grpc.common', loader=None)
-                                )
-                                sys.modules['grpc.common'] = common_mod
-                                temp_modules['grpc.common'] = common_mod
-                            
-                            if 'grpc.ingress_server' not in sys.modules:
-                                ingress_mod = importlib.util.module_from_spec(
-                                    importlib.util.spec_from_loader('grpc.ingress_server', loader=None)
-                                )
-                                sys.modules['grpc.ingress_server'] = ingress_mod
-                                temp_modules['grpc.ingress_server'] = ingress_mod
-                            
-                            if 'grpc.asset_storage' not in sys.modules:
-                                asset_mod = importlib.util.module_from_spec(
-                                    importlib.util.spec_from_loader('grpc.asset_storage', loader=None)
-                                )
-                                sys.modules['grpc.asset_storage'] = asset_mod
-                                temp_modules['grpc.asset_storage'] = asset_mod
-                            
-                            # Load the specific modules
-                            for mod_name, mod_path in proto_modules:
-                                mod_file_path = Path(self.temp_dir) / mod_path
-                                if mod_file_path.exists():
-                                    mod_spec = importlib.util.spec_from_file_location(mod_name, mod_file_path)
-                                    if mod_spec and mod_spec.loader:
-                                        mod = importlib.util.module_from_spec(mod_spec)
-                                        sys.modules[mod_name] = mod
-                                        temp_modules[mod_name] = mod
-                                        mod_spec.loader.exec_module(mod)
-                            
-                            # Now execute our target module
-                            spec.loader.exec_module(module)
-                            logger.debug(f"✅ Successfully loaded from file: {module_name}")
-                            return module
-                            
-                        except Exception as e:
-                            logger.error(f"❌ Error loading module {module_name}: {str(e)}")
-                            # Restore original modules
-                            for name, mod in old_modules.items():
-                                sys.modules[name] = mod
-                            # Remove temporary modules
-                            for name in temp_modules:
-                                if name in sys.modules:
-                                    del sys.modules[name]
-                            return None
-            
-            # Fall back to direct import
-            try:
-                module = importlib.import_module(module_name)
-                logger.debug(f"✅ Successfully imported: {module_name}")
-                return module
-            except ImportError:
-                pass
-            
-            logger.error(f"❌ Failed to import {module_name}: Module not found")
-            return None
+            # Simply try to import the module directly since temp_dir is in sys.path
+            import importlib
+            module = importlib.import_module(module_name)
+            logger.debug(f"✅ Successfully imported: {module_name}")
+            return module
             
         except Exception as e:
             logger.error(f"❌ Failed to import {module_name}: {str(e)}")
