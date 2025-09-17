@@ -378,7 +378,9 @@ function GrpcIntegration() {
       const response = await axios.post(`${API_BASE_URL}/api/grpc/credentials`, credentials);
       
       if (response.data.success) {
-        toast.success('Credentials set successfully');
+        // Save credentials to localStorage
+        localStorage.setItem('grpcCredentials', JSON.stringify(credentials));
+        toast.success('Credentials set and saved locally');
         loadGrpcStatus();
       } else {
         toast.error(`Failed to set credentials: ${response.data.error}`);
