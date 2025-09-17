@@ -650,7 +650,7 @@ class GrpcClient:
             
             # Make the gRPC call with retry
             try:
-                response = await self._call_with_retry(grpc_method, request_message)
+                response = await self._call_with_retry(service_name, method_name, request_message)
                 
                 # Convert response to dict
                 response_dict = {}
