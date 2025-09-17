@@ -944,7 +944,7 @@ function GrpcIntegration() {
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>Save Example</DialogTitle>
+                              <DialogTitle>Save Example for {currentSaveContext.methodName}</DialogTitle>
                               <DialogDescription>
                                 Give this example a name so you can load it later.
                               </DialogDescription>
@@ -961,18 +961,18 @@ function GrpcIntegration() {
                               </div>
                               
                               {/* Show existing saves for this method */}
-                              {namedSaves[`${serviceName}_${methodName}`] && 
-                               Object.keys(namedSaves[`${serviceName}_${methodName}`]).length > 0 && (
+                              {namedSaves[`${currentSaveContext.serviceName}_${currentSaveContext.methodName}`] && 
+                               Object.keys(namedSaves[`${currentSaveContext.serviceName}_${currentSaveContext.methodName}`]).length > 0 && (
                                 <div>
-                                  <Label>Existing Saves</Label>
+                                  <Label>Existing Saves for {currentSaveContext.methodName}</Label>
                                   <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
-                                    {Object.entries(namedSaves[`${serviceName}_${methodName}`] || {}).map(([name, save]) => (
+                                    {Object.entries(namedSaves[`${currentSaveContext.serviceName}_${currentSaveContext.methodName}`] || {}).map(([name, save]) => (
                                       <div key={name} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                                         <span className="text-sm">{name}</span>
                                         <Button
                                           size="sm"
                                           variant="ghost"
-                                          onClick={() => deleteNamedExample(serviceName, methodName, name)}
+                                          onClick={() => deleteNamedExample(currentSaveContext.serviceName, currentSaveContext.methodName, name)}
                                         >
                                           <Trash2 className="h-3 w-3" />
                                         </Button>
@@ -986,7 +986,7 @@ function GrpcIntegration() {
                               <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
                                 Cancel
                               </Button>
-                              <Button onClick={() => saveNamedExample(serviceName, methodName)}>
+                              <Button onClick={() => saveNamedExample()}>
                                 Save Example
                               </Button>
                             </DialogFooter>

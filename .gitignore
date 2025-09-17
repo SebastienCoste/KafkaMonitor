@@ -310,3 +310,4 @@ frontend/node_modules/.cache/default-development/4.pack_
 *.env
 *.env.*
 frontend/node_modules/.cache/default-development/2.pack
+frontend/node_modules/.cache/default-development/7.pack
