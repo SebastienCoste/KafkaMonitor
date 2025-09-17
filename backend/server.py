@@ -565,6 +565,35 @@ async def set_asset_storage_url(request: Dict[str, str]):
         raise HTTPException(status_code=500, detail=str(e))
 # IngressServer Endpoints
 
+@api_router.post("/grpc/{service_name}/{method_name}")
+async def dynamic_grpc_call(service_name: str, method_name: str, request: Dict[str, Any]):
+    """Dynamic gRPC method call for any service and method"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        logger.info(f"🔧 Making dynamic gRPC call: {service_name}.{method_name}")
+        logger.debug(f"📝 Request data: {request}")
+        
+        result = await grpc_client.call_dynamic_method(service_name, method_name, request)
+        return result
+    except Exception as e:
+        logger.error(f"❌ Error in dynamic gRPC call {service_name}.{method_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/grpc/{service_name}/example/{method_name}")
+async def get_method_example(service_name: str, method_name: str):
+    """Get example request data for a specific gRPC method"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        example = await grpc_client.get_method_example(service_name, method_name)
+        return {"example": example}
+    except Exception as e:
+        logger.error(f"❌ Error getting example for {service_name}.{method_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/grpc/ingress/upsert-content")
 async def upsert_content(request: Dict[str, Any]):
     """Call IngressServer.UpsertContent"""
