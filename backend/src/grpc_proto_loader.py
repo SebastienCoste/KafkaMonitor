@@ -238,50 +238,84 @@ def first_version_is_lower(version1, version2):
         
         logger.debug("✅ Package structure created")
     
-    def load_service_modules(self) -> bool:
-        """Load compiled service modules"""
-        logger.info("📦 Loading service modules...")
-        
+    def load_service_modules(self, environment_config: dict = None) -> bool:
+        """Load gRPC service modules based on environment configuration"""
         try:
-            # Load IngressServer - use the actual compiled module paths
-            ingress_pb2 = self._import_module("proto_gen.ingress_server.ingress_server_pb2")
-            ingress_grpc = self._import_module("proto_gen.ingress_server.ingress_server_pb2_grpc")
+            # Clear existing modules
+            self.compiled_modules.clear()
+            self.service_definitions.clear()
             
-            if ingress_pb2 and ingress_grpc:
-                self.compiled_modules['ingress_server'] = {
-                    'pb2': ingress_pb2,
-                    'grpc': ingress_grpc
-                }
-                logger.info("✅ IngressServer modules loaded")
-            else:
-                logger.error("❌ Failed to load IngressServer modules")
-                # Let's try to debug what's available
-                self._debug_temp_directory()
+            if not self.temp_dir or not Path(self.temp_dir).exists():
+                logger.error("❌ Proto files not compiled yet - call compile_proto_files() first")
                 return False
             
-            # Load AssetStorageService - use the actual compiled module paths
-            asset_pb2 = self._import_module("proto_gen.asset_storage.asset_storage_pb2")
-            asset_grpc = self._import_module("proto_gen.asset_storage.asset_storage_pb2_grpc")
-            
-            if asset_pb2 and asset_grpc:
-                self.compiled_modules['asset_storage'] = {
-                    'pb2': asset_pb2,
-                    'grpc': asset_grpc
-                }
-                logger.info("✅ AssetStorageService modules loaded")
+            # Load service definitions from environment config if provided
+            if environment_config and 'grpc_services' in environment_config:
+                return self._load_services_from_config(environment_config['grpc_services'])
             else:
-                logger.error("❌ Failed to load AssetStorageService modules")
-                return False
-            
-            logger.info("🎉 All service modules loaded successfully")
-            return True
-            
+                # Fallback to default service loading
+                return self._load_default_services()
+                
         except Exception as e:
             logger.error(f"💥 Failed to load service modules: {str(e)}")
             logger.error(f"🔴 Error type: {type(e).__name__}")
             import traceback
             logger.error(f"🔴 Traceback: {traceback.format_exc()}")
             return False
+    
+    def _load_services_from_config(self, grpc_services_config: dict) -> bool:
+        """Load services based on configuration with service_proto paths"""
+        try:
+            for service_name, service_config in grpc_services_config.items():
+                if 'service_proto' not in service_config:
+                    logger.warning(f"⚠️  No service_proto defined for {service_name}, skipping")
+                    continue
+                
+                service_proto_path = service_config['service_proto']
+                logger.info(f"📦 Loading {service_name} from {service_proto_path}")
+                
+                # Parse the service definition to extract methods
+                service_def = self._parse_service_definition(service_proto_path)
+                if service_def:
+                    self.service_definitions[service_name] = service_def
+                
+                # Load the compiled modules
+                if not self._load_service_modules_for_service(service_name, service_proto_path):
+                    logger.error(f"❌ Failed to load modules for {service_name}")
+                    return False
+            
+            logger.info(f"✅ Successfully loaded {len(self.compiled_modules)} services")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to load services from config: {str(e)}")
+            return False
+    
+    def _load_default_services(self) -> bool:
+        """Fallback method for loading services without configuration"""
+        logger.info("🔄 Loading services with default paths...")
+        
+        # Try to load from standard paths
+        default_services = {
+            'ingress_server': 'eadp/cadie/ingressserver/v1/ingress_service.proto',
+            'asset_storage': 'eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto'
+        }
+        
+        success = True
+        for service_name, proto_path in default_services.items():
+            logger.info(f"📦 Loading {service_name} from default path {proto_path}")
+            
+            # Parse the service definition
+            service_def = self._parse_service_definition(proto_path)
+            if service_def:
+                self.service_definitions[service_name] = service_def
+                
+            # Load the compiled modules
+            if not self._load_service_modules_for_service(service_name, proto_path):
+                logger.warning(f"⚠️  Failed to load modules for {service_name} from default path")
+                success = False
+        
+        return success
     
     def _import_module(self, module_name: str) -> Optional[Any]:
         """Import a compiled module with simplified import handling"""
