@@ -214,9 +214,20 @@ function GrpcIntegration() {
   const callGrpcMethod = async (serviceName, methodName) => {
     setLoading(true);
     try {
-      // This is a placeholder for dynamic method calls
-      // In a real implementation, you would need to handle the request data
-      const response = await axios.post(`${API_BASE_URL}/api/grpc/${serviceName}/${methodName}`, {});
+      // Get the textarea value for this specific method
+      const textarea = document.querySelector(`textarea[placeholder*="${methodName}"]`);
+      const textareaValue = textarea?.value || '{}';
+      
+      let requestData;
+      try {
+        requestData = JSON.parse(textareaValue);
+      } catch (e) {
+        toast.error('Invalid JSON in request data');
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/api/grpc/${serviceName}/${methodName}`, requestData);
       
       setResults(prev => ({ ...prev, [`${serviceName}_${methodName}`]: response.data }));
       
@@ -227,7 +238,7 @@ function GrpcIntegration() {
       }
     } catch (error) {
       console.error(`Error calling ${methodName}:`, error);
-      toast.error(`Failed to call ${methodName}`);
+      toast.error(`Failed to call ${methodName}: ${error.response?.data?.error || error.message}`);
       setResults(prev => ({ ...prev, [`${serviceName}_${methodName}`]: { success: false, error: error.message } }));
     } finally {
       setLoading(false);
