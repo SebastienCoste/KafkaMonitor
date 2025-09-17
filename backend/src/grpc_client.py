@@ -701,33 +701,50 @@ class GrpcClient:
                 except Exception as dict_error:
                     logger.warning(f"⚠️  MessageToDict failed: {dict_error}")
                 
-                # If MessageToDict didn't work or returned empty, try manual field extraction
-                if not response_dict and response:
-                    logger.debug(f"🔍 Response type: {type(response)}")
-                    response_attrs = [attr for attr in dir(response) if not attr.startswith('_') and not callable(getattr(response, attr, None))]
-                    logger.debug(f"🔍 Response non-callable attributes: {response_attrs}")
-                    
-                    # Try to get all non-private, non-callable attributes
-                    for attr_name in response_attrs:
-                        try:
-                            attr_value = getattr(response, attr_name)
-                            if attr_value is not None:  # Include all non-None values
-                                # Convert protobuf values to JSON-serializable types
-                                converted_value = self._convert_proto_value(attr_value)
-                                if converted_value:  # Only include non-empty values
-                                    response_dict[attr_name] = converted_value
-                                    logger.debug(f"🔍 Extracted attribute {attr_name}: {type(converted_value)}")
-                        except Exception as attr_error:
-                            logger.debug(f"🔍 Could not get attribute {attr_name}: {attr_error}")
-                
-                # Fallback to ListFields if still empty
+                # If MessageToDict didn't work or returned empty, use ListFields directly
                 if not response_dict and hasattr(response, 'ListFields'):
                     try:
-                        for field, value in response.ListFields():
-                            response_dict[field.name] = self._convert_proto_value(value)
+                        fields_list = response.ListFields()
+                        logger.debug(f"🔍 ListFields returned: {len(fields_list)} fields")
+                        for field, value in fields_list:
+                            field_name = field.name
+                            logger.debug(f"🔍 Processing field: {field_name} with value type: {type(value)}")
+                            try:
+                                converted_value = self._convert_proto_value(value)
+                                response_dict[field_name] = converted_value
+                                logger.debug(f"✅ Successfully converted field {field_name}")
+                            except Exception as convert_error:
+                                logger.warning(f"⚠️  Failed to convert field {field_name}: {convert_error}")
+                                # Try to add the raw value as string
+                                try:
+                                    response_dict[field_name] = str(value)
+                                except:
+                                    response_dict[field_name] = f"<unconvertible_{type(value).__name__}>"
                         logger.debug(f"📨 Response converted using ListFields: {response_dict}")
                     except Exception as list_error:
                         logger.warning(f"⚠️  ListFields failed: {list_error}")
+                
+                # If still empty, try a more direct approach with __getattribute__
+                if not response_dict and response:
+                    logger.debug(f"🔍 Trying direct attribute access approach")
+                    try:
+                        # Get the field names from the descriptor without accessing the values
+                        if hasattr(response, 'DESCRIPTOR') and hasattr(response.DESCRIPTOR, 'fields'):
+                            for field_desc in response.DESCRIPTOR.fields:
+                                field_name = field_desc.name
+                                logger.debug(f"🔍 Trying to access field: {field_name}")
+                                try:
+                                    # Use __getattribute__ to bypass some protobuf internal checks
+                                    raw_value = object.__getattribute__(response, field_name)
+                                    if raw_value is not None:
+                                        converted_value = self._convert_proto_value(raw_value)
+                                        if converted_value:
+                                            response_dict[field_name] = converted_value
+                                            logger.debug(f"✅ Got field {field_name} via direct access")
+                                except Exception as attr_error:
+                                    logger.debug(f"🔍 Direct access failed for {field_name}: {attr_error}")
+                    except Exception as desc_error:
+                        logger.debug(f"🔍 Descriptor access failed: {desc_error}")
                 
                 logger.info(f"📨 Final response data: {response_dict}")
                 
