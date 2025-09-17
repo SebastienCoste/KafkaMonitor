@@ -288,3 +288,7 @@ frontend/node_modules/.cache/
 backend/config/.protobuf_cache
 backend/config/proto/eadp
 >>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
+-e 
+# Environment files
+*.env
+*.env.*
