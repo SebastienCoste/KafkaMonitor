@@ -452,11 +452,23 @@ class GrpcClient:
         """Create gRPC metadata from credentials"""
         metadata = []
         
+        # Debug: Log current credentials state
+        logger.debug(f"🔑 Current credentials state:")
+        logger.debug(f"  - authorization: {'SET' if self.credentials.get('authorization') else 'NOT SET'}")
+        logger.debug(f"  - x_pop_token: {'SET' if self.credentials.get('x_pop_token') else 'NOT SET'}")
+        
         if self.credentials.get('authorization'):
+            auth_preview = str(self.credentials['authorization'])[:15] + "..." if len(str(self.credentials['authorization'])) > 15 else str(self.credentials['authorization'])
             metadata.append(('authorization', self.credentials['authorization']))
+            logger.debug(f"✅ Added authorization header: {auth_preview}")
         
         if self.credentials.get('x_pop_token'):
+            token_preview = str(self.credentials['x_pop_token'])[:15] + "..." if len(str(self.credentials['x_pop_token'])) > 15 else str(self.credentials['x_pop_token'])
             metadata.append(('x-pop-token', self.credentials['x_pop_token']))
+            logger.debug(f"✅ Added x-pop-token header: {token_preview}")
+        
+        if not metadata:
+            logger.warning(f"⚠️  No credentials available - metadata will be empty!")
         
         return metadata
     
