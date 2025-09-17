@@ -636,43 +636,7 @@ def first_version_is_lower(version1, version2):
             logger.error(f"💥 Failed to create stub for {service_name}: {str(e)}")
             return None
     
-    def get_message_class(self, service_name: str, message_name: str) -> Optional[Any]:
-        """Get a protobuf message class"""
-        logger.debug(f"📝 Getting message class: {service_name}.{message_name}")
-        
-        try:
-            if service_name not in self.compiled_modules:
-                logger.error(f"❌ Service module not loaded: {service_name}")
-                logger.debug(f"Available modules: {list(self.compiled_modules.keys())}")
-                return None
-            
-            pb2_module = self.compiled_modules[service_name]['pb2']
-            
-            # Try different variations of the message name
-            possible_names = [
-                message_name,
-                f"{service_name}_{message_name}",
-                f"{service_name.title()}{message_name}",
-            ]
-            
-            message_class = None
-            for name in possible_names:
-                message_class = getattr(pb2_module, name, None)
-                if message_class:
-                    logger.debug(f"✅ Found message class with name: {name}")
-                    break
-            
-            if message_class is None:
-                logger.error(f"❌ Message class not found: {message_name}")
-                logger.debug(f"Available attributes in {service_name} module: {dir(pb2_module)}")
-                return None
-            
-            logger.debug(f"✅ Message class found: {message_name}")
-            return message_class
-            
-        except Exception as e:
-            logger.error(f"💥 Failed to get message class {message_name}: {str(e)}")
-            return None
+
     
     def list_available_services(self) -> Dict[str, List[str]]:
         """List available services and their methods"""
