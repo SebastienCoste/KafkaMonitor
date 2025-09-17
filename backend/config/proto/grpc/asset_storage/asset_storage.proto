@@ -2,11 +2,11 @@ syntax = "proto3";
 
 package eadp.cadie.shared.storageinterface.v1;
 
-import "eadp/cadie/shared/storageinterface/v1/asset_url.proto";
-import "eadp/cadie/shared/storageinterface/v1/asset_status.proto";
-import "eadp/cadie/shared/storageinterface/v1/asset_upload.proto";
-import "eadp/cadie/shared/storageinterface/v1/asset_creation.proto";
-import "eadp/cadie/shared/storageinterface/v1/asset_identifier.proto";
+import "grpc/asset_storage/asset_url.proto";
+import "grpc/asset_storage/asset_status.proto";
+import "grpc/asset_storage/asset_upload.proto";
+import "grpc/asset_storage/asset_creation.proto";
+import "grpc/asset_storage/asset_identifier.proto";
 import "eadp/common/v2/player_id.proto";
 
 option java_multiple_files = true;
