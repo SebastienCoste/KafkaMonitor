@@ -83,7 +83,7 @@ class KafkaTraceViewerApp:
             self.kafka_consumer = KafkaConsumerService(
                 config_path=str(kafka_config_path),
                 decoder=self.decoder,
-                trace_header_field=self.settings.get('trace_header_field', 'trace_id')
+                trace_header_field=self.settings.get('trace_header_field', 'traceparent')
             )
 
             # Register message handler
