@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package eadp.common.v2;
+
+option java_multiple_files = true;
+option java_package = "eadp.common.v2";
+option java_outer_classname = "PlayerIdProto";
+
+message PlayerId {
+  string id = 1;
+  string namespace = 2;
+  string platform = 3;
+  map<string, string> attributes = 4;
+}
