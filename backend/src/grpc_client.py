@@ -701,50 +701,88 @@ class GrpcClient:
                 except Exception as dict_error:
                     logger.warning(f"⚠️  MessageToDict failed: {dict_error}")
                 
-                # If MessageToDict didn't work or returned empty, use ListFields directly
-                if not response_dict and hasattr(response, 'ListFields'):
-                    try:
-                        fields_list = response.ListFields()
-                        logger.debug(f"🔍 ListFields returned: {len(fields_list)} fields")
-                        for field, value in fields_list:
-                            field_name = field.name
-                            logger.debug(f"🔍 Processing field: {field_name} with value type: {type(value)}")
-                            try:
-                                converted_value = self._convert_proto_value(value)
-                                response_dict[field_name] = converted_value
-                                logger.debug(f"✅ Successfully converted field {field_name}")
-                            except Exception as convert_error:
-                                logger.warning(f"⚠️  Failed to convert field {field_name}: {convert_error}")
-                                # Try to add the raw value as string
-                                try:
-                                    response_dict[field_name] = str(value)
-                                except:
-                                    response_dict[field_name] = f"<unconvertible_{type(value).__name__}>"
-                        logger.debug(f"📨 Response converted using ListFields: {response_dict}")
-                    except Exception as list_error:
-                        logger.warning(f"⚠️  ListFields failed: {list_error}")
-                
-                # If still empty, try a more direct approach with __getattribute__
+                # If MessageToDict didn't work or returned empty, try serialization/deserialization approach
                 if not response_dict and response:
-                    logger.debug(f"🔍 Trying direct attribute access approach")
                     try:
-                        # Get the field names from the descriptor without accessing the values
-                        if hasattr(response, 'DESCRIPTOR') and hasattr(response.DESCRIPTOR, 'fields'):
-                            for field_desc in response.DESCRIPTOR.fields:
-                                field_name = field_desc.name
-                                logger.debug(f"🔍 Trying to access field: {field_name}")
-                                try:
-                                    # Use __getattribute__ to bypass some protobuf internal checks
-                                    raw_value = object.__getattribute__(response, field_name)
-                                    if raw_value is not None:
-                                        converted_value = self._convert_proto_value(raw_value)
+                        # Approach 1: Try to serialize to string and parse back
+                        logger.debug(f"🔧 Trying serialization/deserialization approach")
+                        serialized = response.SerializeToString()
+                        logger.debug(f"🔧 Response serialized to {len(serialized)} bytes")
+                        
+                        if len(serialized) > 0:
+                            # Create a new instance and parse the serialized data
+                            response_class = type(response)
+                            new_response = response_class()
+                            new_response.ParseFromString(serialized)
+                            
+                            # Try MessageToDict on the new instance
+                            response_dict = MessageToDict(new_response, preserving_proto_field_name=True)
+                            logger.debug(f"📨 Response converted via serialization: {response_dict}")
+                        
+                    except Exception as serial_error:
+                        logger.warning(f"⚠️  Serialization approach failed: {serial_error}")
+                
+                # If still empty, try raw object inspection
+                if not response_dict and response:
+                    try:
+                        logger.debug(f"🔧 Trying raw object inspection")
+                        
+                        # Try to access __dict__ directly
+                        if hasattr(response, '__dict__'):
+                            raw_dict = response.__dict__
+                            logger.debug(f"🔧 Raw __dict__: {raw_dict}")
+                            for key, value in raw_dict.items():
+                                if not key.startswith('_'):
+                                    try:
+                                        converted_value = self._convert_proto_value(value)
                                         if converted_value:
-                                            response_dict[field_name] = converted_value
-                                            logger.debug(f"✅ Got field {field_name} via direct access")
-                                except Exception as attr_error:
-                                    logger.debug(f"🔍 Direct access failed for {field_name}: {attr_error}")
-                    except Exception as desc_error:
-                        logger.debug(f"🔍 Descriptor access failed: {desc_error}")
+                                            response_dict[key] = converted_value
+                                    except Exception as convert_error:
+                                        logger.debug(f"🔧 Failed to convert {key}: {convert_error}")
+                        
+                        # Try vars() function
+                        if not response_dict:
+                            try:
+                                vars_dict = vars(response)
+                                logger.debug(f"🔧 vars() result: {vars_dict}")
+                                for key, value in vars_dict.items():
+                                    if not key.startswith('_'):
+                                        try:
+                                            converted_value = self._convert_proto_value(value)
+                                            if converted_value:
+                                                response_dict[key] = converted_value
+                                        except Exception as convert_error:
+                                            logger.debug(f"🔧 Failed to convert {key}: {convert_error}")
+                            except Exception as vars_error:
+                                logger.debug(f"🔧 vars() failed: {vars_error}")
+                        
+                        # Last resort: direct string parsing
+                        if not response_dict:
+                            try:
+                                response_str = str(response)
+                                logger.debug(f"🔧 Response string representation: {response_str[:200]}")
+                                # If the string contains recognizable data, try to extract it
+                                if 'asset_urls' in response_str and '{' in response_str:
+                                    logger.debug(f"🔧 Found asset_urls in string representation")
+                                    # For now, indicate that data exists but couldn't be extracted
+                                    response_dict = {
+                                        "_extraction_failed": True,
+                                        "_has_asset_urls": True,
+                                        "_response_string": response_str[:500]  # First 500 chars
+                                    }
+                            except Exception as str_error:
+                                logger.debug(f"🔧 String approach failed: {str_error}")
+                        
+                    except Exception as inspect_error:
+                        logger.warning(f"⚠️  Raw inspection failed: {inspect_error}")
+                
+                # If we still have nothing, provide debug info
+                if not response_dict:
+                    response_dict = {
+                        "_debug": "Response extraction completely failed",
+                        "_response_type": str(type(response)),
+                        "_protobuf_issue": "google.protobuf.pyext._message module missing"
+                    }
                 
                 logger.info(f"📨 Final response data: {response_dict}")
                 
