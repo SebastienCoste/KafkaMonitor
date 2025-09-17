@@ -920,14 +920,67 @@ function GrpcIntegration() {
                           Call {methodName}
                         </Button>
                         
-                        <Button 
-                          variant="outline"
-                          onClick={saveRequestData}
-                          disabled={loading}
-                        >
-                          <Save className="mr-2 h-4 w-4" />
-                          Save
-                        </Button>
+                        {/* Save Named Example Dialog */}
+                        <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                          <DialogTrigger asChild>
+                            <Button 
+                              variant="outline"
+                              disabled={loading}
+                            >
+                              <Save className="mr-2 h-4 w-4" />
+                              Save As...
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Save Example</DialogTitle>
+                              <DialogDescription>
+                                Give this example a name so you can load it later.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div>
+                                <Label htmlFor="saveName">Example Name</Label>
+                                <Input
+                                  id="saveName"
+                                  value={saveName}
+                                  onChange={(e) => setSaveName(e.target.value)}
+                                  placeholder="Enter a name for this example..."
+                                />
+                              </div>
+                              
+                              {/* Show existing saves for this method */}
+                              {namedSaves[`${serviceName}_${methodName}`] && 
+                               Object.keys(namedSaves[`${serviceName}_${methodName}`]).length > 0 && (
+                                <div>
+                                  <Label>Existing Saves</Label>
+                                  <div className="mt-2 space-y-1 max-h-32 overflow-y-auto">
+                                    {Object.entries(namedSaves[`${serviceName}_${methodName}`] || {}).map(([name, save]) => (
+                                      <div key={name} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                        <span className="text-sm">{name}</span>
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          onClick={() => deleteNamedExample(serviceName, methodName, name)}
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <DialogFooter>
+                              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                                Cancel
+                              </Button>
+                              <Button onClick={() => saveNamedExample(serviceName, methodName)}>
+                                Save Example
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                       
                       {results[`${serviceName}_${methodName}`] && 
