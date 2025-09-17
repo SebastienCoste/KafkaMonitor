@@ -96,6 +96,9 @@ class GrpcProtoLoader:
             # Create __init__.py files for Python package structure
             self._create_init_files()
             
+            # Rename 'grpc' directory to 'proto_gen' to avoid conflicts with system grpc
+            self._rename_grpc_to_proto_gen()
+            
             logger.info("✅ Proto compilation completed successfully")
             return True
             
