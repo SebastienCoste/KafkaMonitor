@@ -54,10 +54,9 @@ function GrpcIntegration() {
   const [dynamicInputs, setDynamicInputs] = useState({}); // Track textarea values for dynamic methods
   const [savedRequests, setSavedRequests] = useState({}); // Saved request data for persistence
   const [namedSaves, setNamedSaves] = useState({}); // Named saved examples
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [saveName, setSaveName] = useState('');
+  const [saveDialogOpen, setSaveDialogOpen] = useState({});  // Per-method dialog state
+  const [saveName, setSaveName] = useState({});  // Per-method save names
   const [selectedSavesToLoad, setSelectedSavesToLoad] = useState({}); // Per-method selected saves
-  const [currentSaveContext, setCurrentSaveContext] = useState({ serviceName: '', methodName: '' }); // Track which method is being saved
 
   // Form states for different operations
   const [upsertContentForm, setUpsertContentForm] = useState({
