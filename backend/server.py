@@ -581,6 +581,35 @@ async def dynamic_grpc_call(service_name: str, method_name: str, request: Dict[s
         logger.error(f"❌ Error in dynamic gRPC call {service_name}.{method_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/grpc/debug/messages")
+async def debug_available_messages():
+    """Debug endpoint to see what message classes are available"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        debug_info = {}
+        
+        for service_name, modules in grpc_client.proto_loader.compiled_modules.items():
+            debug_info[service_name] = {}
+            
+            for module_type, module in modules.items():
+                debug_info[service_name][module_type] = []
+                
+                # Get all attributes that look like message classes
+                for attr_name in dir(module):
+                    if not attr_name.startswith('_'):
+                        attr_value = getattr(module, attr_name)
+                        # Check if this looks like a protobuf message class
+                        if hasattr(attr_value, 'DESCRIPTOR'):
+                            debug_info[service_name][module_type].append(attr_name)
+        
+        return {"available_messages": debug_info}
+        
+    except Exception as e:
+        logger.error(f"❌ Error in debug messages: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/grpc/{service_name}/example/{method_name}")
 async def get_method_example(service_name: str, method_name: str):
     """Get example request data for a specific gRPC method"""
