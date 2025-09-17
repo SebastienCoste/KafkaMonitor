@@ -162,6 +162,45 @@ class GrpcProtoLoader:
         
         logger.debug("✅ Package structure created")
     
+    def _rename_grpc_to_proto_gen(self):
+        """Rename 'grpc' directory to 'proto_gen' to avoid conflicts with system grpc package"""
+        logger.debug("🔄 Renaming grpc directory to proto_gen...")
+        
+        grpc_dir = Path(self.temp_dir) / "grpc"
+        proto_gen_dir = Path(self.temp_dir) / "proto_gen"
+        
+        if grpc_dir.exists():
+            # Move the directory
+            grpc_dir.rename(proto_gen_dir)
+            logger.debug(f"📁 Renamed {grpc_dir} to {proto_gen_dir}")
+            
+            # Update all Python import statements in the generated files
+            for py_file in proto_gen_dir.rglob("*.py"):
+                if py_file.name != "__init__.py":
+                    self._update_imports_in_file(py_file)
+        
+        logger.debug("✅ Directory rename completed")
+    
+    def _update_imports_in_file(self, py_file: Path):
+        """Update import statements in generated Python files"""
+        try:
+            with open(py_file, 'r') as f:
+                content = f.read()
+            
+            # Replace imports from 'grpc.' to 'proto_gen.'
+            updated_content = content.replace('from grpc.', 'from proto_gen.')
+            updated_content = updated_content.replace('import grpc.', 'import proto_gen.')
+            
+            if content != updated_content:
+                with open(py_file, 'w') as f:
+                    f.write(updated_content)
+                logger.debug(f"📝 Updated imports in {py_file.name}")
+                
+        except Exception as e:
+            logger.warning(f"⚠️  Failed to update imports in {py_file}: {e}")
+        
+        logger.debug("✅ Package structure created")
+    
     def load_service_modules(self) -> bool:
         """Load compiled service modules"""
         logger.info("📦 Loading service modules...")
