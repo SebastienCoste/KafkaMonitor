@@ -513,7 +513,7 @@ class GrpcClient:
                 
             except grpc.RpcError as e:
                 retry_count += 1
-                self.call_statistics['failed_calls'] += 1
+                self.call_stats['failed_calls'] += 1
                 
                 error_details = {
                     'code': e.code().name,
