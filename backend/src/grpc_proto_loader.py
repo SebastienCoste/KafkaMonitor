@@ -187,23 +187,40 @@ class GrpcProtoLoader:
         logger.debug("✅ Package structure created")
     
     def _rename_grpc_to_proto_gen(self):
-        """Rename 'grpc' directory to 'proto_gen' to avoid conflicts with system grpc package"""
-        logger.debug("🔄 Renaming grpc directory to proto_gen...")
+        """Move all generated files to proto_gen directory to avoid conflicts with system grpc package"""
+        logger.debug("🔄 Moving generated files to proto_gen directory...")
         
-        grpc_dir = Path(self.temp_dir) / "grpc"
-        proto_gen_dir = Path(self.temp_dir) / "proto_gen"
+        temp_path = Path(self.temp_dir)
+        proto_gen_dir = temp_path / "proto_gen"
         
-        if grpc_dir.exists():
-            # Move the directory
-            grpc_dir.rename(proto_gen_dir)
-            logger.debug(f"📁 Renamed {grpc_dir} to {proto_gen_dir}")
-            
-            # Update all Python import statements in the generated files
-            for py_file in proto_gen_dir.rglob("*.py"):
-                if py_file.name != "__init__.py":
-                    self._update_imports_in_file(py_file)
+        # Create proto_gen directory
+        proto_gen_dir.mkdir(exist_ok=True)
         
-        logger.debug("✅ Directory rename completed")
+        # Move all generated directories to proto_gen
+        for item in temp_path.iterdir():
+            if item.is_dir() and item.name not in ['proto_gen', '__pycache__']:
+                target_path = proto_gen_dir / item.name
+                if target_path.exists():
+                    # If target exists, merge directories
+                    import shutil
+                    shutil.rmtree(target_path)
+                
+                item.rename(target_path)
+                logger.debug(f"📁 Moved {item.name} to proto_gen/{item.name}")
+        
+        # Move all Python files directly in temp_dir to proto_gen
+        for item in temp_path.iterdir():
+            if item.is_file() and item.suffix == '.py' and item.name != '__init__.py':
+                target_path = proto_gen_dir / item.name
+                item.rename(target_path)
+                logger.debug(f"📝 Moved {item.name} to proto_gen/")
+        
+        # Update all Python import statements in the generated files
+        for py_file in proto_gen_dir.rglob("*.py"):
+            if py_file.name != "__init__.py":
+                self._update_imports_in_file(py_file)
+        
+        logger.debug("✅ Directory restructuring completed")
     
     def list_available_services(self) -> Dict[str, List[str]]:
         """List all available services and their methods from parsed service definitions"""
