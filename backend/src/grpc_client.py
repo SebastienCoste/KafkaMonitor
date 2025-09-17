@@ -27,16 +27,18 @@ class GrpcClient:
     def __init__(self, proto_root_dir: str, environments_dir: str):
         self.proto_loader = GrpcProtoLoader(proto_root_dir)
         self.environments_dir = Path(environments_dir)
-        
-        # Runtime state
-        self.current_environment = None
-        self.environment_config = None
-        self.credentials = {}  # Stored in memory only
         self.channels = {}
         self.stubs = {}
+        self.credentials = {}  # Stored in memory only
+        self.selected_asset_storage_type = 'reader'  # Default to reader
         
-        # Statistics and state
-        self.call_statistics = {
+        # Load default environment config (DEV) on startup
+        self.environment_config = None
+        self.current_environment = 'DEV'  # Default environment
+        self._load_default_environment()
+        
+        # Initialize call statistics
+        self.call_stats = {
             'total_calls': 0,
             'successful_calls': 0,
             'failed_calls': 0,
@@ -45,6 +47,41 @@ class GrpcClient:
         }
         
         logger.info("🚀 GrpcClient initialized")
+    
+    def _load_default_environment(self):
+        """Load default environment configuration"""
+        try:
+            default_env_file = self.environments_dir / 'dev.yaml'
+            if default_env_file.exists():
+                with open(default_env_file, 'r') as f:
+                    self.environment_config = yaml.safe_load(f)
+                logger.info(f"📋 Loaded default environment: {self.current_environment}")
+            else:
+                logger.warning("⚠️  Default environment file not found, using minimal config")
+                self.environment_config = {
+                    'grpc_services': {
+                        'ingress_server': {
+                            'url': 'localhost:50051',
+                            'secure': False,
+                            'timeout': 30,
+                            'service_proto': 'eadp/cadie/ingressserver/v1/ingress_service.proto'
+                        },
+                        'asset_storage': {
+                            'urls': {
+                                'reader': 'localhost:50052',
+                                'writer': 'localhost:50053'
+                            },
+                            'secure': False,
+                            'timeout': 30,
+                            'service_proto': 'eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto'
+                        }
+                    }
+                }
+        except Exception as e:
+            logger.error(f"❌ Error loading default environment: {e}")
+            self.environment_config = {
+                'grpc_services': {}
+            }
     
     async def initialize(self) -> Dict[str, Any]:
         """Initialize the gRPC client and load proto files"""
