@@ -255,22 +255,48 @@ class GrpcProtoLoader:
             logger.error(f"❌ Service not found: {service_name}")
             return None
         
-        # Try to find the message in pb2 module
+        # Try to find the message in pb2 module first
         pb2_module = self.compiled_modules[service_name].get('pb2')
         if pb2_module and hasattr(pb2_module, message_name):
             logger.debug(f"✅ Found message class: {message_name}")
             return getattr(pb2_module, message_name)
         
-        # Try to find in any imported modules
-        for module_name, module in self.compiled_modules[service_name].items():
-            if hasattr(module, message_name):
-                logger.debug(f"✅ Found message class in {module_name}: {message_name}")
-                return getattr(module, message_name)
+        # Try to find message classes by inspecting the module structure
+        # The pb2 module is actually a service definition module that imports other modules
+        if pb2_module:
+            available_attrs = [attr for attr in dir(pb2_module) if not attr.startswith('_')]
+            logger.debug(f"Available attributes in {service_name} module: {available_attrs}")
+            
+            # Look for imported modules that might contain the message
+            for attr_name in available_attrs:
+                attr_value = getattr(pb2_module, attr_name)
+                
+                # Check if this is a module that might contain our message
+                if hasattr(attr_value, '__name__') and 'pb2' in str(attr_value):
+                    if hasattr(attr_value, message_name):
+                        logger.debug(f"✅ Found message class in {attr_name}: {message_name}")
+                        return getattr(attr_value, message_name)
         
         # Search in the temp directory modules more broadly
         if self.temp_dir:
             try:
-                # Try to find any module that has this message class
+                # Try to find the specific message file
+                message_file_pattern = message_name.lower().replace('request', '').replace('response', '')
+                
+                for py_file in Path(self.temp_dir).rglob("*_pb2.py"):
+                    if message_file_pattern in py_file.name.lower():
+                        module_path = py_file.relative_to(Path(self.temp_dir))
+                        module_name = str(module_path).replace('/', '.').replace('.py', '')
+                        
+                        try:
+                            module = self._import_module(module_name)
+                            if module and hasattr(module, message_name):
+                                logger.debug(f"✅ Found message class in {module_name}: {message_name}")
+                                return getattr(module, message_name)
+                        except Exception:
+                            continue
+                
+                # Fallback: search all modules
                 for py_file in Path(self.temp_dir).rglob("*_pb2.py"):
                     module_path = py_file.relative_to(Path(self.temp_dir))
                     module_name = str(module_path).replace('/', '.').replace('.py', '')
@@ -282,6 +308,7 @@ class GrpcProtoLoader:
                             return getattr(module, message_name)
                     except Exception:
                         continue
+                        
             except Exception as e:
                 logger.debug(f"🔍 Error during broad search: {e}")
         
