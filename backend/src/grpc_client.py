@@ -673,7 +673,18 @@ class GrpcClient:
             
             # Make the gRPC call with retry
             try:
-                response = await self._call_with_retry(service_name, method_name, request_message)
+                result = await self._call_with_retry(service_name, method_name, request_message)
+                
+                if not result.get('success'):
+                    return result  # Return error response
+                
+                # Extract the actual response from the result
+                response = result.get('response')
+                if not response:
+                    return {
+                        'success': False,
+                        'error': 'No response received from gRPC call'
+                    }
                 
                 # Convert response to dict
                 response_dict = {}
@@ -681,9 +692,14 @@ class GrpcClient:
                     for field, value in response.ListFields():
                         response_dict[field.name] = self._convert_proto_value(value)
                 
+                # Add metadata about the call
                 return {
                     'success': True,
-                    'data': response_dict
+                    'data': response_dict,
+                    'metadata': {
+                        'method': result.get('method'),
+                        'retry_count': result.get('retry_count', 0)
+                    }
                 }
                 
             except Exception as e:
