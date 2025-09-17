@@ -717,10 +717,7 @@ class GrpcClient:
             # Create the message instance
             message = request_class()
             logger.debug(f"🏗️  Creating message of type: {request_class.__name__}")
-<<<<<<< HEAD
-=======
 
->>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
             
             # Fill the message fields
             for field_name, field_value in data.items():
