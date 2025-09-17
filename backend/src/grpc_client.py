@@ -232,6 +232,83 @@ class GrpcClient:
             'url_type': url_type,
             'message': f'Asset-storage URL type set to {url_type}'
         }
+    async def _get_service_stub(self, service_name: str):
+        """Get or create a gRPC service stub"""
+        try:
+            if service_name in self.stubs:
+                return self.stubs[service_name]
+            
+            # Get service configuration
+            if service_name not in self.environment_config.get('grpc_services', {}):
+                logger.error(f"❌ Service {service_name} not found in configuration")
+                return None
+            
+            service_config = self.environment_config['grpc_services'][service_name]
+            
+            # Create channel if not exists
+            if service_name not in self.channels:
+                await self._create_channel(service_name, service_config)
+            
+            channel = self.channels.get(service_name)
+            if not channel:
+                logger.error(f"❌ Failed to create channel for {service_name}")
+                return None
+            
+            # Get the stub class from compiled modules
+            grpc_module = self.proto_loader.compiled_modules.get(service_name, {}).get('grpc')
+            if not grpc_module:
+                logger.error(f"❌ gRPC module not found for {service_name}")
+                return None
+            
+            # Find the stub class
+            stub_class = None
+            for attr_name in dir(grpc_module):
+                if attr_name.endswith('Stub') and not attr_name.startswith('_'):
+                    stub_class = getattr(grpc_module, attr_name)
+                    break
+            
+            if not stub_class:
+                logger.error(f"❌ Stub class not found for {service_name}")
+                return None
+            
+            # Create and cache the stub
+            stub = stub_class(channel)
+            self.stubs[service_name] = stub
+            
+            logger.info(f"✅ Created stub for {service_name}")
+            return stub
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating stub for {service_name}: {e}")
+            return None
+
+    async def _create_channel(self, service_name: str, service_config: Dict[str, Any]):
+        """Create a gRPC channel for a service"""
+        try:
+            # Get the service URL
+            if service_name == 'asset_storage' and 'urls' in service_config:
+                # Handle asset storage with multiple URLs
+                url_type = self.selected_asset_storage_type or 'reader'
+                service_url = service_config['urls'].get(url_type)
+            else:
+                service_url = service_config.get('url')
+            
+            if not service_url:
+                raise ValueError(f"No URL configured for service {service_name}")
+            
+            # Create channel based on security settings
+            if service_config.get('secure', False):
+                channel = grpc.aio.secure_channel(service_url, grpc.ssl_channel_credentials())
+            else:
+                channel = grpc.aio.insecure_channel(service_url)
+            
+            self.channels[service_name] = channel
+            logger.info(f"✅ Created channel for {service_name} -> {service_url}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating channel for {service_name}: {e}")
+            raise
+
     def _reset_environment_state(self):
         """Reset all environment-specific state"""
         logger.info("🔄 Resetting environment state...")
