@@ -651,7 +651,7 @@ class GrpcClient:
             # Make the gRPC call with retry
             try:
                 response = await self._call_with_retry(service_name, method_name, request_message)
-                
+
                 # Convert response to dict
                 response_dict = {}
                 if hasattr(response, 'ListFields'):
@@ -703,6 +703,7 @@ class GrpcClient:
     
     def _create_request_message(self, request_class, data: Dict[str, Any]):
         """Create a protobuf message from dictionary data with support for nested messages"""
+
         try:
             # Create the message instance
             message = request_class()
@@ -738,6 +739,7 @@ class GrpcClient:
                             setattr(message, field_name, field_value)
                         except Exception as fallback_error:
                             logger.warning(f"⚠️  Fallback assignment also failed for {field_name}: {fallback_error}")
+
                 else:
                     logger.warning(f"⚠️  Field {field_name} not found in message class")
             
