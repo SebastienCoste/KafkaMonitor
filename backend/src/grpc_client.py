@@ -954,7 +954,7 @@ class GrpcClient:
             'active_channels': list(self.channels.keys()),
             'active_stubs': list(self.stubs.keys()),
             'proto_status': self.proto_loader.get_proto_status(),
-            'statistics': self.call_statistics.copy()
+            'statistics': self.call_stats.copy()
         }
     
     def cleanup(self):
