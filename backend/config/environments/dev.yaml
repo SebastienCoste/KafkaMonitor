@@ -15,6 +15,8 @@ grpc_services:
     url: "localhost:50051"
     secure: false
     timeout: 30
+    # Path to the service definition proto file
+    service_proto: "eadp/cadie/ingressserver/v1/ingress_service.proto"
     
   asset_storage:
     # Multiple URLs for asset storage with reader/writer labels
@@ -23,6 +25,8 @@ grpc_services:
       writer: "localhost:50053"
     secure: false
     timeout: 30
+    # Path to the service definition proto file
+    service_proto: "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
 
 # Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files
