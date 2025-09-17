@@ -265,43 +265,25 @@ class GrpcProtoLoader:
             logger.debug(f"✅ Found message class directly: {message_name}")
             return getattr(pb2_module, message_name)
         
-        # Hardcoded mappings for known message patterns
-        message_module_mappings = {
-            'ingress_server': {
-                'UpsertContentRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2',
-                'UpsertContentResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2',
-                'BatchCreateAssetsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_create__assets__pb2',
-                'BatchCreateAssetsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_create__assets__pb2',
-                'BatchAddDownloadCountsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__download__counts__pb2',
-                'BatchAddDownloadCountsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__download__counts__pb2',
-                'BatchAddRatingsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__ratings__pb2',
-                'BatchAddRatingsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__ratings__pb2',
-            }
-        }
+        # Search all imported modules that contain pb2 in their name
+        pb2_modules = [attr for attr in dir(pb2_module) if not attr.startswith('_') and 'pb2' in attr]
+        logger.debug(f"🔍 Searching {len(pb2_modules)} pb2 modules for {message_name}")
         
-        # Check hardcoded mappings
-        if service_name in message_module_mappings:
-            mapping = message_module_mappings[service_name]
-            if message_name in mapping:
-                module_name = mapping[message_name]
-                if hasattr(pb2_module, module_name):
-                    imported_module = getattr(pb2_module, module_name)
-                    if hasattr(imported_module, message_name):
-                        logger.debug(f"✅ Found message class via mapping: {message_name} in {module_name}")
-                        return getattr(imported_module, message_name)
-        
-        # Fallback: search all imported modules
-        for attr_name in dir(pb2_module):
-            if not attr_name.startswith('_') and 'pb2' in attr_name:
-                try:
-                    imported_module = getattr(pb2_module, attr_name)
-                    if hasattr(imported_module, message_name):
-                        logger.debug(f"✅ Found message class in fallback search: {message_name} in {attr_name}")
-                        return getattr(imported_module, message_name)
-                except Exception:
-                    continue
+        for attr_name in pb2_modules:
+            try:
+                imported_module = getattr(pb2_module, attr_name)
+                
+                if hasattr(imported_module, message_name):
+                    logger.debug(f"✅ Found message class in imported module {attr_name}: {message_name}")
+                    return getattr(imported_module, message_name)
+                    
+            except Exception as e:
+                logger.debug(f"🔍 Error accessing module {attr_name}: {e}")
+                continue
         
         logger.error(f"❌ Message class not found: {message_name}")
+        logger.debug(f"Available pb2 modules: {pb2_modules}")
+
         return None
     
     def _create_utilities_module(self):
@@ -655,43 +637,7 @@ def first_version_is_lower(version1, version2):
             logger.error(f"💥 Failed to create stub for {service_name}: {str(e)}")
             return None
     
-    def get_message_class(self, service_name: str, message_name: str) -> Optional[Any]:
-        """Get a protobuf message class"""
-        logger.debug(f"📝 Getting message class: {service_name}.{message_name}")
-        
-        try:
-            if service_name not in self.compiled_modules:
-                logger.error(f"❌ Service module not loaded: {service_name}")
-                logger.debug(f"Available modules: {list(self.compiled_modules.keys())}")
-                return None
-            
-            pb2_module = self.compiled_modules[service_name]['pb2']
-            
-            # Try different variations of the message name
-            possible_names = [
-                message_name,
-                f"{service_name}_{message_name}",
-                f"{service_name.title()}{message_name}",
-            ]
-            
-            message_class = None
-            for name in possible_names:
-                message_class = getattr(pb2_module, name, None)
-                if message_class:
-                    logger.debug(f"✅ Found message class with name: {name}")
-                    break
-            
-            if message_class is None:
-                logger.error(f"❌ Message class not found: {message_name}")
-                logger.debug(f"Available attributes in {service_name} module: {dir(pb2_module)}")
-                return None
-            
-            logger.debug(f"✅ Message class found: {message_name}")
-            return message_class
-            
-        except Exception as e:
-            logger.error(f"💥 Failed to get message class {message_name}: {str(e)}")
-            return None
+
     
     def list_available_services(self) -> Dict[str, List[str]]:
         """List available services and their methods"""

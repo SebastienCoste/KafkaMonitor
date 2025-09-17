@@ -27,16 +27,18 @@ class GrpcClient:
     def __init__(self, proto_root_dir: str, environments_dir: str):
         self.proto_loader = GrpcProtoLoader(proto_root_dir)
         self.environments_dir = Path(environments_dir)
-        
-        # Runtime state
-        self.current_environment = None
-        self.environment_config = None
-        self.credentials = {}  # Stored in memory only
         self.channels = {}
         self.stubs = {}
+        self.credentials = {}  # Stored in memory only
+        self.selected_asset_storage_type = 'reader'  # Default to reader
         
-        # Statistics and state
-        self.call_statistics = {
+        # Load default environment config (DEV) on startup
+        self.environment_config = None
+        self.current_environment = 'DEV'  # Default environment
+        self._load_default_environment()
+        
+        # Initialize call statistics
+        self.call_stats = {
             'total_calls': 0,
             'successful_calls': 0,
             'failed_calls': 0,
@@ -45,6 +47,41 @@ class GrpcClient:
         }
         
         logger.info("🚀 GrpcClient initialized")
+    
+    def _load_default_environment(self):
+        """Load default environment configuration"""
+        try:
+            default_env_file = self.environments_dir / 'dev.yaml'
+            if default_env_file.exists():
+                with open(default_env_file, 'r') as f:
+                    self.environment_config = yaml.safe_load(f)
+                logger.info(f"📋 Loaded default environment: {self.current_environment}")
+            else:
+                logger.warning("⚠️  Default environment file not found, using minimal config")
+                self.environment_config = {
+                    'grpc_services': {
+                        'ingress_server': {
+                            'url': 'localhost:50051',
+                            'secure': False,
+                            'timeout': 30,
+                            'service_proto': 'eadp/cadie/ingressserver/v1/ingress_service.proto'
+                        },
+                        'asset_storage': {
+                            'urls': {
+                                'reader': 'localhost:50052',
+                                'writer': 'localhost:50053'
+                            },
+                            'secure': False,
+                            'timeout': 30,
+                            'service_proto': 'eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto'
+                        }
+                    }
+                }
+        except Exception as e:
+            logger.error(f"❌ Error loading default environment: {e}")
+            self.environment_config = {
+                'grpc_services': {}
+            }
     
     async def initialize(self) -> Dict[str, Any]:
         """Initialize the gRPC client and load proto files"""
@@ -326,7 +363,7 @@ class GrpcClient:
         self.credentials.clear()
         
         # Reset statistics
-        self.call_statistics = {
+        self.call_stats = {
             'total_calls': 0,
             'successful_calls': 0,
             'failed_calls': 0,
@@ -445,7 +482,7 @@ class GrpcClient:
         
         while retry_count <= max_retry_limit:
             try:
-                self.call_statistics['total_calls'] += 1
+                self.call_stats['total_calls'] += 1
                 
                 # Get the method from stub
                 grpc_method = getattr(stub, method_name, None)
@@ -460,10 +497,10 @@ class GrpcClient:
                 response = grpc_method(request, metadata=metadata, timeout=timeout)
                 
                 # Success
-                self.call_statistics['successful_calls'] += 1
-                if method_key not in self.call_statistics['retry_counts']:
-                    self.call_statistics['retry_counts'][method_key] = []
-                self.call_statistics['retry_counts'][method_key].append(retry_count)
+                self.call_stats['successful_calls'] += 1
+                if method_key not in self.call_stats['retry_counts']:
+                    self.call_stats['retry_counts'][method_key] = []
+                self.call_stats['retry_counts'][method_key].append(retry_count)
                 
                 logger.info(f"✅ {method_key} succeeded after {retry_count} retries")
                 
@@ -476,7 +513,7 @@ class GrpcClient:
                 
             except grpc.RpcError as e:
                 retry_count += 1
-                self.call_statistics['failed_calls'] += 1
+                self.call_stats['failed_calls'] += 1
                 
                 error_details = {
                     'code': e.code().name,
@@ -917,7 +954,7 @@ class GrpcClient:
             'active_channels': list(self.channels.keys()),
             'active_stubs': list(self.stubs.keys()),
             'proto_status': self.proto_loader.get_proto_status(),
-            'statistics': self.call_statistics.copy()
+            'statistics': self.call_stats.copy()
         }
     
     def cleanup(self):

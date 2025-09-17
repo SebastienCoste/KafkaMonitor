@@ -141,6 +141,24 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: gRPC integration working as expected. POST /api/grpc/initialize responds correctly (HTTP 200, 0.08s response time) and properly handles missing proto dependencies. Proto files are correctly placed in backend/config/proto/grpc/ with 15 proto files found. gRPC client gracefully handles compilation failures and returns appropriate error messages. All gRPC endpoints respond quickly without hanging (0.05-0.08s response times)."
 
+  - task: "Fix gRPC Message Class Resolution Bug"
+    implemented: true
+    working: true
+    file: "backend/src/grpc_proto_loader.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Starting fix for 'UpsertContentRequest message class not found' error in get_message_class method"
+      - working: true
+        agent: "main"
+        comment: "Fixed duplicate get_message_class method definitions. Removed the inferior implementation (line 639) that only did simple attribute lookup, kept the sophisticated implementation (line 250) that searches through imported pb2 modules. Debug endpoint confirms UpsertContentRequest is now found in eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2 module."
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: gRPC message class resolution bug fix is working perfectly. UpsertContentRequest message class is now found correctly in eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2 module. Debug endpoint /api/grpc/debug/message/ingress_server/UpsertContentRequest returns found=true. Dynamic gRPC endpoint POST /api/grpc/ingress_server/UpsertContent successfully resolves message class (responds in 0.05s). All 6 gRPC service endpoints (UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings, BatchGetSignedUrls, BatchUpdateStatuses) have working message class resolution. No regression in other message classes. The sophisticated get_message_class implementation correctly searches through imported pb2 modules. gRPC initialization returns success=true with both ingress_server and asset_storage services available."
+
 frontend:
   - task: "P10/P50/P95 Display on Topics Page"
     implemented: true
@@ -180,6 +198,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Fix gRPC Message Class Resolution Bug"
     - "P10/P50/P95 Message Age Metrics Backend"
     - "P10/P50/P95 Display on Topics Page"
     - "Graph Visualization Window Size Fix"
@@ -193,3 +212,7 @@ agent_communication:
     message: "🎉 ALL THREE REQUIREMENTS SUCCESSFULLY IMPLEMENTED: ✅ REQ1: Added P10/P50/P95 message age metrics in milliseconds to backend statistics endpoint and frontend topics display with color-coded visualization (P10-emerald, P50-amber, P95-red). ✅ REQ2: Fixed graph visualization size - increased from 600-800px to 800-1200px range with better scaling (60px per topic vs 40px) and improved zoom controls with tooltips and proper container references. ✅ REQ3: Successfully integrated uploaded gRPC proto files - resolved proto compilation issues by creating missing dependencies (eadp proto files), fixed import path conflicts by renaming 'grpc' to 'proto_gen', resolved gRPC version compatibility issues by upgrading to grpcio 1.75.0 and creating missing _utilities.py module. gRPC client now initializes successfully with available services: IngressServer (UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings) and AssetStorageService (BatchGetSignedUrls, BatchUpdateStatuses). All environments (DEV, INT, LOAD, PROD, TEST) are accessible. Application is fully functional with working trace viewer, enhanced topics page with P95 metrics, larger graph visualization, and fully operational gRPC integration page."
   - agent: "testing"
     message: "BACKEND TESTING COMPLETED: ✅ P10/P50/P95 message age metrics are working correctly - all 4 topics show valid metrics in milliseconds format with proper percentile ordering (P10 <= P50 <= P95). ✅ gRPC integration is functional - POST /api/grpc/initialize returns proper status and handles missing proto dependencies gracefully as expected. ✅ All existing statistics functionality preserved. ❌ gRPC proto compilation fails due to missing dependencies (eadp/cadie/shared/v1/download_count.proto) but this is expected behavior for partial proto collection. Overall: 54/59 backend tests passed (91.5% success rate)."
+  - agent: "main"
+    message: "🔧 CRITICAL BUG FIXED: Resolved 'UpsertContentRequest message class not found' error by removing duplicate get_message_class method definition. The sophisticated implementation now correctly searches through imported pb2 modules and successfully finds UpsertContentRequest in eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2 module. gRPC message class resolution is now working properly."
+  - agent: "testing"
+    message: "✅ CRITICAL gRPC MESSAGE CLASS RESOLUTION BUG FIX VERIFIED: The fix is working perfectly. UpsertContentRequest message class is now found correctly in eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2 module. Debug endpoint /api/grpc/debug/message/ingress_server/UpsertContentRequest returns found=true. Dynamic gRPC endpoint POST /api/grpc/ingress_server/UpsertContent successfully resolves message class and responds in 0.05s. All 6 gRPC service endpoints (ingress_server: UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings; asset_storage: BatchGetSignedUrls, BatchUpdateStatuses) have working message class resolution. No regression in other message classes. The sophisticated get_message_class implementation correctly searches through imported pb2 modules. gRPC initialization returns success=true with both services available. The duplicate method definition removal was successful and the 'message class not found' error is completely resolved."

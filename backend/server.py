@@ -581,6 +581,62 @@ async def dynamic_grpc_call(service_name: str, method_name: str, request: Dict[s
         logger.error(f"❌ Error in dynamic gRPC call {service_name}.{method_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@api_router.get("/grpc/debug/message/{service_name}/{message_name}")
+async def debug_message_search(service_name: str, message_name: str):
+    """Debug message class search process"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        result = {"steps": [], "found": False, "message_class": None}
+        
+        if service_name not in grpc_client.proto_loader.compiled_modules:
+            result["steps"].append(f"❌ Service {service_name} not found")
+            return result
+        
+        pb2_module = grpc_client.proto_loader.compiled_modules[service_name].get('pb2')
+        if not pb2_module:
+            result["steps"].append(f"❌ pb2 module not found for {service_name}")
+            return result
+        
+        result["steps"].append(f"✅ Found pb2 module for {service_name}")
+        
+        # Try direct access
+        if hasattr(pb2_module, message_name):
+            result["steps"].append(f"✅ Found {message_name} directly in pb2 module")
+            result["found"] = True
+            return result
+        
+        result["steps"].append(f"❌ {message_name} not found directly in pb2 module")
+        
+        # Search imported modules
+        pb2_modules = [attr for attr in dir(pb2_module) if not attr.startswith('_') and 'pb2' in attr]
+        result["steps"].append(f"📋 Found {len(pb2_modules)} pb2 modules: {pb2_modules}")
+        
+        for attr_name in pb2_modules:
+            try:
+                imported_module = getattr(pb2_module, attr_name)
+                module_attrs = [attr for attr in dir(imported_module) if not attr.startswith('_')]
+                result["steps"].append(f"🔍 Module {attr_name} has {len(module_attrs)} attributes")
+                
+                if hasattr(imported_module, message_name):
+                    result["steps"].append(f"✅ Found {message_name} in module {attr_name}")
+                    result["found"] = True
+                    result["module"] = attr_name
+                    return result
+                else:
+                    result["steps"].append(f"❌ {message_name} not in {attr_name}")
+                    
+            except Exception as e:
+                result["steps"].append(f"❌ Error accessing {attr_name}: {str(e)}")
+        
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Error in debug message search: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/grpc/debug/module/{service_name}/{module_name}")
 async def debug_module_contents(service_name: str, module_name: str):
     """Debug a specific module to see what message classes it contains"""
