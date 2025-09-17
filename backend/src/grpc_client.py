@@ -1247,22 +1247,49 @@ class GrpcClient:
         return example
     
     def _convert_proto_value(self, value):
-        """Convert protobuf values to JSON-serializable types"""
-        from google.protobuf.message import Message
-        from google.protobuf.pyext._message import RepeatedCompositeContainer, RepeatedScalarContainer
-        
-        if isinstance(value, Message):
-            # Convert message to dict
-            result = {}
-            for field, field_value in value.ListFields():
-                result[field.name] = self._convert_proto_value(field_value)
-            return result
-        elif isinstance(value, (RepeatedCompositeContainer, RepeatedScalarContainer)):
-            # Convert repeated fields to list
-            return [self._convert_proto_value(item) for item in value]
-        else:
-            # Return primitive values as-is
-            return value
+        """Convert protobuf values to JSON-serializable types without relying on problematic modules"""
+        try:
+            # Check if it's a protobuf message using duck typing
+            if hasattr(value, 'ListFields') and callable(getattr(value, 'ListFields')):
+                # This is a protobuf message
+                result = {}
+                try:
+                    for field, field_value in value.ListFields():
+                        result[field.name] = self._convert_proto_value(field_value)
+                    return result
+                except Exception as e:
+                    logger.debug(f"❌ ListFields failed for message: {e}")
+                    return str(value)  # Fallback to string representation
+            
+            # Check if it's a repeated container using duck typing
+            elif hasattr(value, '__iter__') and hasattr(value, '__len__') and not isinstance(value, (str, bytes)):
+                # This looks like a repeated container
+                try:
+                    result = []
+                    for item in value:
+                        converted_item = self._convert_proto_value(item)
+                        result.append(converted_item)
+                    logger.debug(f"✅ Converted repeated container with {len(result)} items")
+                    return result
+                except Exception as e:
+                    logger.debug(f"❌ Failed to convert repeated container: {e}")
+                    # Try to convert to string representation
+                    try:
+                        return [str(item) for item in value]
+                    except:
+                        return str(value)
+            
+            # For primitive values, return as-is
+            else:
+                return value
+                
+        except Exception as e:
+            logger.debug(f"❌ _convert_proto_value failed: {e}")
+            # Last resort: try to convert to string
+            try:
+                return str(value)
+            except:
+                return f"<unconvertible_{type(value).__name__}>"
 
     def debug_message_creation(self, service_name: str, method_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """DEBUG: Test message creation without making actual gRPC call"""
