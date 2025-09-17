@@ -1827,6 +1827,9 @@ class KafkaTraceViewerTester:
         # Test 11: Statistics
         self.test_statistics_endpoint()
         
+        # Test 11.1: P10/P50/P95 Message Age Metrics (NEW FEATURE)
+        self.test_p10_p50_p95_message_age_metrics()
+        
         # Test 12: WebSocket connectivity
         self.test_websocket_connectivity()
         
