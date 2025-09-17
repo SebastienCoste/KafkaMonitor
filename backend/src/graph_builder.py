@@ -3,13 +3,12 @@ Topic graph builder and trace management with FIFO eviction
 Enhanced for Phase 2: Multiple disconnected graphs, real-time statistics, trace age analysis
 """
 import logging
-import traceback
-from typing import Dict, List, Optional, Set, Any, Tuple
+from typing import Dict, List, Optional, Set, Any
 from collections import defaultdict, deque
 from datetime import datetime, timedelta
 import yaml
 import numpy as np
-from src.models import KafkaMessage, TraceInfo, TopicGraph, TopicEdge
+from src.models import KafkaMessage, TraceInfo, TopicGraph
 
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)
@@ -19,7 +18,7 @@ class TraceGraphBuilder:
     """Manages topic graph and trace collection with FIFO eviction"""
 
     def __init__(self, topics_config_path: str, max_traces: int = 1000, settings: dict = None):
-        logger.info(f"🔄 Initializing TraceGraphBuilder")
+        logger.info("🔄 Initializing TraceGraphBuilder")
         logger.info(f"📄 Topics config path: {topics_config_path}")
         logger.info(f"📊 Max traces: {max_traces}")
         
@@ -32,7 +31,7 @@ class TraceGraphBuilder:
         self.monitored_topics: Set[str] = set()
         self._load_topic_graph()
         
-        logger.info(f"✅ TraceGraphBuilder initialized successfully")
+        logger.info("✅ TraceGraphBuilder initialized successfully")
 
     def _load_topic_graph(self):
         """Load topic graph configuration"""
