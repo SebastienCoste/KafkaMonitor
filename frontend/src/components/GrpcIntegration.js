@@ -686,7 +686,43 @@ function GrpcIntegration() {
 
       {/* Service Operations */}
       {initialized && Object.keys(availableServices).length > 0 ? (
-        <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
+        <div className="space-y-6">
+          {/* Global Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Request Data Management</CardTitle>
+              <CardDescription>
+                Save and manage your gRPC request data across app reloads
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={saveRequestData}
+                  disabled={loading}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Save All Requests
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={clearSavedData}
+                  disabled={loading}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear Saved Data
+                </Button>
+                
+                <Badge variant="secondary">
+                  {Object.keys(savedRequests).length} requests saved
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             {Object.keys(availableServices).map(serviceName => (
               <TabsTrigger key={serviceName} value={serviceName}>
