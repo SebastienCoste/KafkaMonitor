@@ -290,16 +290,22 @@ function GrpcIntegration() {
 
   const loadGrpcStatus = async () => {
     try {
+      console.log('🔍 Loading gRPC status...');
       const response = await axios.get(`${API_BASE_URL}/api/grpc/status`);
+      console.log('📊 gRPC status response:', response.data);
       setGrpcStatus(response.data);
       setInitialized(response.data.initialized);
+      console.log('✅ Set initialized to:', response.data.initialized);
       
       // If already initialized, fetch available services
       if (response.data.initialized) {
+        console.log('🚀 Client already initialized, fetching services...');
         try {
           const servicesResponse = await axios.post(`${API_BASE_URL}/api/grpc/initialize`);
+          console.log('📋 Services response:', servicesResponse.data);
           if (servicesResponse.data.success && servicesResponse.data.available_services) {
             setAvailableServices(servicesResponse.data.available_services);
+            console.log('✅ Set available services:', servicesResponse.data.available_services);
           }
         } catch (error) {
           console.error('Error fetching available services:', error);
