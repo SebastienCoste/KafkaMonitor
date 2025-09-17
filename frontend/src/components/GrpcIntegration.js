@@ -708,7 +708,18 @@ function GrpcIntegration() {
                 methods.map(methodName => (
                   <Card key={methodName}>
                     <CardHeader>
-                      <CardTitle>{methodName}</CardTitle>
+                      <CardTitle className="flex items-center justify-between">
+                        {methodName}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => loadMethodExample(serviceName, methodName)}
+                          >
+                            Load Example
+                          </Button>
+                        </div>
+                      </CardTitle>
                       <CardDescription>
                         {serviceName} service method
                       </CardDescription>
@@ -717,8 +728,8 @@ function GrpcIntegration() {
                       <div>
                         <Label>Request Data (JSON)</Label>
                         <Textarea
-                          rows={5}
-                          className="font-mono"
+                          rows={8}
+                          className="font-mono text-sm"
                           placeholder={`Enter ${methodName} request parameters as JSON`}
                           value={dynamicInputs[`${serviceName}_${methodName}`] || '{}'}
                           onChange={(e) => setDynamicInputs(prev => ({
@@ -726,15 +737,30 @@ function GrpcIntegration() {
                             [`${serviceName}_${methodName}`]: e.target.value
                           }))}
                         />
+                        <div className="text-xs text-gray-500 mt-1">
+                          Use <code>{"{{rand}}"}</code> for random values in your JSON
+                        </div>
                       </div>
                       
-                      <Button 
-                        onClick={() => callGrpcMethod(serviceName, methodName)}
-                        disabled={loading}
-                      >
-                        {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                        Call {methodName}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => callGrpcMethod(serviceName, methodName)}
+                          disabled={loading}
+                          className="flex-1"
+                        >
+                          {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                          Call {methodName}
+                        </Button>
+                        
+                        <Button 
+                          variant="outline"
+                          onClick={saveRequestData}
+                          disabled={loading}
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save
+                        </Button>
+                      </div>
                       
                       {results[`${serviceName}_${methodName}`] && 
                         renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
