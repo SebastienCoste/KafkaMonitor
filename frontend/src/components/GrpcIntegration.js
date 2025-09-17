@@ -1048,10 +1048,10 @@ function GrpcIntegration() {
                               )}
                             </div>
                             <DialogFooter>
-                              <Button variant="outline" onClick={() => setSaveDialogOpen(false)}>
+                              <Button variant="outline" onClick={() => setSaveDialogOpen(prev => ({ ...prev, [`${serviceName}_${methodName}`]: false }))}>
                                 Cancel
                               </Button>
-                              <Button onClick={() => saveNamedExample()}>
+                              <Button onClick={() => saveNamedExample(serviceName, methodName)}>
                                 Save Example
                               </Button>
                             </DialogFooter>
