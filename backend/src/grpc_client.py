@@ -714,6 +714,15 @@ class GrpcClient:
                         'error': 'No response received from gRPC call'
                     }
                 
+                # LOG RAW RESPONSE - As requested for debugging
+                try:
+                    response_str = str(response)
+                    logger.info(f"📋 Raw response (first 300 chars): {response_str[:300]}")
+                    if len(response_str) > 300:
+                        logger.debug(f"📋 Full raw response: {response_str}")
+                except Exception as str_error:
+                    logger.warning(f"⚠️  Could not convert response to string: {str_error}")
+                
                 # Enhanced response conversion - simplified direct approach
                 response_dict = {}
                 
