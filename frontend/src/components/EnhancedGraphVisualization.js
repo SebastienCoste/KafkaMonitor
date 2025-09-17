@@ -223,9 +223,12 @@ function EnhancedGraphVisualization() {
             enabled: true,
             direction: 'UD',
             sortMethod: 'directed',
-            nodeSpacing: 150,
-            levelSeparation: 200,
-            treeSpacing: 300
+            nodeSpacing: 200,
+            levelSeparation: 250,
+            treeSpacing: 400,
+            blockShifting: true,
+            edgeMinimization: true,
+            parentCentralization: true
           }
         } : {
           improvedLayout: true,
