@@ -661,11 +661,7 @@ class GrpcClient:
             # Make the gRPC call with retry
             try:
                 response = await self._call_with_retry(service_name, method_name, request_message)
-<<<<<<< HEAD
                 
-=======
-
->>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                 # Convert response to dict
                 response_dict = {}
                 if hasattr(response, 'ListFields'):
