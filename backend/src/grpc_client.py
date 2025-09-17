@@ -232,6 +232,83 @@ class GrpcClient:
             'url_type': url_type,
             'message': f'Asset-storage URL type set to {url_type}'
         }
+    async def _get_service_stub(self, service_name: str):
+        """Get or create a gRPC service stub"""
+        try:
+            if service_name in self.stubs:
+                return self.stubs[service_name]
+            
+            # Get service configuration
+            if service_name not in self.environment_config.get('grpc_services', {}):
+                logger.error(f"❌ Service {service_name} not found in configuration")
+                return None
+            
+            service_config = self.environment_config['grpc_services'][service_name]
+            
+            # Create channel if not exists
+            if service_name not in self.channels:
+                await self._create_channel(service_name, service_config)
+            
+            channel = self.channels.get(service_name)
+            if not channel:
+                logger.error(f"❌ Failed to create channel for {service_name}")
+                return None
+            
+            # Get the stub class from compiled modules
+            grpc_module = self.proto_loader.compiled_modules.get(service_name, {}).get('grpc')
+            if not grpc_module:
+                logger.error(f"❌ gRPC module not found for {service_name}")
+                return None
+            
+            # Find the stub class
+            stub_class = None
+            for attr_name in dir(grpc_module):
+                if attr_name.endswith('Stub') and not attr_name.startswith('_'):
+                    stub_class = getattr(grpc_module, attr_name)
+                    break
+            
+            if not stub_class:
+                logger.error(f"❌ Stub class not found for {service_name}")
+                return None
+            
+            # Create and cache the stub
+            stub = stub_class(channel)
+            self.stubs[service_name] = stub
+            
+            logger.info(f"✅ Created stub for {service_name}")
+            return stub
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating stub for {service_name}: {e}")
+            return None
+
+    async def _create_channel(self, service_name: str, service_config: Dict[str, Any]):
+        """Create a gRPC channel for a service"""
+        try:
+            # Get the service URL
+            if service_name == 'asset_storage' and 'urls' in service_config:
+                # Handle asset storage with multiple URLs
+                url_type = self.selected_asset_storage_type or 'reader'
+                service_url = service_config['urls'].get(url_type)
+            else:
+                service_url = service_config.get('url')
+            
+            if not service_url:
+                raise ValueError(f"No URL configured for service {service_name}")
+            
+            # Create channel based on security settings
+            if service_config.get('secure', False):
+                channel = grpc.aio.secure_channel(service_url, grpc.ssl_channel_credentials())
+            else:
+                channel = grpc.aio.insecure_channel(service_url)
+            
+            self.channels[service_name] = channel
+            logger.info(f"✅ Created channel for {service_name} -> {service_url}")
+            
+        except Exception as e:
+            logger.error(f"❌ Error creating channel for {service_name}: {e}")
+            raise
+
     def _reset_environment_state(self):
         """Reset all environment-specific state"""
         logger.info("🔄 Resetting environment state...")
@@ -492,6 +569,184 @@ class GrpcClient:
             logger.error(f"💥 {error_msg}")
             return {'success': False, 'error': error_msg}
     
+    async def call_dynamic_method(self, service_name: str, method_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Dynamically call any gRPC service method"""
+        try:
+            logger.info(f"📞 Dynamic gRPC call: {service_name}.{method_name}")
+            
+            # Get the service stub
+            stub = await self._get_service_stub(service_name)
+            if not stub:
+                return {
+                    'success': False,
+                    'error': f'Service stub not available for {service_name}'
+                }
+            
+            # Get the method from the stub
+            if not hasattr(stub, method_name):
+                return {
+                    'success': False,
+                    'error': f'Method {method_name} not found in service {service_name}'
+                }
+            
+            grpc_method = getattr(stub, method_name)
+            
+            # Get the request message class
+            request_class = self.proto_loader.get_message_class(service_name, f"{method_name}Request")
+            if not request_class:
+                return {
+                    'success': False,
+                    'error': f'Request message class not found for {method_name}'
+                }
+            
+            # Process the request data (handle {{rand}} replacement)
+            processed_data = self._process_template_variables(request_data)
+            
+            # Create the request message
+            try:
+                request_message = self._create_request_message(request_class, processed_data)
+            except Exception as e:
+                return {
+                    'success': False,
+                    'error': f'Failed to create request message: {str(e)}'
+                }
+            
+            # Make the gRPC call with retry
+            try:
+                response = await self._call_with_retry(grpc_method, request_message)
+                
+                # Convert response to dict
+                response_dict = {}
+                if hasattr(response, 'ListFields'):
+                    for field, value in response.ListFields():
+                        response_dict[field.name] = self._convert_proto_value(value)
+                
+                return {
+                    'success': True,
+                    'data': response_dict
+                }
+                
+            except Exception as e:
+                logger.error(f"❌ gRPC call failed: {str(e)}")
+                return {
+                    'success': False,
+                    'error': f'gRPC call failed: {str(e)}'
+                }
+                
+        except Exception as e:
+            logger.error(f"❌ Dynamic method call error: {str(e)}")
+            return {
+                'success': False,
+                'error': f'Dynamic method call error: {str(e)}'
+            }
+    
+    def _process_template_variables(self, data: Dict[str, Any], variables: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Process template variables like {{rand}} in request data"""
+        import json
+        import random
+        import string
+        
+        # Convert to JSON string and back to handle nested structures
+        json_str = json.dumps(data)
+        
+        # Replace {{rand}} with random values
+        import re
+        def replace_rand(match):
+            # Generate random string of 8 characters
+            return ''.join(random.choices(string.ascii_letters + string.digits, k=8))
+        
+        json_str = re.sub(r'\{\{rand\}\}', replace_rand, json_str)
+        
+        # Handle custom variables if provided
+        if variables:
+            for key, value in variables.items():
+                json_str = json_str.replace(f'{{{{{key}}}}}', str(value))
+        
+        return json.loads(json_str)
+    
+    def _create_request_message(self, request_class, data: Dict[str, Any]):
+        """Create a protobuf message from dictionary data"""
+        try:
+            # Create the message instance
+            message = request_class()
+            
+            # Fill the message fields
+            for field_name, field_value in data.items():
+                if hasattr(message, field_name):
+                    setattr(message, field_name, field_value)
+                else:
+                    logger.warning(f"⚠️  Field {field_name} not found in message class")
+            
+            return message
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to create request message: {e}")
+            raise
+    
+    def _convert_proto_value(self, value):
+        """Convert protobuf values to JSON-serializable types"""
+        from google.protobuf.message import Message
+        from google.protobuf.pyext._message import RepeatedCompositeContainer, RepeatedScalarContainer
+        
+        if isinstance(value, Message):
+            # Convert message to dict
+            result = {}
+            for field, field_value in value.ListFields():
+                result[field.name] = self._convert_proto_value(field_value)
+            return result
+        elif isinstance(value, (RepeatedCompositeContainer, RepeatedScalarContainer)):
+            # Convert repeated fields to list
+            return [self._convert_proto_value(item) for item in value]
+        else:
+            # Return primitive values as-is
+            return value
+
+    async def get_method_example(self, service_name: str, method_name: str) -> Dict[str, Any]:
+        """Generate example request data for a specific method"""
+        try:
+            # Get the request message class
+            request_class = self.proto_loader.get_message_class(service_name, f"{method_name}Request")
+            if not request_class:
+                return {}
+            
+            # Generate example based on the message fields
+            example = {}
+            
+            # Create a temporary instance to inspect fields
+            temp_instance = request_class()
+            
+            # Get field descriptors
+            for field in temp_instance.DESCRIPTOR.fields:
+                field_name = field.name
+                field_type = field.type
+                
+                # Generate example values based on field type
+                if field_type == field.TYPE_STRING:
+                    if 'id' in field_name.lower():
+                        example[field_name] = "example-id-{{rand}}"
+                    elif 'name' in field_name.lower():
+                        example[field_name] = "Example Name"
+                    elif 'content' in field_name.lower():
+                        example[field_name] = {"key": "value", "data": "{{rand}}"} if field_name.endswith('_data') else "Example content"
+                    else:
+                        example[field_name] = f"example_{field_name}"
+                elif field_type == field.TYPE_INT32 or field_type == field.TYPE_INT64:
+                    example[field_name] = 123
+                elif field_type == field.TYPE_BOOL:
+                    example[field_name] = True
+                elif field_type == field.TYPE_DOUBLE or field_type == field.TYPE_FLOAT:
+                    example[field_name] = 1.23
+                elif field_type == field.TYPE_MESSAGE:
+                    example[field_name] = {}
+                else:
+                    example[field_name] = f"example_{field_name}"
+            
+            return example
+            
+        except Exception as e:
+            logger.error(f"❌ Error generating example for {service_name}.{method_name}: {e}")
+            return {}
+
     async def batch_create_assets(self, assets_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Call IngressServer.BatchCreateAssets"""
         logger.info(f"📦 Preparing BatchCreateAssets request for {len(assets_data)} assets")

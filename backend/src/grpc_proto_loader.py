@@ -255,42 +255,53 @@ class GrpcProtoLoader:
             logger.error(f"❌ Service not found: {service_name}")
             return None
         
-        # Try to find the message in pb2 module
         pb2_module = self.compiled_modules[service_name].get('pb2')
-        if pb2_module and hasattr(pb2_module, message_name):
-            logger.debug(f"✅ Found message class: {message_name}")
+        if not pb2_module:
+            logger.error(f"❌ pb2 module not found for {service_name}")
+            return None
+        
+        # Try direct access first
+        if hasattr(pb2_module, message_name):
+            logger.debug(f"✅ Found message class directly: {message_name}")
             return getattr(pb2_module, message_name)
         
-        # Try to find in any imported modules
-        for module_name, module in self.compiled_modules[service_name].items():
-            if hasattr(module, message_name):
-                logger.debug(f"✅ Found message class in {module_name}: {message_name}")
-                return getattr(module, message_name)
+        # Hardcoded mappings for known message patterns
+        message_module_mappings = {
+            'ingress_server': {
+                'UpsertContentRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2',
+                'UpsertContentResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2',
+                'BatchCreateAssetsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_create__assets__pb2',
+                'BatchCreateAssetsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_create__assets__pb2',
+                'BatchAddDownloadCountsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__download__counts__pb2',
+                'BatchAddDownloadCountsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__download__counts__pb2',
+                'BatchAddRatingsRequest': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__ratings__pb2',
+                'BatchAddRatingsResponse': 'eadp_dot_cadie_dot_ingressserver_dot_v1_dot_add__ratings__pb2',
+            }
+        }
         
-        # Search in the temp directory modules more broadly
-        if self.temp_dir:
-            try:
-                # Try to find any module that has this message class
-                for py_file in Path(self.temp_dir).rglob("*_pb2.py"):
-                    module_path = py_file.relative_to(Path(self.temp_dir))
-                    module_name = str(module_path).replace('/', '.').replace('.py', '')
-                    
-                    try:
-                        module = self._import_module(module_name)
-                        if module and hasattr(module, message_name):
-                            logger.debug(f"✅ Found message class in {module_name}: {message_name}")
-                            return getattr(module, message_name)
-                    except Exception:
-                        continue
-            except Exception as e:
-                logger.debug(f"🔍 Error during broad search: {e}")
+        # Check hardcoded mappings
+        if service_name in message_module_mappings:
+            mapping = message_module_mappings[service_name]
+            if message_name in mapping:
+                module_name = mapping[message_name]
+                if hasattr(pb2_module, module_name):
+                    imported_module = getattr(pb2_module, module_name)
+                    if hasattr(imported_module, message_name):
+                        logger.debug(f"✅ Found message class via mapping: {message_name} in {module_name}")
+                        return getattr(imported_module, message_name)
+        
+        # Fallback: search all imported modules
+        for attr_name in dir(pb2_module):
+            if not attr_name.startswith('_') and 'pb2' in attr_name:
+                try:
+                    imported_module = getattr(pb2_module, attr_name)
+                    if hasattr(imported_module, message_name):
+                        logger.debug(f"✅ Found message class in fallback search: {message_name} in {attr_name}")
+                        return getattr(imported_module, message_name)
+                except Exception:
+                    continue
         
         logger.error(f"❌ Message class not found: {message_name}")
-        if service_name in self.compiled_modules and 'pb2' in self.compiled_modules[service_name]:
-            pb2_module = self.compiled_modules[service_name]['pb2']
-            available_attrs = [attr for attr in dir(pb2_module) if not attr.startswith('_')]
-            logger.debug(f"Available attributes in {service_name} module: {available_attrs}")
-        
         return None
     
     def _create_utilities_module(self):

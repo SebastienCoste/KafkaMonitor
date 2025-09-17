@@ -565,6 +565,100 @@ async def set_asset_storage_url(request: Dict[str, str]):
         raise HTTPException(status_code=500, detail=str(e))
 # IngressServer Endpoints
 
+@api_router.post("/grpc/{service_name}/{method_name}")
+async def dynamic_grpc_call(service_name: str, method_name: str, request: Dict[str, Any]):
+    """Dynamic gRPC method call for any service and method"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        logger.info(f"🔧 Making dynamic gRPC call: {service_name}.{method_name}")
+        logger.debug(f"📝 Request data: {request}")
+        
+        result = await grpc_client.call_dynamic_method(service_name, method_name, request)
+        return result
+    except Exception as e:
+        logger.error(f"❌ Error in dynamic gRPC call {service_name}.{method_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/grpc/debug/module/{service_name}/{module_name}")
+async def debug_module_contents(service_name: str, module_name: str):
+    """Debug a specific module to see what message classes it contains"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        if service_name not in grpc_client.proto_loader.compiled_modules:
+            raise HTTPException(status_code=404, detail=f"Service {service_name} not found")
+        
+        pb2_module = grpc_client.proto_loader.compiled_modules[service_name].get('pb2')
+        if not pb2_module:
+            raise HTTPException(status_code=404, detail=f"pb2 module not found for {service_name}")
+        
+        if not hasattr(pb2_module, module_name):
+            raise HTTPException(status_code=404, detail=f"Module {module_name} not found")
+        
+        target_module = getattr(pb2_module, module_name)
+        
+        # Get all message classes from the module
+        message_classes = []
+        for attr_name in dir(target_module):
+            if not attr_name.startswith('_'):
+                attr_value = getattr(target_module, attr_name)
+                if hasattr(attr_value, 'DESCRIPTOR'):
+                    message_classes.append(attr_name)
+        
+        return {
+            "module": module_name,
+            "message_classes": message_classes
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Error in debug module: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/grpc/debug/messages")
+async def debug_available_messages():
+    """Debug endpoint to see what message classes are available"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        debug_info = {}
+        
+        for service_name, modules in grpc_client.proto_loader.compiled_modules.items():
+            debug_info[service_name] = {}
+            
+            for module_type, module in modules.items():
+                debug_info[service_name][module_type] = []
+                
+                # Get all attributes that look like message classes
+                for attr_name in dir(module):
+                    if not attr_name.startswith('_'):
+                        attr_value = getattr(module, attr_name)
+                        # Check if this looks like a protobuf message class
+                        if hasattr(attr_value, 'DESCRIPTOR'):
+                            debug_info[service_name][module_type].append(attr_name)
+        
+        return {"available_messages": debug_info}
+        
+    except Exception as e:
+        logger.error(f"❌ Error in debug messages: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/grpc/{service_name}/example/{method_name}")
+async def get_method_example(service_name: str, method_name: str):
+    """Get example request data for a specific gRPC method"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    try:
+        example = await grpc_client.get_method_example(service_name, method_name)
+        return {"example": example}
+    except Exception as e:
+        logger.error(f"❌ Error getting example for {service_name}.{method_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/grpc/ingress/upsert-content")
 async def upsert_content(request: Dict[str, Any]):
     """Call IngressServer.UpsertContent"""

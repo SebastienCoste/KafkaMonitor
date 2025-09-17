@@ -30,7 +30,9 @@ import {
   AlertTriangle, 
   CheckCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Save,
+  Trash2
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -49,6 +51,7 @@ function GrpcIntegration() {
   const [initialized, setInitialized] = useState(false);
   const [availableServices, setAvailableServices] = useState({}); // Dynamic services and methods
   const [dynamicInputs, setDynamicInputs] = useState({}); // Track textarea values for dynamic methods
+  const [savedRequests, setSavedRequests] = useState({}); // Saved request data for persistence
 
   // Form states for different operations
   const [upsertContentForm, setUpsertContentForm] = useState({
@@ -86,6 +89,64 @@ function GrpcIntegration() {
   // Asset-storage URL management
   const [assetStorageUrls, setAssetStorageUrls] = useState({});
   const [selectedAssetUrlType, setSelectedAssetUrlType] = useState('reader');
+
+  // Load saved requests on component mount
+  useEffect(() => {
+    const savedData = localStorage.getItem('grpcSavedRequests');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setSavedRequests(parsed);
+        setDynamicInputs(parsed);
+      } catch (error) {
+        console.error('Error loading saved requests:', error);
+      }
+    }
+  }, []);
+
+  // Load example data for a method
+  const loadMethodExample = async (serviceName, methodName) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/grpc/${serviceName}/example/${methodName}`);
+      const inputKey = `${serviceName}_${methodName}`;
+      const exampleJson = JSON.stringify(response.data.example, null, 2);
+      
+      setDynamicInputs(prev => ({
+        ...prev,
+        [inputKey]: exampleJson
+      }));
+      
+      toast.success(`Example loaded for ${methodName}`);
+    } catch (error) {
+      console.error(`Error loading example for ${methodName}:`, error);
+      toast.error(`Failed to load example for ${methodName}`);
+    }
+  };
+
+  // Save current request data
+  const saveRequestData = () => {
+    try {
+      localStorage.setItem('grpcSavedRequests', JSON.stringify(dynamicInputs));
+      setSavedRequests(dynamicInputs);
+      toast.success('Request data saved successfully');
+    } catch (error) {
+      console.error('Error saving request data:', error);
+      toast.error('Failed to save request data');
+    }
+  };
+
+  // Clear saved data
+  const clearSavedData = () => {
+    try {
+      localStorage.removeItem('grpcSavedRequests');
+      setSavedRequests({});
+      setDynamicInputs({});
+      toast.success('Saved data cleared');
+    } catch (error) {
+      console.error('Error clearing saved data:', error);
+      toast.error('Failed to clear saved data');
+    }
+  };
 
   // Load initial data
   useEffect(() => {
@@ -625,7 +686,43 @@ function GrpcIntegration() {
 
       {/* Service Operations */}
       {initialized && Object.keys(availableServices).length > 0 ? (
-        <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
+        <div className="space-y-6">
+          {/* Global Controls */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Request Data Management</CardTitle>
+              <CardDescription>
+                Save and manage your gRPC request data across app reloads
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline"
+                  onClick={saveRequestData}
+                  disabled={loading}
+                >
+                  <Save className="mr-2 h-4 w-4" />
+                  Save All Requests
+                </Button>
+                
+                <Button 
+                  variant="outline"
+                  onClick={clearSavedData}
+                  disabled={loading}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Clear Saved Data
+                </Button>
+                
+                <Badge variant="secondary">
+                  {Object.keys(savedRequests).length} requests saved
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             {Object.keys(availableServices).map(serviceName => (
               <TabsTrigger key={serviceName} value={serviceName}>
@@ -649,7 +746,18 @@ function GrpcIntegration() {
                 methods.map(methodName => (
                   <Card key={methodName}>
                     <CardHeader>
-                      <CardTitle>{methodName}</CardTitle>
+                      <CardTitle className="flex items-center justify-between">
+                        {methodName}
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => loadMethodExample(serviceName, methodName)}
+                          >
+                            Load Example
+                          </Button>
+                        </div>
+                      </CardTitle>
                       <CardDescription>
                         {serviceName} service method
                       </CardDescription>
@@ -658,8 +766,8 @@ function GrpcIntegration() {
                       <div>
                         <Label>Request Data (JSON)</Label>
                         <Textarea
-                          rows={5}
-                          className="font-mono"
+                          rows={8}
+                          className="font-mono text-sm"
                           placeholder={`Enter ${methodName} request parameters as JSON`}
                           value={dynamicInputs[`${serviceName}_${methodName}`] || '{}'}
                           onChange={(e) => setDynamicInputs(prev => ({
@@ -667,15 +775,30 @@ function GrpcIntegration() {
                             [`${serviceName}_${methodName}`]: e.target.value
                           }))}
                         />
+                        <div className="text-xs text-gray-500 mt-1">
+                          Use <code>{"{{rand}}"}</code> for random values in your JSON
+                        </div>
                       </div>
                       
-                      <Button 
-                        onClick={() => callGrpcMethod(serviceName, methodName)}
-                        disabled={loading}
-                      >
-                        {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                        Call {methodName}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => callGrpcMethod(serviceName, methodName)}
+                          disabled={loading}
+                          className="flex-1"
+                        >
+                          {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                          Call {methodName}
+                        </Button>
+                        
+                        <Button 
+                          variant="outline"
+                          onClick={saveRequestData}
+                          disabled={loading}
+                        >
+                          <Save className="mr-2 h-4 w-4" />
+                          Save
+                        </Button>
+                      </div>
                       
                       {results[`${serviceName}_${methodName}`] && 
                         renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
@@ -689,6 +812,7 @@ function GrpcIntegration() {
             </TabsContent>
           ))}
         </Tabs>
+        </div>
       ) : (
         <Card>
           <CardContent className="text-center py-8">
