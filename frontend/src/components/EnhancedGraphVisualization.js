@@ -518,13 +518,58 @@ function EnhancedGraphVisualization() {
                 <div
                   id={`network-component-${filteredData ? 'filtered-' : ''}${index}`}
                   style={{
-                    height: '400px',
+                    height: Math.max(600, Math.min(800, component.topics.length * 40 + 200)) + 'px',
                     width: '100%',
                     border: '2px solid #e2e8f0',
                     borderRadius: '12px',
                     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)'
                   }}
                 />
+                
+                {/* Zoom Controls */}
+                <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-white shadow-lg"
+                    onClick={() => {
+                      const network = networkInstances[`component-${index}`];
+                      if (network) {
+                        const scale = network.getScale() * 1.2;
+                        network.moveTo({ scale });
+                      }
+                    }}
+                  >
+                    🔍+
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-white shadow-lg"
+                    onClick={() => {
+                      const network = networkInstances[`component-${index}`];
+                      if (network) {
+                        const scale = network.getScale() * 0.8;
+                        network.moveTo({ scale });
+                      }
+                    }}
+                  >
+                    🔍-
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="bg-white shadow-lg"
+                    onClick={() => {
+                      const network = networkInstances[`component-${index}`];
+                      if (network) {
+                        network.fit();
+                      }
+                    }}
+                  >
+                    ⊞
+                  </Button>
+                </div>
                 
                 {/* Legend */}
                 <div className="absolute top-4 right-4 bg-white p-3 rounded-lg shadow-lg text-sm">
