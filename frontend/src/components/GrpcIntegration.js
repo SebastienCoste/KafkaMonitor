@@ -172,13 +172,15 @@ function GrpcIntegration() {
   };
 
   // Save named example (REQ3)
-  const saveNamedExample = () => {
-    if (!saveName.trim()) {
+  const saveNamedExample = (serviceName, methodName) => {
+    const methodKey = `${serviceName}_${methodName}`;
+    const saveNameValue = saveName[methodKey];
+    
+    if (!saveNameValue || !saveNameValue.trim()) {
       toast.error('Please enter a name for this save');
       return;
     }
     
-    const { serviceName, methodName } = currentSaveContext;
     if (!serviceName || !methodName) {
       toast.error('No method context available');
       return;
