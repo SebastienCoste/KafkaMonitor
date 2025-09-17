@@ -154,9 +154,15 @@ function GrpcIntegration() {
   };
 
   // Save named example (REQ3)
-  const saveNamedExample = (serviceName, methodName) => {
+  const saveNamedExample = () => {
     if (!saveName.trim()) {
       toast.error('Please enter a name for this save');
+      return;
+    }
+    
+    const { serviceName, methodName } = currentSaveContext;
+    if (!serviceName || !methodName) {
+      toast.error('No method context available');
       return;
     }
     
@@ -181,7 +187,7 @@ function GrpcIntegration() {
       setNamedSaves(newNamedSaves);
       setSaveName('');
       setSaveDialogOpen(false);
-      toast.success(`Saved example as "${saveName}"`);
+      toast.success(`Saved example as "${saveName}" for ${methodName}`);
     } catch (error) {
       console.error('Error saving named example:', error);
       toast.error('Failed to save named example');
