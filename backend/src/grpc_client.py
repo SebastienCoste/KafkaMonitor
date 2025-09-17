@@ -494,6 +494,16 @@ class GrpcClient:
                 
                 # Make the call
                 logger.debug(f"🔄 Attempt {retry_count + 1} for {method_key}")
+                
+                # Debug: Log the actual request message content
+                try:
+                    from google.protobuf.json_format import MessageToDict
+                    request_dict = MessageToDict(request)
+                    logger.debug(f"📤 Sending request payload: {request_dict}")
+                except Exception as debug_error:
+                    logger.debug(f"📤 Could not serialize request for debug: {debug_error}")
+                    logger.debug(f"📤 Request type: {type(request)}")
+                
                 response = grpc_method(request, metadata=metadata, timeout=timeout)
                 
                 # Success
@@ -702,11 +712,12 @@ class GrpcClient:
         return json.loads(json_str)
     
     def _create_request_message(self, request_class, data: Dict[str, Any]):
-        """Create a protobuf message from dictionary data with support for nested messages"""
-
+        """Create a protobuf message from dictionary data with support for nested messages and oneof fields"""
         try:
             # Create the message instance
             message = request_class()
+            logger.debug(f"🏗️  Creating message of type: {request_class.__name__}")
+
             
             # Fill the message fields
             for field_name, field_value in data.items():
@@ -716,38 +727,81 @@ class GrpcClient:
                         field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
                         
                         if field_descriptor:
-                            if field_descriptor.message_type:
-                                # This is a message field, need to create nested message
-                                nested_message_class = getattr(message.__class__, field_name).__class__
-                                if isinstance(field_value, dict):
-                                    # Recursively create nested message
-                                    nested_message = self._create_nested_message(field_descriptor.message_type, field_value)
-                                    setattr(message, field_name, nested_message)
-                                else:
-                                    # Try direct assignment for non-dict values
-                                    setattr(message, field_name, field_value)
+
+                            success = self._set_field_value(message, field_descriptor, field_name, field_value)
+                            if success:
+                                logger.debug(f"✅ Successfully set field {field_name}")
                             else:
-                                # Primitive field, assign directly
+                                logger.warning(f"⚠️  Failed to set field {field_name} using descriptor, trying direct assignment")
+
                                 setattr(message, field_name, field_value)
                         else:
                             # Fallback to direct assignment
                             setattr(message, field_name, field_value)
+                            logger.debug(f"✅ Set field {field_name} via direct assignment")
+
                     except Exception as field_error:
                         logger.warning(f"⚠️  Failed to set field {field_name}: {field_error}")
                         # Try simple assignment as fallback
                         try:
                             setattr(message, field_name, field_value)
+                            logger.debug(f"✅ Set field {field_name} via fallback assignment")
                         except Exception as fallback_error:
                             logger.warning(f"⚠️  Fallback assignment also failed for {field_name}: {fallback_error}")
-
                 else:
                     logger.warning(f"⚠️  Field {field_name} not found in message class")
             
+            logger.debug(f"🏁 Message creation completed for {request_class.__name__}")
+
             return message
             
         except Exception as e:
             logger.error(f"❌ Failed to create request message: {e}")
             raise
+
+    def _set_field_value(self, message, field_descriptor, field_name: str, field_value):
+        """Set a field value on a protobuf message based on field descriptor"""
+        try:
+            from google.protobuf.descriptor import FieldDescriptor
+            
+            if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
+                # This is a message field, need to create nested message
+                if isinstance(field_value, dict):
+                    nested_message = self._create_nested_message(field_descriptor.message_type, field_value)
+                    
+                    # Check if this field is part of a oneof group
+                    if field_descriptor.containing_oneof:
+                        logger.debug(f"🔄 Setting oneof field {field_name} in group {field_descriptor.containing_oneof.name}")
+                        # For oneof fields, we need to use CopyFrom or direct field access
+                        field_obj = getattr(message, field_name)
+                        field_obj.CopyFrom(nested_message)
+                        return True
+                    else:
+                        setattr(message, field_name, nested_message)
+                        return True
+                else:
+                    logger.warning(f"⚠️  Expected dict for message field {field_name}, got {type(field_value)}")
+                    return False
+            elif field_descriptor.type == FieldDescriptor.TYPE_STRING:
+                setattr(message, field_name, str(field_value))
+                return True
+            elif field_descriptor.type in [FieldDescriptor.TYPE_INT32, FieldDescriptor.TYPE_INT64]:
+                setattr(message, field_name, int(field_value))
+                return True
+            elif field_descriptor.type == FieldDescriptor.TYPE_BOOL:
+                setattr(message, field_name, bool(field_value))
+                return True
+            elif field_descriptor.type in [FieldDescriptor.TYPE_DOUBLE, FieldDescriptor.TYPE_FLOAT]:
+                setattr(message, field_name, float(field_value))
+                return True
+            else:
+                # Try direct assignment for other types
+                setattr(message, field_name, field_value)
+                return True
+                
+        except Exception as e:
+            logger.debug(f"🔍 Field setting failed for {field_name}: {e}")
+            return False
     
     def _create_nested_message(self, message_descriptor, data: Dict[str, Any]):
         """Create a nested protobuf message from dictionary data"""
@@ -755,11 +809,26 @@ class GrpcClient:
             # Get the message class from the descriptor
             message_class = message_descriptor._concrete_class
             message = message_class()
+
+            logger.debug(f"🏗️  Creating nested message: {message_descriptor.name}")
             
-            # Fill the nested message fields
+            # Fill the nested message fields recursively
             for field_name, field_value in data.items():
                 if hasattr(message, field_name):
-                    setattr(message, field_name, field_value)
+                    # Get field descriptor for nested field
+                    field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
+                    if field_descriptor:
+                        success = self._set_field_value(message, field_descriptor, field_name, field_value)
+                        if success:
+                            logger.debug(f"✅ Set nested field {field_name}")
+                        else:
+                            # Fallback to direct assignment
+                            setattr(message, field_name, field_value)
+                            logger.debug(f"✅ Set nested field {field_name} via fallback")
+                    else:
+                        setattr(message, field_name, field_value)
+                        logger.debug(f"✅ Set nested field {field_name} directly")
+
                 else:
                     logger.debug(f"🔍 Field {field_name} not found in nested message {message_descriptor.name}")
             
@@ -788,50 +857,160 @@ class GrpcClient:
             return value
 
     async def get_method_example(self, service_name: str, method_name: str) -> Dict[str, Any]:
-        """Generate example request data for a specific method"""
+        """Generate example request data for a specific method with full depth"""
+
         try:
             # Get the request message class
             request_class = self.proto_loader.get_message_class(service_name, f"{method_name}Request")
             if not request_class:
                 return {}
             
-            # Generate example based on the message fields
-            example = {}
-            
             # Create a temporary instance to inspect fields
             temp_instance = request_class()
             
-            # Get field descriptors
-            for field in temp_instance.DESCRIPTOR.fields:
-                field_name = field.name
-                field_type = field.type
-                
-                # Generate example values based on field type
-                if field_type == field.TYPE_STRING:
-                    if 'id' in field_name.lower():
-                        example[field_name] = "example-id-{{rand}}"
-                    elif 'name' in field_name.lower():
-                        example[field_name] = "Example Name"
-                    elif 'content' in field_name.lower():
-                        example[field_name] = {"key": "value", "data": "{{rand}}"} if field_name.endswith('_data') else "Example content"
-                    else:
-                        example[field_name] = f"example_{field_name}"
-                elif field_type == field.TYPE_INT32 or field_type == field.TYPE_INT64:
-                    example[field_name] = 123
-                elif field_type == field.TYPE_BOOL:
-                    example[field_name] = True
-                elif field_type == field.TYPE_DOUBLE or field_type == field.TYPE_FLOAT:
-                    example[field_name] = 1.23
-                elif field_type == field.TYPE_MESSAGE:
-                    example[field_name] = {}
-                else:
-                    example[field_name] = f"example_{field_name}"
+            # Generate example with full depth recursively
+            example = self._generate_message_example(temp_instance.DESCRIPTOR, visited_types=set())
             
             return example
             
         except Exception as e:
             logger.error(f"❌ Error generating example for {service_name}.{method_name}: {e}")
             return {}
+
+    def _generate_message_example(self, message_descriptor, visited_types: set = None, depth: int = 0) -> Dict[str, Any]:
+        """Recursively generate example data for a protobuf message with full depth"""
+        if visited_types is None:
+            visited_types = set()
+        
+        # Prevent infinite recursion for circular references
+        message_type_name = message_descriptor.full_name
+        if message_type_name in visited_types or depth > 5:  # Max depth of 5 levels
+            return {}
+        
+        visited_types.add(message_type_name)
+        example = {}
+        
+        try:
+            # Get field descriptors
+            for field in message_descriptor.fields:
+                field_name = field.name
+                field_type = field.type
+                
+                # Generate example values based on field type
+                if field_type == field.TYPE_STRING:
+                    if 'id' in field_name.lower():
+                        example[field_name] = f"example-{field_name}-{{{{rand}}}}"
+                    elif 'name' in field_name.lower() or 'title' in field_name.lower():
+                        example[field_name] = f"Example {field_name.replace('_', ' ').title()}"
+                    elif 'content' in field_name.lower():
+                        if field_name.endswith('_data'):
+                            example[field_name] = '{"key": "value", "data": "{{rand}}"}'
+                        else:
+                            example[field_name] = "Example content with {{rand}} template"
+                    elif 'url' in field_name.lower():
+                        example[field_name] = f"https://example.com/{field_name}/{{{{rand}}}}"
+                    elif 'email' in field_name.lower():
+                        example[field_name] = "user-{{rand}}@example.com"
+                    elif 'token' in field_name.lower():
+                        example[field_name] = "eyJhbGciOiJIUzI1NiIs-{{rand}}"
+                    elif 'schema' in field_name.lower():
+                        example[field_name] = "ea.example.schema.v1"
+                    else:
+                        example[field_name] = f"example_{field_name}_{{{{rand}}}}"
+                        
+                elif field_type == field.TYPE_INT32:
+                    if 'count' in field_name.lower():
+                        example[field_name] = 5
+                    elif 'size' in field_name.lower():
+                        example[field_name] = 1024
+                    elif 'port' in field_name.lower():
+                        example[field_name] = 8080
+                    else:
+                        example[field_name] = 123
+                        
+                elif field_type == field.TYPE_INT64:
+                    if 'time' in field_name.lower() or 'timestamp' in field_name.lower():
+                        import time
+                        example[field_name] = int(time.time() * 1000)  # milliseconds
+                    else:
+                        example[field_name] = 1234567890
+                        
+                elif field_type == field.TYPE_BOOL:
+                    example[field_name] = True
+                    
+                elif field_type == field.TYPE_DOUBLE or field_type == field.TYPE_FLOAT:
+                    if 'rate' in field_name.lower() or 'ratio' in field_name.lower():
+                        example[field_name] = 0.75
+                    else:
+                        example[field_name] = 1.23
+                        
+                elif field_type == field.TYPE_BYTES:
+                    example[field_name] = "ZXhhbXBsZSBieXRlcyBkYXRh"  # base64 encoded "example bytes data"
+                    
+                elif field_type == field.TYPE_MESSAGE:
+                    # Recursively generate nested message example
+                    if field.message_type:
+                        nested_example = self._generate_message_example(
+                            field.message_type, 
+                            visited_types.copy(), 
+                            depth + 1
+                        )
+                        example[field_name] = nested_example
+                    else:
+                        example[field_name] = {}
+                        
+                elif field_type == field.TYPE_ENUM:
+                    # Get first enum value (skip the first one if it's 0/UNKNOWN)
+                    if field.enum_type and field.enum_type.values:
+                        enum_values = field.enum_type.values
+                        if len(enum_values) > 1:
+                            example[field_name] = enum_values[1].name  # Skip first (usually UNKNOWN)
+                        else:
+                            example[field_name] = enum_values[0].name
+                    else:
+                        example[field_name] = "EXAMPLE_ENUM_VALUE"
+                        
+                else:
+                    example[field_name] = f"example_{field_name}"
+            
+            # Handle repeated fields (arrays)
+            for field in message_descriptor.fields:
+                if field.label == field.LABEL_REPEATED:
+                    field_name = field.name
+                    if field_name in example:
+                        # Convert single values to arrays with 1-2 examples
+                        single_value = example[field_name]
+                        if field.type == field.TYPE_MESSAGE:
+                            # For message arrays, create 2 different examples
+                            if single_value:
+                                second_example = self._generate_message_example(
+                                    field.message_type, 
+                                    visited_types.copy(), 
+                                    depth + 1
+                                )
+                                # Modify some values in second example
+                                for key in second_example:
+                                    if isinstance(second_example[key], str) and "{{rand}}" in second_example[key]:
+                                        second_example[key] = second_example[key].replace("{{rand}}", "{{rand}}")
+                                example[field_name] = [single_value, second_example]
+                            else:
+                                example[field_name] = [{}]
+                        else:
+                            # For primitive arrays
+                            if isinstance(single_value, str):
+                                example[field_name] = [single_value, single_value.replace("{{rand}}", "{{rand}}")]
+                            elif isinstance(single_value, (int, float)):
+                                example[field_name] = [single_value, single_value + 1]
+                            else:
+                                example[field_name] = [single_value, single_value]
+        
+        except Exception as e:
+            logger.error(f"❌ Error generating message example for {message_descriptor.name}: {e}")
+        
+        finally:
+            visited_types.discard(message_type_name)
+        
+        return example
 
     async def batch_create_assets(self, assets_data: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Call IngressServer.BatchCreateAssets"""

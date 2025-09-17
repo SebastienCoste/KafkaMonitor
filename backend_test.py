@@ -1239,7 +1239,6 @@ class KafkaTraceViewerTester:
         
         return all_working
 
-
     def test_grpc_upsert_content_call_fix(self) -> bool:
         """Test the gRPC UpsertContent Call Fix - CRITICAL TEST for review request"""
         print("\n" + "=" * 80)
@@ -1524,7 +1523,6 @@ class KafkaTraceViewerTester:
         else:
             self.log_test("gRPC Methods Regression Test", False, f"{parameter_errors} methods still have parameter errors")
             return False
-
 
     def test_grpc_message_class_resolution_bug_fix(self) -> bool:
         """Test the gRPC Message Class Resolution Bug Fix - CRITICAL TEST"""
