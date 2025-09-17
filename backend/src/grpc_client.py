@@ -727,10 +727,7 @@ class GrpcClient:
                         field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
                         
                         if field_descriptor:
-<<<<<<< HEAD
-=======
 
->>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                             success = self._set_field_value(message, field_descriptor, field_name, field_value)
                             if success:
                                 logger.debug(f"✅ Successfully set field {field_name}")
