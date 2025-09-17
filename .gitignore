@@ -297,3 +297,7 @@ backend/config/proto/eadp
 *.env
 *.env.*
 frontend/node_modules/.cache/default-development/4.pack_
+-e 
+# Environment files
+*.env
+*.env.*
