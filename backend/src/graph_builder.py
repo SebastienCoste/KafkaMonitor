@@ -391,6 +391,7 @@ class TraceGraphBuilder:
         # Add detailed per-topic statistics
         stats['topics']['details'] = {}
         all_topics = self.topic_graph.get_all_topics()
+        now = datetime.now()
         
         for topic in all_topics:
             topic_traces = []
@@ -401,12 +402,19 @@ class TraceGraphBuilder:
                 if any(msg.topic == topic for msg in trace.messages):
                     topic_traces.append(trace_id)
             
+            # Calculate P10/P50/P95 message age metrics for this topic
+            topic_stats = self._calculate_topic_statistics(topic, now)
+            
             stats['topics']['details'][topic] = {
                 'message_count': topic_message_count,
                 'trace_count': len(topic_traces),
                 'monitored': topic in self.monitored_topics,
                 'status': 'Receiving messages' if topic_message_count > 0 else 'No messages',
-                'traces': topic_traces
+                'traces': topic_traces,
+                # Add P10/P50/P95 metrics in milliseconds
+                'message_age_p10_ms': round(topic_stats['trace_age_p10'] * 1000, 2),
+                'message_age_p50_ms': round(topic_stats['trace_age_p50'] * 1000, 2), 
+                'message_age_p95_ms': round(topic_stats['trace_age_p95'] * 1000, 2)
             }
         
         if earliest_time:
