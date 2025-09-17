@@ -352,10 +352,7 @@ function GrpcIntegration() {
         // Save environment to localStorage
         localStorage.setItem('grpcCurrentEnvironment', environment);
         toast.success(`Environment set to ${environment}`);
-        // Reset credentials when environment changes
-        setCredentials({ authorization: '', x_pop_token: '' });
-        // Clear credentials from localStorage when environment changes
-        localStorage.removeItem('grpcCredentials');
+        // DON'T reset credentials when environment changes - user wants to keep them
         // Clear all results and state
         setResults({});
         setUploadUrls([]);
