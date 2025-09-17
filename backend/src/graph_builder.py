@@ -123,7 +123,6 @@ class TraceGraphBuilder:
     def _create_new_trace(self, trace_id: str):
         """Create a new trace"""
         self.traces[trace_id] = TraceInfo(trace_id=trace_id)
-        logger.info(f"Created new trace: {trace_id}")
 
     def _enforce_trace_limit(self):
         """Enforce maximum trace limit with FIFO eviction"""
