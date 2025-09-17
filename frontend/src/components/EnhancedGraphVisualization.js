@@ -545,45 +545,48 @@ function EnhancedGraphVisualization() {
                 />
                 
                 {/* Zoom Controls */}
-                <div className="absolute bottom-4 right-4 flex flex-col space-y-2">
+                <div className="absolute bottom-4 right-4 flex flex-col space-y-2 z-10">
                   <Button
                     size="sm"
                     variant="outline"
-                    className="bg-white shadow-lg"
+                    className="bg-white shadow-lg hover:bg-gray-50 border-2 w-10 h-10 p-0"
                     onClick={() => {
-                      const network = networkInstances[`component-${index}`];
+                      const network = networkInstances[`${filteredData ? 'filtered-' : ''}${index}`];
                       if (network) {
                         const scale = network.getScale() * 1.2;
                         network.moveTo({ scale });
                       }
                     }}
+                    title="Zoom In"
                   >
                     🔍+
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="bg-white shadow-lg"
+                    className="bg-white shadow-lg hover:bg-gray-50 border-2 w-10 h-10 p-0"
                     onClick={() => {
-                      const network = networkInstances[`component-${index}`];
+                      const network = networkInstances[`${filteredData ? 'filtered-' : ''}${index}`];
                       if (network) {
                         const scale = network.getScale() * 0.8;
                         network.moveTo({ scale });
                       }
                     }}
+                    title="Zoom Out"
                   >
                     🔍-
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="bg-white shadow-lg"
+                    className="bg-white shadow-lg hover:bg-gray-50 border-2 w-10 h-10 p-0"
                     onClick={() => {
-                      const network = networkInstances[`component-${index}`];
+                      const network = networkInstances[`${filteredData ? 'filtered-' : ''}${index}`];
                       if (network) {
                         network.fit();
                       }
                     }}
+                    title="Fit to View"
                   >
                     ⊞
                   </Button>
