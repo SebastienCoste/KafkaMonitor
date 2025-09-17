@@ -141,6 +141,21 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: gRPC integration working as expected. POST /api/grpc/initialize responds correctly (HTTP 200, 0.08s response time) and properly handles missing proto dependencies. Proto files are correctly placed in backend/config/proto/grpc/ with 15 proto files found. gRPC client gracefully handles compilation failures and returns appropriate error messages. All gRPC endpoints respond quickly without hanging (0.05-0.08s response times)."
 
+  - task: "Fix gRPC Message Class Resolution Bug"
+    implemented: true
+    working: true
+    file: "backend/src/grpc_proto_loader.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Starting fix for 'UpsertContentRequest message class not found' error in get_message_class method"
+      - working: true
+        agent: "main"
+        comment: "Fixed duplicate get_message_class method definitions. Removed the inferior implementation (line 639) that only did simple attribute lookup, kept the sophisticated implementation (line 250) that searches through imported pb2 modules. Debug endpoint confirms UpsertContentRequest is now found in eadp_dot_cadie_dot_ingressserver_dot_v1_dot_upsert__content__pb2 module."
+
 frontend:
   - task: "P10/P50/P95 Display on Topics Page"
     implemented: true
