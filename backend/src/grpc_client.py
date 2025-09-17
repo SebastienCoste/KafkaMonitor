@@ -869,7 +869,78 @@ class GrpcClient:
             # Return primitive values as-is
             return value
 
-    async def get_method_example(self, service_name: str, method_name: str) -> Dict[str, Any]:
+    def debug_message_creation(self, service_name: str, method_name: str, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """DEBUG: Test message creation without making actual gRPC call"""
+        try:
+            logger.info(f"🔍 DEBUG: Testing message creation for {service_name}.{method_name}")
+            
+            # Get the request message class
+            request_class = self.proto_loader.get_message_class(service_name, f"{method_name}Request")
+            if not request_class:
+                return {
+                    'success': False,
+                    'error': f'Request message class not found for {method_name}',
+                    'debug_info': {'step': 'message_class_lookup'}
+                }
+            
+            # Process the request data
+            processed_data = self._process_template_variables(request_data)
+            logger.debug(f"🔍 DEBUG: Processed data: {processed_data}")
+            
+            # Create the request message
+            request_message = self._create_request_message(request_class, processed_data)
+            logger.debug(f"🔍 DEBUG: Message created successfully: {type(request_message)}")
+            
+            # Test serialization
+            try:
+                serialized = request_message.SerializeToString()
+                serialized_size = len(serialized)
+                logger.debug(f"🔍 DEBUG: Serialized size: {serialized_size} bytes")
+                
+                # Try to deserialize to verify integrity
+                test_message = request_class()
+                test_message.ParseFromString(serialized)
+                
+                # Convert to dict for inspection
+                from google.protobuf.json_format import MessageToDict
+                message_dict = MessageToDict(request_message)
+                
+                return {
+                    'success': True,
+                    'debug_info': {
+                        'original_data': request_data,
+                        'processed_data': processed_data,
+                        'message_type': str(type(request_message)),
+                        'serialized_size': serialized_size,
+                        'serialized_first_50_bytes': serialized[:50].hex() if serialized else "EMPTY",
+                        'message_dict': message_dict,
+                        'fields_set': [field.name for field, _ in request_message.ListFields()],
+                        'message_str': str(request_message)[:500] if serialized_size > 0 else "EMPTY MESSAGE"
+                    }
+                }
+                
+            except Exception as serialize_error:
+                return {
+                    'success': False,
+                    'error': f'Serialization failed: {str(serialize_error)}',
+                    'debug_info': {
+                        'step': 'serialization',
+                        'message_type': str(type(request_message)),
+                        'original_data': request_data,
+                        'processed_data': processed_data
+                    }
+                }
+                
+        except Exception as e:
+            logger.error(f"💥 DEBUG: Message creation failed: {e}")
+            return {
+                'success': False,
+                'error': f'Message creation failed: {str(e)}',
+                'debug_info': {
+                    'step': 'message_creation',
+                    'original_data': request_data
+                }
+            }
         """Generate example request data for a specific method with full depth"""
 
         try:
