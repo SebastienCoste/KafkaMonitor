@@ -581,6 +581,7 @@ async def dynamic_grpc_call(service_name: str, method_name: str, request: Dict[s
         logger.error(f"❌ Error in dynamic gRPC call {service_name}.{method_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @api_router.get("/grpc/debug/message/{service_name}/{message_name}")
 async def debug_message_search(service_name: str, message_name: str):
     """Debug message class search process"""
