@@ -269,7 +269,10 @@ class GrpcProtoLoader:
         for attr_name in dir(pb2_module):
             if not attr_name.startswith('_') and 'pb2' in attr_name:
                 try:
+                    logger.debug(f"🔍 Checking module: {attr_name}")
                     imported_module = getattr(pb2_module, attr_name)
+                    logger.debug(f"🔍 Module {attr_name} attributes: {[attr for attr in dir(imported_module) if not attr.startswith('_')]}")
+                    
                     if hasattr(imported_module, message_name):
                         logger.debug(f"✅ Found message class in imported module {attr_name}: {message_name}")
                         return getattr(imported_module, message_name)
