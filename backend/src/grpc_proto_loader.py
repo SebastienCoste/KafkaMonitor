@@ -317,6 +317,125 @@ def first_version_is_lower(version1, version2):
         
         return success
     
+    
+    def _parse_service_definition(self, service_proto_path: str) -> Optional[Dict]:
+        """Parse a proto file to extract service definition and methods"""
+        try:
+            proto_file_path = self.proto_root / service_proto_path
+            if not proto_file_path.exists():
+                logger.warning(f"⚠️  Proto file not found: {proto_file_path}")
+                return None
+            
+            logger.debug(f"📖 Parsing service definition from: {proto_file_path}")
+            
+            # Read and parse the proto file
+            with open(proto_file_path, 'r') as f:
+                proto_content = f.read()
+            
+            # Extract service definitions using simple regex
+            import re
+            service_pattern = r'service\s+(\w+)\s*\{([^}]+)\}'
+            method_pattern = r'rpc\s+(\w+)\s*\(([^)]+)\)\s*returns\s*\(([^)]+)\)'
+            
+            services = {}
+            for service_match in re.finditer(service_pattern, proto_content, re.DOTALL):
+                service_name = service_match.group(1)
+                service_body = service_match.group(2)
+                
+                methods = []
+                for method_match in re.finditer(method_pattern, service_body):
+                    method_name = method_match.group(1)
+                    request_type = method_match.group(2).strip()
+                    response_type = method_match.group(3).strip()
+                    
+                    methods.append({
+                        'name': method_name,
+                        'request_type': request_type,
+                        'response_type': response_type
+                    })
+                
+                services[service_name] = {
+                    'methods': methods,
+                    'proto_path': service_proto_path
+                }
+            
+            logger.debug(f"✅ Parsed {len(services)} services from {proto_file_path}")
+            return services
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to parse service definition from {service_proto_path}: {str(e)}")
+            return None
+    
+    def _load_service_modules_for_service(self, service_name: str, service_proto_path: str) -> bool:
+        """Load compiled modules for a specific service"""
+        try:
+            logger.debug(f"📦 Loading modules for service: {service_name}")
+            
+            # Convert proto path to module path
+            # e.g., eadp/cadie/ingressserver/v1/ingress_service.proto -> proto_gen.eadp.cadie.ingressserver.v1.ingress_service_pb2
+            proto_path_parts = Path(service_proto_path).with_suffix('').parts
+            module_base = 'proto_gen.' + '.'.join(proto_path_parts)
+            
+            pb2_module_name = f"{module_base}_pb2"
+            grpc_module_name = f"{module_base}_pb2_grpc"
+            
+            logger.debug(f"🔍 Attempting to load: {pb2_module_name} and {grpc_module_name}")
+            
+            # Try to import the modules
+            pb2_module = self._import_module(pb2_module_name)
+            grpc_module = self._import_module(grpc_module_name)
+            
+            if pb2_module and grpc_module:
+                self.compiled_modules[service_name] = {
+                    'pb2': pb2_module,
+                    'grpc': grpc_module
+                }
+                logger.info(f"✅ Successfully loaded modules for {service_name}")
+                return True
+            else:
+                logger.error(f"❌ Failed to load one or both modules for {service_name}")
+                # Try fallback paths for backward compatibility
+                return self._try_fallback_module_loading(service_name)
+                
+        except Exception as e:
+            logger.error(f"❌ Error loading modules for {service_name}: {str(e)}")
+            return False
+    
+    def _try_fallback_module_loading(self, service_name: str) -> bool:
+        """Try to load modules using fallback/legacy paths"""
+        try:
+            logger.info(f"🔄 Trying fallback module loading for {service_name}")
+            
+            # Legacy paths for backward compatibility
+            fallback_paths = {
+                'ingress_server': {
+                    'pb2': 'proto_gen.ingress_server.ingress_server_pb2',
+                    'grpc': 'proto_gen.ingress_server.ingress_server_pb2_grpc'
+                },
+                'asset_storage': {
+                    'pb2': 'proto_gen.asset_storage.asset_storage_pb2',
+                    'grpc': 'proto_gen.asset_storage.asset_storage_pb2_grpc'
+                }
+            }
+            
+            if service_name in fallback_paths:
+                pb2_module = self._import_module(fallback_paths[service_name]['pb2'])
+                grpc_module = self._import_module(fallback_paths[service_name]['grpc'])
+                
+                if pb2_module and grpc_module:
+                    self.compiled_modules[service_name] = {
+                        'pb2': pb2_module,
+                        'grpc': grpc_module
+                    }
+                    logger.info(f"✅ Successfully loaded {service_name} using fallback paths")
+                    return True
+            
+            logger.error(f"❌ Fallback loading failed for {service_name}")
+            return False
+            
+        except Exception as e:
+            logger.error(f"❌ Fallback loading error for {service_name}: {str(e)}")
+            return False
     def _import_module(self, module_name: str) -> Optional[Any]:
         """Import a compiled module with simplified import handling"""
         try:
