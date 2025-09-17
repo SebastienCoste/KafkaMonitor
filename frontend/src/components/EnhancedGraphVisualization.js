@@ -536,7 +536,7 @@ function EnhancedGraphVisualization() {
                 <div
                   id={`network-component-${filteredData ? 'filtered-' : ''}${index}`}
                   style={{
-                    height: Math.max(600, Math.min(800, component.topics.length * 40 + 200)) + 'px',
+                    height: Math.max(800, Math.min(1200, component.topics.length * 60 + 400)) + 'px',
                     width: '100%',
                     border: '2px solid #e2e8f0',
                     borderRadius: '12px',
