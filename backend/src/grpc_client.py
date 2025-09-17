@@ -754,8 +754,17 @@ class GrpcClient:
                 # This is a message field, need to create nested message
                 if isinstance(field_value, dict):
                     nested_message = self._create_nested_message(field_descriptor.message_type, field_value)
-                    setattr(message, field_name, nested_message)
-                    return True
+                    
+                    # Check if this field is part of a oneof group
+                    if field_descriptor.containing_oneof:
+                        logger.debug(f"🔄 Setting oneof field {field_name} in group {field_descriptor.containing_oneof.name}")
+                        # For oneof fields, we need to use CopyFrom or direct field access
+                        field_obj = getattr(message, field_name)
+                        field_obj.CopyFrom(nested_message)
+                        return True
+                    else:
+                        setattr(message, field_name, nested_message)
+                        return True
                 else:
                     logger.warning(f"⚠️  Expected dict for message field {field_name}, got {type(field_value)}")
                     return False
