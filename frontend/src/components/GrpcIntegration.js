@@ -30,7 +30,9 @@ import {
   AlertTriangle, 
   CheckCircle,
   Eye,
-  EyeOff
+  EyeOff,
+  Save,
+  Trash2
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
