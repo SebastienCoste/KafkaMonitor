@@ -686,11 +686,40 @@ class GrpcClient:
                         'error': 'No response received from gRPC call'
                     }
                 
-                # Convert response to dict
+                # Enhanced response conversion with detailed logging
                 response_dict = {}
-                if hasattr(response, 'ListFields'):
-                    for field, value in response.ListFields():
-                        response_dict[field.name] = self._convert_proto_value(value)
+                try:
+                    # Try using MessageToDict for better conversion
+                    from google.protobuf.json_format import MessageToDict
+                    response_dict = MessageToDict(response, preserving_proto_field_name=True)
+                    logger.debug(f"📨 Response converted using MessageToDict: {response_dict}")
+                except Exception as dict_error:
+                    logger.warning(f"⚠️  MessageToDict failed: {dict_error}")
+                    
+                    # Fallback to manual field extraction
+                    if hasattr(response, 'ListFields'):
+                        for field, value in response.ListFields():
+                            response_dict[field.name] = self._convert_proto_value(value)
+                        logger.debug(f"📨 Response converted using ListFields: {response_dict}")
+                    else:
+                        logger.warning(f"⚠️  Response has no ListFields: {type(response)}")
+                
+                # If still empty, try to extract all attributes
+                if not response_dict and response:
+                    logger.debug(f"🔍 Response type: {type(response)}")
+                    logger.debug(f"🔍 Response dir: {[attr for attr in dir(response) if not attr.startswith('_')]}")
+                    
+                    # Try to get all non-private attributes
+                    for attr_name in dir(response):
+                        if not attr_name.startswith('_') and not callable(getattr(response, attr_name)):
+                            try:
+                                attr_value = getattr(response, attr_name)
+                                if attr_value:  # Only include non-empty values
+                                    response_dict[attr_name] = self._convert_proto_value(attr_value)
+                            except Exception as attr_error:
+                                logger.debug(f"🔍 Could not get attribute {attr_name}: {attr_error}")
+                
+                logger.info(f"📨 Final response data: {response_dict}")
                 
                 # Add metadata about the call
                 return {
@@ -698,7 +727,9 @@ class GrpcClient:
                     'data': response_dict,
                     'metadata': {
                         'method': result.get('method'),
-                        'retry_count': result.get('retry_count', 0)
+                        'retry_count': result.get('retry_count', 0),
+                        'response_type': str(type(response)),
+                        'fields_found': len(response_dict)
                     }
                 }
                 
