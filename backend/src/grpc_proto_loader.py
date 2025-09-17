@@ -264,7 +264,7 @@ class GrpcProtoLoader:
                         temp_modules = {}
                         
                         # Save current modules that might conflict
-                        conflicting_names = ['grpc.common', 'grpc.asset_storage', 'grpc.ingress_server']
+                        conflicting_names = ['proto_gen.common', 'proto_gen.asset_storage', 'proto_gen.ingress_server']
                         for name in conflicting_names:
                             if name in sys.modules:
                                 old_modules[name] = sys.modules[name]
@@ -272,21 +272,21 @@ class GrpcProtoLoader:
                         try:
                             # Load all our proto modules first
                             proto_modules = [
-                                ('grpc.common.base_pb2', 'grpc/common/base_pb2.py'),
-                                ('grpc.common.types_pb2', 'grpc/common/types_pb2.py'),
-                                ('grpc.asset_storage.asset_storage_pb2', 'grpc/asset_storage/asset_storage_pb2.py'),
-                                ('grpc.ingress_server.ingress_server_pb2', 'grpc/ingress_server/ingress_server_pb2.py'),
-                                ('grpc.asset_storage.asset_storage_pb2_grpc', 'grpc/asset_storage/asset_storage_pb2_grpc.py'),
-                                ('grpc.ingress_server.ingress_server_pb2_grpc', 'grpc/ingress_server/ingress_server_pb2_grpc.py'),
+                                ('proto_gen.common.base_pb2', 'proto_gen/common/base_pb2.py'),
+                                ('proto_gen.common.types_pb2', 'proto_gen/common/types_pb2.py'),
+                                ('proto_gen.asset_storage.asset_storage_pb2', 'proto_gen/asset_storage/asset_storage_pb2.py'),
+                                ('proto_gen.ingress_server.ingress_server_pb2', 'proto_gen/ingress_server/ingress_server_pb2.py'),
+                                ('proto_gen.asset_storage.asset_storage_pb2_grpc', 'proto_gen/asset_storage/asset_storage_pb2_grpc.py'),
+                                ('proto_gen.ingress_server.ingress_server_pb2_grpc', 'proto_gen/ingress_server/ingress_server_pb2_grpc.py'),
                             ]
                             
                             # Create parent modules
-                            if 'grpc' not in sys.modules:
-                                grpc_mod = importlib.util.module_from_spec(
-                                    importlib.util.spec_from_loader('grpc', loader=None)
+                            if 'proto_gen' not in sys.modules:
+                                proto_gen_mod = importlib.util.module_from_spec(
+                                    importlib.util.spec_from_loader('proto_gen', loader=None)
                                 )
-                                sys.modules['grpc'] = grpc_mod
-                                temp_modules['grpc'] = grpc_mod
+                                sys.modules['proto_gen'] = proto_gen_mod
+                                temp_modules['proto_gen'] = proto_gen_mod
                             
                             if 'grpc.common' not in sys.modules:
                                 common_mod = importlib.util.module_from_spec(
