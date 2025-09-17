@@ -266,22 +266,23 @@ class GrpcProtoLoader:
             return getattr(pb2_module, message_name)
         
         # Search all imported modules that contain pb2 in their name
-        for attr_name in dir(pb2_module):
-            if not attr_name.startswith('_') and 'pb2' in attr_name:
-                try:
-                    logger.debug(f"🔍 Checking module: {attr_name}")
-                    imported_module = getattr(pb2_module, attr_name)
-                    logger.debug(f"🔍 Module {attr_name} attributes: {[attr for attr in dir(imported_module) if not attr.startswith('_')]}")
+        pb2_modules = [attr for attr in dir(pb2_module) if not attr.startswith('_') and 'pb2' in attr]
+        logger.debug(f"🔍 Searching {len(pb2_modules)} pb2 modules for {message_name}")
+        
+        for attr_name in pb2_modules:
+            try:
+                imported_module = getattr(pb2_module, attr_name)
+                
+                if hasattr(imported_module, message_name):
+                    logger.debug(f"✅ Found message class in imported module {attr_name}: {message_name}")
+                    return getattr(imported_module, message_name)
                     
-                    if hasattr(imported_module, message_name):
-                        logger.debug(f"✅ Found message class in imported module {attr_name}: {message_name}")
-                        return getattr(imported_module, message_name)
-                except Exception as e:
-                    logger.debug(f"🔍 Error accessing module {attr_name}: {e}")
-                    continue
+            except Exception as e:
+                logger.debug(f"🔍 Error accessing module {attr_name}: {e}")
+                continue
         
         logger.error(f"❌ Message class not found: {message_name}")
-        logger.debug(f"Available pb2 modules: {[attr for attr in dir(pb2_module) if 'pb2' in attr]}")
+        logger.debug(f"Available pb2 modules: {pb2_modules}")
         return None
     
     def _create_utilities_module(self):
