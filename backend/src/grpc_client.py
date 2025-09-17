@@ -67,8 +67,8 @@ class GrpcClient:
                     'error': 'Failed to compile proto files'
                 }
             
-            # Load service modules
-            if not self.proto_loader.load_service_modules():
+            # Load service modules with environment configuration
+            if not self.proto_loader.load_service_modules(self.environment_config):
                 return {
                     'success': False,
                     'error': 'Failed to load service modules'
