@@ -25,6 +25,7 @@ import { Toaster } from './components/ui/sonner';
 import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
+console.log('🌐 Main App API_BASE_URL:', API_BASE_URL);
 
 function App() {
   // State management
