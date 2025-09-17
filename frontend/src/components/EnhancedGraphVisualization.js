@@ -293,6 +293,16 @@ function EnhancedGraphVisualization() {
         [containerKey]: network
       }));
 
+      // Auto-fit the network after stabilization for better visibility
+      network.once("stabilizationIterationsDone", function() {
+        network.fit({
+          animation: {
+            duration: 1000,
+            easingFunction: "easeInOutQuad"
+          }
+        });
+      });
+
       // Add event listeners
       network.on("click", function (params) {
         if (params.nodes.length > 0) {
