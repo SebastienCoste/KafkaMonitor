@@ -97,6 +97,7 @@ function GrpcIntegration() {
   // Load saved requests on component mount
   useEffect(() => {
     const savedData = localStorage.getItem('grpcSavedRequests');
+    const namedSavedData = localStorage.getItem('grpcNamedSaves');
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
@@ -104,6 +105,14 @@ function GrpcIntegration() {
         setDynamicInputs(parsed);
       } catch (error) {
         console.error('Error loading saved requests:', error);
+      }
+    }
+    if (namedSavedData) {
+      try {
+        const parsed = JSON.parse(namedSavedData);
+        setNamedSaves(parsed);
+      } catch (error) {
+        console.error('Error loading named saves:', error);
       }
     }
   }, []);
