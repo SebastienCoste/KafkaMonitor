@@ -184,6 +184,40 @@ class GrpcProtoLoader:
         
         logger.debug("✅ Directory rename completed")
     
+    def _create_utilities_module(self):
+        """Create missing _utilities.py module for gRPC version checking"""
+        logger.debug("🔧 Creating _utilities.py module...")
+        
+        proto_gen_dir = Path(self.temp_dir) / "proto_gen"
+        if proto_gen_dir.exists():
+            utilities_file = proto_gen_dir / "_utilities.py"
+            
+            utilities_code = '''# Generated utilities for gRPC version checking
+def first_version_is_lower(version1, version2):
+    """Compare two version strings to check if version1 < version2"""
+    try:
+        from packaging import version
+        return version.parse(version1) < version.parse(version2)
+    except ImportError:
+        # Fallback to simple string comparison if packaging is not available
+        v1_parts = [int(x) for x in version1.split('.')]
+        v2_parts = [int(x) for x in version2.split('.')]
+        
+        # Pad with zeros to make same length
+        max_len = max(len(v1_parts), len(v2_parts))
+        v1_parts.extend([0] * (max_len - len(v1_parts)))
+        v2_parts.extend([0] * (max_len - len(v2_parts)))
+        
+        return v1_parts < v2_parts
+'''
+            
+            with open(utilities_file, 'w') as f:
+                f.write(utilities_code)
+            
+            logger.debug(f"📝 Created utilities module: {utilities_file}")
+        
+        logger.debug("✅ Utilities module created")
+    
     def _update_imports_in_file(self, py_file: Path):
         """Update import statements in generated Python files"""
         try:
