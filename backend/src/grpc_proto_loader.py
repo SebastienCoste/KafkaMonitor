@@ -186,6 +186,24 @@ class GrpcProtoLoader:
         
         logger.debug("✅ Directory rename completed")
     
+    def list_available_services(self) -> Dict[str, List[str]]:
+        """List all available services and their methods from parsed service definitions"""
+        services = {}
+        
+        for service_name, service_data in self.service_definitions.items():
+            service_methods = []
+            
+            # Extract methods from all services in the definition
+            for svc_name, svc_def in service_data.items():
+                if 'methods' in svc_def:
+                    for method in svc_def['methods']:
+                        service_methods.append(method['name'])
+            
+            services[service_name] = service_methods
+        
+        logger.debug(f"📋 Available services: {services}")
+        return services
+    
     def _create_utilities_module(self):
         """Create missing _utilities.py module for gRPC version checking"""
         logger.debug("🔧 Creating _utilities.py module...")
