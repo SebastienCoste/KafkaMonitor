@@ -363,7 +363,7 @@ class GrpcClient:
         self.credentials.clear()
         
         # Reset statistics
-        self.call_statistics = {
+        self.call_stats = {
             'total_calls': 0,
             'successful_calls': 0,
             'failed_calls': 0,
