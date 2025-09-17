@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package eadp.cadie.shared.v1;
+
+option java_multiple_files = true;
+option java_package = "eadp.cadie.shared.v1";
+option java_outer_classname = "RatingProto";
+
+message Ratings {
+  string content_id = 1;
+  string player_id = 2;
+  float rating_value = 3;
+  uint64 rating_timestamp = 4;
+  string rating_type = 5;
+  string comments = 6;
+}
