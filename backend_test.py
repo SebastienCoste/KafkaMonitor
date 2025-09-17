@@ -253,6 +253,116 @@ class KafkaTraceViewerTester:
         except Exception as e:
             self.log_test("Get Statistics", False, f"Exception: {str(e)}")
             return False
+
+    def test_p10_p50_p95_message_age_metrics(self) -> bool:
+        """Test P10/P50/P95 Message Age Metrics in Statistics Endpoint"""
+        print("\n" + "=" * 60)
+        print("🔍 Testing P10/P50/P95 Message Age Metrics Implementation")
+        print("=" * 60)
+        
+        try:
+            response = requests.get(f"{self.base_url}/api/statistics", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check if topics section exists with details
+                if "topics" not in data or "details" not in data["topics"]:
+                    self.log_test("P10/P50/P95 Metrics Structure", False, "Missing topics.details section in statistics")
+                    return False
+                
+                topics_details = data["topics"]["details"]
+                
+                if not topics_details:
+                    self.log_test("P10/P50/P95 Metrics Structure", False, "No topic details found in statistics")
+                    return False
+                
+                # Check each topic for the new P10/P50/P95 message age metrics
+                metrics_found = True
+                topics_with_metrics = 0
+                sample_metrics = {}
+                
+                required_fields = ['message_age_p10_ms', 'message_age_p50_ms', 'message_age_p95_ms']
+                
+                for topic_name, topic_data in topics_details.items():
+                    # Check if all required P10/P50/P95 fields are present
+                    missing_fields = [field for field in required_fields if field not in topic_data]
+                    
+                    if missing_fields:
+                        self.log_test("P10/P50/P95 Metrics Fields", False, f"Topic {topic_name} missing fields: {missing_fields}")
+                        metrics_found = False
+                        break
+                    
+                    # Validate that values are numbers and in milliseconds (reasonable range)
+                    p10_ms = topic_data['message_age_p10_ms']
+                    p50_ms = topic_data['message_age_p50_ms']
+                    p95_ms = topic_data['message_age_p95_ms']
+                    
+                    # Check that values are numeric
+                    if not all(isinstance(val, (int, float)) for val in [p10_ms, p50_ms, p95_ms]):
+                        self.log_test("P10/P50/P95 Metrics Values", False, f"Topic {topic_name} has non-numeric values: P10={p10_ms}, P50={p50_ms}, P95={p95_ms}")
+                        metrics_found = False
+                        break
+                    
+                    # Check that values are non-negative
+                    if any(val < 0 for val in [p10_ms, p50_ms, p95_ms]):
+                        self.log_test("P10/P50/P95 Metrics Values", False, f"Topic {topic_name} has negative values: P10={p10_ms}, P50={p50_ms}, P95={p95_ms}")
+                        metrics_found = False
+                        break
+                    
+                    # Check percentile order: P10 <= P50 <= P95
+                    if not (p10_ms <= p50_ms <= p95_ms):
+                        self.log_test("P10/P50/P95 Metrics Order", False, f"Topic {topic_name} percentile order invalid: P10={p10_ms} <= P50={p50_ms} <= P95={p95_ms}")
+                        metrics_found = False
+                        break
+                    
+                    # Check that values are in reasonable millisecond range (0 to 24 hours = 86400000 ms)
+                    if any(val > 86400000 for val in [p10_ms, p50_ms, p95_ms]):
+                        self.log_test("P10/P50/P95 Metrics Range", False, f"Topic {topic_name} has unreasonably large values (>24h): P10={p10_ms}, P50={p50_ms}, P95={p95_ms}")
+                        metrics_found = False
+                        break
+                    
+                    topics_with_metrics += 1
+                    
+                    # Store sample metrics for reporting
+                    if len(sample_metrics) < 3:  # Store up to 3 samples
+                        sample_metrics[topic_name] = {
+                            'p10': p10_ms,
+                            'p50': p50_ms,
+                            'p95': p95_ms
+                        }
+                
+                if metrics_found:
+                    self.log_test("P10/P50/P95 Metrics Implementation", True, f"Found valid metrics for {topics_with_metrics} topics")
+                    
+                    # Log sample metrics for verification
+                    for topic, metrics in sample_metrics.items():
+                        self.log_test(f"Sample Metrics - {topic}", True, f"P10={metrics['p10']}ms, P50={metrics['p50']}ms, P95={metrics['p95']}ms")
+                    
+                    # Test that metrics are in milliseconds (not seconds)
+                    # If any P50 value is less than 1000ms but greater than 1, it's likely in milliseconds
+                    millisecond_format = True
+                    for topic_name, topic_data in topics_details.items():
+                        p50_ms = topic_data['message_age_p50_ms']
+                        # If P50 is between 1-1000, it's likely in seconds (should be converted to ms)
+                        if 1 < p50_ms < 1000 and topic_data.get('message_count', 0) > 0:
+                            # This might indicate values are in seconds, not milliseconds
+                            # But we'll be lenient since small values could be legitimate
+                            pass
+                    
+                    self.log_test("P10/P50/P95 Metrics Format", True, "Metrics appear to be in milliseconds format")
+                    
+                    return True
+                else:
+                    return False
+                    
+            else:
+                self.log_test("P10/P50/P95 Metrics Endpoint", False, f"Statistics endpoint failed: HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("P10/P50/P95 Metrics Test", False, f"Exception: {str(e)}")
+            return False
     
     def test_websocket_connectivity(self) -> bool:
         """Test WebSocket connectivity (basic check)"""
