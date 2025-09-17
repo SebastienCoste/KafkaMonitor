@@ -57,6 +57,7 @@ function GrpcIntegration() {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [selectedSavesToLoad, setSelectedSavesToLoad] = useState({}); // Per-method selected saves
+  const [currentSaveContext, setCurrentSaveContext] = useState({ serviceName: '', methodName: '' }); // Track which method is being saved
 
   // Form states for different operations
   const [upsertContentForm, setUpsertContentForm] = useState({
