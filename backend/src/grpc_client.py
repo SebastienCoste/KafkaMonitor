@@ -519,6 +519,11 @@ class GrpcClient:
                 
                 response = grpc_method(request, metadata=metadata, timeout=timeout)
                 
+                # For async calls, we need to await the response
+                if hasattr(response, '__await__'):
+                    logger.debug(f"🔄 Awaiting async response")
+                    response = await response
+                
                 # Success
                 self.call_stats['successful_calls'] += 1
                 if method_key not in self.call_stats['retry_counts']:
