@@ -77,12 +77,12 @@ agenthub/agents/youtube/db
 .cache/
 
 # Mobile development
-android-sdk/ frontend/node_modules/.cache/default-development/0.pack
-frontend/node_modules/.cache/default-development/0.pack
+android-sdk/
 -e 
 # Environment files
 *.env
 *.env.*
+<<<<<<< HEAD
 -e 
 # Environment files
 *.env
@@ -280,3 +280,11 @@ frontend/node_modules/.cache/default-development/6.pack
 # Environment files
 *.env
 *.env.*
+=======
+
+
+frontend/node_modules/.cache/
+
+backend/config/.protobuf_cache
+backend/config/proto/eadp
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d

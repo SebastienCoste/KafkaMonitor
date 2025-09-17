@@ -283,6 +283,10 @@ class GrpcProtoLoader:
         
         logger.error(f"❌ Message class not found: {message_name}")
         logger.debug(f"Available pb2 modules: {pb2_modules}")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
         return None
     
     def _create_utilities_module(self):

@@ -661,7 +661,11 @@ class GrpcClient:
             # Make the gRPC call with retry
             try:
                 response = await self._call_with_retry(service_name, method_name, request_message)
+<<<<<<< HEAD
                 
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                 # Convert response to dict
                 response_dict = {}
                 if hasattr(response, 'ListFields'):
@@ -717,6 +721,10 @@ class GrpcClient:
             # Create the message instance
             message = request_class()
             logger.debug(f"🏗️  Creating message of type: {request_class.__name__}")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
             
             # Fill the message fields
             for field_name, field_value in data.items():
@@ -726,17 +734,29 @@ class GrpcClient:
                         field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
                         
                         if field_descriptor:
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                             success = self._set_field_value(message, field_descriptor, field_name, field_value)
                             if success:
                                 logger.debug(f"✅ Successfully set field {field_name}")
                             else:
                                 logger.warning(f"⚠️  Failed to set field {field_name} using descriptor, trying direct assignment")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                                 setattr(message, field_name, field_value)
                         else:
                             # Fallback to direct assignment
                             setattr(message, field_name, field_value)
                             logger.debug(f"✅ Set field {field_name} via direct assignment")
+<<<<<<< HEAD
                             
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                     except Exception as field_error:
                         logger.warning(f"⚠️  Failed to set field {field_name}: {field_error}")
                         # Try simple assignment as fallback
@@ -749,6 +769,10 @@ class GrpcClient:
                     logger.warning(f"⚠️  Field {field_name} not found in message class")
             
             logger.debug(f"🏁 Message creation completed for {request_class.__name__}")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
             return message
             
         except Exception as e:
@@ -805,7 +829,11 @@ class GrpcClient:
             # Get the message class from the descriptor
             message_class = message_descriptor._concrete_class
             message = message_class()
+<<<<<<< HEAD
             
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
             logger.debug(f"🏗️  Creating nested message: {message_descriptor.name}")
             
             # Fill the nested message fields recursively
@@ -824,6 +852,10 @@ class GrpcClient:
                     else:
                         setattr(message, field_name, field_value)
                         logger.debug(f"✅ Set nested field {field_name} directly")
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
                 else:
                     logger.debug(f"🔍 Field {field_name} not found in nested message {message_descriptor.name}")
             
@@ -853,6 +885,10 @@ class GrpcClient:
 
     async def get_method_example(self, service_name: str, method_name: str) -> Dict[str, Any]:
         """Generate example request data for a specific method with full depth"""
+<<<<<<< HEAD
+=======
+
+>>>>>>> 3c957d430905432a2f609b20ae26b9b80390252d
         try:
             # Get the request message class
             request_class = self.proto_loader.get_message_class(service_name, f"{method_name}Request")

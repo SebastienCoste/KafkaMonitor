@@ -1,10 +1,3 @@
-# Kafka cluster connection settings
-bootstrap_servers: "localhost:9092"
-security_protocol: "SASL_SSL"  # or SASL_PLAINTEXT for non-SSL
-sasl_mechanism: "SCRAM-SHA-512"
-sasl_username: "your_username"
-sasl_password: "your_password"
-
 # Consumer settings
 group_id: "kafka-trace-viewer"
 auto_offset_reset: "latest"  # latest, earliest, none
@@ -13,4 +6,4 @@ session_timeout_ms: 6000
 heartbeat_interval_ms: 3000
 
 # Mock mode for development/testing
-mock_mode: true  # Set to false when using real Kafka
+mock_mode: false  # Set to false when using real Kafka
