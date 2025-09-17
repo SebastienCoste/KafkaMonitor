@@ -48,6 +48,7 @@ function GrpcIntegration() {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [availableServices, setAvailableServices] = useState({}); // Dynamic services and methods
+  const [dynamicInputs, setDynamicInputs] = useState({}); // Track textarea values for dynamic methods
 
   // Form states for different operations
   const [upsertContentForm, setUpsertContentForm] = useState({
@@ -97,6 +98,18 @@ function GrpcIntegration() {
       const response = await axios.get(`${API_BASE_URL}/api/grpc/status`);
       setGrpcStatus(response.data);
       setInitialized(response.data.initialized);
+      
+      // If already initialized, fetch available services
+      if (response.data.initialized) {
+        try {
+          const servicesResponse = await axios.post(`${API_BASE_URL}/api/grpc/initialize`);
+          if (servicesResponse.data.success && servicesResponse.data.available_services) {
+            setAvailableServices(servicesResponse.data.available_services);
+          }
+        } catch (error) {
+          console.error('Error fetching available services:', error);
+        }
+      }
     } catch (error) {
       console.error('Error loading gRPC status:', error);
     }
@@ -214,9 +227,20 @@ function GrpcIntegration() {
   const callGrpcMethod = async (serviceName, methodName) => {
     setLoading(true);
     try {
-      // This is a placeholder for dynamic method calls
-      // In a real implementation, you would need to handle the request data
-      const response = await axios.post(`${API_BASE_URL}/api/grpc/${serviceName}/${methodName}`, {});
+      // Get the input value for this specific method
+      const inputKey = `${serviceName}_${methodName}`;
+      const textareaValue = dynamicInputs[inputKey] || '{}';
+      
+      let requestData;
+      try {
+        requestData = JSON.parse(textareaValue);
+      } catch (e) {
+        toast.error('Invalid JSON in request data');
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/api/grpc/${serviceName}/${methodName}`, requestData);
       
       setResults(prev => ({ ...prev, [`${serviceName}_${methodName}`]: response.data }));
       
@@ -227,7 +251,7 @@ function GrpcIntegration() {
       }
     } catch (error) {
       console.error(`Error calling ${methodName}:`, error);
-      toast.error(`Failed to call ${methodName}`);
+      toast.error(`Failed to call ${methodName}: ${error.response?.data?.error || error.message}`);
       setResults(prev => ({ ...prev, [`${serviceName}_${methodName}`]: { success: false, error: error.message } }));
     } finally {
       setLoading(false);
@@ -600,61 +624,88 @@ function GrpcIntegration() {
       </Card>
 
       {/* Service Operations */}
-      <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
-        <TabsList className={`grid w-full grid-cols-${Math.min(Object.keys(availableServices).length, 4)}`}>
-          {Object.keys(availableServices).map(serviceName => (
-            <TabsTrigger key={serviceName} value={serviceName}>
-              {serviceName === 'ingress_server' ? 'IngressServer' : 
-               serviceName === 'asset_storage' ? 'AssetStorageService' : 
-               serviceName}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* Dynamic Service Tabs */}
-        {Object.entries(availableServices).map(([serviceName, methods]) => (
-          <TabsContent key={serviceName} value={serviceName} className="space-y-6">
-            <h3 className="text-xl font-semibold mb-4">
-              {serviceName === 'ingress_server' ? 'IngressServer' : 
-               serviceName === 'asset_storage' ? 'AssetStorageService' : 
-               serviceName} Methods
-            </h3>
-            
-            {methods.map(methodName => (
-              <Card key={methodName}>
-                <CardHeader>
-                  <CardTitle>{methodName}</CardTitle>
-                  <CardDescription>
-                    {serviceName} service method
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Request Data (JSON)</Label>
-                    <Textarea
-                      rows={5}
-                      className="font-mono"
-                      placeholder={`Enter ${methodName} request parameters as JSON`}
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={() => callGrpcMethod(serviceName, methodName)}
-                    disabled={loading}
-                  >
-                    {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                    Call {methodName}
-                  </Button>
-                  
-                  {results[`${serviceName}_${methodName}`] && 
-                    renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
-                  }
-                </CardContent>
-              </Card>
+      {initialized && Object.keys(availableServices).length > 0 ? (
+        <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            {Object.keys(availableServices).map(serviceName => (
+              <TabsTrigger key={serviceName} value={serviceName}>
+                {serviceName === 'ingress_server' ? 'IngressServer' : 
+                 serviceName === 'asset_storage' ? 'AssetStorageService' : 
+                 serviceName}
+              </TabsTrigger>
             ))}
-          </TabsContent>
-        ))}
-      </Tabs>
+          </TabsList>
+
+          {/* Dynamic Service Tabs */}
+          {Object.entries(availableServices).map(([serviceName, methods]) => (
+            <TabsContent key={serviceName} value={serviceName} className="space-y-6">
+              <h3 className="text-xl font-semibold mb-4">
+                {serviceName === 'ingress_server' ? 'IngressServer' : 
+                 serviceName === 'asset_storage' ? 'AssetStorageService' : 
+                 serviceName} Methods
+              </h3>
+              
+              {methods && methods.length > 0 ? (
+                methods.map(methodName => (
+                  <Card key={methodName}>
+                    <CardHeader>
+                      <CardTitle>{methodName}</CardTitle>
+                      <CardDescription>
+                        {serviceName} service method
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Request Data (JSON)</Label>
+                        <Textarea
+                          rows={5}
+                          className="font-mono"
+                          placeholder={`Enter ${methodName} request parameters as JSON`}
+                          value={dynamicInputs[`${serviceName}_${methodName}`] || '{}'}
+                          onChange={(e) => setDynamicInputs(prev => ({
+                            ...prev,
+                            [`${serviceName}_${methodName}`]: e.target.value
+                          }))}
+                        />
+                      </div>
+                      
+                      <Button 
+                        onClick={() => callGrpcMethod(serviceName, methodName)}
+                        disabled={loading}
+                      >
+                        {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                        Call {methodName}
+                      </Button>
+                      
+                      {results[`${serviceName}_${methodName}`] && 
+                        renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
+                      }
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-gray-500">No methods available for this service.</p>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      ) : (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-gray-500 mb-4">
+              {!initialized 
+                ? "Initialize the gRPC client to see available services and methods." 
+                : "No services available. Please check your configuration."}
+            </p>
+            {!initialized && (
+              <Button onClick={initializeGrpc} disabled={loading}>
+                {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                Initialize gRPC Client
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Display */}
       {grpcStatus && (
