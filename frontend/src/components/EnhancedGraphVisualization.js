@@ -254,8 +254,13 @@ function EnhancedGraphVisualization() {
           selectConnectedEdges: false,
           hover: true,
           multiselect: true,
-          tooltipDelay: 200
+          tooltipDelay: 200,
+          zoomSpeed: 1
         },
+        configure: {
+          enabled: false
+        },
+        autoResize: true,
         nodes: {
           borderWidth: 2,
           shadow: true,
