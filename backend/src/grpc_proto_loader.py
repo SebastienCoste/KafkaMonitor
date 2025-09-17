@@ -99,6 +99,9 @@ class GrpcProtoLoader:
             # Rename 'grpc' directory to 'proto_gen' to avoid conflicts with system grpc
             self._rename_grpc_to_proto_gen()
             
+            # Create missing utilities module for gRPC version checking
+            self._create_utilities_module()
+            
             logger.info("✅ Proto compilation completed successfully")
             return True
             
