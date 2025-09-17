@@ -565,6 +565,15 @@ async def set_asset_storage_url(request: Dict[str, str]):
         raise HTTPException(status_code=500, detail=str(e))
 # IngressServer Endpoints
 
+@api_router.post("/grpc/debug/create_message/{service_name}/{method_name}")
+async def debug_create_message(service_name: str, method_name: str, request_data: dict):
+    """DEBUG: Test message creation without making gRPC call"""
+    if not grpc_client:
+        raise HTTPException(status_code=503, detail="gRPC client not initialized")
+    
+    result = grpc_client.debug_message_creation(service_name, method_name, request_data)
+    return result
+
 @api_router.post("/grpc/{service_name}/{method_name}")
 async def dynamic_grpc_call(service_name: str, method_name: str, request: Dict[str, Any]):
     """Dynamic gRPC method call for any service and method"""
