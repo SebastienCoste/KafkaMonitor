@@ -2370,6 +2370,16 @@ class KafkaTraceViewerTester:
         # Test 18: gRPC Service Endpoints (should handle missing proto files gracefully)
         self.test_grpc_service_endpoints()
         
+        # CRITICAL TESTS FOR REVIEW REQUEST
+        print("\n" + "=" * 60)
+        print("🔧 CRITICAL TESTS FOR REVIEW REQUEST")
+        print("=" * 60)
+        
+        # Test the specific fixes mentioned in the review request
+        upsert_content_fix_ok = self.test_grpc_upsert_content_call_fix()
+        example_generation_ok = self.test_grpc_example_generation()
+        regression_test_ok = self.test_all_grpc_service_methods_regression()
+        
         # SPECIFIC BUG FIX TESTS
         print("\n" + "=" * 60)
         print("🐛 Testing Specific Bug Fixes")
@@ -2389,6 +2399,9 @@ class KafkaTraceViewerTester:
         
         # Test 23: All gRPC Endpoints Hanging Behavior (Legacy test)
         all_grpc_hanging_ok = self.test_all_grpc_endpoints_hanging_behavior()
+        
+        # Test 24: gRPC Message Class Resolution Bug Fix
+        message_class_fix_ok = self.test_grpc_message_class_resolution_bug_fix()
         
         # Print summary
         print("\n" + "=" * 60)
