@@ -49,6 +49,7 @@ function GrpcIntegration() {
   const [initialized, setInitialized] = useState(false);
   const [availableServices, setAvailableServices] = useState({}); // Dynamic services and methods
   const [dynamicInputs, setDynamicInputs] = useState({}); // Track textarea values for dynamic methods
+  const [savedRequests, setSavedRequests] = useState({}); // Saved request data for persistence
 
   // Form states for different operations
   const [upsertContentForm, setUpsertContentForm] = useState({
