@@ -242,6 +242,8 @@ class GrpcProtoLoader:
         except Exception as e:
             logger.error(f"💥 Failed to load service modules: {str(e)}")
             logger.error(f"🔴 Error type: {type(e).__name__}")
+            import traceback
+            logger.error(f"🔴 Traceback: {traceback.format_exc()}")
             return False
     
     def _import_module(self, module_name: str) -> Optional[Any]:
