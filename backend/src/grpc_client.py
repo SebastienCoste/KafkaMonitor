@@ -494,6 +494,16 @@ class GrpcClient:
                 
                 # Make the call
                 logger.debug(f"🔄 Attempt {retry_count + 1} for {method_key}")
+                
+                # Debug: Log the actual request message content
+                try:
+                    from google.protobuf.json_format import MessageToDict
+                    request_dict = MessageToDict(request)
+                    logger.debug(f"📤 Sending request payload: {request_dict}")
+                except Exception as debug_error:
+                    logger.debug(f"📤 Could not serialize request for debug: {debug_error}")
+                    logger.debug(f"📤 Request type: {type(request)}")
+                
                 response = grpc_method(request, metadata=metadata, timeout=timeout)
                 
                 # Success
