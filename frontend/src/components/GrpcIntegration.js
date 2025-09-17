@@ -96,10 +96,13 @@ function GrpcIntegration() {
   const [assetStorageUrls, setAssetStorageUrls] = useState({});
   const [selectedAssetUrlType, setSelectedAssetUrlType] = useState('reader');
 
-  // Load saved requests on component mount
+  // Load saved requests and credentials on component mount
   useEffect(() => {
     const savedData = localStorage.getItem('grpcSavedRequests');
     const namedSavedData = localStorage.getItem('grpcNamedSaves');
+    const savedCredentials = localStorage.getItem('grpcCredentials');
+    const savedEnvironment = localStorage.getItem('grpcCurrentEnvironment');
+    
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
@@ -109,6 +112,7 @@ function GrpcIntegration() {
         console.error('Error loading saved requests:', error);
       }
     }
+    
     if (namedSavedData) {
       try {
         const parsed = JSON.parse(namedSavedData);
@@ -116,6 +120,21 @@ function GrpcIntegration() {
       } catch (error) {
         console.error('Error loading named saves:', error);
       }
+    }
+    
+    if (savedCredentials) {
+      try {
+        const parsed = JSON.parse(savedCredentials);
+        setCredentials(parsed);
+        console.log('✅ Loaded saved credentials');
+      } catch (error) {
+        console.error('Error loading saved credentials:', error);
+      }
+    }
+    
+    if (savedEnvironment) {
+      setCurrentEnvironment(savedEnvironment);
+      console.log(`✅ Loaded saved environment: ${savedEnvironment}`);
     }
   }, []);
 
