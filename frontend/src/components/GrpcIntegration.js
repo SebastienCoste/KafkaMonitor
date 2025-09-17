@@ -1009,7 +1009,7 @@ function GrpcIntegration() {
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
-                              <DialogTitle>Save Example for {currentSaveContext.methodName}</DialogTitle>
+                              <DialogTitle>Save Example for {methodName}</DialogTitle>
                               <DialogDescription>
                                 Give this example a name so you can load it later.
                               </DialogDescription>
@@ -1019,8 +1019,8 @@ function GrpcIntegration() {
                                 <Label htmlFor="saveName">Example Name</Label>
                                 <Input
                                   id="saveName"
-                                  value={saveName}
-                                  onChange={(e) => setSaveName(e.target.value)}
+                                  value={saveName[`${serviceName}_${methodName}`] || ''}
+                                  onChange={(e) => setSaveName(prev => ({ ...prev, [`${serviceName}_${methodName}`]: e.target.value }))}
                                   placeholder="Enter a name for this example..."
                                 />
                               </div>
