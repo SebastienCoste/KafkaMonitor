@@ -804,7 +804,7 @@ function GrpcIntegration() {
               <Label>Authorization Header</Label>
               <div className="relative">
                 <Input
-                  type={showCredentials ? "text" : "password"}
+                  type="text"  // Make visible by default as requested
                   value={credentials.authorization}
                   onChange={(e) => setCredentials(prev => ({ ...prev, authorization: e.target.value }))}
                   placeholder="Bearer token or authorization header"
@@ -824,7 +824,7 @@ function GrpcIntegration() {
             <div>
               <Label>X-POP-TOKEN</Label>
               <Input
-                type={showCredentials ? "text" : "password"}
+                type="text"  // Make visible by default as requested
                 value={credentials.x_pop_token}
                 onChange={(e) => setCredentials(prev => ({ ...prev, x_pop_token: e.target.value }))}
                 placeholder="X-POP-TOKEN value"
@@ -832,9 +832,30 @@ function GrpcIntegration() {
             </div>
           </div>
 
-          <Button onClick={setGrpcCredentials} disabled={!currentEnvironment}>
-            Set Credentials
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={setGrpcCredentials} disabled={!currentEnvironment}>
+              Set Credentials
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              onClick={reloadCredentials}
+              title="Reload credentials from local storage"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Reload Credentials
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowCredentials(!showCredentials)}
+              title="Toggle credential visibility"
+            >
+              {showCredentials ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              {showCredentials ? "Hide" : "Show"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
