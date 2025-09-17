@@ -478,6 +478,18 @@ function App() {
     setExpandedMessages(new Set());
   };
 
+  const toggleMessageExpansion = (messageIndex) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(messageIndex)) {
+        newSet.delete(messageIndex);
+      } else {
+        newSet.add(messageIndex);
+      }
+      return newSet;
+    });
+  };
+
   const filteredTraces = traces.filter(trace =>
     trace.trace_id.toLowerCase().includes(searchTerm.toLowerCase())
   );
