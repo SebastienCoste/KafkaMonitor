@@ -702,10 +702,11 @@ class GrpcClient:
         return json.loads(json_str)
     
     def _create_request_message(self, request_class, data: Dict[str, Any]):
-        """Create a protobuf message from dictionary data with support for nested messages"""
+        """Create a protobuf message from dictionary data with support for nested messages and oneof fields"""
         try:
             # Create the message instance
             message = request_class()
+            logger.debug(f"🏗️  Creating message of type: {request_class.__name__}")
             
             # Fill the message fields
             for field_name, field_value in data.items():
@@ -715,37 +716,69 @@ class GrpcClient:
                         field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
                         
                         if field_descriptor:
-                            if field_descriptor.message_type:
-                                # This is a message field, need to create nested message
-                                nested_message_class = getattr(message.__class__, field_name).__class__
-                                if isinstance(field_value, dict):
-                                    # Recursively create nested message
-                                    nested_message = self._create_nested_message(field_descriptor.message_type, field_value)
-                                    setattr(message, field_name, nested_message)
-                                else:
-                                    # Try direct assignment for non-dict values
-                                    setattr(message, field_name, field_value)
+                            success = self._set_field_value(message, field_descriptor, field_name, field_value)
+                            if success:
+                                logger.debug(f"✅ Successfully set field {field_name}")
                             else:
-                                # Primitive field, assign directly
+                                logger.warning(f"⚠️  Failed to set field {field_name} using descriptor, trying direct assignment")
                                 setattr(message, field_name, field_value)
                         else:
                             # Fallback to direct assignment
                             setattr(message, field_name, field_value)
+                            logger.debug(f"✅ Set field {field_name} via direct assignment")
+                            
                     except Exception as field_error:
                         logger.warning(f"⚠️  Failed to set field {field_name}: {field_error}")
                         # Try simple assignment as fallback
                         try:
                             setattr(message, field_name, field_value)
+                            logger.debug(f"✅ Set field {field_name} via fallback assignment")
                         except Exception as fallback_error:
                             logger.warning(f"⚠️  Fallback assignment also failed for {field_name}: {fallback_error}")
                 else:
                     logger.warning(f"⚠️  Field {field_name} not found in message class")
             
+            logger.debug(f"🏁 Message creation completed for {request_class.__name__}")
             return message
             
         except Exception as e:
             logger.error(f"❌ Failed to create request message: {e}")
             raise
+
+    def _set_field_value(self, message, field_descriptor, field_name: str, field_value):
+        """Set a field value on a protobuf message based on field descriptor"""
+        try:
+            from google.protobuf.descriptor import FieldDescriptor
+            
+            if field_descriptor.type == FieldDescriptor.TYPE_MESSAGE:
+                # This is a message field, need to create nested message
+                if isinstance(field_value, dict):
+                    nested_message = self._create_nested_message(field_descriptor.message_type, field_value)
+                    setattr(message, field_name, nested_message)
+                    return True
+                else:
+                    logger.warning(f"⚠️  Expected dict for message field {field_name}, got {type(field_value)}")
+                    return False
+            elif field_descriptor.type == FieldDescriptor.TYPE_STRING:
+                setattr(message, field_name, str(field_value))
+                return True
+            elif field_descriptor.type in [FieldDescriptor.TYPE_INT32, FieldDescriptor.TYPE_INT64]:
+                setattr(message, field_name, int(field_value))
+                return True
+            elif field_descriptor.type == FieldDescriptor.TYPE_BOOL:
+                setattr(message, field_name, bool(field_value))
+                return True
+            elif field_descriptor.type in [FieldDescriptor.TYPE_DOUBLE, FieldDescriptor.TYPE_FLOAT]:
+                setattr(message, field_name, float(field_value))
+                return True
+            else:
+                # Try direct assignment for other types
+                setattr(message, field_name, field_value)
+                return True
+                
+        except Exception as e:
+            logger.debug(f"🔍 Field setting failed for {field_name}: {e}")
+            return False
     
     def _create_nested_message(self, message_descriptor, data: Dict[str, Any]):
         """Create a nested protobuf message from dictionary data"""
@@ -754,10 +787,24 @@ class GrpcClient:
             message_class = message_descriptor._concrete_class
             message = message_class()
             
-            # Fill the nested message fields
+            logger.debug(f"🏗️  Creating nested message: {message_descriptor.name}")
+            
+            # Fill the nested message fields recursively
             for field_name, field_value in data.items():
                 if hasattr(message, field_name):
-                    setattr(message, field_name, field_value)
+                    # Get field descriptor for nested field
+                    field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
+                    if field_descriptor:
+                        success = self._set_field_value(message, field_descriptor, field_name, field_value)
+                        if success:
+                            logger.debug(f"✅ Set nested field {field_name}")
+                        else:
+                            # Fallback to direct assignment
+                            setattr(message, field_name, field_value)
+                            logger.debug(f"✅ Set nested field {field_name} via fallback")
+                    else:
+                        setattr(message, field_name, field_value)
+                        logger.debug(f"✅ Set nested field {field_name} directly")
                 else:
                     logger.debug(f"🔍 Field {field_name} not found in nested message {message_descriptor.name}")
             
