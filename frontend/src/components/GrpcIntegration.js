@@ -162,6 +162,54 @@ function GrpcIntegration() {
     }
   };
 
+  const callGrpcMethod = async (serviceName, methodName) => {
+    const resultKey = `${serviceName}_${methodName}`;
+    setLoading(true);
+    
+    try {
+      // Get the textarea value for this specific method
+      const textareaValue = document.querySelector(`textarea[placeholder*="${methodName}"]`)?.value || '{}';
+      
+      let requestData;
+      try {
+        requestData = JSON.parse(textareaValue);
+      } catch (e) {
+        toast.error('Invalid JSON in request data');
+        return;
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/api/grpc/${serviceName}/${methodName}`, {
+        ...requestData
+      });
+
+      setResults(prev => ({
+        ...prev,
+        [resultKey]: {
+          success: true,
+          data: response.data,
+          timestamp: new Date().toISOString()
+        }
+      }));
+
+      toast.success(`${methodName} completed successfully`);
+    } catch (error) {
+      console.error(`Error calling ${methodName}:`, error);
+      
+      setResults(prev => ({
+        ...prev,
+        [resultKey]: {
+          success: false,
+          error: error.response?.data || error.message,
+          timestamp: new Date().toISOString()
+        }
+      }));
+
+      toast.error(`${methodName} failed: ${error.response?.data?.error || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const setGrpcCredentials = async () => {
     try {
       const response = await axios.post(`${API_BASE_URL}/api/grpc/credentials`, credentials);
