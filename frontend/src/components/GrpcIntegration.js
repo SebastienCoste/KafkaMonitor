@@ -868,9 +868,12 @@ function GrpcIntegration() {
                           {namedSaves[`${serviceName}_${methodName}`] && 
                            Object.keys(namedSaves[`${serviceName}_${methodName}`]).length > 0 && (
                             <Select
-                              value={selectedSaveToLoad}
+                              value={selectedSavesToLoad[`${serviceName}_${methodName}`] || ""}
                               onValueChange={(value) => {
-                                setSelectedSaveToLoad(value);
+                                setSelectedSavesToLoad(prev => ({
+                                  ...prev,
+                                  [`${serviceName}_${methodName}`]: value
+                                }));
                                 loadNamedExample(serviceName, methodName, value);
                               }}
                             >
