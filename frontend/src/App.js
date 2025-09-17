@@ -946,18 +946,28 @@ function App() {
                                   </div>
                                   
                                   <div className="space-y-2">
-                                    {messages.map((message) => (
-                                      <div key={message.index} className="border rounded p-3 bg-gray-50">
-                                        <div className="flex justify-between items-start mb-2">
-                                          <div className="text-sm text-gray-600">
-                                            Message #{message.index + 1}
+                                    {messages.map((message) => {
+                                      const isExpanded = expandedMessages.has(message.index);
+                                      
+                                      return (
+                                        <div key={message.index} className="border rounded p-3 bg-gray-50">
+                                          <div 
+                                            className="flex justify-between items-start mb-2 cursor-pointer hover:bg-gray-100 p-1 rounded"
+                                            onClick={() => toggleMessageExpansion(message.index)}
+                                          >
+                                            <div className="text-sm text-gray-600 flex items-center">
+                                              <span className="mr-2">
+                                                {isExpanded ? '▼' : '▶'}
+                                              </span>
+                                              Message #{message.index + 1}
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                              {new Date(message.timestamp).toLocaleString()}
+                                            </div>
                                           </div>
-                                          <div className="text-xs text-gray-500">
-                                            {new Date(message.timestamp).toLocaleString()}
-                                          </div>
-                                        </div>
-                                        
-                                        <div className="space-y-2">
+                                          
+                                          {isExpanded && (
+                                            <div className="space-y-2">
                                           {message.headers && Object.keys(message.headers).length > 0 && (
                                             <div>
                                               <div className="text-sm font-medium text-gray-700 mb-1">Headers:</div>
