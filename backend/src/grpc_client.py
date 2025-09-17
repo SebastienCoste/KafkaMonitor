@@ -495,7 +495,7 @@ class GrpcClient:
                 # Make the call
                 logger.debug(f"🔄 Attempt {retry_count + 1} for {method_key}")
                 
-                # Debug: Log the actual request message content AND serialized bytes
+                # Debug: Log the actual request message content AND headers
                 try:
                     from google.protobuf.json_format import MessageToDict
                     request_dict = MessageToDict(request)
@@ -512,6 +512,17 @@ class GrpcClient:
                             logger.debug(f"  - {field.name}: {value}")
                     else:
                         logger.debug(f"📦 First 50 bytes: {serialized[:50]}")
+                    
+                    # LOG HEADERS/METADATA - This is what you requested!
+                    logger.info(f"🔑 Request headers/metadata:")
+                    if metadata:
+                        for key, value in metadata:
+                            # Show first 15 characters of value as requested
+                            value_preview = str(value)[:15] + "..." if len(str(value)) > 15 else str(value)
+                            logger.info(f"  - {key}: {value_preview}")
+                    else:
+                        logger.warning(f"⚠️  NO METADATA/HEADERS being sent!")
+                        
                 except Exception as debug_error:
                     logger.debug(f"📤 Could not serialize request for debug: {debug_error}")
                     logger.debug(f"📤 Request type: {type(request)}")
