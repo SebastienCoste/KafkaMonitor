@@ -2294,7 +2294,8 @@ class KafkaTraceViewerTester:
 def main():
     """Main test execution"""
     tester = KafkaTraceViewerTester()
-    success = tester.run_review_request_tests()
+    # Run comprehensive tests instead of review request tests for P10/P50/P95 testing
+    success = tester.run_comprehensive_test()
     return 0 if success else 1
 
 if __name__ == "__main__":
