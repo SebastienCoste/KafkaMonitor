@@ -125,12 +125,32 @@ class TraceGraphBuilder:
         self.traces[trace_id] = TraceInfo(trace_id=trace_id)
 
     def _enforce_trace_limit(self):
-        """Enforce maximum trace limit with FIFO eviction"""
-        while len(self.traces) > self.max_traces:
+        """Enforce maximum trace limit with intelligent eviction"""
+        if len(self.traces) <= self.max_traces:
+            return
+            
+        # Calculate how many traces to evict (evict in batches to avoid frequent evictions)
+        traces_to_evict = min(100, len(self.traces) - self.max_traces)
+        
+        for _ in range(traces_to_evict):
+            if len(self.trace_order) == 0:
+                break
+                
             oldest_trace_id = self.trace_order.popleft()
             if oldest_trace_id in self.traces:
+                # Don't evict traces that have received messages in the last 30 seconds
+                trace = self.traces[oldest_trace_id]
+                if trace.messages:
+                    latest_message_time = max(msg.timestamp for msg in trace.messages)
+                    time_since_last_message = datetime.now() - latest_message_time
+                    
+                    if time_since_last_message.total_seconds() < 30:
+                        # Put it back at the end and skip eviction
+                        self.trace_order.append(oldest_trace_id)
+                        continue
+                
                 del self.traces[oldest_trace_id]
-                logger.debug(f"Evicted trace: {oldest_trace_id}")
+                logger.debug(f"Evicted trace: {oldest_trace_id} (age: {time_since_last_message.total_seconds():.1f}s)")
 
     def get_trace(self, trace_id: str) -> Optional[TraceInfo]:
         """Get trace by ID"""
