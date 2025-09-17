@@ -22,16 +22,16 @@ logger = logging.getLogger(__name__)
 class GrpcProtoLoader:
     """Manages loading and compilation of user-provided proto files"""
     
-    def __init__(self, proto_dir: str):
-        self.proto_dir = Path(proto_dir)
-        # The actual proto root should be the parent directory to handle imports correctly
-        self.proto_root = self.proto_dir.parent
+    def __init__(self, proto_root_dir: str):
+        """Initialize the gRPC proto loader with the entire proto root directory"""
+        self.proto_root = Path(proto_root_dir)
+        self.temp_dir = None
         self.compiled_modules: Dict[str, Any] = {}
         self.service_stubs: Dict[str, Any] = {}
-        self.temp_dir = None
+        self.service_definitions: Dict[str, Dict] = {}  # Store parsed service definitions
         
-        # Create proto directory if it doesn't exist
-        self.proto_dir.mkdir(parents=True, exist_ok=True)
+        # Ensure proto root exists
+        self.proto_root.mkdir(parents=True, exist_ok=True)
         
         logger.info(f"🔧 Initialized GrpcProtoLoader with proto directory: {self.proto_dir}")
         logger.info(f"🔧 Proto root for imports: {self.proto_root}")
