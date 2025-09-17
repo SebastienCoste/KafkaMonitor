@@ -702,7 +702,7 @@ class GrpcClient:
         return json.loads(json_str)
     
     def _create_request_message(self, request_class, data: Dict[str, Any]):
-        """Create a protobuf message from dictionary data"""
+        """Create a protobuf message from dictionary data with support for nested messages"""
         try:
             # Create the message instance
             message = request_class()
@@ -710,7 +710,34 @@ class GrpcClient:
             # Fill the message fields
             for field_name, field_value in data.items():
                 if hasattr(message, field_name):
-                    setattr(message, field_name, field_value)
+                    try:
+                        # Get field descriptor to understand the field type
+                        field_descriptor = message.DESCRIPTOR.fields_by_name.get(field_name)
+                        
+                        if field_descriptor:
+                            if field_descriptor.message_type:
+                                # This is a message field, need to create nested message
+                                nested_message_class = getattr(message.__class__, field_name).__class__
+                                if isinstance(field_value, dict):
+                                    # Recursively create nested message
+                                    nested_message = self._create_nested_message(field_descriptor.message_type, field_value)
+                                    setattr(message, field_name, nested_message)
+                                else:
+                                    # Try direct assignment for non-dict values
+                                    setattr(message, field_name, field_value)
+                            else:
+                                # Primitive field, assign directly
+                                setattr(message, field_name, field_value)
+                        else:
+                            # Fallback to direct assignment
+                            setattr(message, field_name, field_value)
+                    except Exception as field_error:
+                        logger.warning(f"⚠️  Failed to set field {field_name}: {field_error}")
+                        # Try simple assignment as fallback
+                        try:
+                            setattr(message, field_name, field_value)
+                        except Exception as fallback_error:
+                            logger.warning(f"⚠️  Fallback assignment also failed for {field_name}: {fallback_error}")
                 else:
                     logger.warning(f"⚠️  Field {field_name} not found in message class")
             
@@ -718,6 +745,26 @@ class GrpcClient:
             
         except Exception as e:
             logger.error(f"❌ Failed to create request message: {e}")
+            raise
+    
+    def _create_nested_message(self, message_descriptor, data: Dict[str, Any]):
+        """Create a nested protobuf message from dictionary data"""
+        try:
+            # Get the message class from the descriptor
+            message_class = message_descriptor._concrete_class
+            message = message_class()
+            
+            # Fill the nested message fields
+            for field_name, field_value in data.items():
+                if hasattr(message, field_name):
+                    setattr(message, field_name, field_value)
+                else:
+                    logger.debug(f"🔍 Field {field_name} not found in nested message {message_descriptor.name}")
+            
+            return message
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to create nested message: {e}")
             raise
     
     def _convert_proto_value(self, value):
