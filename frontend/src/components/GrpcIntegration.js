@@ -993,7 +993,10 @@ function GrpcIntegration() {
                         </Button>
                         
                         {/* Save Named Example Dialog */}
-                        <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+                        <Dialog 
+                          open={saveDialogOpen[`${serviceName}_${methodName}`] || false} 
+                          onOpenChange={(open) => setSaveDialogOpen(prev => ({ ...prev, [`${serviceName}_${methodName}`]: open }))}
+                        >
                           <DialogTrigger asChild>
                             <Button 
                               variant="outline"
