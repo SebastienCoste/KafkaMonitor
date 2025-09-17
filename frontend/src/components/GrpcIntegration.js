@@ -47,6 +47,7 @@ function GrpcIntegration() {
   const [showCredentials, setShowCredentials] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  const [availableServices, setAvailableServices] = useState({}); // Dynamic services and methods
 
   // Form states for different operations
   const [upsertContentForm, setUpsertContentForm] = useState({
