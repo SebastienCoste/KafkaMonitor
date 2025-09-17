@@ -120,6 +120,7 @@ function GrpcIntegration() {
       if (response.data.success) {
         toast.success('gRPC client initialized successfully');
         setInitialized(true);
+        setAvailableServices(response.data.available_services || {});
         loadGrpcStatus();
       } else {
         toast.error(`Initialization failed: ${response.data.error}`);
