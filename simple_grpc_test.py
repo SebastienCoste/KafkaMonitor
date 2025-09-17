@@ -40,15 +40,15 @@ def main():
                 try:
                     print("\n🔍 Testing direct imports...")
                     
-                    # Try importing the grpc package
-                    import grpc as grpc_pkg
-                    print(f"✅ grpc package imported: {grpc_pkg}")
+                    # Try importing the proto_gen package (not the system grpc package)
+                    import proto_gen
+                    print(f"✅ proto_gen package imported: {proto_gen}")
                     
                     # Try importing ingress_server modules
-                    from grpc.ingress_server import ingress_server_pb2
+                    from proto_gen.ingress_server import ingress_server_pb2
                     print(f"✅ ingress_server_pb2 imported: {ingress_server_pb2}")
                     
-                    from grpc.ingress_server import ingress_server_pb2_grpc
+                    from proto_gen.ingress_server import ingress_server_pb2_grpc
                     print(f"✅ ingress_server_pb2_grpc imported: {ingress_server_pb2_grpc}")
                     
                     # Check if service class exists
