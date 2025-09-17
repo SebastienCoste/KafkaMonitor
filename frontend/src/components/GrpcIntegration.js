@@ -388,6 +388,24 @@ function GrpcIntegration() {
     }
   };
 
+  // Reload credentials from localStorage
+  const reloadCredentials = () => {
+    try {
+      const savedCredentials = localStorage.getItem('grpcCredentials');
+      if (savedCredentials) {
+        const parsed = JSON.parse(savedCredentials);
+        setCredentials(parsed);
+        toast.success('Credentials reloaded from memory');
+        console.log('✅ Credentials reloaded from localStorage');
+      } else {
+        toast.info('No saved credentials found in memory');
+      }
+    } catch (error) {
+      console.error('Error reloading credentials:', error);
+      toast.error('Failed to reload credentials');
+    }
+  };
+
   const loadAssetStorageUrls = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/grpc/asset-storage/urls`);
