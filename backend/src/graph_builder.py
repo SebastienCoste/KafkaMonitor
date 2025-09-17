@@ -97,21 +97,27 @@ class TraceGraphBuilder:
             return
 
         # Get or create trace
-        if message.trace_id not in self.traces:
+        trace_existed = message.trace_id in self.traces
+        if not trace_existed:
             self._create_new_trace(message.trace_id)
+        else:
+            logger.debug(f"Adding to existing trace {message.trace_id}: {message.topic}")
 
         # Add message to trace
         trace = self.traces[message.trace_id]
         trace.add_message(message)
 
+        if not trace_existed:
+            logger.info(f"Created new trace: {message.trace_id}")
+        
         logger.debug(f"Added message to trace {message.trace_id}: {message.topic}")
 
-        # Update trace order for FIFO
+        # Update trace order for FIFO (always move to end when active)
         if message.trace_id in self.trace_order:
             self.trace_order.remove(message.trace_id)
         self.trace_order.append(message.trace_id)
 
-        # Enforce max traces limit
+        # Enforce max traces limit with improved logic
         self._enforce_trace_limit()
 
     def _create_new_trace(self, trace_id: str):
