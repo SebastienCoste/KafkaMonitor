@@ -812,6 +812,7 @@ function GrpcIntegration() {
             </TabsContent>
           ))}
         </Tabs>
+        </div>
       ) : (
         <Card>
           <CardContent className="text-center py-8">
