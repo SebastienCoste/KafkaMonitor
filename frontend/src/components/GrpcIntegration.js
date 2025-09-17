@@ -600,60 +600,83 @@ function GrpcIntegration() {
       </Card>
 
       {/* Service Operations */}
-      <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
-        <TabsList className={`grid w-full grid-cols-${Math.min(Object.keys(availableServices).length, 4)}`}>
-          {Object.keys(availableServices).map(serviceName => (
-            <TabsTrigger key={serviceName} value={serviceName}>
-              {serviceName === 'ingress_server' ? 'IngressServer' : 
-               serviceName === 'asset_storage' ? 'AssetStorageService' : 
-               serviceName}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-
-        {/* Dynamic Service Tabs */}
-        {Object.entries(availableServices).map(([serviceName, methods]) => (
-          <TabsContent key={serviceName} value={serviceName} className="space-y-6">
-            <h3 className="text-xl font-semibold mb-4">
-              {serviceName === 'ingress_server' ? 'IngressServer' : 
-               serviceName === 'asset_storage' ? 'AssetStorageService' : 
-               serviceName} Methods
-            </h3>
-            
-            {methods.map(methodName => (
-              <Card key={methodName}>
-                <CardHeader>
-                  <CardTitle>{methodName}</CardTitle>
-                  <CardDescription>
-                    {serviceName} service method
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label>Request Data (JSON)</Label>
-                    <Textarea
-                      rows={5}
-                      className="font-mono"
-                      placeholder={`Enter ${methodName} request parameters as JSON`}
-                    />
-                  </div>
-                  
-                  <Button 
-                    onClick={() => callGrpcMethod(serviceName, methodName)}
-                    disabled={loading}
-                  >
-                    {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                    Call {methodName}
-                  </Button>
-                  
-                  {results[`${serviceName}_${methodName}`] && 
-                    renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
-                  }
-                </CardContent>
-              </Card>
+      {initialized && Object.keys(availableServices).length > 0 ? (
+        <Tabs defaultValue={Object.keys(availableServices)[0]} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            {Object.keys(availableServices).map(serviceName => (
+              <TabsTrigger key={serviceName} value={serviceName}>
+                {serviceName === 'ingress_server' ? 'IngressServer' : 
+                 serviceName === 'asset_storage' ? 'AssetStorageService' : 
+                 serviceName}
+              </TabsTrigger>
             ))}
-          </TabsContent>
-        ))}
+          </TabsList>
+
+          {/* Dynamic Service Tabs */}
+          {Object.entries(availableServices).map(([serviceName, methods]) => (
+            <TabsContent key={serviceName} value={serviceName} className="space-y-6">
+              <h3 className="text-xl font-semibold mb-4">
+                {serviceName === 'ingress_server' ? 'IngressServer' : 
+                 serviceName === 'asset_storage' ? 'AssetStorageService' : 
+                 serviceName} Methods
+              </h3>
+              
+              {methods && methods.length > 0 ? (
+                methods.map(methodName => (
+                  <Card key={methodName}>
+                    <CardHeader>
+                      <CardTitle>{methodName}</CardTitle>
+                      <CardDescription>
+                        {serviceName} service method
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Request Data (JSON)</Label>
+                        <Textarea
+                          rows={5}
+                          className="font-mono"
+                          placeholder={`Enter ${methodName} request parameters as JSON`}
+                        />
+                      </div>
+                      
+                      <Button 
+                        onClick={() => callGrpcMethod(serviceName, methodName)}
+                        disabled={loading}
+                      >
+                        {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                        Call {methodName}
+                      </Button>
+                      
+                      {results[`${serviceName}_${methodName}`] && 
+                        renderResult(`${serviceName}_${methodName}`, results[`${serviceName}_${methodName}`])
+                      }
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <p className="text-gray-500">No methods available for this service.</p>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      ) : (
+        <Card>
+          <CardContent className="text-center py-8">
+            <p className="text-gray-500 mb-4">
+              {!initialized 
+                ? "Initialize the gRPC client to see available services and methods." 
+                : "No services available. Please check your configuration."}
+            </p>
+            {!initialized && (
+              <Button onClick={initializeGrpc} disabled={loading}>
+                {loading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                Initialize gRPC Client
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
       </Tabs>
 
       {/* Status Display */}
