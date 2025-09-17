@@ -209,6 +209,31 @@ function GrpcIntegration() {
       toast.error('Failed to set asset-storage URL');
     }
   };
+  
+  // Generic gRPC method call
+  const callGrpcMethod = async (serviceName, methodName) => {
+    setLoading(true);
+    try {
+      // This is a placeholder for dynamic method calls
+      // In a real implementation, you would need to handle the request data
+      const response = await axios.post(`${API_BASE_URL}/api/grpc/${serviceName}/${methodName}`, {});
+      
+      setResults(prev => ({ ...prev, [`${serviceName}_${methodName}`]: response.data }));
+      
+      if (response.data.success) {
+        toast.success(`${methodName} called successfully`);
+      } else {
+        toast.error(`${methodName} failed: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error(`Error calling ${methodName}:`, error);
+      toast.error(`Failed to call ${methodName}`);
+      setResults(prev => ({ ...prev, [`${serviceName}_${methodName}`]: { success: false, error: error.message } }));
+    } finally {
+      setLoading(false);
+    }
+  };
+  
   // gRPC method calls
   const callUpsertContent = async () => {
     setLoading(true);
