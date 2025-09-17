@@ -822,6 +822,33 @@ function App() {
                                       </div>
                                     </div>
                                     
+                                    {/* P10/P50/P95 Message Age Metrics */}
+                                    {topicDetails && (
+                                      <div className="mt-4 pt-4 border-t border-gray-200">
+                                        <div className="text-sm font-medium text-gray-700 mb-2">Message Age Percentiles</div>
+                                        <div className="grid grid-cols-3 gap-2 text-center">
+                                          <div>
+                                            <div className="text-lg font-bold text-emerald-600">
+                                              {topicDetails.message_age_p10_ms || 0}ms
+                                            </div>
+                                            <div className="text-xs text-gray-600">P10</div>
+                                          </div>
+                                          <div>
+                                            <div className="text-lg font-bold text-amber-600">
+                                              {topicDetails.message_age_p50_ms || 0}ms
+                                            </div>
+                                            <div className="text-xs text-gray-600">P50</div>
+                                          </div>
+                                          <div>
+                                            <div className="text-lg font-bold text-red-600">
+                                              {topicDetails.message_age_p95_ms || 0}ms
+                                            </div>
+                                            <div className="text-xs text-gray-600">P95</div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                    
                                     <div className="mt-4 pt-4 border-t border-gray-200">
                                       <div className="text-sm space-y-2">
                                         <div className="flex justify-between">
