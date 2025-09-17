@@ -81,8 +81,8 @@ class GrpcProtoLoader:
             if self.temp_dir not in sys.path:
                 sys.path.insert(0, self.temp_dir)
             
-            # Find all proto files
-            proto_files = list(self.proto_dir.rglob("*.proto"))
+            # Find all proto files in the entire proto root directory (not just grpc subdir)
+            proto_files = list(self.proto_root.rglob("*.proto"))
             logger.info(f"📄 Found {len(proto_files)} proto files")
             
             if not proto_files:
