@@ -2600,6 +2600,12 @@ class KafkaTraceViewerTester:
             print("\n❌ Health check failed - stopping tests")
             return False
         
+        # CRITICAL: Enhanced Topic Statistics Bug Fixes Testing (Review Request)
+        print("\n" + "=" * 80)
+        print("🎯 CRITICAL REVIEW REQUEST TESTING - ENHANCED TOPIC STATISTICS BUG FIXES")
+        print("=" * 80)
+        self.test_enhanced_topic_statistics_bug_fixes()
+        
         # NEW FEATURE TESTS (from review request)
         print("\n" + "=" * 60)
         print("🆕 Testing New Features from Review Request")
