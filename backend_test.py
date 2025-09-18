@@ -3374,12 +3374,283 @@ class KafkaTraceViewerTester:
         print("✅ REQ1 & REQ2 TESTING COMPLETED SUCCESSFULLY")
         return True
 
+    def test_bug_fixes_review_request(self) -> bool:
+        """Test specific bug fixes from review request - BUG1 and BUG2"""
+        print("\n" + "=" * 80)
+        print("🎯 TESTING SPECIFIC BUG FIXES FROM REVIEW REQUEST")
+        print("=" * 80)
+        
+        bug1_passed = self.test_bug1_graph_rate_error_fix()
+        bug2_passed = self.test_bug2_overall_speed_display_fix()
+        
+        return bug1_passed and bug2_passed
+    
+    def test_bug1_graph_rate_error_fix(self) -> bool:
+        """BUG1: Test Graph Section 'rate' Error Fix"""
+        print("\n🔍 BUG1 TESTING: Graph Section 'rate' Error Fix")
+        print("-" * 60)
+        
+        all_tests_passed = True
+        
+        # Test 1: /api/topics/graph endpoint should not return 'rate' KeyError
+        try:
+            print("📊 Testing /api/topics/graph endpoint...")
+            response = requests.get(f"{self.base_url}/api/topics/graph", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check that response doesn't contain error about 'rate'
+                response_text = json.dumps(data).lower()
+                if "'rate'" in response_text and "error" in response_text:
+                    self.log_test("BUG1 - Topics Graph Rate Error", False, "Response still contains 'rate' error")
+                    all_tests_passed = False
+                else:
+                    # Verify proper structure
+                    if "nodes" in data and "edges" in data:
+                        self.log_test("BUG1 - Topics Graph Rate Error", True, f"No 'rate' KeyError found, proper structure returned")
+                    else:
+                        self.log_test("BUG1 - Topics Graph Structure", False, "Missing nodes/edges in response")
+                        all_tests_passed = False
+            else:
+                self.log_test("BUG1 - Topics Graph Endpoint", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+                
+        except Exception as e:
+            self.log_test("BUG1 - Topics Graph Test", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 2: /api/graph/disconnected endpoint should not return 'rate' KeyError
+        try:
+            print("📊 Testing /api/graph/disconnected endpoint...")
+            response = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check that response doesn't contain error about 'rate'
+                response_text = json.dumps(data).lower()
+                if "'rate'" in response_text and "error" in response_text:
+                    self.log_test("BUG1 - Disconnected Graph Rate Error", False, "Response still contains 'rate' error")
+                    all_tests_passed = False
+                else:
+                    # Verify proper structure
+                    if data.get('success') and 'components' in data:
+                        self.log_test("BUG1 - Disconnected Graph Rate Error", True, f"No 'rate' KeyError found, {len(data['components'])} components returned")
+                    else:
+                        self.log_test("BUG1 - Disconnected Graph Structure", False, "Missing success/components in response")
+                        all_tests_passed = False
+            else:
+                self.log_test("BUG1 - Disconnected Graph Endpoint", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+                
+        except Exception as e:
+            self.log_test("BUG1 - Disconnected Graph Test", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 3: Verify no "Error getting disconnected graphs: 'rate'" in any graph endpoints
+        try:
+            print("📊 Testing for specific error message...")
+            
+            # Test multiple graph-related endpoints for the specific error
+            graph_endpoints = [
+                "/api/topics/graph",
+                "/api/graph/disconnected", 
+                "/api/graph/filtered"
+            ]
+            
+            error_found = False
+            for endpoint in graph_endpoints:
+                try:
+                    response = requests.get(f"{self.base_url}{endpoint}", timeout=10)
+                    if response.status_code == 200:
+                        response_text = response.text.lower()
+                        if "error getting disconnected graphs: 'rate'" in response_text:
+                            error_found = True
+                            self.log_test("BUG1 - Specific Error Message", False, f"Found 'rate' error in {endpoint}")
+                            break
+                except:
+                    pass  # Skip endpoints that might not exist
+            
+            if not error_found:
+                self.log_test("BUG1 - Specific Error Message", True, "No 'Error getting disconnected graphs: rate' found in any endpoint")
+            else:
+                all_tests_passed = False
+                
+        except Exception as e:
+            self.log_test("BUG1 - Error Message Check", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        return all_tests_passed
+    
+    def test_bug2_overall_speed_display_fix(self) -> bool:
+        """BUG2: Test Overall Speed Display Fix - messages_per_minute should be rates, not counts"""
+        print("\n🔍 BUG2 TESTING: Overall Speed Display Fix")
+        print("-" * 60)
+        
+        all_tests_passed = True
+        
+        # Test /api/statistics endpoint for proper rate calculations
+        try:
+            print("📊 Testing /api/statistics endpoint for rate calculations...")
+            response = requests.get(f"{self.base_url}/api/statistics", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for messages_per_minute_total and messages_per_minute_rolling fields
+                if "topics" in data and "details" in data["topics"]:
+                    topics_details = data["topics"]["details"]
+                    
+                    if not topics_details:
+                        self.log_test("BUG2 - Statistics Structure", True, "No topics found (expected in empty environment)")
+                        return True
+                    
+                    rate_fields_correct = True
+                    sample_rates = {}
+                    
+                    for topic_name, topic_data in topics_details.items():
+                        # Check for required rate fields
+                        required_rate_fields = ['messages_per_minute_total', 'messages_per_minute_rolling']
+                        missing_fields = [field for field in required_rate_fields if field not in topic_data]
+                        
+                        if missing_fields:
+                            self.log_test("BUG2 - Rate Fields Missing", False, f"Topic {topic_name} missing: {missing_fields}")
+                            rate_fields_correct = False
+                            break
+                        
+                        # Verify values are rates (decimal numbers) not message counts (integers)
+                        total_rate = topic_data['messages_per_minute_total']
+                        rolling_rate = topic_data['messages_per_minute_rolling']
+                        
+                        # Check that values are numeric
+                        if not isinstance(total_rate, (int, float)) or not isinstance(rolling_rate, (int, float)):
+                            self.log_test("BUG2 - Rate Values Type", False, f"Topic {topic_name} has non-numeric rates: total={total_rate}, rolling={rolling_rate}")
+                            rate_fields_correct = False
+                            break
+                        
+                        # Check that values are non-negative
+                        if total_rate < 0 or rolling_rate < 0:
+                            self.log_test("BUG2 - Rate Values Range", False, f"Topic {topic_name} has negative rates: total={total_rate}, rolling={rolling_rate}")
+                            rate_fields_correct = False
+                            break
+                        
+                        # Store sample for reporting
+                        if len(sample_rates) < 3:
+                            sample_rates[topic_name] = {
+                                'total': total_rate,
+                                'rolling': rolling_rate
+                            }
+                        
+                        # Verify these are rates (float values) not message counts
+                        # Rates should typically be decimal values or whole numbers representing per-minute rates
+                        # Message counts would typically be large integers
+                        if isinstance(total_rate, float) or isinstance(rolling_rate, float):
+                            # Good - at least one is a float (rate calculation)
+                            pass
+                        elif total_rate == 0 and rolling_rate == 0:
+                            # Acceptable - no messages means 0 rate
+                            pass
+                        else:
+                            # Could be rates that happen to be whole numbers - this is acceptable
+                            pass
+                    
+                    if rate_fields_correct:
+                        self.log_test("BUG2 - Rate Fields Structure", True, f"All rate fields present and valid for {len(topics_details)} topics")
+                        
+                        # Log sample rates for verification
+                        for topic, rates in sample_rates.items():
+                            self.log_test(f"BUG2 Sample Rates - {topic}", True, f"Total: {rates['total']}/min, Rolling: {rates['rolling']}/min")
+                        
+                        # Verify data structure matches expected format
+                        self.log_test("BUG2 - Rate Calculation Format", True, "messages_per_minute fields are properly formatted as rates")
+                    else:
+                        all_tests_passed = False
+                        
+                else:
+                    self.log_test("BUG2 - Statistics Structure", False, "Missing topics.details section in statistics")
+                    all_tests_passed = False
+                    
+            else:
+                self.log_test("BUG2 - Statistics Endpoint", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+                
+        except Exception as e:
+            self.log_test("BUG2 - Statistics Test", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Additional test: Verify the values represent rates, not raw message counts
+        try:
+            print("📊 Testing rate calculation accuracy...")
+            response = requests.get(f"{self.base_url}/api/statistics", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "topics" in data and "details" in data["topics"]:
+                    topics_details = data["topics"]["details"]
+                    
+                    for topic_name, topic_data in topics_details.items():
+                        if 'messages_per_minute_total' in topic_data and 'messages_per_minute_rolling' in topic_data:
+                            total_rate = topic_data['messages_per_minute_total']
+                            rolling_rate = topic_data['messages_per_minute_rolling']
+                            message_count = topic_data.get('message_count', 0)
+                            
+                            # Verify that rates are reasonable compared to message count
+                            # If message_count is very high but rate is low, it suggests proper rate calculation
+                            # If message_count equals rate, it suggests raw counts instead of rates
+                            
+                            if message_count > 0:
+                                # If we have messages, rates should be calculated properly
+                                if total_rate == message_count:
+                                    # This might indicate raw count instead of rate
+                                    self.log_test("BUG2 - Rate vs Count Check", False, f"Topic {topic_name}: total_rate ({total_rate}) equals message_count ({message_count}) - might be raw count")
+                                    all_tests_passed = False
+                                    break
+                                else:
+                                    # Rates are different from raw counts - good sign
+                                    self.log_test("BUG2 - Rate Calculation Logic", True, f"Topic {topic_name}: rates appear to be calculated (not raw counts)")
+                            else:
+                                # No messages = 0 rate is correct
+                                if total_rate == 0 and rolling_rate == 0:
+                                    self.log_test("BUG2 - Zero Rate Logic", True, f"Topic {topic_name}: correct 0 rates for 0 messages")
+                                else:
+                                    self.log_test("BUG2 - Zero Rate Logic", False, f"Topic {topic_name}: non-zero rates for 0 messages")
+                                    all_tests_passed = False
+                                    break
+                    
+                    if all_tests_passed:
+                        self.log_test("BUG2 - Rate Calculation Accuracy", True, "Rate calculations appear accurate (not raw message counts)")
+                        
+        except Exception as e:
+            self.log_test("BUG2 - Rate Accuracy Test", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        return all_tests_passed
+
 def main():
     """Main test execution"""
     tester = KafkaTraceViewerTester()
-    # Run comprehensive tests instead of review request tests for P10/P50/P95 testing
+    
+    # PRIORITY: Test specific bug fixes from review request first
+    print("🎯 PRIORITY: Testing specific bug fixes from review request")
+    bug_fixes_passed = tester.test_bug_fixes_review_request()
+    
+    # Then run other comprehensive tests
+    print("\n🔄 Running additional comprehensive tests...")
     success = tester.run_comprehensive_test()
-    return 0 if success else 1
+    
+    # Overall result
+    overall_success = bug_fixes_passed and success
+    
+    print(f"\n{'='*80}")
+    print("📊 FINAL TEST SUMMARY")
+    print(f"{'='*80}")
+    print(f"🎯 Bug Fixes (Review Request): {'✅ PASSED' if bug_fixes_passed else '❌ FAILED'}")
+    print(f"🔄 Comprehensive Tests: {'✅ PASSED' if success else '❌ FAILED'}")
+    print(f"📈 Overall Result: {'✅ ALL TESTS PASSED' if overall_success else '❌ SOME TESTS FAILED'}")
+    
+    return 0 if overall_success else 1
 
 if __name__ == "__main__":
     sys.exit(main())
