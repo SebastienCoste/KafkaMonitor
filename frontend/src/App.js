@@ -823,9 +823,9 @@ function App() {
                                       </div>
                                       <div className="text-center">
                                         <div className="text-2xl font-bold text-purple-600">
-                                          {topicDetails?.messages_per_minute_rolling || 0}
+                                          {(topicDetails?.messages_per_minute_rolling || 0).toFixed(1)}
                                         </div>
-                                        <div className="text-sm text-gray-600">Msgs/Min</div>
+                                        <div className="text-sm text-gray-600">Msgs/Min (60s)</div>
                                         <div className="text-xs text-gray-500">
                                           (Overall: {(topicDetails?.messages_per_minute_total || 0).toFixed(1)}/min)
                                         </div>
