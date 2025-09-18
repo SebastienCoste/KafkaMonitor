@@ -549,6 +549,23 @@ class TraceGraphBuilder:
                 newest_message_time = max(msg.timestamp for msg in trace.messages)
                 total_trace_duration = (newest_message_time - oldest_message_time).total_seconds()
                 
+                # Only include traces where time_to_topic > 0 (i.e., this topic wasn't the starting topic)
+                # OR if time_to_topic is 0 but there are multiple topics, use the time within the topic
+                if time_to_topic == 0 and len(trace.topics) > 1:
+                    # If this is the starting topic, calculate internal processing time
+                    if len(trace_messages_for_topic) > 1:
+                        # Use the time between first and last message in this topic as processing time
+                        last_topic_message = max(trace_messages_for_topic, key=lambda m: m.timestamp)
+                        time_to_topic = (last_topic_message.timestamp - first_topic_message.timestamp).total_seconds()
+                elif time_to_topic == 0 and len(trace.topics) == 1:
+                    # If this is the only topic in the trace, use total processing time within topic
+                    if len(trace_messages_for_topic) > 1:
+                        last_topic_message = max(trace_messages_for_topic, key=lambda m: m.timestamp)
+                        time_to_topic = (last_topic_message.timestamp - first_topic_message.timestamp).total_seconds()
+                    else:
+                        # Single message in single topic - use a small default time to avoid 0ms
+                        time_to_topic = 0.001  # 1ms minimum
+                
                 # Store data for slowest traces calculation
                 trace_slowest_data.append({
                     'trace_id': trace_id,
