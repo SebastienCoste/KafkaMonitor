@@ -485,7 +485,7 @@ class TraceGraphBuilder:
             
             nodes.append({
                 'id': topic,
-                'label': f"{topic}\n{node_stats['message_count']} msgs\n{node_stats['rate']:.1f}/min",
+                'label': f"{topic}\n{node_stats['message_count']} msgs\n{node_stats['rate_total']:.1f}/min",
                 'type': 'topic',
                 'component': component_index,
                 'monitored': topic in self.monitored_topics,
