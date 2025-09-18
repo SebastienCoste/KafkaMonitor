@@ -521,21 +521,37 @@ class TraceGraphBuilder:
         """Calculate comprehensive statistics for a topic"""
         messages = []
         trace_ages = []
+        trace_slowest_data = []  # For tracking slowest traces
         
-        # Collect all messages for this topic
-        for trace in self.traces.values():
+        # Collect all messages for this topic and trace timing data
+        for trace_id, trace in self.traces.items():
             trace_messages_for_topic = []
             for msg in trace.messages:
                 if msg.topic == topic:
                     messages.append(msg)
                     trace_messages_for_topic.append(msg)
             
-            # Calculate trace age for this topic based on message timestamps within the trace
+            # Calculate trace timing metrics if this trace has messages for this topic
             if trace_messages_for_topic and trace.messages:
                 # Find the oldest message in the entire trace (start of trace)
                 oldest_message_time = min(msg.timestamp for msg in trace.messages)
                 
-                # For each message in this topic, calculate age from trace start
+                # Find when trace first reached this topic
+                first_topic_message = min(trace_messages_for_topic, key=lambda m: m.timestamp)
+                time_to_topic = (first_topic_message.timestamp - oldest_message_time).total_seconds()
+                
+                # Calculate total trace duration
+                newest_message_time = max(msg.timestamp for msg in trace.messages)
+                total_trace_duration = (newest_message_time - oldest_message_time).total_seconds()
+                
+                # Store data for slowest traces calculation
+                trace_slowest_data.append({
+                    'trace_id': trace_id,
+                    'time_to_topic': time_to_topic,
+                    'total_duration': total_trace_duration
+                })
+                
+                # For age percentile calculation - use time from start to each message in this topic
                 for msg in trace_messages_for_topic:
                     age_seconds = (msg.timestamp - oldest_message_time).total_seconds()
                     trace_ages.append(age_seconds)
@@ -543,20 +559,32 @@ class TraceGraphBuilder:
         if not messages:
             return {
                 'message_count': 0,
-                'rate': 0.0,
+                'rate_total': 0.0,
+                'rate_rolling_60s': 0.0,
                 'median_trace_age': 0,
                 'trace_age_p10': 0,
                 'trace_age_p50': 0,
                 'trace_age_p95': 0,
-                'last_message_time': None
+                'last_message_time': None,
+                'slowest_traces': []
             }
         
-        # Calculate message rate (messages per minute)
+        # Sort messages by timestamp for rate calculations
+        messages.sort(key=lambda m: m.timestamp)
+        
+        # Calculate total message rate (messages per minute over entire time span)
+        rate_total = 0.0
         if len(messages) > 1:
-            time_span = (messages[-1].timestamp - messages[0].timestamp).total_seconds() / 60
-            rate = len(messages) / max(time_span, 1)  # Avoid division by zero
-        else:
-            rate = 0.0
+            time_span_minutes = (messages[-1].timestamp - messages[0].timestamp).total_seconds() / 60
+            rate_total = len(messages) / max(time_span_minutes, 1)  # Avoid division by zero
+        
+        # Calculate rolling 60-second message rate
+        rate_rolling_60s = 0.0
+        sixty_seconds_ago = now - timedelta(seconds=60)
+        recent_messages = [msg for msg in messages if msg.timestamp >= sixty_seconds_ago]
+        if recent_messages:
+            # Messages per minute in the last 60 seconds
+            rate_rolling_60s = len(recent_messages)  # Already per minute since we're looking at 60 seconds
         
         # Calculate trace age percentiles
         if trace_ages:
@@ -566,14 +594,19 @@ class TraceGraphBuilder:
         else:
             p10 = p50 = p95 = 0
         
+        # Find the 3 slowest traces (by time to reach this topic)
+        slowest_traces = sorted(trace_slowest_data, key=lambda x: x['time_to_topic'], reverse=True)[:3]
+        
         return {
             'message_count': len(messages),
-            'rate': rate,
+            'rate_total': rate_total,
+            'rate_rolling_60s': rate_rolling_60s,
             'median_trace_age': p50,
             'trace_age_p10': p10,
             'trace_age_p50': p50,
             'trace_age_p95': p95,
-            'last_message_time': messages[-1].timestamp.isoformat() if messages else None
+            'last_message_time': messages[-1].timestamp.isoformat() if messages else None,
+            'slowest_traces': slowest_traces
         }
     
     def _calculate_edge_statistics(self, source_topic: str, dest_topic: str) -> Dict[str, Any]:
