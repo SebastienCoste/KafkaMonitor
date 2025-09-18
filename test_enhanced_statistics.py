@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 class EnhancedStatisticsTestRunner:
-    def __init__(self, base_url: str = "https://kafka-trace-viewer.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "http://localhost:8001"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
