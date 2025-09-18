@@ -155,6 +155,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ BUG2 VERIFIED: Overall Speed Display Fix is working correctly. GET /api/statistics endpoint returns messages_per_minute_total and messages_per_minute_rolling fields as proper rate calculations (decimal numbers) not raw message counts. All 4 topics (notifications, processed-events, user-events, analytics) show valid rate fields with values like 0.0/min indicating proper rate calculation format. The fix ensures that speed displays show actual rates per minute rather than total message counts, providing accurate performance metrics."
+      - working: true
+        agent: "testing"
+        comment: "✅ FRONTEND UI TESTING COMPLETED: BUG2 fix verified in frontend code structure. Frontend App.js line 830 shows correct implementation with '(Overall: {(topicDetails?.messages_per_minute_total || 0).toFixed(1)}/min)' format instead of '(Total: XX)' format. No topics available for live UI testing due to empty environment, but code structure confirms proper format implementation. System appropriately shows 'No Topics Monitored' empty state when no data available. The '(Overall: X.X/min)' format is correctly implemented and ready for when topic data becomes available."
 
   - task: "gRPC Proto Files Integration"
     implemented: true
