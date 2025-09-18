@@ -875,6 +875,45 @@ function App() {
                                         </div>
                                       </div>
                                     </div>
+                                    
+                                    {/* Slowest Traces Section */}
+                                    {topicDetails?.slowest_traces && topicDetails.slowest_traces.length > 0 && (
+                                      <div className="mt-4 pt-4 border-t border-red-100">
+                                        <div className="text-sm font-medium text-gray-700 mb-3">
+                                          3 Slowest Traces
+                                        </div>
+                                        <div className="space-y-2">
+                                          {topicDetails.slowest_traces.map((trace, index) => (
+                                            <div 
+                                              key={trace.trace_id} 
+                                              className="flex items-center justify-between p-2 bg-red-50 rounded-md text-sm hover:bg-red-100 cursor-pointer transition-colors"
+                                              onClick={() => selectTrace(trace.trace_id)}
+                                            >
+                                              <div className="flex items-center space-x-2">
+                                                <Badge variant="outline" className="text-xs">
+                                                  #{index + 1}
+                                                </Badge>
+                                                <span className="font-mono text-blue-600">
+                                                  {trace.trace_id.substring(0, 8)}...
+                                                </span>
+                                              </div>
+                                              <div className="flex items-center space-x-3 text-xs text-gray-600">
+                                                <span>
+                                                  To topic: <span className="font-semibold text-red-600">
+                                                    {Math.round(trace.time_to_topic * 1000)}ms
+                                                  </span>
+                                                </span>
+                                                <span>
+                                                  Total: <span className="font-semibold">
+                                                    {Math.round(trace.total_duration * 1000)}ms
+                                                  </span>
+                                                </span>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
                                   </CardContent>
                                 </Card>
                               );
