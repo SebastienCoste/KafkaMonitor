@@ -893,8 +893,8 @@ function App() {
                                                 <Badge variant="outline" className="text-xs">
                                                   #{index + 1}
                                                 </Badge>
-                                                <span className="font-mono text-blue-600">
-                                                  {trace.trace_id.substring(0, 8)}...
+                                                <span className="font-mono text-blue-600 text-xs">
+                                                  {trace.trace_id}
                                                 </span>
                                               </div>
                                               <div className="flex items-center space-x-3 text-xs text-gray-600">
