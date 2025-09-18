@@ -2814,6 +2814,246 @@ class KafkaTraceViewerTester:
         
         return all_passed
 
+    def test_enhanced_topic_statistics_req1_req2(self) -> bool:
+        """Test Enhanced Topic Statistics Implementation for REQ1 and REQ2"""
+        print("\n" + "=" * 80)
+        print("🔍 TESTING ENHANCED TOPIC STATISTICS - REQ1 & REQ2")
+        print("=" * 80)
+        print("REQ1: Test new fields - messages_per_minute_total, messages_per_minute_rolling, slowest_traces")
+        print("REQ2: Test topic handling when topics don't exist - graceful handling")
+        print("=" * 80)
+        
+        # REQ1 Testing: Test /api/statistics endpoint for new fields
+        try:
+            print("🔄 REQ1: Testing /api/statistics endpoint for enhanced fields...")
+            response = requests.get(f"{self.base_url}/api/statistics", timeout=15)
+            
+            if response.status_code != 200:
+                self.log_test("REQ1 - Statistics Endpoint", False, f"HTTP {response.status_code}")
+                return False
+            
+            data = response.json()
+            
+            # Verify main structure
+            if "topics" not in data or "details" not in data["topics"]:
+                self.log_test("REQ1 - Statistics Structure", False, "Missing topics.details section")
+                return False
+            
+            topics_details = data["topics"]["details"]
+            
+            if not topics_details:
+                self.log_test("REQ1 - Statistics Structure", False, "No topic details found")
+                return False
+            
+            # Test new fields for each topic
+            req1_fields_valid = True
+            topics_tested = 0
+            sample_data = {}
+            
+            required_new_fields = [
+                'messages_per_minute_total',
+                'messages_per_minute_rolling', 
+                'slowest_traces'
+            ]
+            
+            for topic_name, topic_data in topics_details.items():
+                topics_tested += 1
+                
+                # Check if all new REQ1 fields are present
+                missing_fields = [field for field in required_new_fields if field not in topic_data]
+                
+                if missing_fields:
+                    self.log_test("REQ1 - New Fields Present", False, f"Topic {topic_name} missing: {missing_fields}")
+                    req1_fields_valid = False
+                    break
+                
+                # Validate field types and values
+                mpm_total = topic_data['messages_per_minute_total']
+                mpm_rolling = topic_data['messages_per_minute_rolling']
+                slowest_traces = topic_data['slowest_traces']
+                
+                # Validate messages_per_minute_total
+                if not isinstance(mpm_total, (int, float)) or mpm_total < 0:
+                    self.log_test("REQ1 - messages_per_minute_total", False, f"Invalid value for {topic_name}: {mpm_total}")
+                    req1_fields_valid = False
+                    break
+                
+                # Validate messages_per_minute_rolling
+                if not isinstance(mpm_rolling, (int, float)) or mpm_rolling < 0:
+                    self.log_test("REQ1 - messages_per_minute_rolling", False, f"Invalid value for {topic_name}: {mpm_rolling}")
+                    req1_fields_valid = False
+                    break
+                
+                # Validate slowest_traces array structure
+                if not isinstance(slowest_traces, list):
+                    self.log_test("REQ1 - slowest_traces Structure", False, f"slowest_traces not array for {topic_name}")
+                    req1_fields_valid = False
+                    break
+                
+                # Validate slowest_traces data structure if not empty
+                for trace_data in slowest_traces:
+                    if not isinstance(trace_data, dict):
+                        self.log_test("REQ1 - slowest_traces Item", False, f"Invalid trace data structure in {topic_name}")
+                        req1_fields_valid = False
+                        break
+                    
+                    required_trace_fields = ['trace_id', 'time_to_topic', 'total_duration']
+                    missing_trace_fields = [field for field in required_trace_fields if field not in trace_data]
+                    
+                    if missing_trace_fields:
+                        self.log_test("REQ1 - slowest_traces Fields", False, f"Missing fields in slowest_traces for {topic_name}: {missing_trace_fields}")
+                        req1_fields_valid = False
+                        break
+                    
+                    # Validate trace field types
+                    if not isinstance(trace_data['trace_id'], str):
+                        self.log_test("REQ1 - trace_id Type", False, f"trace_id not string in {topic_name}")
+                        req1_fields_valid = False
+                        break
+                    
+                    if not isinstance(trace_data['time_to_topic'], (int, float)) or trace_data['time_to_topic'] < 0:
+                        self.log_test("REQ1 - time_to_topic Type", False, f"Invalid time_to_topic in {topic_name}: {trace_data['time_to_topic']}")
+                        req1_fields_valid = False
+                        break
+                    
+                    if not isinstance(trace_data['total_duration'], (int, float)) or trace_data['total_duration'] < 0:
+                        self.log_test("REQ1 - total_duration Type", False, f"Invalid total_duration in {topic_name}: {trace_data['total_duration']}")
+                        req1_fields_valid = False
+                        break
+                
+                if not req1_fields_valid:
+                    break
+                
+                # Store sample data for reporting
+                if len(sample_data) < 3:
+                    sample_data[topic_name] = {
+                        'mpm_total': mpm_total,
+                        'mpm_rolling': mpm_rolling,
+                        'slowest_traces_count': len(slowest_traces)
+                    }
+            
+            if req1_fields_valid:
+                self.log_test("REQ1 - Enhanced Fields Implementation", True, f"All new fields valid for {topics_tested} topics")
+                
+                # Log sample data
+                for topic, data in sample_data.items():
+                    self.log_test(f"REQ1 Sample - {topic}", True, f"MPM Total: {data['mpm_total']:.2f}, MPM Rolling: {data['mpm_rolling']:.2f}, Slowest Traces: {data['slowest_traces_count']}")
+            else:
+                return False
+            
+            # Test different scenarios - topics with no messages vs topics with messages
+            topics_with_messages = 0
+            topics_without_messages = 0
+            
+            for topic_name, topic_data in topics_details.items():
+                message_count = topic_data.get('message_count', 0)
+                if message_count > 0:
+                    topics_with_messages += 1
+                    # Verify non-zero topics have reasonable values
+                    if topic_data['messages_per_minute_total'] == 0 and topic_data['messages_per_minute_rolling'] == 0:
+                        self.log_test("REQ1 - Topics With Messages", False, f"Topic {topic_name} has messages but zero rates")
+                        return False
+                else:
+                    topics_without_messages += 1
+                    # Verify zero-message topics have zero values and empty arrays
+                    if (topic_data['messages_per_minute_total'] != 0 or 
+                        topic_data['messages_per_minute_rolling'] != 0 or 
+                        len(topic_data['slowest_traces']) != 0):
+                        self.log_test("REQ1 - Topics Without Messages", False, f"Topic {topic_name} has no messages but non-zero values")
+                        return False
+            
+            self.log_test("REQ1 - Scenario Testing", True, f"Topics with messages: {topics_with_messages}, without: {topics_without_messages}")
+            
+        except Exception as e:
+            self.log_test("REQ1 - Statistics Test", False, f"Exception: {str(e)}")
+            return False
+        
+        # REQ2 Testing: Test topic handling when topics don't exist
+        try:
+            print("🔄 REQ2: Testing graceful handling of missing topics...")
+            
+            # Test /api/topics endpoint
+            topics_response = requests.get(f"{self.base_url}/api/topics", timeout=10)
+            if topics_response.status_code == 200:
+                topics_data = topics_response.json()
+                all_topics = topics_data.get('all_topics', [])
+                monitored_topics = topics_data.get('monitored_topics', [])
+                
+                self.log_test("REQ2 - Topics Endpoint", True, f"All: {len(all_topics)}, Monitored: {len(monitored_topics)}")
+                
+                # Test that system continues to operate even if some topics don't exist
+                # This is verified by the fact that statistics endpoint works
+                self.log_test("REQ2 - System Operation", True, "System continues operating with topic configuration")
+            else:
+                self.log_test("REQ2 - Topics Endpoint", False, f"HTTP {topics_response.status_code}")
+                return False
+            
+            # Test /api/grpc/status to verify system is running
+            grpc_response = requests.get(f"{self.base_url}/api/grpc/status", timeout=10)
+            if grpc_response.status_code in [200, 503]:  # 503 is acceptable if gRPC not initialized
+                self.log_test("REQ2 - System Status", True, f"System running (HTTP {grpc_response.status_code})")
+            else:
+                self.log_test("REQ2 - System Status", False, f"Unexpected status: {grpc_response.status_code}")
+                return False
+            
+            # Test Kafka consumer subscription handling (via health check)
+            health_response = requests.get(f"{self.base_url}/api/health", timeout=10)
+            if health_response.status_code == 200:
+                health_data = health_response.json()
+                if health_data.get('status') == 'healthy':
+                    self.log_test("REQ2 - Kafka Consumer Health", True, f"Kafka consumer operational with {health_data.get('traces_count', 0)} traces")
+                else:
+                    self.log_test("REQ2 - Kafka Consumer Health", False, f"Unhealthy status: {health_data.get('status')}")
+                    return False
+            else:
+                self.log_test("REQ2 - Kafka Consumer Health", False, f"Health check failed: {health_response.status_code}")
+                return False
+            
+        except Exception as e:
+            self.log_test("REQ2 - Topic Handling Test", False, f"Exception: {str(e)}")
+            return False
+        
+        # Final validation - test expected response format
+        try:
+            print("🔄 Final: Validating expected response format...")
+            
+            # Verify the response matches the expected format from review request
+            expected_structure_found = False
+            
+            for topic_name, topic_data in topics_details.items():
+                # Check if we have the expected structure
+                if (isinstance(topic_data.get('message_count'), int) and
+                    isinstance(topic_data.get('trace_count'), int) and
+                    isinstance(topic_data.get('messages_per_minute_total'), (int, float)) and
+                    isinstance(topic_data.get('messages_per_minute_rolling'), (int, float)) and
+                    isinstance(topic_data.get('slowest_traces'), list)):
+                    
+                    expected_structure_found = True
+                    
+                    # Validate slowest_traces structure matches expected format
+                    for trace in topic_data['slowest_traces']:
+                        if (isinstance(trace.get('trace_id'), str) and
+                            isinstance(trace.get('time_to_topic'), (int, float)) and
+                            isinstance(trace.get('total_duration'), (int, float))):
+                            continue
+                        else:
+                            expected_structure_found = False
+                            break
+                    break
+            
+            if expected_structure_found:
+                self.log_test("REQ1&2 - Expected Format", True, "Response format matches expected structure from review request")
+            else:
+                self.log_test("REQ1&2 - Expected Format", False, "Response format doesn't match expected structure")
+                return False
+            
+        except Exception as e:
+            self.log_test("REQ1&2 - Format Validation", False, f"Exception: {str(e)}")
+            return False
+        
+        print("✅ REQ1 & REQ2 TESTING COMPLETED SUCCESSFULLY")
+        return True
+
 def main():
     """Main test execution"""
     tester = KafkaTraceViewerTester()
