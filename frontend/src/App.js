@@ -827,7 +827,7 @@ function App() {
                                         </div>
                                         <div className="text-sm text-gray-600">Msgs/Min</div>
                                         <div className="text-xs text-gray-500">
-                                          (Total: {topicDetails?.messages_per_minute_total || 0})
+                                          (Overall: {(topicDetails?.messages_per_minute_total || 0).toFixed(1)}/min)
                                         </div>
                                       </div>
                                     </div>
