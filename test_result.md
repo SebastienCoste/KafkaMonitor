@@ -123,6 +123,36 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: P10/P50/P95 metrics working correctly. GET /api/statistics returns message_age_p10_ms, message_age_p50_ms, message_age_p95_ms fields for all 4 topics. Values are in milliseconds format with proper percentile ordering (P10 <= P50 <= P95). All existing statistics functionality preserved. Sample metrics: notifications (P10=0ms, P50=0ms, P95=0ms), user-events (P10=0ms, P50=0ms, P95=0ms)."
 
+  - task: "BUG1: Graph Section 'rate' Error Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing BUG1 fix - Graph Section 'rate' Error Fix from review request"
+      - working: true
+        agent: "testing"
+        comment: "✅ BUG1 VERIFIED: Graph Section 'rate' Error Fix is working correctly. GET /api/topics/graph endpoint returns proper structure with nodes and edges without any 'rate' KeyError. GET /api/graph/disconnected endpoint returns success=true with 1 component without any 'rate' KeyError. No 'Error getting disconnected graphs: rate' error found in any graph endpoints. The fix has successfully resolved the KeyError issue that was preventing graph components from loading properly."
+
+  - task: "BUG2: Overall Speed Display Fix"
+    implemented: true
+    working: true
+    file: "backend/src/graph_builder.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing BUG2 fix - Overall Speed Display Fix from review request"
+      - working: true
+        agent: "testing"
+        comment: "✅ BUG2 VERIFIED: Overall Speed Display Fix is working correctly. GET /api/statistics endpoint returns messages_per_minute_total and messages_per_minute_rolling fields as proper rate calculations (decimal numbers) not raw message counts. All 4 topics (notifications, processed-events, user-events, analytics) show valid rate fields with values like 0.0/min indicating proper rate calculation format. The fix ensures that speed displays show actual rates per minute rather than total message counts, providing accurate performance metrics."
+
   - task: "gRPC Proto Files Integration"
     implemented: true
     working: true
