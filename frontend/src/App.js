@@ -613,7 +613,6 @@ function App() {
       </header>
 
       {/* Main Content */}
-      <div className="text-sm text-gray-500 p-2">DEBUG: Current page: {currentPage}</div>
       {currentPage === 'traces' ? (
         // Existing Kafka Trace Viewer Content
         <div className="max-w-full mx-auto p-4">
