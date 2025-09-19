@@ -55,14 +55,17 @@ class GrpcProtoLoader:
             # Check ingress_server
             if 'ingress_server' in grpc_services and 'service_proto' in grpc_services['ingress_server']:
                 ingress_proto_path = self.proto_root / grpc_services['ingress_server']['service_proto']
+                ingress_proto_url = grpc_services['ingress_server']['url']
                 validation_results['ingress_server'] = ingress_proto_path.exists()
-                logger.debug(f"🔍 Checking ingress_server proto: {ingress_proto_path} -> {validation_results['ingress_server']}")
+                logger.debug(f"🔍 Checking ingress_server ({ingress_proto_url}) proto: {ingress_proto_path} -> {validation_results['ingress_server']}")
             
             # Check asset_storage
             if 'asset_storage' in grpc_services and 'service_proto' in grpc_services['asset_storage']:
                 asset_proto_path = self.proto_root / grpc_services['asset_storage']['service_proto']
+                asset_reader_url = grpc_services['asset_storage']['urls']['reader']
+                asset_writer_url = grpc_services['asset_storage']['urls']['writer']
                 validation_results['asset_storage'] = asset_proto_path.exists()
-                logger.debug(f"🔍 Checking asset_storage proto: {asset_proto_path} -> {validation_results['asset_storage']}")
+                logger.debug(f"🔍 Checking asset_storage R({asset_reader_url}) W({asset_writer_url}) proto: {asset_proto_path} -> {validation_results['asset_storage']}")
         else:
             # Fallback to default paths
             logger.info("🔄 Using default proto paths for validation")

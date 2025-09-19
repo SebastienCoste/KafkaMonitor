@@ -126,7 +126,8 @@ async def initialize_kafka_components():
         
         # Default to DEV environment (or first available)
         available_envs = environment_manager.list_environments()
-        default_env = 'DEV' if 'DEV' in available_envs else (available_envs[0] if available_envs else None)
+        config_default_env = settings.get('application', {}).get('start_env', 'DEV')
+        default_env = config_default_env if config_default_env in available_envs else (available_envs[0] if available_envs else None)
         
         if default_env:
             logger.info(f"🔄 Switching to default environment: {default_env}")
