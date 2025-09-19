@@ -7,6 +7,8 @@ import './App.css';
 // Components
 import GrpcIntegration from './components/GrpcIntegration';
 import EnhancedGraphVisualization from './components/EnhancedGraphVisualization';
+import BlueprintCreator from './components/blueprint/BlueprintCreator';
+import { BlueprintProvider } from './components/blueprint/Common/BlueprintContext';
 
 // Shadcn UI components
 import { Button } from './components/ui/button';
