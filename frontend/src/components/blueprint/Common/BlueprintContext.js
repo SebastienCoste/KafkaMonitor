@@ -171,17 +171,6 @@ export function BlueprintProvider({ children }) {
     }
   };
 
-  const refreshFileTree = useCallback(async () => {
-    if (!rootPath) return;
-    
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/blueprint/file-tree`);
-      setFileTree(response.data.files || []);
-    } catch (error) {
-      console.error('Error refreshing file tree:', error);
-    }
-  }, [API_BASE_URL, rootPath]);
-
   const loadFileContent = async (filePath) => {
     try {
       setLoading(true);
