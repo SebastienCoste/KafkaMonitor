@@ -1145,10 +1145,15 @@ function App() {
             </div>
           )}
         </div>
-      ) : (
+      ) : currentPage === 'grpc' ? (
         // gRPC Integration Page
         <GrpcIntegration />
-      )}
+      ) : currentPage === 'blueprint' ? (
+        // Blueprint Creator Page
+        <BlueprintProvider>
+          <BlueprintCreator />
+        </BlueprintProvider>
+      ) : null}
       <Toaster />
     </div>
   );
