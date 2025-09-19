@@ -171,15 +171,7 @@ export default function BlueprintCreator() {
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-semibold text-gray-900">Project Files</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {/* Show directory picker to change root */}}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
                 </div>
-                <DirectoryPicker />
               </div>
               
               <div className="flex-1 overflow-hidden">
