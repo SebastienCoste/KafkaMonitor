@@ -26,7 +26,7 @@ class BlueprintBuildManager:
         self.last_build_result = None
     
     async def execute_build(self, root_path: str, script_name: str = "buildBlueprint.sh", 
-                          websocket: Optional[WebSocket] = None) -> BuildResult:
+                          websocket: Optional[WebSocket] = None, broadcast_callback = None) -> BuildResult:
         """Execute blueprint build script with real-time output streaming"""
         
         if self.build_status == BuildStatus.BUILDING:
@@ -51,11 +51,12 @@ class BlueprintBuildManager:
             os.chmod(script_path, 0o755)
             
             # Send build start message
+            start_message = {"type": "build_started", "data": {"script": script_name, "root_path": root_path}}
             if websocket:
-                await self._send_websocket_message(
-                    websocket, "build_started", 
-                    {"script": script_name, "root_path": root_path}
-                )
+                await self._send_websocket_message(websocket, "build_started", 
+                    {"script": script_name, "root_path": root_path})
+            if broadcast_callback:
+                await broadcast_callback("build_started", {"script": script_name, "root_path": root_path})
             
             # Execute build script
             self.current_build_process = await asyncio.create_subprocess_exec(
@@ -72,9 +73,9 @@ class BlueprintBuildManager:
                 
                 # Send to WebSocket if connected
                 if websocket:
-                    await self._send_websocket_message(
-                        websocket, "build_output", {"content": line}
-                    )
+                    await self._send_websocket_message(websocket, "build_output", {"content": line})
+                if broadcast_callback:
+                    await broadcast_callback("build_output", {"content": line})
             
             # Wait for process completion
             return_code = await self.current_build_process.wait()
@@ -99,14 +100,15 @@ class BlueprintBuildManager:
             )
             
             # Send completion message
+            completion_data = {
+                "success": success,
+                "execution_time": execution_time,
+                "generated_files": generated_files
+            }
             if websocket:
-                await self._send_websocket_message(
-                    websocket, "build_complete", {
-                        "success": success,
-                        "execution_time": execution_time,
-                        "generated_files": generated_files
-                    }
-                )
+                await self._send_websocket_message(websocket, "build_complete", completion_data)
+            if broadcast_callback:
+                await broadcast_callback("build_complete", completion_data)
             
             self.last_build_result = result
             return result
@@ -124,9 +126,9 @@ class BlueprintBuildManager:
             )
             
             if websocket:
-                await self._send_websocket_message(
-                    websocket, "build_error", {"error": error_msg}
-                )
+                await self._send_websocket_message(websocket, "build_error", {"error": error_msg})
+            if broadcast_callback:
+                await broadcast_callback("build_error", {"error": error_msg})
             
             self.last_build_result = result
             return result
@@ -144,9 +146,9 @@ class BlueprintBuildManager:
             )
             
             if websocket:
-                await self._send_websocket_message(
-                    websocket, "build_error", {"error": error_msg}
-                )
+                await self._send_websocket_message(websocket, "build_error", {"error": error_msg})
+            if broadcast_callback:
+                await broadcast_callback("build_error", {"error": error_msg})
             
             self.last_build_result = result
             return result
