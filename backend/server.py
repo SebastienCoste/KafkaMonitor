@@ -23,6 +23,9 @@ from src.kafka_consumer import KafkaConsumerService
 from src.graph_builder import TraceGraphBuilder
 from src.grpc_client import GrpcClient
 from src.environment_manager import EnvironmentManager
+from src.blueprint_models import *
+from src.blueprint_file_manager import BlueprintFileManager
+from src.blueprint_build_manager import BlueprintBuildManager
 
 
 ROOT_DIR = Path(__file__).parent
