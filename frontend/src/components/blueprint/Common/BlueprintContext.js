@@ -112,6 +112,22 @@ export function BlueprintProvider({ children }) {
     }
   };
 
+  // Load environments on mount
+  useEffect(() => {
+    loadEnvironments();
+  }, []);
+
+  const refreshFileTree = useCallback(async () => {
+    if (!rootPath) return;
+    
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/blueprint/file-tree`);
+      setFileTree(response.data.files || []);
+    } catch (error) {
+      console.error('Error refreshing file tree:', error);
+    }
+  }, [API_BASE_URL, rootPath]);
+
   // Auto-refresh logic
   useEffect(() => {
     if (autoRefresh && rootPath) {
@@ -121,11 +137,6 @@ export function BlueprintProvider({ children }) {
       return () => clearInterval(interval);
     }
   }, [autoRefresh, rootPath, refreshFileTree]);
-
-  // Load environments on mount
-  useEffect(() => {
-    loadEnvironments();
-  }, []);
 
   const loadEnvironments = async () => {
     try {
