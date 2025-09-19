@@ -313,16 +313,19 @@ test_plan:
         comment: "✅ ENHANCED TOPIC STATISTICS TESTING COMPLETED - ALL REQUIREMENTS VERIFIED: REQ1: All new fields working correctly - messages_per_minute_total (0.0), messages_per_minute_rolling (0.0), slowest_traces (empty array with correct structure). All 4 topics (analytics, user-events, notifications, processed-events) have valid field types and values. REQ2: Graceful topic handling verified - Kafka consumer subscription working, system continues operating without failing, all required endpoints accessible (GET /api/statistics, GET /api/topics, GET /api/grpc/status). Response format matches review request specification exactly. Total: 11/11 tests passed (100% success rate)."
 
   - task: "Frontend API URL Configuration Fix"
-    implemented: false
-    working: false
+    implemented: true
+    working: true
     file: "frontend/.env.local"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: false
         agent: "main"
         comment: "Frontend is making API calls to localhost:8001 instead of REACT_APP_BACKEND_URL. Root cause: .env.local file overrides main .env file with localhost:8001 setting. Browser console confirms API_BASE_URL is being loaded as http://localhost:8001 despite correct environment variable usage in code."
+      - working: true
+        agent: "main"
+        comment: "FIXED: Updated /app/frontend/.env.local file to use correct backend URL (https://kafka-insight.preview.emergentagent.com) instead of localhost:8001. Restarted frontend service. Browser console now shows correct API_BASE_URL. Also fixed backend by installing missing protoc which was causing 503 errors. Backend and frontend now working correctly with proper API communication."
 
 agent_communication:
   - agent: "main"
