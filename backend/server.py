@@ -789,21 +789,22 @@ async def blueprint_websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
-            # Keep connection alive and send periodic updates
-            await asyncio.sleep(5)
+            # Keep connection alive with less frequent updates
+            await asyncio.sleep(30)  # Only send updates every 30 seconds
 
-            # Send periodic file tree refresh if enabled
-            if blueprint_file_manager and blueprint_file_manager.root_path:
-                try:
-                    file_tree = await blueprint_file_manager.get_file_tree()
-                    update_data = {
-                        "type": "file_tree_update",
-                        "timestamp": datetime.now().isoformat(),
-                        "files": [f.dict() for f in file_tree]
-                    }
-                    await websocket.send_text(json.dumps(update_data))
-                except Exception as e:
-                    logger.debug(f"Error sending file tree update: {e}")
+            # Send periodic file tree refresh only if auto-refresh is enabled
+            # Note: We can't directly check frontend autoRefresh state here
+            # The frontend should manage its own refresh frequency
+            try:
+                # Send a simple ping to keep connection alive
+                ping_data = {
+                    "type": "ping",
+                    "timestamp": datetime.now().isoformat()
+                }
+                await websocket.send_text(json.dumps(ping_data))
+            except Exception as e:
+                logger.debug(f"Error sending ping: {e}")
+                break
 
     except WebSocketDisconnect:
         blueprint_websocket_connections.remove(websocket)
