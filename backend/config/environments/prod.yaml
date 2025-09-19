@@ -31,8 +31,8 @@ grpc_services:
 # Blueprint Server Configuration
 blueprint_server:
   base_url: "https://blueprint-prod.example.com"
-  validate_path: "/api/v1/blueprint/validate"
-  activate_path: "/api/v1/blueprint/activate"
+  validate_path: "/validate/{namespace}"
+  activate_path: "/activate/{namespace}"
   auth_header_name: "Authorization"
   auth_header_value: "Bearer prod-api-token"
 
