@@ -8,11 +8,12 @@ import { FileArchive, Download, RefreshCw } from 'lucide-react';
 export default function OutputFiles() {
   const { outputFiles, loadOutputFiles, rootPath, loading } = useBlueprintContext();
 
+  // Only load output files when component mounts or rootPath changes
   useEffect(() => {
     if (rootPath) {
       loadOutputFiles();
     }
-  }, [rootPath, loadOutputFiles]);
+  }, [rootPath]); // Removed loadOutputFiles dependency to prevent frequent reloads
 
   const formatFileSize = (bytes) => {
     const sizes = ['B', 'KB', 'MB', 'GB'];
