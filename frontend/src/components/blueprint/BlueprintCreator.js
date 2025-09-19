@@ -146,7 +146,7 @@ export default function BlueprintCreator() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <DirectoryPicker />
+                <FileBrowser />
                 
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                   <h4 className="font-medium text-blue-900 mb-2">Expected Structure:</h4>
