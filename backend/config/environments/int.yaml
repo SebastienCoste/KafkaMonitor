@@ -4,15 +4,15 @@ description: "Integration Environment"
 
 # Kafka Configuration for this environment
 kafka:
-  bootstrap_servers: "int-kafka.example.com:9092"
+  bootstrap_servers: "kafka-int.example.com:9092"
   security_protocol: "SASL_SSL"
-  sasl_mechanism: "SCRAM-SHA-256"
-  username: "int-user"
-  password: "int-password"
+  sasl_mechanism: "SCRAM-SHA-512"
+  username: "kafka-int-user"
+  password: "kafka-int-password"
 
 grpc_services:
   ingress_server:
-    url: "int-ingress.example.com:443"
+    url: "ingress-int.example.com:443"
     secure: true
     timeout: 30
     # Path to the service definition proto file
@@ -21,12 +21,20 @@ grpc_services:
   asset_storage:
     # Multiple URLs for asset storage with reader/writer labels
     urls:
-      reader: "int-assets-reader.example.com:443"
-      writer: "int-assets-writer.example.com:443"
+      reader: "asset-storage-int-reader.example.com:443"
+      writer: "asset-storage-int-writer.example.com:443"
     secure: true
     timeout: 30
     # Path to the service definition proto file
     service_proto: "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
+
+# Blueprint Server Configuration
+blueprint_server:
+  base_url: "https://blueprint-int.example.com"
+  validate_path: "/api/v1/blueprint/validate"
+  activate_path: "/api/v1/blueprint/activate"
+  auth_header_name: "Authorization"
+  auth_header_value: "Bearer int-api-token"
 
 # Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files
