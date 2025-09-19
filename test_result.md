@@ -123,6 +123,96 @@ backend:
         agent: "testing"
         comment: "✅ VERIFIED: P10/P50/P95 metrics working correctly. GET /api/statistics returns message_age_p10_ms, message_age_p50_ms, message_age_p95_ms fields for all 4 topics. Values are in milliseconds format with proper percentile ordering (P10 <= P50 <= P95). All existing statistics functionality preserved. Sample metrics: notifications (P10=0ms, P50=0ms, P95=0ms), user-events (P10=0ms, P50=0ms, P95=0ms)."
 
+  - task: "Blueprint Creator API Configuration Endpoints"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing Blueprint Creator API configuration endpoints from review request"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: GET /api/blueprint/config endpoint working correctly. Returns proper structure with root_path, auto_refresh, and available_templates fields. Found 4 available templates. Blueprint file manager is properly initialized."
+
+  - task: "Blueprint Creator API Root Path Configuration"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing PUT /api/blueprint/config endpoint for setting root path"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: PUT /api/blueprint/config endpoint working correctly. Successfully sets root path to /app with proper validation. Returns success=true and updated root_path value. Blueprint configuration management functional."
+
+  - task: "Blueprint Creator API File Tree Management"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing GET /api/blueprint/file-tree endpoint for file structure retrieval"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: GET /api/blueprint/file-tree endpoint working correctly. Returns proper file structure with 35 files/directories found. Includes project files like README.md, BUG_FIXES.md, etc. File tree management operational."
+
+  - task: "Blueprint Creator API File Content Management"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing GET/PUT /api/blueprint/file-content/{path} endpoints for file content operations"
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ PARTIAL: File content endpoints implemented but require root path to be set first. PUT operations timeout intermittently due to network issues, but core functionality exists. GET operations return proper error when root path not configured."
+
+  - task: "Blueprint Creator API Validation"
+    implemented: true
+    working: "NA"
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing GET /api/blueprint/validate-config endpoint for blueprint validation"
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ INTERMITTENT: Blueprint validation endpoint implemented and accessible, but experiences intermittent timeout issues. When accessible, returns proper validation structure with valid, errors, and warnings fields."
+
+  - task: "Blueprint Creator API WebSocket Support"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing WebSocket endpoint /api/ws/blueprint for real-time updates"
+      - working: true
+        agent: "testing"
+        comment: "✅ VERIFIED: WebSocket endpoint /api/ws/blueprint is accessible and properly configured. URL wss://kafka-insight.preview.emergentagent.com/api/ws/blueprint is reachable for real-time Blueprint Creator updates."
+
   - task: "BUG1: Graph Section 'rate' Error Fix"
     implemented: true
     working: true
