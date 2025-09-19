@@ -32,7 +32,10 @@ export function BlueprintProvider({ children }) {
   useEffect(() => {
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/api/ws/blueprint`;
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/api/ws/blueprint`;
+      
+      console.log('Connecting to WebSocket:', wsUrl);
       
       const ws = new WebSocket(wsUrl);
       
@@ -44,6 +47,7 @@ export function BlueprintProvider({ children }) {
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
+          console.log('WebSocket message received:', data);
           handleWebSocketMessage(data);
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
@@ -70,7 +74,7 @@ export function BlueprintProvider({ children }) {
         websocket.close();
       }
     };
-  }, []);
+  }, []); // Remove websocket dependency to avoid reconnection loops
 
   const handleWebSocketMessage = (data) => {
     switch (data.type) {
