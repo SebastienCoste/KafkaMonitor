@@ -79,7 +79,7 @@ export default function ConsoleOutput() {
                     : 'text-gray-100'
                 }`}
               >
-                <span className="text-gray-500 mr-2">{index + 1:03d}</span>
+                <span className="text-gray-500 mr-2">{String(index + 1).padStart(3, '0')}</span>
                 {line}
               </div>
             ))
