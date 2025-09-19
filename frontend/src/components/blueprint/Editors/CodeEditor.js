@@ -111,7 +111,11 @@ export default function CodeEditor({ filePath }) {
           }}
           onKeyDown={handleKeyDown}
           className="w-full h-full p-4 font-mono text-sm border-none resize-none focus:outline-none focus:ring-0 bg-white"
-          style={{ fontFamily: 'Monaco, "Lucida Console", monospace' }}
+          style={{ 
+            fontFamily: 'Monaco, "Lucida Console", monospace',
+            minHeight: '100%',
+            height: '100%'
+          }}
           spellCheck={false}
         />
       </div>
