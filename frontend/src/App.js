@@ -536,6 +536,14 @@ function App() {
                   <Server className="h-4 w-4 mr-2" />
                   gRPC Integration
                 </Button>
+                <Button
+                  variant={currentPage === 'blueprint' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage('blueprint')}
+                >
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Blueprint Creator
+                </Button>
               </div>
               
               {/* Status indicators - only for trace viewer */}
