@@ -1,24 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { UnControlled as CodeMirror } from 'react-codemirror2';
 import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
 import { Save, RotateCcw } from 'lucide-react';
-
-// Import CodeMirror and modes
-import 'codemirror/lib/codemirror.css';
-import 'codemirror/theme/default.css';
-import 'codemirror/theme/material.css';
-import 'codemirror/mode/javascript/javascript';
-import 'codemirror/mode/yaml/yaml';
-import 'codemirror/mode/protobuf/protobuf';
-import 'codemirror/addon/edit/closebrackets';
-import 'codemirror/addon/edit/matchbrackets';
-import 'codemirror/addon/fold/foldcode';
-import 'codemirror/addon/fold/foldgutter';
-import 'codemirror/addon/fold/brace-fold';
-import 'codemirror/addon/fold/foldgutter.css';
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
@@ -35,16 +20,16 @@ export default function CodeEditor({ filePath }) {
     const ext = filename.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'json':
-        return 'application/json';
+        return 'JSON';
       case 'jslt':
-        return 'application/json'; // JSLT is JSON-like
+        return 'JSLT'; 
       case 'yaml':
       case 'yml':
-        return 'yaml';
+        return 'YAML';
       case 'proto':
-        return 'protobuf';
+        return 'Protocol Buffer';
       default:
-        return 'text/plain';
+        return 'Text';
     }
   };
 
@@ -64,20 +49,10 @@ export default function CodeEditor({ filePath }) {
     toast.info('Changes reverted');
   };
 
-  const options = {
-    mode: getFileMode(filePath),
-    theme: 'default',
-    lineNumbers: true,
-    lineWrapping: true,
-    autoCloseBrackets: true,
-    matchBrackets: true,
-    foldGutter: true,
-    gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-    indentUnit: 2,
-    tabSize: 2,
-    extraKeys: {
-      'Ctrl-S': handleSave,
-      'Cmd-S': handleSave
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault();
+      handleSave();
     }
   };
 
@@ -95,8 +70,8 @@ export default function CodeEditor({ filePath }) {
       <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <h3 className="font-medium text-gray-900">{filePath}</h3>
-          <Badge variant={getFileMode(filePath) === 'application/json' ? 'default' : 'secondary'}>
-            {getFileMode(filePath).split('/').pop().toUpperCase()}
+          <Badge variant="secondary">
+            {getFileMode(filePath)}
           </Badge>
           {hasChanges && (
             <Badge variant="outline" className="text-orange-600 border-orange-200">
@@ -126,16 +101,18 @@ export default function CodeEditor({ filePath }) {
         </div>
       </div>
 
-      {/* Code Editor */}
+      {/* Simple Text Editor */}
       <div className="flex-1 overflow-hidden">
-        <CodeMirror
+        <textarea
           value={currentContent}
-          options={options}
-          onChange={(editor, data, value) => {
-            setCurrentContent(value);
-            setHasChanges(value !== fileContent);
+          onChange={(e) => {
+            setCurrentContent(e.target.value);
+            setHasChanges(e.target.value !== fileContent);
           }}
-          className="h-full"
+          onKeyDown={handleKeyDown}
+          className="w-full h-full p-4 font-mono text-sm border-none resize-none focus:outline-none focus:ring-0 bg-white"
+          style={{ fontFamily: 'Monaco, "Lucida Console", monospace' }}
+          spellCheck={false}
         />
       </div>
     </div>
