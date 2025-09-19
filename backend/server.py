@@ -43,6 +43,11 @@ grpc_client: Optional[GrpcClient] = None
 environment_manager: Optional[EnvironmentManager] = None
 websocket_connections: List[WebSocket] = []
 
+# Global variables for Blueprint Creator components
+blueprint_file_manager: Optional[BlueprintFileManager] = None
+blueprint_build_manager: Optional[BlueprintBuildManager] = None
+blueprint_websocket_connections: List[WebSocket] = []
+
 # Configuration paths
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
