@@ -120,7 +120,7 @@ export function BlueprintProvider({ children }) {
       }, 30000); // 30 seconds
       return () => clearInterval(interval);
     }
-  }, [autoRefresh, rootPath]);
+  }, [autoRefresh, rootPath, refreshFileTree]);
 
   // Load environments on mount
   useEffect(() => {
