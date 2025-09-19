@@ -28,5 +28,13 @@ grpc_services:
     # Path to the service definition proto file
     service_proto: "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
 
+# Blueprint Server Configuration
+blueprint_server:
+  base_url: "https://blueprint-dev.example.com"
+  validate_path: "/api/v1/blueprint/validate"
+  activate_path: "/api/v1/blueprint/activate"
+  auth_header_name: "Authorization"
+  auth_header_value: "Bearer dev-api-token"
+
 # Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files
