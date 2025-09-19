@@ -31,3 +31,6 @@ mock_data:
 # Topic monitoring settings
 topic_monitoring:
   activate_all_on_startup: true  # Whether to monitor all configured topics on startup
+
+application:
+  start_env: INT

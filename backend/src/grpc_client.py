@@ -22,7 +22,7 @@ from .grpc_proto_loader import GrpcProtoLoader
 logger = logging.getLogger(__name__)
 
 class GrpcClient:
-    """Main gRPC client for Kafka Monitor services"""
+    """Main gRPC client for Marauder's map services"""
     
     def __init__(self, proto_root_dir: str, environments_dir: str):
         self.proto_loader = GrpcProtoLoader(proto_root_dir)
