@@ -676,10 +676,19 @@ async def get_blueprint_output_files(root_path: str):
 @api_router.post("/blueprint/validate/{filename}")
 async def validate_blueprint(filename: str, request: DeploymentRequest):
     """Validate blueprint with blueprint server"""
-    if not blueprint_build_manager or not environment_manager:
+    if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
     try:
+        # Get namespace from blueprint_cnf.json
+        namespace = None
+        try:
+            config_validation = await blueprint_file_manager.validate_blueprint_config("blueprint_cnf.json")
+            if config_validation.get('valid') and config_validation.get('config'):
+                namespace = config_validation['config'].get('namespace')
+        except Exception as e:
+            logger.warning(f"Could not extract namespace from blueprint_cnf.json: {e}")
+        
         # Get environment configuration
         env_config_data = environment_manager.get_environment_config(request.environment)
         if not env_config_data.get('success'):
@@ -697,7 +706,8 @@ async def validate_blueprint(filename: str, request: DeploymentRequest):
             filename,
             request.environment,
             DeploymentAction.VALIDATE,
-            env_config
+            env_config,
+            namespace
         )
         
         return result.dict()
@@ -708,10 +718,19 @@ async def validate_blueprint(filename: str, request: DeploymentRequest):
 @api_router.post("/blueprint/activate/{filename}")
 async def activate_blueprint(filename: str, request: DeploymentRequest):
     """Activate blueprint with blueprint server"""
-    if not blueprint_build_manager or not environment_manager:
+    if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
     try:
+        # Get namespace from blueprint_cnf.json
+        namespace = None
+        try:
+            config_validation = await blueprint_file_manager.validate_blueprint_config("blueprint_cnf.json")
+            if config_validation.get('valid') and config_validation.get('config'):
+                namespace = config_validation['config'].get('namespace')
+        except Exception as e:
+            logger.warning(f"Could not extract namespace from blueprint_cnf.json: {e}")
+        
         # Get environment configuration
         env_config_data = environment_manager.get_environment_config(request.environment)
         if not env_config_data.get('success'):
@@ -729,7 +748,8 @@ async def activate_blueprint(filename: str, request: DeploymentRequest):
             filename,
             request.environment,
             DeploymentAction.ACTIVATE,
-            env_config
+            env_config,
+            namespace
         )
         
         return result.dict()
