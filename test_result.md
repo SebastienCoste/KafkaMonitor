@@ -312,7 +312,21 @@ test_plan:
         agent: "testing"
         comment: "✅ ENHANCED TOPIC STATISTICS TESTING COMPLETED - ALL REQUIREMENTS VERIFIED: REQ1: All new fields working correctly - messages_per_minute_total (0.0), messages_per_minute_rolling (0.0), slowest_traces (empty array with correct structure). All 4 topics (analytics, user-events, notifications, processed-events) have valid field types and values. REQ2: Graceful topic handling verified - Kafka consumer subscription working, system continues operating without failing, all required endpoints accessible (GET /api/statistics, GET /api/topics, GET /api/grpc/status). Response format matches review request specification exactly. Total: 11/11 tests passed (100% success rate)."
 
+  - task: "Frontend API URL Configuration Fix"
+    implemented: false
+    working: false
+    file: "frontend/.env.local"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "main"
+        comment: "Frontend is making API calls to localhost:8001 instead of REACT_APP_BACKEND_URL. Root cause: .env.local file overrides main .env file with localhost:8001 setting. Browser console confirms API_BASE_URL is being loaded as http://localhost:8001 despite correct environment variable usage in code."
+
 agent_communication:
+  - agent: "main"
+    message: "🔍 FRONTEND API URL ISSUE IDENTIFIED: The issue is NOT in the code - both App.js and GrpcIntegration.js correctly use process.env.REACT_APP_BACKEND_URL. Root cause: .env.local file (REACT_APP_BACKEND_URL=http://localhost:8001) is overriding the main .env file (REACT_APP_BACKEND_URL=https://kafka-insight.preview.emergentagent.com) due to React's environment variable precedence. Browser console shows API_BASE_URL is loading as localhost:8001. All API calls are failing with 503 Service Unavailable because they're going to wrong URL. Need to fix .env.local file to resolve the gRPC integration UI testing blocker."
   - agent: "main"
     message: "🎉 ALL THREE REQUIREMENTS SUCCESSFULLY IMPLEMENTED: ✅ REQ1: Added P10/P50/P95 message age metrics in milliseconds to backend statistics endpoint and frontend topics display with color-coded visualization (P10-emerald, P50-amber, P95-red). ✅ REQ2: Fixed graph visualization size - increased from 600-800px to 800-1200px range with better scaling (60px per topic vs 40px) and improved zoom controls with tooltips and proper container references. ✅ REQ3: Successfully integrated uploaded gRPC proto files - resolved proto compilation issues by creating missing dependencies (eadp proto files), fixed import path conflicts by renaming 'grpc' to 'proto_gen', resolved gRPC version compatibility issues by upgrading to grpcio 1.75.0 and creating missing _utilities.py module. gRPC client now initializes successfully with available services: IngressServer (UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings) and AssetStorageService (BatchGetSignedUrls, BatchUpdateStatuses). All environments (DEV, INT, LOAD, PROD, TEST) are accessible. Application is fully functional with working trace viewer, enhanced topics page with P95 metrics, larger graph visualization, and fully operational gRPC integration page."
   - agent: "testing"
