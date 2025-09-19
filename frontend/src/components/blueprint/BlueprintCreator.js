@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 // Blueprint Creator Components
 import { useBlueprintContext } from './Common/BlueprintContext';
 import FileTree from './FileExplorer/FileTree';
-import DirectoryPicker from './FileExplorer/DirectoryPicker';
+import FileBrowser from './FileExplorer/FileBrowser';
 import FileUpload from './FileExplorer/FileUpload';
 import CodeEditor from './Editors/CodeEditor';
 import BuildControls from './BuildPanel/BuildControls';
