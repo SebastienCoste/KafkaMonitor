@@ -58,6 +58,13 @@ async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
     logger.info("🚀 Starting Kafka trace viewer component initialization")
     global graph_builder, kafka_consumer, grpc_client, environment_manager
+    global blueprint_file_manager, blueprint_build_manager
+    
+    # Initialize Blueprint Creator components
+    logger.info("🏗️ Initializing Blueprint Creator components...")
+    blueprint_file_manager = BlueprintFileManager()
+    blueprint_build_manager = BlueprintBuildManager()
+    logger.info("✅ Blueprint Creator components initialized")
     
     # Check if required directories exist
     if not CONFIG_DIR.exists():
