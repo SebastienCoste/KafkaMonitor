@@ -4,15 +4,15 @@ description: "Load Testing Environment"
 
 # Kafka Configuration for this environment
 kafka:
-  bootstrap_servers: "load-kafka.example.com:9092"
+  bootstrap_servers: "kafka-load.example.com:9092"
   security_protocol: "SASL_SSL"
-  sasl_mechanism: "SCRAM-SHA-256"
-  username: "load-user"
-  password: "load-password"
+  sasl_mechanism: "SCRAM-SHA-512"
+  username: "kafka-load-user"
+  password: "kafka-load-password"
 
 grpc_services:
   ingress_server:
-    url: "load-ingress.example.com:443"
+    url: "ingress-load.example.com:443"
     secure: true
     timeout: 30
     # Path to the service definition proto file
@@ -21,12 +21,20 @@ grpc_services:
   asset_storage:
     # Multiple URLs for asset storage with reader/writer labels
     urls:
-      reader: "load-assets-reader.example.com:443"
-      writer: "load-assets-writer.example.com:443"
+      reader: "asset-storage-load-reader.example.com:443"
+      writer: "asset-storage-load-writer.example.com:443"
     secure: true
     timeout: 30
     # Path to the service definition proto file
     service_proto: "eadp/cadie/shared/storageinterface/v1/storage_service_admin.proto"
+
+# Blueprint Server Configuration
+blueprint_server:
+  base_url: "https://blueprint-load.example.com"
+  validate_path: "/api/v1/blueprint/validate"
+  activate_path: "/api/v1/blueprint/activate"
+  auth_header_name: "Authorization"
+  auth_header_value: "Bearer load-api-token"
 
 # Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files

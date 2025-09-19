@@ -23,6 +23,9 @@ from src.kafka_consumer import KafkaConsumerService
 from src.graph_builder import TraceGraphBuilder
 from src.grpc_client import GrpcClient
 from src.environment_manager import EnvironmentManager
+from src.blueprint_models import *
+from src.blueprint_file_manager import BlueprintFileManager
+from src.blueprint_build_manager import BlueprintBuildManager
 
 
 ROOT_DIR = Path(__file__).parent
@@ -40,6 +43,11 @@ grpc_client: Optional[GrpcClient] = None
 environment_manager: Optional[EnvironmentManager] = None
 websocket_connections: List[WebSocket] = []
 
+# Global variables for Blueprint Creator components
+blueprint_file_manager: Optional[BlueprintFileManager] = None
+blueprint_build_manager: Optional[BlueprintBuildManager] = None
+blueprint_websocket_connections: List[WebSocket] = []
+
 # Configuration paths
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
@@ -50,6 +58,13 @@ async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
     logger.info("🚀 Starting Kafka trace viewer component initialization")
     global graph_builder, kafka_consumer, grpc_client, environment_manager
+    global blueprint_file_manager, blueprint_build_manager
+    
+    # Initialize Blueprint Creator components
+    logger.info("🏗️ Initializing Blueprint Creator components...")
+    blueprint_file_manager = BlueprintFileManager()
+    blueprint_build_manager = BlueprintBuildManager()
+    logger.info("✅ Blueprint Creator components initialized")
     
     # Check if required directories exist
     if not CONFIG_DIR.exists():
@@ -463,6 +478,327 @@ async def get_statistics():
     except Exception as e:
         logger.error(f"Error getting statistics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# Blueprint Creator Endpoints
+
+@api_router.get("/blueprint/config")
+async def get_blueprint_config():
+    """Get current blueprint configuration"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    return {
+        "root_path": blueprint_file_manager.root_path,
+        "auto_refresh": True,
+        "available_templates": blueprint_file_manager.get_available_templates()
+    }
+
+@api_router.put("/blueprint/config")
+async def set_blueprint_config(request: Dict[str, str]):
+    """Set blueprint root path"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    root_path = request.get('root_path')
+    if not root_path:
+        raise HTTPException(status_code=400, detail="Root path is required")
+    
+    try:
+        blueprint_file_manager.set_root_path(root_path)
+        return {"success": True, "root_path": blueprint_file_manager.root_path}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/blueprint/file-tree")
+async def get_blueprint_file_tree(path: str = ""):
+    """Get blueprint file tree structure"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    try:
+        file_tree = await blueprint_file_manager.get_file_tree(path)
+        return {"files": file_tree}
+    except Exception as e:
+        logger.error(f"Error getting file tree: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/file-content/{path:path}")
+async def get_blueprint_file_content(path: str):
+    """Get content of a blueprint file"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    try:
+        content = await blueprint_file_manager.read_file(path)
+        return {"content": content}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except Exception as e:
+        logger.error(f"Error reading file {path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/blueprint/file-content/{path:path}")
+async def save_blueprint_file_content(path: str, request: Dict[str, str]):
+    """Save content to a blueprint file"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    content = request.get('content', '')
+    
+    try:
+        await blueprint_file_manager.write_file(path, content)
+        
+        # Notify WebSocket clients about file change
+        await broadcast_blueprint_change("file_updated", {"path": path})
+        
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Error saving file {path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/create-file")
+async def create_blueprint_file(request: FileOperationRequest):
+    """Create a new blueprint file"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    try:
+        template_name = request.new_path  # Using new_path as template name for simplicity
+        await blueprint_file_manager.create_file(request.path, template_name)
+        
+        # Notify WebSocket clients about file creation
+        await broadcast_blueprint_change("file_created", {"path": request.path})
+        
+        return {"success": True}
+    except FileExistsError:
+        raise HTTPException(status_code=409, detail="File already exists")
+    except Exception as e:
+        logger.error(f"Error creating file {request.path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/blueprint/delete-file/{path:path}")
+async def delete_blueprint_file(path: str):
+    """Delete a blueprint file or directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    try:
+        await blueprint_file_manager.delete_file(path)
+        
+        # Notify WebSocket clients about file deletion
+        await broadcast_blueprint_change("file_deleted", {"path": path})
+        
+        return {"success": True}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+    except Exception as e:
+        logger.error(f"Error deleting file {path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/create-directory")
+async def create_blueprint_directory(request: FileOperationRequest):
+    """Create a new directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    try:
+        await blueprint_file_manager.create_directory(request.path)
+        
+        # Notify WebSocket clients about directory creation
+        await broadcast_blueprint_change("directory_created", {"path": request.path})
+        
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Error creating directory {request.path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/build")
+async def build_blueprint(request: BuildRequest):
+    """Execute blueprint build"""
+    if not blueprint_build_manager:
+        raise HTTPException(status_code=503, detail="Blueprint build manager not initialized")
+    
+    try:
+        # Execute build with WebSocket broadcasting
+        result = await blueprint_build_manager.execute_build(
+            request.root_path, 
+            request.script_name,
+            websocket=None  # We'll broadcast to all connected clients
+        )
+        
+        # Broadcast build result to all WebSocket clients
+        await broadcast_blueprint_change("build_complete", {
+            "success": result.success,
+            "execution_time": result.execution_time,
+            "generated_files": result.generated_files,
+            "status": result.status
+        })
+        
+        return result.dict()
+    except Exception as e:
+        logger.error(f"Error building blueprint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/build-status")
+async def get_blueprint_build_status():
+    """Get current build status"""
+    if not blueprint_build_manager:
+        raise HTTPException(status_code=503, detail="Blueprint build manager not initialized")
+    
+    return blueprint_build_manager.get_build_status()
+
+@api_router.post("/blueprint/cancel-build")
+async def cancel_blueprint_build():
+    """Cancel current build"""
+    if not blueprint_build_manager:
+        raise HTTPException(status_code=503, detail="Blueprint build manager not initialized")
+    
+    try:
+        cancelled = await blueprint_build_manager.cancel_build()
+        return {"success": cancelled}
+    except Exception as e:
+        logger.error(f"Error canceling build: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/output-files")
+async def get_blueprint_output_files(root_path: str):
+    """Get list of generated output files"""
+    if not blueprint_build_manager:
+        raise HTTPException(status_code=503, detail="Blueprint build manager not initialized")
+    
+    try:
+        files = await blueprint_build_manager.list_output_files(root_path)
+        return {"files": files}
+    except Exception as e:
+        logger.error(f"Error listing output files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/validate/{filename}")
+async def validate_blueprint(filename: str, request: DeploymentRequest):
+    """Validate blueprint with blueprint server"""
+    if not blueprint_build_manager or not environment_manager:
+        raise HTTPException(status_code=503, detail="Required managers not initialized")
+    
+    try:
+        # Get environment configuration
+        env_config_data = environment_manager.get_environment_config(request.environment)
+        if not env_config_data.get('success'):
+            raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
+        
+        blueprint_config = env_config_data['config'].get('blueprint_server')
+        if not blueprint_config:
+            raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
+        
+        env_config = EnvironmentConfig(**blueprint_config)
+        
+        # Deploy with validate action
+        result = await blueprint_build_manager.deploy_blueprint(
+            request.root_path if hasattr(request, 'root_path') else blueprint_file_manager.root_path,
+            filename,
+            request.environment,
+            DeploymentAction.VALIDATE,
+            env_config
+        )
+        
+        return result.dict()
+    except Exception as e:
+        logger.error(f"Error validating blueprint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/activate/{filename}")
+async def activate_blueprint(filename: str, request: DeploymentRequest):
+    """Activate blueprint with blueprint server"""
+    if not blueprint_build_manager or not environment_manager:
+        raise HTTPException(status_code=503, detail="Required managers not initialized")
+    
+    try:
+        # Get environment configuration
+        env_config_data = environment_manager.get_environment_config(request.environment)
+        if not env_config_data.get('success'):
+            raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
+        
+        blueprint_config = env_config_data['config'].get('blueprint_server')
+        if not blueprint_config:
+            raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
+        
+        env_config = EnvironmentConfig(**blueprint_config)
+        
+        # Deploy with activate action
+        result = await blueprint_build_manager.deploy_blueprint(
+            request.root_path if hasattr(request, 'root_path') else blueprint_file_manager.root_path,
+            filename,
+            request.environment,
+            DeploymentAction.ACTIVATE,
+            env_config
+        )
+        
+        return result.dict()
+    except Exception as e:
+        logger.error(f"Error activating blueprint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/validate-config")
+async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
+    """Validate blueprint configuration file"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    try:
+        validation_result = await blueprint_file_manager.validate_blueprint_config(path)
+        return validation_result
+    except Exception as e:
+        logger.error(f"Error validating blueprint config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+async def broadcast_blueprint_change(event_type: str, data: Dict[str, Any]):
+    """Broadcast blueprint changes to all WebSocket clients"""
+    if blueprint_websocket_connections:
+        message = WebSocketMessage(type=event_type, data=data)
+        
+        # Send to all connected clients
+        disconnected = []
+        for websocket in blueprint_websocket_connections:
+            try:
+                await websocket.send_text(message.json())
+            except Exception as e:
+                logger.warning(f"Failed to send blueprint change to WebSocket client: {e}")
+                disconnected.append(websocket)
+        
+        # Remove disconnected clients
+        for ws in disconnected:
+            blueprint_websocket_connections.remove(ws)
+
+@api_router.websocket("/ws/blueprint")
+async def blueprint_websocket_endpoint(websocket: WebSocket):
+    """WebSocket endpoint for Blueprint Creator real-time updates"""
+    await websocket.accept()
+    blueprint_websocket_connections.append(websocket)
+
+    try:
+        while True:
+            # Keep connection alive and send periodic updates
+            await asyncio.sleep(5)
+
+            # Send periodic file tree refresh if enabled
+            if blueprint_file_manager and blueprint_file_manager.root_path:
+                try:
+                    file_tree = await blueprint_file_manager.get_file_tree()
+                    update_data = {
+                        "type": "file_tree_update",
+                        "timestamp": datetime.now().isoformat(),
+                        "files": [f.dict() for f in file_tree]
+                    }
+                    await websocket.send_text(json.dumps(update_data))
+                except Exception as e:
+                    logger.debug(f"Error sending file tree update: {e}")
+
+    except WebSocketDisconnect:
+        blueprint_websocket_connections.remove(websocket)
+        logger.debug("Blueprint WebSocket connection closed")
+    except Exception as e:
+        logger.error(f"Blueprint WebSocket error: {e}")
+        if websocket in blueprint_websocket_connections:
+            blueprint_websocket_connections.remove(websocket)
 
 # gRPC Integration Endpoints
 

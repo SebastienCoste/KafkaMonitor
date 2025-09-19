@@ -7,6 +7,8 @@ import './App.css';
 // Components
 import GrpcIntegration from './components/GrpcIntegration';
 import EnhancedGraphVisualization from './components/EnhancedGraphVisualization';
+import BlueprintCreator from './components/blueprint/BlueprintCreator';
+import { BlueprintProvider } from './components/blueprint/Common/BlueprintContext';
 
 // Shadcn UI components
 import { Button } from './components/ui/button';
@@ -22,7 +24,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw } from 'lucide-react';
+import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw, FolderOpen } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 console.log('🌐 Main App API_BASE_URL:', API_BASE_URL);
@@ -533,6 +535,14 @@ function App() {
                 >
                   <Server className="h-4 w-4 mr-2" />
                   gRPC Integration
+                </Button>
+                <Button
+                  variant={currentPage === 'blueprint' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCurrentPage('blueprint')}
+                >
+                  <FolderOpen className="h-4 w-4 mr-2" />
+                  Blueprint Creator
                 </Button>
               </div>
               
@@ -1135,10 +1145,15 @@ function App() {
             </div>
           )}
         </div>
-      ) : (
+      ) : currentPage === 'grpc' ? (
         // gRPC Integration Page
         <GrpcIntegration />
-      )}
+      ) : currentPage === 'blueprint' ? (
+        // Blueprint Creator Page
+        <BlueprintProvider>
+          <BlueprintCreator />
+        </BlueprintProvider>
+      ) : null}
       <Toaster />
     </div>
   );
