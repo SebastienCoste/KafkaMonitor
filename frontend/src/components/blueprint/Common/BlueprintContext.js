@@ -284,7 +284,7 @@ export function BlueprintProvider({ children }) {
     }
   };
 
-  const loadOutputFiles = async () => {
+  const loadOutputFiles = useCallback(async () => {
     if (!rootPath) return;
     
     try {
@@ -293,7 +293,7 @@ export function BlueprintProvider({ children }) {
     } catch (error) {
       console.error('Error loading output files:', error);
     }
-  };
+  }, [API_BASE_URL, rootPath]);
 
   const validateBlueprint = async (filename) => {
     try {
