@@ -681,7 +681,7 @@ async def validate_blueprint(filename: str, request: DeploymentRequest):
                 namespace = config_validation['config'].get('namespace')
         except Exception as e:
             logger.warning(f"Could not extract namespace from blueprint_cnf.json: {e}")
-        
+
         # Get environment configuration
         env_config_data = environment_manager.get_environment_config(request.environment)
         if not env_config_data.get('success'):

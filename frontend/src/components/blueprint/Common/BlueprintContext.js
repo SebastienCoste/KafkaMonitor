@@ -138,6 +138,7 @@ export function BlueprintProvider({ children }) {
     }
   }, [autoRefresh, rootPath, refreshFileTree]);
 
+
   const loadEnvironments = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/environments`);
@@ -294,6 +295,7 @@ export function BlueprintProvider({ children }) {
       console.error('Error loading output files:', error);
     }
   }, [API_BASE_URL, rootPath]);
+
 
   const validateBlueprint = async (filename) => {
     try {

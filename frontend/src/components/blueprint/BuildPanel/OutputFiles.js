@@ -15,6 +15,7 @@ export default function OutputFiles() {
     }
   }, [rootPath]); // Removed loadOutputFiles dependency to prevent frequent reloads
 
+
   const formatFileSize = (bytes) => {
     const sizes = ['B', 'KB', 'MB', 'GB'];
     if (bytes === 0) return '0 B';

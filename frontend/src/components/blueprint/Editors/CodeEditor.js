@@ -116,6 +116,7 @@ export default function CodeEditor({ filePath }) {
             minHeight: '100%',
             height: '100%'
           }}
+
           spellCheck={false}
         />
       </div>
