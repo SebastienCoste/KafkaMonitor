@@ -623,16 +623,9 @@ async def build_blueprint(request: BuildRequest):
         result = await blueprint_build_manager.execute_build(
             request.root_path, 
             request.script_name,
-            websocket=None  # We'll broadcast to all connected clients
+            websocket=None,  # We'll broadcast to all connected clients
+            broadcast_callback=broadcast_blueprint_change
         )
-        
-        # Broadcast build result to all WebSocket clients
-        await broadcast_blueprint_change("build_complete", {
-            "success": result.success,
-            "execution_time": result.execution_time,
-            "generated_files": result.generated_files,
-            "status": result.status
-        })
         
         return result.dict()
     except Exception as e:
