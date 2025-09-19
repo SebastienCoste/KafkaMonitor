@@ -226,7 +226,8 @@ class BlueprintBuildManager:
         return False
     
     async def deploy_blueprint(self, root_path: str, tgz_file: str, environment: str, 
-                             action: DeploymentAction, env_config: EnvironmentConfig) -> DeploymentResult:
+                             action: DeploymentAction, env_config: EnvironmentConfig, 
+                             namespace: str = None) -> DeploymentResult:
         """Deploy blueprint to blueprint server"""
         
         try:
@@ -240,11 +241,17 @@ class BlueprintBuildManager:
             if not os.path.exists(full_tgz_path):
                 raise FileNotFoundError(f"Blueprint file not found: {tgz_file}")
             
-            # Determine API endpoint
+            # Determine API endpoint with namespace substitution
             if action == DeploymentAction.VALIDATE:
-                endpoint = env_config.base_url + env_config.validate_path
+                endpoint_path = env_config.validate_path
             else:
-                endpoint = env_config.base_url + env_config.activate_path
+                endpoint_path = env_config.activate_path
+            
+            # Replace namespace placeholder if provided
+            if namespace and '{namespace}' in endpoint_path:
+                endpoint_path = endpoint_path.replace('{namespace}', namespace)
+            
+            endpoint = env_config.base_url + endpoint_path
             
             # Prepare headers
             headers = {
