@@ -419,9 +419,33 @@ export default function FileTree({ files }) {
       >
         <div className="flex items-center space-x-2 flex-1" onClick={() => handleFileClick(item.path)}>
           {getFileIcon(item.name)}
-          <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
-            {item.name}
-          </span>
+          {renamingItem === item.path ? (
+            <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
+              <Input
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                className="h-6 text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleConfirmRename();
+                  } else if (e.key === 'Escape') {
+                    handleCancelRename();
+                  }
+                }}
+              />
+              <Button size="sm" onClick={handleConfirmRename} className="h-6 w-6 p-0">
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancelRename} className="h-6 w-6 p-0">
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
+              {item.name}
+            </span>
+          )}
         </div>
         <div className="flex items-center space-x-1">
           <div className="text-xs text-gray-400">
