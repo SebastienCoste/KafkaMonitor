@@ -76,11 +76,16 @@ export function BlueprintProvider({ children }) {
         console.log('Loading initial blueprint configuration...');
         console.log('API_BASE_URL:', API_BASE_URL);
         
-        const response = await axios.get(`${API_BASE_URL}/api/blueprint/config`);
-        console.log('Config response status:', response.status);
-        console.log('Config response data:', response.data);
+        // Use fetch instead of axios for more reliable requests
+        console.log('Making config request...');
+        const configResponse = await fetch(`${API_BASE_URL}/api/blueprint/config`);
+        console.log('Config response received, status:', configResponse.status);
         
-        const config = response.data;
+        if (!configResponse.ok) {
+          throw new Error(`Config request failed: ${configResponse.status} ${configResponse.statusText}`);
+        }
+        
+        const config = await configResponse.json();
         console.log('Loaded config:', config);
         
         if (config && config.root_path) {
@@ -90,18 +95,24 @@ export function BlueprintProvider({ children }) {
           
           // Auto-load file tree if root path is set
           console.log('Loading file tree...');
-          const fileTreeResponse = await axios.get(`${API_BASE_URL}/api/blueprint/file-tree`);
-          console.log('File tree response status:', fileTreeResponse.status);
-          console.log('File tree response data:', fileTreeResponse.data);
+          const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`);
+          console.log('File tree response received, status:', fileTreeResponse.status);
           
-          setFileTree(fileTreeResponse.data.files || []);
+          if (!fileTreeResponse.ok) {
+            throw new Error(`File tree request failed: ${fileTreeResponse.status} ${fileTreeResponse.statusText}`);
+          }
+          
+          const fileTreeData = await fileTreeResponse.json();
+          console.log('File tree response data:', fileTreeData);
+          
+          setFileTree(fileTreeData.files || []);
           console.log('File tree loaded successfully');
         } else {
           console.log('No root path found in config, staying on setup screen');
         }
       } catch (error) {
         console.error('Error loading initial config:', error);
-        console.error('Error details:', error.response || error.message || error);
+        console.error('Error details:', error.message);
       } finally {
         console.log('Setting initializing to false');
         setInitializing(false);
