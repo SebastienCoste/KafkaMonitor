@@ -784,6 +784,10 @@ async def validate_blueprint(filepath: str, request: DeploymentRequest):
 @api_router.post("/blueprint/activate/{filepath:path}")
 async def activate_blueprint(filepath: str, request: DeploymentRequest):
     """Activate blueprint with blueprint server"""
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔍 Blueprint activation requested for filepath: {filepath}, filename: {filename}")
+    
     if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
