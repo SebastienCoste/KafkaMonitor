@@ -44,6 +44,7 @@ export default function BlueprintCreator() {
     autoRefresh,
     setAutoRefresh,
     loading,
+    initializing,
     refreshFileTree,
     loadOutputFiles,
     setRootPath: setBlueprintRootPath
@@ -139,7 +140,18 @@ export default function BlueprintCreator() {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-        {!rootPath ? (
+        {initializing ? (
+          // Loading initial configuration
+          <div className="flex-1 flex items-center justify-center">
+            <Card className="w-full max-w-md mx-4">
+              <CardContent className="p-8 text-center">
+                <RefreshCw className="h-8 w-8 mx-auto mb-4 animate-spin text-blue-500" />
+                <h3 className="text-lg font-semibold mb-2">Loading Blueprint Creator</h3>
+                <p className="text-gray-600">Initializing configuration...</p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : !rootPath ? (
           // Initial setup view
           <div className="flex-1 flex items-center justify-center">
             <Card className="w-full max-w-2xl mx-4">

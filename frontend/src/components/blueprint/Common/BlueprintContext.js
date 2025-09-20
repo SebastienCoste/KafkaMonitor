@@ -27,10 +27,11 @@ export function BlueprintProvider({ children }) {
   const [buildOutput, setBuildOutput] = useState([]);
   const [outputFiles, setOutputFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(false);
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
-  // WebSocket connection
+  // WebSocket connection and load config on mount
   useEffect(() => {
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -69,7 +70,57 @@ export function BlueprintProvider({ children }) {
       };
     };
 
+    // Load existing configuration on mount
+    const loadInitialConfig = async () => {
+      try {
+        console.log('Loading initial blueprint configuration...');
+        console.log('API_BASE_URL:', API_BASE_URL);
+        
+        // Use fetch instead of axios for more reliable requests
+        console.log('Making config request...');
+        const configResponse = await fetch(`${API_BASE_URL}/api/blueprint/config`);
+        console.log('Config response received, status:', configResponse.status);
+        
+        if (!configResponse.ok) {
+          throw new Error(`Config request failed: ${configResponse.status} ${configResponse.statusText}`);
+        }
+        
+        const config = await configResponse.json();
+        console.log('Loaded config:', config);
+        
+        if (config && config.root_path) {
+          console.log('Setting root path:', config.root_path);
+          setRootPath(config.root_path);
+          setAutoRefresh(config.auto_refresh || true);
+          
+          // Auto-load file tree if root path is set
+          console.log('Loading file tree...');
+          const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`);
+          console.log('File tree response received, status:', fileTreeResponse.status);
+          
+          if (!fileTreeResponse.ok) {
+            throw new Error(`File tree request failed: ${fileTreeResponse.status} ${fileTreeResponse.statusText}`);
+          }
+          
+          const fileTreeData = await fileTreeResponse.json();
+          console.log('File tree response data:', fileTreeData);
+          
+          setFileTree(fileTreeData.files || []);
+          console.log('File tree loaded successfully');
+        } else {
+          console.log('No root path found in config, staying on setup screen');
+        }
+      } catch (error) {
+        console.error('Error loading initial config:', error);
+        console.error('Error details:', error.message);
+      } finally {
+        console.log('Setting initializing to false');
+        setInitializing(false);
+      }
+    };
+
     connectWebSocket();
+    loadInitialConfig();
 
     return () => {
       if (websocket) {
@@ -402,6 +453,7 @@ export function BlueprintProvider({ children }) {
     try {
       setLoading(true);
       const response = await axios.post(`${API_BASE_URL}/api/blueprint/validate/${filename}`, {
+        tgz_file: filename,
         environment: selectedEnvironment,
         action: 'validate'
       });
@@ -418,6 +470,7 @@ export function BlueprintProvider({ children }) {
     try {
       setLoading(true);
       const response = await axios.post(`${API_BASE_URL}/api/blueprint/activate/${filename}`, {
+        tgz_file: filename,
         environment: selectedEnvironment,
         action: 'activate'
       });
@@ -466,6 +519,7 @@ export function BlueprintProvider({ children }) {
     buildOutput,
     outputFiles,
     loading,
+    initializing,
     
     // Actions
     setRootPath: setBlueprintRootPath,
