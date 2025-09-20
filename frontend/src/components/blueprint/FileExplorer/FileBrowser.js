@@ -32,37 +32,36 @@ export default function FileBrowser() {
     setShowManualInput(false);
   };
 
-  const handleBrowseFiles = () => {
-    // Create a hidden file input element for directory selection
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.webkitdirectory = true; // Enable directory selection
-    input.multiple = true;
-    
-    input.onchange = (event) => {
-      const files = event.target.files;
-      if (files && files.length > 0) {
-        // Get the directory path from the first file
-        const firstFile = files[0];
-        const pathParts = firstFile.webkitRelativePath.split('/');
-        if (pathParts.length > 1) {
-          // For security reasons, we can't get the full system path
-          // So we'll ask the user to confirm the directory name and enter full path
-          const dirName = pathParts[0];
-          const fullPath = prompt(
-            `Selected directory: "${dirName}"\n\nPlease enter the full path to this directory:`,
-            `/path/to/${dirName}`
-          );
-          
-          if (fullPath) {
-            setInputPath(fullPath);
-            handleSetPathDirectly(fullPath);
-          }
+  const handleBrowseFiles = async () => {
+    try {
+      // Use the File System Access API if available (modern browsers)
+      if ('showDirectoryPicker' in window) {
+        const directoryHandle = await window.showDirectoryPicker();
+        const path = prompt(
+          `Selected directory: "${directoryHandle.name}"\n\nPlease enter the full path to this directory:`,
+          `/path/to/${directoryHandle.name}`
+        );
+        
+        if (path) {
+          await handleSetPathDirectly(path);
+        }
+      } else {
+        // Fallback: Ask user to manually enter the path
+        const path = prompt(
+          'Please enter the full path to your blueprint directory:',
+          '/path/to/your/blueprint/directory'
+        );
+        
+        if (path) {
+          await handleSetPathDirectly(path);
         }
       }
-    };
-    
-    input.click();
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Error selecting directory:', error);
+        toast.error('Failed to select directory. Please use manual entry instead.');
+      }
+    }
   };
 
   const handleSetPathDirectly = async (path) => {
