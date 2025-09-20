@@ -3,7 +3,8 @@ import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
-import { FileArchive, Download, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
+import { FileArchive, Download, RefreshCw, Trash2 } from 'lucide-react';
 
 export default function OutputFiles() {
   const { outputFiles, loadOutputFiles, rootPath, loading } = useBlueprintContext();
