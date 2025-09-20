@@ -726,7 +726,9 @@ async def get_blueprint_output_files(root_path: str):
 @api_router.post("/blueprint/validate/{filepath:path}")
 async def validate_blueprint(filepath: str, request: DeploymentRequest):
     """Validate blueprint with blueprint server"""
-    logger.info(f"🔍 Blueprint validation requested for file: {filename}")
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔍 Blueprint validation requested for filepath: {filepath}, filename: {filename}")
     logger.info(f"🔍 Request data: environment={request.environment}, action={request.action}")
     
     if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
