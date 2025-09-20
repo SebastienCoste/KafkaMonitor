@@ -5731,12 +5731,20 @@ def run_deployment_endpoints_405_fix_test():
     return success
 
 if __name__ == "__main__":
-    # Run the specific test for the review request
-    success = run_deployment_endpoints_405_fix_test()
+    tester = KafkaTraceViewerTester()
+    
+    # Run the specific test for blueprint deployment endpoints filepath fix
+    print("🎯 RUNNING SPECIFIC TEST: Blueprint Deployment Endpoints Filepath Fix")
+    print("=" * 80)
+    
+    success = tester.test_blueprint_deployment_endpoints_filepath_fix()
+    
+    # Print final summary
+    tester.print_summary()
     
     if success:
-        print("\n🎉 REQ FIX2 test completed successfully!")
-        sys.exit(0)
+        print("\n🎉 Blueprint Deployment Endpoints Filepath Fix Test PASSED!")
     else:
-        print("\n❌ REQ FIX2 test failed - check output above")
-        sys.exit(1)
+        print("\n❌ Blueprint Deployment Endpoints Filepath Fix Test FAILED!")
+    
+    sys.exit(0 if success else 1)
