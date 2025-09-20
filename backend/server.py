@@ -723,8 +723,8 @@ async def get_blueprint_output_files(root_path: str):
         logger.error(f"Error listing output files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/validate/{filename}")
-async def validate_blueprint(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/validate/{filepath:path}")
+async def validate_blueprint(filepath: str, request: DeploymentRequest):
     """Validate blueprint with blueprint server"""
     logger.info(f"🔍 Blueprint validation requested for file: {filename}")
     logger.info(f"🔍 Request data: environment={request.environment}, action={request.action}")
