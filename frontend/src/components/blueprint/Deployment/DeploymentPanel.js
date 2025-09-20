@@ -169,15 +169,19 @@ export default function DeploymentPanel() {
   };
 
   const getActionBadge = (action) => {
-    return action === 'validate' ? (
-      <Badge variant="outline" className="text-blue-600 border-blue-200">
-        Validate
-      </Badge>
-    ) : (
-      <Badge className="bg-green-500">
-        Activate
-      </Badge>
-    );
+    if (action === 'validate' || action === 'validate-script') {
+      return (
+        <Badge variant="outline" className="text-blue-600 border-blue-200">
+          {action === 'validate-script' ? 'Script Validate' : 'API Validate'}
+        </Badge>
+      );
+    } else {
+      return (
+        <Badge className="bg-green-500">
+          {action === 'activate-script' ? 'Script Activate' : 'API Activate'}
+        </Badge>
+      );
+    }
   };
 
   return (
