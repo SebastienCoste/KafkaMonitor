@@ -421,6 +421,8 @@ export function BlueprintProvider({ children }) {
     fileTree,
     selectedFile,
     fileContent,
+    openTabs,
+    activeTab,
     autoRefresh,
     environments,
     selectedEnvironment,
@@ -434,9 +436,14 @@ export function BlueprintProvider({ children }) {
     setRootPath: setBlueprintRootPath,
     setSelectedFile,
     setFileContent,
+    setActiveTab,
     setAutoRefresh,
     setSelectedEnvironment,
     setBuildOutput,
+    
+    // Tab Management
+    closeTab,
+    updateTabContent,
     
     // API Methods
     refreshFileTree,
