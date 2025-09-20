@@ -65,6 +65,9 @@ export default function DeploymentPanel() {
     }
 
     setDeploymentLoading(true);
+    setScriptOutput('');
+    setShowScriptConsole(true);
+    
     try {
       const response = await fetch(
         `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/validate-script/${selectedFile}`,
@@ -79,6 +82,10 @@ export default function DeploymentPanel() {
       );
       
       const result = await response.json();
+      
+      // Display script output in console
+      setScriptOutput(result.output || 'No output received');
+      
       setDeploymentResults([{
         action: 'validate-script',
         timestamp: new Date(),
@@ -88,10 +95,12 @@ export default function DeploymentPanel() {
       if (result.success) {
         toast.success('Blueprint validation script completed successfully');
       } else {
-        toast.error(`Blueprint validation script failed: ${result.output}`);
+        toast.error(`Blueprint validation script failed (exit code: ${result.return_code})`);
       }
     } catch (error) {
-      toast.error(`Script execution failed: ${error.message}`);
+      const errorMsg = `Script execution failed: ${error.message}`;
+      setScriptOutput(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setDeploymentLoading(false);
     }
@@ -104,6 +113,9 @@ export default function DeploymentPanel() {
     }
 
     setDeploymentLoading(true);
+    setScriptOutput('');
+    setShowScriptConsole(true);
+    
     try {
       const response = await fetch(
         `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/activate-script/${selectedFile}`,
@@ -118,6 +130,10 @@ export default function DeploymentPanel() {
       );
       
       const result = await response.json();
+      
+      // Display script output in console
+      setScriptOutput(result.output || 'No output received');
+      
       setDeploymentResults([{
         action: 'activate-script',
         timestamp: new Date(),
@@ -127,10 +143,12 @@ export default function DeploymentPanel() {
       if (result.success) {
         toast.success('Blueprint activation script completed successfully');
       } else {
-        toast.error(`Blueprint activation script failed: ${result.output}`);
+        toast.error(`Blueprint activation script failed (exit code: ${result.return_code})`);
       }
     } catch (error) {
-      toast.error(`Script execution failed: ${error.message}`);
+      const errorMsg = `Script execution failed: ${error.message}`;
+      setScriptOutput(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setDeploymentLoading(false);
     }
