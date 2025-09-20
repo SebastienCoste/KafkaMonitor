@@ -214,7 +214,11 @@ class BlueprintCreatorTester:
         try:
             # Test POST /api/blueprint/validate/{filename}
             print("Testing POST /api/blueprint/validate/test-blueprint.yaml...")
-            validate_payload = {"environment": "DEV"}
+            validate_payload = {
+                "tgz_file": "test-blueprint.tgz",
+                "environment": "DEV",
+                "action": "validate"
+            }
             
             validate_response = requests.post(
                 f"{self.base_url}/api/blueprint/validate/test-blueprint.yaml",
@@ -231,8 +235,12 @@ class BlueprintCreatorTester:
                 try:
                     error_data = validate_response.json()
                     error_detail = error_data.get('detail', 'Unknown error')
-                    self.log_test("Blueprint Validate", True, 
-                                f"Expected failure - {error_detail}")
+                    if isinstance(error_detail, str):
+                        self.log_test("Blueprint Validate", True, 
+                                    f"Expected failure - {error_detail}")
+                    else:
+                        self.log_test("Blueprint Validate", True, 
+                                    f"Expected failure - validation error")
                 except:
                     self.log_test("Blueprint Validate", True, 
                                 f"Expected failure (HTTP {validate_response.status_code})")
@@ -243,7 +251,11 @@ class BlueprintCreatorTester:
             
             # Test POST /api/blueprint/activate/{filename}
             print("Testing POST /api/blueprint/activate/test-blueprint.yaml...")
-            activate_payload = {"environment": "DEV"}
+            activate_payload = {
+                "tgz_file": "test-blueprint.tgz",
+                "environment": "DEV",
+                "action": "activate"
+            }
             
             activate_response = requests.post(
                 f"{self.base_url}/api/blueprint/activate/test-blueprint.yaml",
@@ -260,8 +272,12 @@ class BlueprintCreatorTester:
                 try:
                     error_data = activate_response.json()
                     error_detail = error_data.get('detail', 'Unknown error')
-                    self.log_test("Blueprint Activate", True, 
-                                f"Expected failure - {error_detail}")
+                    if isinstance(error_detail, str):
+                        self.log_test("Blueprint Activate", True, 
+                                    f"Expected failure - {error_detail}")
+                    else:
+                        self.log_test("Blueprint Activate", True, 
+                                    f"Expected failure - validation error")
                 except:
                     self.log_test("Blueprint Activate", True, 
                                 f"Expected failure (HTTP {activate_response.status_code})")
