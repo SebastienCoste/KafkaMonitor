@@ -287,7 +287,31 @@ export default function FileTree({ files }) {
                 <ChevronRight className="h-4 w-4 text-gray-400" />
               )}
               <Folder className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium text-gray-700">{item.name}</span>
+              {renamingItem === item.path ? (
+                <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
+                  <Input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    className="h-6 text-sm"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleConfirmRename();
+                      } else if (e.key === 'Escape') {
+                        handleCancelRename();
+                      }
+                    }}
+                  />
+                  <Button size="sm" onClick={handleConfirmRename} className="h-6 w-6 p-0">
+                    <Check className="h-3 w-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleCancelRename} className="h-6 w-6 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-sm font-medium text-gray-700">{item.name}</span>
+              )}
             </div>
             
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100">
