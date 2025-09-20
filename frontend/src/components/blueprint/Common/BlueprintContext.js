@@ -320,6 +320,40 @@ export function BlueprintProvider({ children }) {
     }
   };
 
+  const renameFile = async (sourcePath, newName) => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/rename-file`, {
+        source_path: sourcePath,
+        new_name: newName
+      });
+      
+      // If the renamed file was selected or in tabs, update the references
+      if (selectedFile === sourcePath) {
+        setSelectedFile(response.data.new_path);
+      }
+      
+      // Update any open tabs with the old path
+      setOpenTabs(prev => prev.map(tab => 
+        tab.path === sourcePath 
+          ? { ...tab, path: response.data.new_path }
+          : tab
+      ));
+      
+      if (activeTab === sourcePath) {
+        setActiveTab(response.data.new_path);
+      }
+      
+      await refreshFileTree();
+      return response.data;
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const buildBlueprint = async (scriptName = 'buildBlueprint.sh') => {
     try {
       setLoading(true);
