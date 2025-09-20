@@ -224,6 +224,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ POST-MERGE VERIFICATION: Blueprint Creator deployment endpoints working correctly after main branch merge. POST /api/blueprint/validate/{filename} and POST /api/blueprint/activate/{filename} endpoints are accessible and handle requests properly. Both endpoints accept correct DeploymentRequest format with tgz_file, environment, and action fields. Namespace extraction from blueprint_cnf.json is implemented. Deployment endpoints functional with proper error handling."
+      - working: true
+        agent: "testing"
+        comment: "✅ REQ FIX2 VERIFIED: 405 Method Not Allowed errors are RESOLVED. All deployment endpoints now accept POST requests correctly with the corrected payload including tgz_file, environment, and action fields. POST /api/blueprint/validate/{filename} returns HTTP 200 (not 405), POST /api/blueprint/activate/{filename} returns HTTP 200 (not 405), POST /api/blueprint/validate-script/{filename} returns HTTP 500 (not 405), POST /api/blueprint/activate-script/{filename} returns HTTP 500 (not 405). The frontend fix that includes the tgz_file field in the request payload is working correctly. The issue was that the frontend was not sending the tgz_file field that the backend's DeploymentRequest model requires, and this has been successfully fixed."
 
   - task: "Blueprint Creator API Validation"
     implemented: true
