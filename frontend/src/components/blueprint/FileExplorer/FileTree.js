@@ -91,16 +91,17 @@ export default function FileTree({ files }) {
     setCreateName('');
   };
 
-  const handleDelete = async (itemPath) => {
-    if (!window.confirm(`Are you sure you want to delete "${itemPath}"?`)) {
+  const handleDelete = async (itemPath, isDirectory = false) => {
+    const itemType = isDirectory ? 'folder' : 'file';
+    if (!window.confirm(`Are you sure you want to delete this ${itemType} "${itemPath}"?${isDirectory ? '\n\nThis will delete all contents permanently.' : ''}`)) {
       return;
     }
 
     try {
       await deleteFile(itemPath);
-      toast.success(`Deleted: ${itemPath}`);
+      toast.success(`Deleted ${itemType}: ${itemPath}`);
     } catch (error) {
-      toast.error(`Failed to delete: ${error.message}`);
+      toast.error(`Failed to delete ${itemType}: ${error.message}`);
     }
   };
 
