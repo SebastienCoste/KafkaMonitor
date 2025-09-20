@@ -806,35 +806,52 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
 @api_router.post("/blueprint/validate-script/{filename}")
 async def validate_blueprint_script(filename: str, request: DeploymentRequest):
     """Run validateBlueprint.sh script with specified parameters"""
+    logger.info(f"🔧 Script validation requested for file: {filename}")
+    logger.info(f"🔧 Request data: environment={request.environment}, action={request.action}")
+    
     if not blueprint_file_manager or not environment_manager:
+        logger.error("❌ Required managers not initialized for script validation")
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
     try:
         # Get environment configuration for API key
+        logger.info(f"🔧 Getting environment configuration for: {request.environment}")
         env_config_data = environment_manager.get_environment_config(request.environment)
         if not env_config_data.get('success'):
+            logger.error(f"❌ Environment {request.environment} not found")
             raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
         
         blueprint_config = env_config_data['config'].get('blueprint_server')
         if not blueprint_config:
+            logger.error(f"❌ Blueprint server not configured for environment {request.environment}")
             raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
         
         api_key = blueprint_config.get('auth_header_value', '').replace('Bearer ', '')
+        logger.info(f"🔧 Using API key: {api_key[:10]}...")
         
         # Construct script path
         script_path = os.path.join(blueprint_file_manager.root_path, 'validateBlueprint.sh')
+        logger.info(f"🔧 Looking for script at: {script_path}")
+        
         if not os.path.exists(script_path):
+            logger.error(f"❌ Script not found: {script_path}")
             raise HTTPException(status_code=404, detail="validateBlueprint.sh not found in root directory")
         
         # Make script executable
         os.chmod(script_path, 0o755)
+        logger.info(f"🔧 Made script executable: {script_path}")
         
         # Execute script with parameters
-        process = await asyncio.create_subprocess_exec(
+        cmd = [
             'bash', script_path,
             f'--env={request.environment.upper()}',
             f'--api-key={api_key}',
-            filename,
+            filename
+        ]
+        logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filename]")  # Hide API key in logs
+        
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
             cwd=blueprint_file_manager.root_path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT
@@ -842,6 +859,9 @@ async def validate_blueprint_script(filename: str, request: DeploymentRequest):
         
         stdout, _ = await process.communicate()
         output = stdout.decode('utf-8') if stdout else ""
+        
+        logger.info(f"🔧 Script completed with return code: {process.returncode}")
+        logger.info(f"🔧 Script output (first 200 chars): {output[:200]}...")
         
         return {
             "success": process.returncode == 0,
@@ -851,7 +871,7 @@ async def validate_blueprint_script(filename: str, request: DeploymentRequest):
         }
         
     except Exception as e:
-        logger.error(f"Error running validate script: {e}")
+        logger.error(f"❌ Error running validate script: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/blueprint/activate-script/{filename}")
