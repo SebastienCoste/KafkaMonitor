@@ -450,11 +450,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix gRPC Message Class Resolution Bug"
-    - "P10/P50/P95 Message Age Metrics Backend"
-    - "P10/P50/P95 Display on Topics Page"
-    - "Graph Visualization Window Size Fix"
-    - "gRPC Proto Files Integration"
+    - "Blueprint Creator File Switching Fix"
+    - "Blueprint Creator Folder Operations Fix"
+    - "Blueprint Creator Syntax Highlighting Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -564,9 +562,56 @@ test_plan:
         agent: "testing"
         comment: "✅ BLUEPRINT CREATOR FRONTEND ENHANCEMENTS TESTING COMPLETED - ALL REQUIREMENTS VERIFIED: ✅ REQ7 - Browse for Directory UI: Button shows correct text 'Browse for Directory' (not 'Upload'), manual entry option also available. ✅ REQ8 - Refresh Button Auto-refresh Fix: Refresh button does NOT reactivate auto-refresh toggle, state preserved correctly (tested: true before refresh, true after refresh). ✅ File Extension Color Coding: Color classes implemented in code (text-blue-500, text-indigo-500, text-purple-500, text-orange-500, text-yellow-500, text-green-600), different extensions mapped to different colors (JSON=blue, JSLT=indigo, PROTO=purple, YAML=orange, JS/TS=yellow, SH=green). ✅ Rename Functionality: Edit buttons implemented to appear on hover, input fields for renaming functionality, rename API endpoint integrated. ✅ Create Files/Folders Inside Directories: Create File and Create Folder buttons available, functionality to create items in specific directories, quick create options for common file types (Config, JSLT). ✅ Drag and Drop Functionality: Drag & drop upload area found with text 'Drag & drop files or click to browse', supported file types display 'Supports: JSON, JSLT, Proto, YAML, Text', file tree items are draggable for moving. ✅ Enhanced File Tree Display: Project Files header and current path display present, scrollable file tree container, proper file and folder icons with colors, settings button for changing directories. ✅ Additional Features: Tab navigation (Files, Build, Deploy) working correctly, auto-refresh controls with checkbox properly implemented, WebSocket connectivity for real-time updates, responsive UI layout, environment selection (DEV, INT, LOAD, PROD, TEST) in Deploy tab. RESULT: All Blueprint Creator enhancements from review request successfully verified and working correctly."
 
+  - task: "Blueprint Creator File Switching Fix"
+    implemented: true
+    working: false
+    file: "frontend/src/components/blueprint/Common/BlueprintContext.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 1 - File Switching Issue: Navigate to Blueprint Creator tab, set root path to /app using manual path entry, click on multiple files (README.md, package.json, server.py), verify that file content changes correctly when switching between files, ensure the editor displays the correct content for each file immediately upon clicking"
+      - working: false
+        agent: "testing"
+        comment: "❌ FIX 1 ISSUE FOUND: Blueprint Creator navigation works correctly and interface loads properly, but file tree is not displaying files despite backend API returning correct file structure. Backend GET /api/blueprint/file-tree returns 45+ files including README.md, package.json, server.py, but frontend shows 'No files found'. Root cause appears to be a disconnect between backend file tree API and frontend file tree rendering. The file switching functionality cannot be tested without visible files in the tree."
+
+  - task: "Blueprint Creator Folder Operations Fix"
+    implemented: true
+    working: false
+    file: "frontend/src/components/blueprint/FileExplorer/FileTree.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 2 - Folder Rename/Delete Operations: In the file tree, test folder operations - hover over folders to reveal action buttons, verify rename button (Edit icon) is visible for folders, verify delete button (Trash icon) is visible for folders, test renaming a folder (create test folder first if needed), test deleting an empty folder, verify operations work correctly for both files and folders"
+      - working: false
+        agent: "testing"
+        comment: "❌ FIX 2 ISSUE FOUND: Folder operations cannot be tested because no folders are visible in the file tree. The same root cause as FIX 1 - backend returns proper file structure with directories (backend, frontend, tests, etc.) but frontend file tree component is not rendering them. The hover functionality for folder action buttons cannot be verified without visible folders in the interface."
+
+  - task: "Blueprint Creator Syntax Highlighting Fix"
+    implemented: true
+    working: false
+    file: "frontend/src/components/blueprint/Editors/CodeEditor.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 3 - Syntax Highlighting for Different File Types: Click on files with different extensions (.json, .md, .yaml, .js, .py, .sh files), verify syntax highlighting is applied correctly for each file type, verify Edit/Preview toggle button is present in the editor, test switching between Edit mode (textarea) and Preview mode (syntax highlighted), verify syntax highlighting is functional with proper language detection"
+      - working: false
+        agent: "testing"
+        comment: "❌ FIX 3 ISSUE FOUND: Edit/Preview toggle button and syntax highlighting cannot be tested because no files are visible to select. The CodeEditor component is not being rendered due to the file tree display issue. Without files to click on, the editor interface with Edit/Preview toggle and syntax highlighting functionality cannot be accessed or tested."
+
 agent_communication:
   - agent: "main"
     message: "✅ FRONTEND API URL ISSUE RESOLVED: Successfully fixed the frontend API URL configuration by updating .env.local file to use https://trace-blueprint.preview.emergentagent.com instead of localhost:8001. Also fixed missing protoc dependency that was causing backend 503 errors. Browser console now shows correct API_BASE_URL and backend APIs are responding properly. The gRPC integration UI testing blocker has been completely resolved."
+  - agent: "testing"
+    message: "🔍 BLUEPRINT CREATOR THREE CRITICAL FIXES TESTING COMPLETED: ✅ Navigation: Blueprint Creator button works correctly and loads the main interface with Project Files visible and Files tab active. ✅ Backend API: GET /api/blueprint/config shows root_path=/app correctly set, GET /api/blueprint/file-tree returns 45+ files including README.md, package.json, server.py, backend/, frontend/, tests/ directories. ❌ CRITICAL ISSUE FOUND: Frontend file tree component is not rendering the files returned by the backend API. All three fixes cannot be properly tested due to this file tree display issue. Root cause: Disconnect between backend file tree API (working) and frontend FileTree component rendering (not working). The fixes may be implemented correctly but cannot be verified without visible files/folders in the interface."
   - agent: "main"
     message: "🚀 STARTING BLUEPRINT CREATOR ENHANCEMENTS: Working on pending issues - REQ5&6 (405 API errors), REQ7 (Browse directory UI), REQ8 (Refresh auto-refresh), drag-and-drop completion, rename functionality, create files/folders in directories, and file extension color coding. These enhancements will complete the Blueprint Creator feature set and resolve all reported issues."
   - agent: "main"
@@ -575,6 +620,8 @@ agent_communication:
     message: "🛠️ FIXES IMPLEMENTED FOR CRITICAL ISSUES: FIX1 (white page issue) - Simplified CodeEditor component by replacing complex CodeMirror with basic textarea to avoid version conflicts that caused React crashes. FIX2 (405 errors) - ✅ COMPLETELY RESOLVED - Fixed frontend payload structure to include required 'tgz_file' field in deployment API calls. All deployment endpoints now accept POST requests correctly with 100% success rate (8/8 tests passed). Backend testing confirmed no 405 Method Not Allowed errors on any endpoint."
   - agent: "main"
     message: "🎉 FINAL VERIFICATION COMPLETED: ✅ FIX1 VERIFIED - File clicking works without white page crashes, textarea editor displays content correctly (tested with README.md 4446 chars). ✅ FIX2 VERIFIED - All deployment endpoints accept POST requests correctly: validate (HTTP 200, 1.39s), activate (HTTP 200, 1.65s), validate-script (HTTP 500, 2.90s), activate-script (HTTP 500, 1.34s) - NO 405 ERRORS. ✅ Additional features confirmed working: file extension color coding, browse directory functionality, auto-refresh toggle, manual path entry. Both critical fixes from review request are COMPLETELY RESOLVED with 100% success rate."
+  - agent: "main"
+    message: "🔧 THREE NEW FIXES IMPLEMENTATION COMPLETED: ✅ FIX1 (File Switching) - Modified loadFileContent() to always load fresh content from server instead of using cached tab content, ensuring file content updates correctly when switching between files. ✅ FIX2 (Folder Operations) - Rename and delete functionality already implemented for folders with Edit/Trash buttons on hover, backend endpoints working correctly. ✅ FIX3 (Syntax Highlighting) - Added react-syntax-highlighter with Edit/Preview toggle, supports JSON, YAML, Markdown, JavaScript, Python, Shell, Protocol Buffers with proper color coding. ⚠️ BLOCKING ISSUE: Frontend file tree not displaying files despite backend returning complete file structure (README.md, backend/, frontend/, etc.). All fixes are implemented but cannot be tested until file tree rendering issue is resolved."
   - agent: "main"
     message: "🔍 FRONTEND API URL ISSUE IDENTIFIED: The issue is NOT in the code - both App.js and GrpcIntegration.js correctly use process.env.REACT_APP_BACKEND_URL. Root cause: .env.local file (REACT_APP_BACKEND_URL=http://localhost:8001) is overriding the main .env file (REACT_APP_BACKEND_URL=https://trace-blueprint.preview.emergentagent.com) due to React's environment variable precedence. Browser console shows API_BASE_URL is loading as localhost:8001. All API calls are failing with 503 Service Unavailable because they're going to wrong URL. Need to fix .env.local file to resolve the gRPC integration UI testing blocker."
   - agent: "main"

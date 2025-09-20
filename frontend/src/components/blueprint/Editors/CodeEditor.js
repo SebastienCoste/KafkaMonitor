@@ -3,12 +3,15 @@ import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Eye, Edit } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
   const [currentContent, setCurrentContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Update content when file changes
   useEffect(() => {
@@ -40,8 +43,45 @@ export default function CodeEditor({ filePath }) {
         return 'Protocol Buffer';
       case 'sh':
         return 'Shell Script';
+      case 'md':
+        return 'Markdown';
+      case 'js':
+        return 'JavaScript';
+      case 'py':
+        return 'Python';
       default:
         return 'Text';
+    }
+  };
+
+  const getSyntaxLanguage = (filePath) => {
+    const ext = getFileExtension(filePath);
+    switch (ext) {
+      case 'json':
+        return 'json';
+      case 'jslt':
+        return 'javascript'; // JSLT is JavaScript-like
+      case 'yaml':
+      case 'yml':
+        return 'yaml';
+      case 'proto':
+        return 'protobuf';
+      case 'sh':
+        return 'bash';
+      case 'md':
+        return 'markdown';
+      case 'js':
+        return 'javascript';
+      case 'py':
+        return 'python';
+      case 'html':
+        return 'html';
+      case 'css':
+        return 'css';
+      case 'xml':
+        return 'xml';
+      default:
+        return 'text';
     }
   };
 
@@ -89,6 +129,23 @@ export default function CodeEditor({ filePath }) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? (
+              <>
+                <Eye className="h-4 w-4 mr-1" />
+                Preview
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleRevert}
             disabled={!hasChanges || loading}
           >
@@ -106,19 +163,42 @@ export default function CodeEditor({ filePath }) {
         </div>
       </div>
 
-      {/* Text Editor */}
-      <div className="flex-1 overflow-hidden">
-        <textarea
-          value={currentContent}
-          onChange={handleContentChange}
-          className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm"
-          style={{ 
-            minHeight: 'calc(100vh - 250px)',
-            fontSize: '14px',
-            fontFamily: 'Monaco, "Lucida Console", monospace'
-          }}
-          placeholder="File content will appear here..."
-        />
+      {/* Editor Area */}
+      <div className="flex-1 overflow-hidden relative">
+        {isEditing ? (
+          /* Edit Mode - Textarea */
+          <textarea
+            value={currentContent}
+            onChange={handleContentChange}
+            className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm bg-gray-50"
+            style={{ 
+              minHeight: 'calc(100vh - 250px)',
+              fontSize: '14px',
+              fontFamily: 'Monaco, "Lucida Console", monospace'
+            }}
+            placeholder="File content will appear here..."
+          />
+        ) : (
+          /* Preview Mode - Syntax Highlighted */
+          <div className="h-full overflow-auto">
+            <SyntaxHighlighter
+              language={getSyntaxLanguage(filePath)}
+              style={tomorrow}
+              showLineNumbers={true}
+              wrapLines={true}
+              customStyle={{
+                margin: 0,
+                padding: '16px',
+                fontSize: '14px',
+                fontFamily: 'Monaco, "Lucida Console", monospace',
+                minHeight: 'calc(100vh - 250px)',
+                background: '#fafafa'
+              }}
+            >
+              {currentContent || '// File content will appear here...'}
+            </SyntaxHighlighter>
+          </div>
+        )}
       </div>
     </div>
   );

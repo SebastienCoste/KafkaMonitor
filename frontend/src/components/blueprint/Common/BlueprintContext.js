@@ -232,30 +232,36 @@ export function BlueprintProvider({ children }) {
     try {
       setLoading(true);
       
-      // Check if file is already open in tabs
-      const existingTab = openTabs.find(tab => tab.path === filePath);
-      if (existingTab) {
-        setActiveTab(filePath);
-        setSelectedFile(filePath);
-        setFileContent(existingTab.content);
-        return;
-      }
-      
+      // Always load fresh content from server and update editor
       const response = await axios.get(`${API_BASE_URL}/api/blueprint/file-content/${filePath}`);
       const content = response.data.content;
       
-      // Add to open tabs
-      const newTab = {
-        path: filePath,
-        content: content,
-        hasChanges: false,
-        originalContent: content
-      };
-      
-      setOpenTabs(prev => [...prev, newTab]);
-      setActiveTab(filePath);
-      setFileContent(content);
-      setSelectedFile(filePath);
+      // Check if file is already open in tabs
+      const existingTab = openTabs.find(tab => tab.path === filePath);
+      if (existingTab) {
+        // Update existing tab with fresh content
+        setOpenTabs(prev => prev.map(tab => 
+          tab.path === filePath 
+            ? { ...tab, content: content, originalContent: content }
+            : tab
+        ));
+        setActiveTab(filePath);
+        setSelectedFile(filePath);
+        setFileContent(content);
+      } else {
+        // Add to open tabs
+        const newTab = {
+          path: filePath,
+          content: content,
+          hasChanges: false,
+          originalContent: content
+        };
+        
+        setOpenTabs(prev => [...prev, newTab]);
+        setActiveTab(filePath);
+        setFileContent(content);
+        setSelectedFile(filePath);
+      }
     } catch (error) {
       console.error('Error loading file content:', error);
       throw error;
