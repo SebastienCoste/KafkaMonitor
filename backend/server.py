@@ -621,6 +621,37 @@ async def move_blueprint_file(request: Dict[str, str]):
         logger.error(f"Error moving file {source_path} to {destination_path}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/blueprint/rename-file")
+async def rename_blueprint_file(request: Dict[str, str]):
+    """Rename a blueprint file/directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    source_path = request.get('source_path')
+    new_name = request.get('new_name')
+    
+    if not source_path or not new_name:
+        raise HTTPException(status_code=400, detail="Source path and new name are required")
+    
+    try:
+        # Calculate destination path
+        source_dir = os.path.dirname(source_path)
+        destination_path = os.path.join(source_dir, new_name) if source_dir else new_name
+        
+        await blueprint_file_manager.move_file(source_path, destination_path)
+        
+        # Notify WebSocket clients about file rename
+        await broadcast_blueprint_change("file_renamed", {
+            "source_path": source_path,
+            "destination_path": destination_path,
+            "new_name": new_name
+        })
+        
+        return {"success": True, "new_path": destination_path}
+    except Exception as e:
+        logger.error(f"Error renaming file {source_path} to {new_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/blueprint/create-directory")
 async def create_blueprint_directory(request: FileOperationRequest):
     """Create a new directory"""
@@ -695,30 +726,43 @@ async def get_blueprint_output_files(root_path: str):
 @api_router.post("/blueprint/validate/{filename}")
 async def validate_blueprint(filename: str, request: DeploymentRequest):
     """Validate blueprint with blueprint server"""
+    logger.info(f"🔍 Blueprint validation requested for file: {filename}")
+    logger.info(f"🔍 Request data: environment={request.environment}, action={request.action}")
+    
     if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
+        logger.error("❌ Required managers not initialized")
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
     try:
+        logger.info("🔍 Extracting namespace from blueprint_cnf.json...")
         # Get namespace from blueprint_cnf.json
         namespace = None
         try:
             config_validation = await blueprint_file_manager.validate_blueprint_config("blueprint_cnf.json")
             if config_validation.get('valid') and config_validation.get('config'):
                 namespace = config_validation['config'].get('namespace')
+                logger.info(f"✅ Extracted namespace: {namespace}")
+            else:
+                logger.warning(f"⚠️ Blueprint config validation failed: {config_validation}")
         except Exception as e:
-            logger.warning(f"Could not extract namespace from blueprint_cnf.json: {e}")
+            logger.warning(f"⚠️ Could not extract namespace from blueprint_cnf.json: {e}")
         
+        logger.info(f"🔍 Getting environment configuration for: {request.environment}")
         # Get environment configuration
         env_config_data = environment_manager.get_environment_config(request.environment)
         if not env_config_data.get('success'):
+            logger.error(f"❌ Environment {request.environment} not found")
             raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
         
         blueprint_config = env_config_data['config'].get('blueprint_server')
         if not blueprint_config:
+            logger.error(f"❌ Blueprint server not configured for environment {request.environment}")
             raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
         
+        logger.info(f"🔍 Blueprint server config: {blueprint_config}")
         env_config = EnvironmentConfig(**blueprint_config)
         
+        logger.info(f"🔍 Starting blueprint validation - file: {filename}, env: {request.environment}, namespace: {namespace}")
         # Deploy with validate action
         result = await blueprint_build_manager.deploy_blueprint(
             request.root_path if hasattr(request, 'root_path') else blueprint_file_manager.root_path,
@@ -729,9 +773,10 @@ async def validate_blueprint(filename: str, request: DeploymentRequest):
             namespace
         )
         
+        logger.info(f"✅ Blueprint validation completed - success: {result.success}")
         return result.dict()
     except Exception as e:
-        logger.error(f"Error validating blueprint: {e}")
+        logger.error(f"❌ Error validating blueprint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/blueprint/activate/{filename}")
@@ -792,35 +837,52 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
 @api_router.post("/blueprint/validate-script/{filename}")
 async def validate_blueprint_script(filename: str, request: DeploymentRequest):
     """Run validateBlueprint.sh script with specified parameters"""
+    logger.info(f"🔧 Script validation requested for file: {filename}")
+    logger.info(f"🔧 Request data: environment={request.environment}, action={request.action}")
+    
     if not blueprint_file_manager or not environment_manager:
+        logger.error("❌ Required managers not initialized for script validation")
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
     try:
         # Get environment configuration for API key
+        logger.info(f"🔧 Getting environment configuration for: {request.environment}")
         env_config_data = environment_manager.get_environment_config(request.environment)
         if not env_config_data.get('success'):
+            logger.error(f"❌ Environment {request.environment} not found")
             raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
         
         blueprint_config = env_config_data['config'].get('blueprint_server')
         if not blueprint_config:
+            logger.error(f"❌ Blueprint server not configured for environment {request.environment}")
             raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
         
         api_key = blueprint_config.get('auth_header_value', '').replace('Bearer ', '')
+        logger.info(f"🔧 Using API key: {api_key[:10]}...")
         
         # Construct script path
         script_path = os.path.join(blueprint_file_manager.root_path, 'validateBlueprint.sh')
+        logger.info(f"🔧 Looking for script at: {script_path}")
+        
         if not os.path.exists(script_path):
+            logger.error(f"❌ Script not found: {script_path}")
             raise HTTPException(status_code=404, detail="validateBlueprint.sh not found in root directory")
         
         # Make script executable
         os.chmod(script_path, 0o755)
+        logger.info(f"🔧 Made script executable: {script_path}")
         
         # Execute script with parameters
-        process = await asyncio.create_subprocess_exec(
+        cmd = [
             'bash', script_path,
             f'--env={request.environment.upper()}',
             f'--api-key={api_key}',
-            filename,
+            filename
+        ]
+        logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filename]")  # Hide API key in logs
+        
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
             cwd=blueprint_file_manager.root_path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT
@@ -828,6 +890,9 @@ async def validate_blueprint_script(filename: str, request: DeploymentRequest):
         
         stdout, _ = await process.communicate()
         output = stdout.decode('utf-8') if stdout else ""
+        
+        logger.info(f"🔧 Script completed with return code: {process.returncode}")
+        logger.info(f"🔧 Script output (first 200 chars): {output[:200]}...")
         
         return {
             "success": process.returncode == 0,
@@ -837,7 +902,7 @@ async def validate_blueprint_script(filename: str, request: DeploymentRequest):
         }
         
     except Exception as e:
-        logger.error(f"Error running validate script: {e}")
+        logger.error(f"❌ Error running validate script: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/blueprint/activate-script/{filename}")

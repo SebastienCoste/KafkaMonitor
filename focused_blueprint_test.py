@@ -9,7 +9,7 @@ import time
 from datetime import datetime
 
 class FocusedBlueprintTester:
-    def __init__(self, base_url: str = "https://kafka-insight.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "https://trace-blueprint.preview.emergentagent.com"):
         self.base_url = base_url
         self.test_root_path = "/app"  # Use /app as it exists
         

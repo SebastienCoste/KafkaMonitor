@@ -1,23 +1,110 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
 import { Save, RotateCcw } from 'lucide-react';
 
+// CodeMirror imports
+import { EditorView, basicSetup } from '@codemirror/basic-setup';
+import { EditorState } from '@codemirror/state';
+import { json } from '@codemirror/lang-json';
+import { javascript } from '@codemirror/lang-javascript';
+import { yaml } from '@codemirror/lang-yaml';
+import { oneDark } from '@codemirror/theme-one-dark';
+
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
   const [currentContent, setCurrentContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const editorRef = useRef(null);
+  const viewRef = useRef(null);
 
   // Update content when file changes
   useEffect(() => {
     setCurrentContent(fileContent);
     setHasChanges(false);
+    
+    // Update CodeMirror editor if it exists
+    if (viewRef.current) {
+      const transaction = viewRef.current.state.update({
+        changes: {
+          from: 0,
+          to: viewRef.current.state.doc.length,
+          insert: fileContent
+        }
+      });
+      viewRef.current.dispatch(transaction);
+    }
   }, [fileContent]);
 
+  // Initialize CodeMirror editor
+  useEffect(() => {
+    if (!editorRef.current || !filePath) return;
+
+    const extensions = [
+      basicSetup,
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          const content = update.state.doc.toString();
+          setCurrentContent(content);
+          setHasChanges(content !== fileContent);
+        }
+      }),
+      EditorView.theme({
+        '&': { height: '100%' },
+        '.cm-scroller': { overflow: 'auto' },
+        '.cm-editor': { height: '100%' },
+        '.cm-focused': { outline: 'none' }
+      })
+    ];
+
+    // Add language support based on file extension
+    const ext = getFileExtension(filePath);
+    switch (ext) {
+      case 'json':
+        extensions.push(json());
+        break;
+      case 'jslt':
+        extensions.push(javascript()); // JSLT is JavaScript-like
+        break;
+      case 'yaml':
+      case 'yml':
+        extensions.push(yaml());
+        break;
+      case 'js':
+      case 'sh':
+        extensions.push(javascript());
+        break;
+      default:
+        // Plain text, no special highlighting
+        break;
+    }
+
+    const startState = EditorState.create({
+      doc: currentContent,
+      extensions
+    });
+
+    const view = new EditorView({
+      state: startState,
+      parent: editorRef.current
+    });
+
+    viewRef.current = view;
+
+    return () => {
+      view.destroy();
+      viewRef.current = null;
+    };
+  }, [filePath]);
+
+  const getFileExtension = (filename) => {
+    return filename.split('.').pop()?.toLowerCase() || '';
+  };
+
   const getFileMode = (filename) => {
-    const ext = filename.split('.').pop()?.toLowerCase();
+    const ext = getFileExtension(filename);
     switch (ext) {
       case 'json':
         return 'JSON';
@@ -28,6 +115,8 @@ export default function CodeEditor({ filePath }) {
         return 'YAML';
       case 'proto':
         return 'Protocol Buffer';
+      case 'sh':
+        return 'Shell Script';
       default:
         return 'Text';
     }
@@ -47,12 +136,17 @@ export default function CodeEditor({ filePath }) {
     setCurrentContent(fileContent);
     setHasChanges(false);
     toast.info('Changes reverted');
-  };
-
-  const handleKeyDown = (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      e.preventDefault();
-      handleSave();
+    
+    // Update CodeMirror editor
+    if (viewRef.current) {
+      const transaction = viewRef.current.state.update({
+        changes: {
+          from: 0,
+          to: viewRef.current.state.doc.length,
+          insert: fileContent
+        }
+      });
+      viewRef.current.dispatch(transaction);
     }
   };
 
@@ -101,22 +195,16 @@ export default function CodeEditor({ filePath }) {
         </div>
       </div>
 
-      {/* Simple Text Editor */}
+      {/* CodeMirror Editor */}
       <div className="flex-1 overflow-hidden">
-        <textarea
-          value={currentContent}
-          onChange={(e) => {
-            setCurrentContent(e.target.value);
-            setHasChanges(e.target.value !== fileContent);
-          }}
-          onKeyDown={handleKeyDown}
-          className="w-full h-full p-4 font-mono text-sm border-none resize-none focus:outline-none focus:ring-0 bg-white overflow-auto"
+        <div 
+          ref={editorRef} 
+          className="h-full w-full"
           style={{ 
-            fontFamily: 'Monaco, "Lucida Console", monospace',
-            minHeight: 'calc(100vh - 200px)', // Take most of the screen height
-            height: 'auto'
-          }}
-          spellCheck={false}
+            minHeight: 'calc(100vh - 250px)',
+            fontSize: '14px',
+            fontFamily: 'Monaco, "Lucida Console", monospace'
+          }} 
         />
       </div>
     </div>

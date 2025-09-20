@@ -17,6 +17,8 @@ export function BlueprintProvider({ children }) {
   const [fileTree, setFileTree] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
+  const [openTabs, setOpenTabs] = useState([]); // Array of {path, content, hasChanges}
+  const [activeTab, setActiveTab] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [environments, setEnvironments] = useState([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState('dev');
@@ -161,9 +163,10 @@ export function BlueprintProvider({ children }) {
       
       if (response.data.success) {
         setRootPath(path);
-        // Force immediate refresh with a small delay to ensure backend is ready
+        // Force immediate file tree refresh
         setTimeout(async () => {
           await refreshFileTree();
+          console.log('✅ Auto-loaded file tree after setting root path');
         }, 500);
       }
     } catch (error) {
@@ -177,8 +180,30 @@ export function BlueprintProvider({ children }) {
   const loadFileContent = async (filePath) => {
     try {
       setLoading(true);
+      
+      // Check if file is already open in tabs
+      const existingTab = openTabs.find(tab => tab.path === filePath);
+      if (existingTab) {
+        setActiveTab(filePath);
+        setSelectedFile(filePath);
+        setFileContent(existingTab.content);
+        return;
+      }
+      
       const response = await axios.get(`${API_BASE_URL}/api/blueprint/file-content/${filePath}`);
-      setFileContent(response.data.content);
+      const content = response.data.content;
+      
+      // Add to open tabs
+      const newTab = {
+        path: filePath,
+        content: content,
+        hasChanges: false,
+        originalContent: content
+      };
+      
+      setOpenTabs(prev => [...prev, newTab]);
+      setActiveTab(filePath);
+      setFileContent(content);
       setSelectedFile(filePath);
     } catch (error) {
       console.error('Error loading file content:', error);
@@ -188,13 +213,54 @@ export function BlueprintProvider({ children }) {
     }
   };
 
+  const closeTab = (filePath) => {
+    setOpenTabs(prev => prev.filter(tab => tab.path !== filePath));
+    
+    // If closing active tab, switch to another tab or clear selection
+    if (activeTab === filePath) {
+      const remainingTabs = openTabs.filter(tab => tab.path !== filePath);
+      if (remainingTabs.length > 0) {
+        const newActiveTab = remainingTabs[remainingTabs.length - 1];
+        setActiveTab(newActiveTab.path);
+        setSelectedFile(newActiveTab.path);
+        setFileContent(newActiveTab.content);
+      } else {
+        setActiveTab(null);
+        setSelectedFile(null);
+        setFileContent('');
+      }
+    }
+  };
+
+  const updateTabContent = (filePath, content) => {
+    setOpenTabs(prev => prev.map(tab => 
+      tab.path === filePath 
+        ? { ...tab, content, hasChanges: content !== tab.originalContent }
+        : tab
+    ));
+    
+    if (activeTab === filePath) {
+      setFileContent(content);
+    }
+  };
+
   const saveFileContent = async (filePath, content) => {
     try {
       setLoading(true);
       await axios.put(`${API_BASE_URL}/api/blueprint/file-content/${filePath}`, {
         content: content
       });
-      setFileContent(content);
+      
+      // Update tab content and mark as saved
+      setOpenTabs(prev => prev.map(tab => 
+        tab.path === filePath 
+          ? { ...tab, content, hasChanges: false, originalContent: content }
+          : tab
+      ));
+      
+      if (activeTab === filePath) {
+        setFileContent(content);
+      }
     } catch (error) {
       console.error('Error saving file content:', error);
       throw error;
@@ -248,6 +314,40 @@ export function BlueprintProvider({ children }) {
       await refreshFileTree();
     } catch (error) {
       console.error('Error creating directory:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renameFile = async (sourcePath, newName) => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/rename-file`, {
+        source_path: sourcePath,
+        new_name: newName
+      });
+      
+      // If the renamed file was selected or in tabs, update the references
+      if (selectedFile === sourcePath) {
+        setSelectedFile(response.data.new_path);
+      }
+      
+      // Update any open tabs with the old path
+      setOpenTabs(prev => prev.map(tab => 
+        tab.path === sourcePath 
+          ? { ...tab, path: response.data.new_path }
+          : tab
+      ));
+      
+      if (activeTab === sourcePath) {
+        setActiveTab(response.data.new_path);
+      }
+      
+      await refreshFileTree();
+      return response.data;
+    } catch (error) {
+      console.error('Error renaming file:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -356,6 +456,8 @@ export function BlueprintProvider({ children }) {
     fileTree,
     selectedFile,
     fileContent,
+    openTabs,
+    activeTab,
     autoRefresh,
     environments,
     selectedEnvironment,
@@ -369,9 +471,14 @@ export function BlueprintProvider({ children }) {
     setRootPath: setBlueprintRootPath,
     setSelectedFile,
     setFileContent,
+    setActiveTab,
     setAutoRefresh,
     setSelectedEnvironment,
     setBuildOutput,
+    
+    // Tab Management
+    closeTab,
+    updateTabContent,
     
     // API Methods
     refreshFileTree,
@@ -380,6 +487,7 @@ export function BlueprintProvider({ children }) {
     createFile,
     deleteFile,
     createDirectory,
+    renameFile,
     buildBlueprint,
     cancelBuild,
     loadOutputFiles,

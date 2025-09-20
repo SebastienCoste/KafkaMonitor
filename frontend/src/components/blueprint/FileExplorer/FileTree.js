@@ -13,7 +13,10 @@ import {
   Plus,
   Trash2,
   FolderPlus,
-  FilePlus
+  FilePlus,
+  Edit,
+  Check,
+  X
 } from 'lucide-react';
 
 export default function FileTree({ files }) {
@@ -23,6 +26,7 @@ export default function FileTree({ files }) {
     createFile,
     createDirectory,
     deleteFile,
+    renameFile,
     refreshFileTree
   } = useBlueprintContext();
   
@@ -32,6 +36,8 @@ export default function FileTree({ files }) {
   const [createName, setCreateName] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
+  const [renamingItem, setRenamingItem] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const toggleFolder = (path) => {
     const newExpanded = new Set(expandedFolders);
@@ -178,14 +184,63 @@ export default function FileTree({ files }) {
     }
   };
 
+  const handleStartRename = (item) => {
+    setRenamingItem(item.path);
+    setRenameValue(item.name);
+  };
+
+  const handleConfirmRename = async () => {
+    if (!renameValue.trim() || renameValue === renamingItem.split('/').pop()) {
+      handleCancelRename();
+      return;
+    }
+
+    try {
+      await renameFile(renamingItem, renameValue.trim());
+      toast.success(`Renamed to: ${renameValue}`);
+    } catch (error) {
+      toast.error(`Failed to rename: ${error.message}`);
+    } finally {
+      handleCancelRename();
+    }
+  };
+
+  const handleCancelRename = () => {
+    setRenamingItem(null);
+    setRenameValue('');
+  };
+
   const getFileIcon = (filename) => {
     const ext = filename.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'json':
-      case 'jslt':
         return <FileText className="h-4 w-4 text-blue-500" />;
+      case 'jslt':
+        return <FileText className="h-4 w-4 text-indigo-500" />;
       case 'proto':
         return <Settings className="h-4 w-4 text-purple-500" />;
+      case 'yaml':
+      case 'yml':
+        return <FileText className="h-4 w-4 text-orange-500" />;
+      case 'js':
+      case 'ts':
+        return <FileText className="h-4 w-4 text-yellow-500" />;
+      case 'sh':
+        return <FileText className="h-4 w-4 text-green-600" />;
+      case 'md':
+        return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'xml':
+        return <FileText className="h-4 w-4 text-red-500" />;
+      case 'txt':
+        return <FileText className="h-4 w-4 text-gray-600" />;
+      case 'py':
+        return <FileText className="h-4 w-4 text-green-500" />;
+      case 'java':
+        return <FileText className="h-4 w-4 text-red-600" />;
+      case 'css':
+        return <FileText className="h-4 w-4 text-blue-400" />;
+      case 'html':
+        return <FileText className="h-4 w-4 text-orange-600" />;
       default:
         return <File className="h-4 w-4 text-gray-400" />;
     }
@@ -215,7 +270,31 @@ export default function FileTree({ files }) {
                 <ChevronRight className="h-4 w-4 text-gray-400" />
               )}
               <Folder className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium text-gray-700">{item.name}</span>
+              {renamingItem === item.path ? (
+                <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
+                  <Input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    className="h-6 text-sm"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleConfirmRename();
+                      } else if (e.key === 'Escape') {
+                        handleCancelRename();
+                      }
+                    }}
+                  />
+                  <Button size="sm" onClick={handleConfirmRename} className="h-6 w-6 p-0">
+                    <Check className="h-3 w-3" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={handleCancelRename} className="h-6 w-6 p-0">
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <span className="text-sm font-medium text-gray-700">{item.name}</span>
+              )}
             </div>
             
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100">
@@ -242,6 +321,18 @@ export default function FileTree({ files }) {
                 title="Create folder"
               >
                 <FolderPlus className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleStartRename(item);
+                }}
+                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
+                title="Rename folder"
+              >
+                <Edit className="h-3 w-3" />
               </Button>
               <Button
                 variant="ghost"
@@ -311,14 +402,50 @@ export default function FileTree({ files }) {
       >
         <div className="flex items-center space-x-2 flex-1" onClick={() => handleFileClick(item.path)}>
           {getFileIcon(item.name)}
-          <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
-            {item.name}
-          </span>
+          {renamingItem === item.path ? (
+            <div className="flex items-center space-x-1" onClick={(e) => e.stopPropagation()}>
+              <Input
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                className="h-6 text-sm"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleConfirmRename();
+                  } else if (e.key === 'Escape') {
+                    handleCancelRename();
+                  }
+                }}
+              />
+              <Button size="sm" onClick={handleConfirmRename} className="h-6 w-6 p-0">
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button size="sm" variant="ghost" onClick={handleCancelRename} className="h-6 w-6 p-0">
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          ) : (
+            <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
+              {item.name}
+            </span>
+          )}
         </div>
         <div className="flex items-center space-x-1">
           <div className="text-xs text-gray-400">
             {item.size && formatFileSize(item.size)}
           </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleStartRename(item);
+            }}
+            className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700 opacity-0 group-hover:opacity-100"
+            title="Rename file"
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"
