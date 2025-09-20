@@ -961,7 +961,7 @@ async def activate_blueprint_script(filepath: str, request: DeploymentRequest):
             "success": process.returncode == 0,
             "return_code": process.returncode,
             "output": output,
-            "command": f"activateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filename}"
+            "command": f"activateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filepath}"
         }
         
     except Exception as e:
