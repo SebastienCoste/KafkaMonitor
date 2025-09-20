@@ -3,7 +3,9 @@ import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Eye, Edit } from 'lucide-react';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
