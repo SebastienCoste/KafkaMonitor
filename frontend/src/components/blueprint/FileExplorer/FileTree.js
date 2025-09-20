@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
+import { Input } from '../../ui/input';
+import { toast } from 'sonner';
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -9,7 +11,9 @@ import {
   FileText,
   Settings,
   Plus,
-  Trash2
+  Trash2,
+  FolderPlus,
+  FilePlus
 } from 'lucide-react';
 
 export default function FileTree({ files }) {
