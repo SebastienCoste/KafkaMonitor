@@ -161,6 +161,7 @@ export function BlueprintProvider({ children }) {
       
       if (response.data.success) {
         setRootPath(path);
+        // Auto-refresh file tree immediately after setting path
         await refreshFileTree();
       }
     } catch (error) {
