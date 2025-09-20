@@ -170,10 +170,10 @@ export default function FileTree({ files }) {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete(item.path);
+                  handleDelete(item.path, true); // true indicates it's a directory
                 }}
                 className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                title="Delete"
+                title="Delete folder"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
