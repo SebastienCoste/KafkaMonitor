@@ -33,7 +33,7 @@ blueprint_server:
   base_url: "https://blueprint-prod.example.com"
   validate_path: "/validate/{namespace}"
   activate_path: "/activate/{namespace}"
-  auth_header_name: "Authorization"
+  auth_header_name: "x-api-key"
   auth_header_value: "Bearer prod-api-token"
 
 # Note: gRPC Credentials are provided at runtime via UI

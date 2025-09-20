@@ -447,10 +447,6 @@ class MockProtobufDecoder:
             }
         }
         
-    def load_topic_protobuf(self, topic: str, proto_file: str, message_type: str):
-        """Mock implementation - just log the configuration"""
-        logger.info(f"Mock: Loading protobuf for topic '{topic}' (proto: {proto_file}, type: {message_type})")
-        
     def decode_message(self, topic: str, message_bytes: bytes) -> Dict[str, Any]:
         """Mock decode - return template data"""
         if topic in self.mock_data_templates:

@@ -92,8 +92,8 @@ class TraceGraphBuilder:
             return
 
         if not message.trace_id:
-            logger.debug(f"Message without trace ID: {message.topic}[{message.partition}]:{message.offset}")
-            return
+            logger.debug(f"Message without trace ID: {message.topic}[{message.partition}]:{message.offset} using the topic name")
+            message.trace_id = f"{message.topic}-{message.timestamp}"
 
         # Get or create trace
         trace_existed = message.trace_id in self.traces
