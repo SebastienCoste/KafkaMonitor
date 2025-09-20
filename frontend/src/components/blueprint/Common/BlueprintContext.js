@@ -419,6 +419,7 @@ export function BlueprintProvider({ children }) {
     try {
       setLoading(true);
       const response = await axios.post(`${API_BASE_URL}/api/blueprint/activate/${filename}`, {
+        tgz_file: filename,
         environment: selectedEnvironment,
         action: 'activate'
       });
