@@ -17,6 +17,8 @@ export function BlueprintProvider({ children }) {
   const [fileTree, setFileTree] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
+  const [openTabs, setOpenTabs] = useState([]); // Array of {path, content, hasChanges}
+  const [activeTab, setActiveTab] = useState(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [environments, setEnvironments] = useState([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState('dev');
