@@ -38,7 +38,7 @@ export default function BlueprintCreator() {
     rootPath,
     fileTree,
     selectedFile,
-    activeTab,
+    activeTab: activeFileTab,
     openTabs,
     fileContent,
     autoRefresh,
