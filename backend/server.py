@@ -885,7 +885,7 @@ async def validate_blueprint_script(filepath: str, request: DeploymentRequest):
             'bash', script_path,
             f'--env={request.environment.upper()}',
             f'--api-key={api_key}',
-            filename
+            filepath  # Pass the full filepath (e.g., "out/blueprint.tgz") to the script
         ]
         logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filename]")  # Hide API key in logs
         
