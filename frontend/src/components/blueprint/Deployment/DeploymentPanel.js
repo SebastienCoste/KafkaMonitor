@@ -55,7 +55,83 @@ export default function DeploymentPanel() {
     }
   };
 
-  const handleActivate = async () => {
+  const handleValidateScript = async () => {
+    if (!selectedFile) {
+      toast.error('Please select a blueprint file to validate');
+      return;
+    }
+
+    setDeploymentLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/validate-script/${selectedFile}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            environment: selectedEnvironment,
+            action: 'validate'
+          })
+        }
+      );
+      
+      const result = await response.json();
+      setDeploymentResults([{
+        action: 'validate-script',
+        timestamp: new Date(),
+        ...result
+      }, ...deploymentResults]);
+      
+      if (result.success) {
+        toast.success('Blueprint validation script completed successfully');
+      } else {
+        toast.error(`Blueprint validation script failed: ${result.output}`);
+      }
+    } catch (error) {
+      toast.error(`Script execution failed: ${error.message}`);
+    } finally {
+      setDeploymentLoading(false);
+    }
+  };
+
+  const handleActivateScript = async () => {
+    if (!selectedFile) {
+      toast.error('Please select a blueprint file to activate');
+      return;
+    }
+
+    setDeploymentLoading(true);
+    try {
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/activate-script/${selectedFile}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            environment: selectedEnvironment,
+            action: 'activate'
+          })
+        }
+      );
+      
+      const result = await response.json();
+      setDeploymentResults([{
+        action: 'activate-script',
+        timestamp: new Date(),
+        ...result
+      }, ...deploymentResults]);
+      
+      if (result.success) {
+        toast.success('Blueprint activation script completed successfully');
+      } else {
+        toast.error(`Blueprint activation script failed: ${result.output}`);
+      }
+    } catch (error) {
+      toast.error(`Script execution failed: ${error.message}`);
+    } finally {
+      setDeploymentLoading(false);
+    }
+  };
     if (!selectedFile) {
       toast.error('Please select a blueprint file to activate');
       return;
