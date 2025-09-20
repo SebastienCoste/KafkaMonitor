@@ -320,6 +320,18 @@ export default function FileTree({ files }) {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
+                  handleStartRename(item);
+                }}
+                className="h-6 w-6 p-0 text-blue-600 hover:text-blue-700"
+                title="Rename folder"
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
                   handleDelete(item.path, true); // true indicates it's a directory
                 }}
                 className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
