@@ -132,6 +132,8 @@ export default function DeploymentPanel() {
       setDeploymentLoading(false);
     }
   };
+
+  const handleActivate = async () => {
     if (!selectedFile) {
       toast.error('Please select a blueprint file to activate');
       return;
