@@ -30,7 +30,7 @@ export function BlueprintProvider({ children }) {
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
-  // WebSocket connection
+  // WebSocket connection and load config on mount
   useEffect(() => {
     const connectWebSocket = () => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -69,7 +69,23 @@ export function BlueprintProvider({ children }) {
       };
     };
 
+    // Load existing configuration on mount
+    const loadInitialConfig = async () => {
+      try {
+        const config = await getBlueprintConfig();
+        if (config.root_path) {
+          setRootPath(config.root_path);
+          setAutoRefresh(config.auto_refresh);
+          // Auto-load file tree if root path is set
+          await refreshFileTree();
+        }
+      } catch (error) {
+        console.error('Error loading initial config:', error);
+      }
+    };
+
     connectWebSocket();
+    loadInitialConfig();
 
     return () => {
       if (websocket) {
