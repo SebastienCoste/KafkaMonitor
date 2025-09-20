@@ -5854,15 +5854,56 @@ def run_blueprint_creator_tests():
     
         return blueprint_success
 
-if __name__ == "__main__":
-    tester = KafkaTraceViewerTester()
+def run_deployment_endpoints_405_fix_test():
+    """Run the specific test for REQ FIX2 - deployment endpoints 405 fix"""
+    print("🔧 DEPLOYMENT ENDPOINTS 405 FIX TEST - REQ FIX2")
+    print("=" * 80)
+    print("Testing the fixed deployment endpoints to verify 405 errors are resolved")
+    print("Endpoints to test:")
+    print("1. POST /api/blueprint/validate/{filename}")
+    print("2. POST /api/blueprint/activate/{filename}")
+    print("3. POST /api/blueprint/validate-script/{filename}")
+    print("4. POST /api/blueprint/activate-script/{filename}")
+    print("=" * 80)
     
-    # Run Blueprint Creator tests for the review request
-    success = tester.run_blueprint_creator_review_tests()
+    # Use the correct backend URL
+    tester = KafkaTraceViewerTester("https://trace-blueprint.preview.emergentagent.com")
+    
+    # Run the specific test
+    success = tester.test_deployment_endpoints_405_fix()
+    
+    # Print final summary
+    print("\n" + "=" * 80)
+    print("📊 DEPLOYMENT ENDPOINTS 405 FIX TEST SUMMARY")
+    print("=" * 80)
+    
+    success_rate = (tester.tests_passed / tester.tests_run) * 100 if tester.tests_run > 0 else 0
+    
+    print(f"✅ Tests Passed: {tester.tests_passed}/{tester.tests_run} ({success_rate:.1f}%)")
     
     if success:
-        print("\n🎉 All Blueprint Creator tests completed successfully!")
+        print("🎉 RESULT: Deployment endpoints 405 fix is WORKING")
+        print("   ✅ POST /api/blueprint/validate/{filename} accepts POST requests")
+        print("   ✅ POST /api/blueprint/activate/{filename} accepts POST requests")
+        print("   ✅ POST /api/blueprint/validate-script/{filename} accepts POST requests")
+        print("   ✅ POST /api/blueprint/activate-script/{filename} accepts POST requests")
+        print("   ✅ No 405 Method Not Allowed errors detected")
+        print("   ✅ REQ FIX2 verification completed successfully")
+    else:
+        print("❌ RESULT: Deployment endpoints 405 fix needs attention")
+        print("   ❌ Some endpoints still returning 405 Method Not Allowed")
+        print("   💡 Check if the frontend payload includes tgz_file field")
+        print("   💡 Verify DeploymentRequest model accepts the correct fields")
+    
+    return success
+
+if __name__ == "__main__":
+    # Run the specific test for the review request
+    success = run_deployment_endpoints_405_fix_test()
+    
+    if success:
+        print("\n🎉 REQ FIX2 test completed successfully!")
         sys.exit(0)
     else:
-        print("\n❌ Some Blueprint Creator tests failed - check output above")
+        print("\n❌ REQ FIX2 test failed - check output above")
         sys.exit(1)
