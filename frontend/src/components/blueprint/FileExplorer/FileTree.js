@@ -26,6 +26,7 @@ export default function FileTree({ files }) {
     createFile,
     createDirectory,
     deleteFile,
+    renameFile,
     refreshFileTree
   } = useBlueprintContext();
   
