@@ -887,7 +887,7 @@ async def validate_blueprint_script(filepath: str, request: DeploymentRequest):
             f'--api-key={api_key}',
             filepath  # Pass the full filepath (e.g., "out/blueprint.tgz") to the script
         ]
-        logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filename]")  # Hide API key in logs
+        logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filepath]")  # Hide API key in logs
         
         process = await asyncio.create_subprocess_exec(
             *cmd,
