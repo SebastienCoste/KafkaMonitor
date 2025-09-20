@@ -44,6 +44,7 @@ export default function BlueprintCreator() {
     autoRefresh,
     setAutoRefresh,
     loading,
+    initializing,
     refreshFileTree,
     loadOutputFiles,
     setRootPath: setBlueprintRootPath
