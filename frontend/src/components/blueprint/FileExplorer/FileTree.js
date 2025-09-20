@@ -128,9 +128,8 @@ export default function FileTree({ files }) {
             className={`flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
               depth > 0 ? `ml-${depth * 4}` : ''
             }`}
-            onClick={() => toggleFolder(item.path)}
           >
-            <div className="flex items-center space-x-1 flex-1">
+            <div className="flex items-center space-x-1 flex-1" onClick={() => toggleFolder(item.path)}>
               {isExpanded ? (
                 <ChevronDown className="h-4 w-4 text-gray-400" />
               ) : (
@@ -139,7 +138,79 @@ export default function FileTree({ files }) {
               <Folder className="h-4 w-4 text-yellow-500" />
               <span className="text-sm font-medium text-gray-700">{item.name}</span>
             </div>
+            
+            <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCreateFile(item.path);
+                }}
+                className="h-6 w-6 p-0"
+                title="Create file"
+              >
+                <FilePlus className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCreateFolder(item.path);
+                }}
+                className="h-6 w-6 p-0"
+                title="Create folder"
+              >
+                <FolderPlus className="h-3 w-3" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(item.path);
+                }}
+                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                title="Delete"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
+          
+          {/* Show create input if creating in this directory */}
+          {creatingIn === item.path && (
+            <div className={`flex items-center p-2 ml-${(depth + 1) * 4} bg-blue-50`}>
+              <div className="flex items-center space-x-1 flex-1">
+                {createType === 'file' ? (
+                  <File className="h-4 w-4 text-gray-400" />
+                ) : (
+                  <Folder className="h-4 w-4 text-yellow-500" />
+                )}
+                <Input
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  placeholder={`Enter ${createType} name`}
+                  className="h-6 text-sm"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleConfirmCreate();
+                    } else if (e.key === 'Escape') {
+                      handleCancelCreate();
+                    }
+                  }}
+                />
+                <Button size="sm" onClick={handleConfirmCreate} className="h-6">
+                  ✓
+                </Button>
+                <Button size="sm" variant="ghost" onClick={handleCancelCreate} className="h-6">
+                  ✕
+                </Button>
+              </div>
+            </div>
+          )}
           
           {isExpanded && item.children && (
             <div className="ml-4">
@@ -153,19 +224,32 @@ export default function FileTree({ files }) {
     return (
       <div
         key={item.path}
-        className={`flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
+        className={`group flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
           isSelected ? 'bg-blue-50 border-r-2 border-blue-500' : ''
         } ${depth > 0 ? `ml-${depth * 4}` : ''}`}
-        onClick={() => handleFileClick(item.path)}
       >
-        <div className="flex items-center space-x-2 flex-1">
+        <div className="flex items-center space-x-2 flex-1" onClick={() => handleFileClick(item.path)}>
           {getFileIcon(item.name)}
           <span className={`text-sm ${isSelected ? 'text-blue-700 font-medium' : 'text-gray-600'}`}>
             {item.name}
           </span>
         </div>
-        <div className="text-xs text-gray-400">
-          {item.size && formatFileSize(item.size)}
+        <div className="flex items-center space-x-1">
+          <div className="text-xs text-gray-400">
+            {item.size && formatFileSize(item.size)}
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(item.path);
+            }}
+            className="h-6 w-6 p-0 text-red-600 hover:text-red-700 opacity-0 group-hover:opacity-100"
+            title="Delete"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
         </div>
       </div>
     );
