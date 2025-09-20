@@ -43,8 +43,45 @@ export default function CodeEditor({ filePath }) {
         return 'Protocol Buffer';
       case 'sh':
         return 'Shell Script';
+      case 'md':
+        return 'Markdown';
+      case 'js':
+        return 'JavaScript';
+      case 'py':
+        return 'Python';
       default:
         return 'Text';
+    }
+  };
+
+  const getSyntaxLanguage = (filePath) => {
+    const ext = getFileExtension(filePath);
+    switch (ext) {
+      case 'json':
+        return 'json';
+      case 'jslt':
+        return 'javascript'; // JSLT is JavaScript-like
+      case 'yaml':
+      case 'yml':
+        return 'yaml';
+      case 'proto':
+        return 'protobuf';
+      case 'sh':
+        return 'bash';
+      case 'md':
+        return 'markdown';
+      case 'js':
+        return 'javascript';
+      case 'py':
+        return 'python';
+      case 'html':
+        return 'html';
+      case 'css':
+        return 'css';
+      case 'xml':
+        return 'xml';
+      default:
+        return 'text';
     }
   };
 
