@@ -763,6 +763,108 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
         logger.error(f"Error validating blueprint config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/blueprint/validate-script/{filename}")
+async def validate_blueprint_script(filename: str, request: DeploymentRequest):
+    """Run validateBlueprint.sh script with specified parameters"""
+    if not blueprint_file_manager or not environment_manager:
+        raise HTTPException(status_code=503, detail="Required managers not initialized")
+    
+    try:
+        # Get environment configuration for API key
+        env_config_data = environment_manager.get_environment_config(request.environment)
+        if not env_config_data.get('success'):
+            raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
+        
+        blueprint_config = env_config_data['config'].get('blueprint_server')
+        if not blueprint_config:
+            raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
+        
+        api_key = blueprint_config.get('auth_header_value', '').replace('Bearer ', '')
+        
+        # Construct script path
+        script_path = os.path.join(blueprint_file_manager.root_path, 'validateBlueprint.sh')
+        if not os.path.exists(script_path):
+            raise HTTPException(status_code=404, detail="validateBlueprint.sh not found in root directory")
+        
+        # Make script executable
+        os.chmod(script_path, 0o755)
+        
+        # Execute script with parameters
+        process = await asyncio.create_subprocess_exec(
+            'bash', script_path,
+            f'--env={request.environment.upper()}',
+            f'--api-key={api_key}',
+            filename,
+            cwd=blueprint_file_manager.root_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        
+        stdout, _ = await process.communicate()
+        output = stdout.decode('utf-8') if stdout else ""
+        
+        return {
+            "success": process.returncode == 0,
+            "return_code": process.returncode,
+            "output": output,
+            "command": f"validateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filename}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error running validate script: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/activate-script/{filename}")
+async def activate_blueprint_script(filename: str, request: DeploymentRequest):
+    """Run activateBlueprint.sh script with specified parameters"""
+    if not blueprint_file_manager or not environment_manager:
+        raise HTTPException(status_code=503, detail="Required managers not initialized")
+    
+    try:
+        # Get environment configuration for API key
+        env_config_data = environment_manager.get_environment_config(request.environment)
+        if not env_config_data.get('success'):
+            raise HTTPException(status_code=400, detail=f"Environment {request.environment} not found")
+        
+        blueprint_config = env_config_data['config'].get('blueprint_server')
+        if not blueprint_config:
+            raise HTTPException(status_code=400, detail=f"Blueprint server not configured for environment {request.environment}")
+        
+        api_key = blueprint_config.get('auth_header_value', '').replace('Bearer ', '')
+        
+        # Construct script path
+        script_path = os.path.join(blueprint_file_manager.root_path, 'activateBlueprint.sh')
+        if not os.path.exists(script_path):
+            raise HTTPException(status_code=404, detail="activateBlueprint.sh not found in root directory")
+        
+        # Make script executable
+        os.chmod(script_path, 0o755)
+        
+        # Execute script with parameters
+        process = await asyncio.create_subprocess_exec(
+            'bash', script_path,
+            f'--env={request.environment.upper()}',
+            f'--api-key={api_key}',
+            filename,
+            cwd=blueprint_file_manager.root_path,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT
+        )
+        
+        stdout, _ = await process.communicate()
+        output = stdout.decode('utf-8') if stdout else ""
+        
+        return {
+            "success": process.returncode == 0,
+            "return_code": process.returncode,
+            "output": output,
+            "command": f"activateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filename}"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error running activate script: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 async def broadcast_blueprint_change(event_type: str, data: Dict[str, Any]):
     """Broadcast blueprint changes to all WebSocket clients"""
     if blueprint_websocket_connections:
