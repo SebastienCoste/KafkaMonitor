@@ -110,11 +110,11 @@ export default function CodeEditor({ filePath }) {
             setHasChanges(e.target.value !== fileContent);
           }}
           onKeyDown={handleKeyDown}
-          className="w-full h-full p-4 font-mono text-sm border-none resize-none focus:outline-none focus:ring-0 bg-white"
+          className="w-full h-full p-4 font-mono text-sm border-none resize-none focus:outline-none focus:ring-0 bg-white overflow-auto"
           style={{ 
             fontFamily: 'Monaco, "Lucida Console", monospace',
-            minHeight: '100%',
-            height: '100%'
+            minHeight: 'calc(100vh - 200px)', // Take most of the screen height
+            height: 'auto'
           }}
           spellCheck={false}
         />
