@@ -93,7 +93,75 @@ export default function FileTree({ files }) {
     setCreateName('');
   };
 
-  const handleDelete = async (itemPath, isDirectory = false) => {
+  const handleDragStart = (e, item) => {
+    setDraggedItem(item);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+  };
+
+  const handleDragOver = (e, item) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Only allow dropping into directories
+    if (item.type === 'directory') {
+      setDragOverItem(item.path);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    // Only clear if leaving to a non-child element
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverItem(null);
+    }
+  };
+
+  const handleDrop = async (e, targetItem) => {
+    e.preventDefault();
+    setDragOverItem(null);
+    
+    if (!draggedItem || !targetItem || targetItem.type !== 'directory') {
+      return;
+    }
+    
+    // Don't allow dropping item into itself or its children
+    if (draggedItem.path === targetItem.path || targetItem.path.startsWith(draggedItem.path + '/')) {
+      toast.error('Cannot move item into itself or its children');
+      return;
+    }
+    
+    try {
+      const sourcePath = draggedItem.path;
+      const targetDir = targetItem.path;
+      const fileName = draggedItem.name;
+      const newPath = targetDir ? `${targetDir}/${fileName}` : fileName;
+      
+      // Use backend API to move the file/folder
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/move-file`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_path: sourcePath,
+            destination_path: newPath
+          })
+        }
+      );
+      
+      if (response.ok) {
+        toast.success(`Moved ${draggedItem.name} to ${targetItem.name}`);
+        // Refresh file tree to show changes
+        refreshFileTree();
+      } else {
+        throw new Error(`Failed to move item: ${response.status}`);
+      }
+    } catch (error) {
+      toast.error(`Failed to move item: ${error.message}`);
+    } finally {
+      setDraggedItem(null);
+    }
+  };
     const itemType = isDirectory ? 'folder' : 'file';
     if (!window.confirm(`Are you sure you want to delete this ${itemType} "${itemPath}"?${isDirectory ? '\n\nThis will delete all contents permanently.' : ''}`)) {
       return;
