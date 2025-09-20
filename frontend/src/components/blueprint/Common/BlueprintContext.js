@@ -179,14 +179,67 @@ export function BlueprintProvider({ children }) {
   const loadFileContent = async (filePath) => {
     try {
       setLoading(true);
+      
+      // Check if file is already open in tabs
+      const existingTab = openTabs.find(tab => tab.path === filePath);
+      if (existingTab) {
+        setActiveTab(filePath);
+        setSelectedFile(filePath);
+        setFileContent(existingTab.content);
+        return;
+      }
+      
       const response = await axios.get(`${API_BASE_URL}/api/blueprint/file-content/${filePath}`);
-      setFileContent(response.data.content);
+      const content = response.data.content;
+      
+      // Add to open tabs
+      const newTab = {
+        path: filePath,
+        content: content,
+        hasChanges: false,
+        originalContent: content
+      };
+      
+      setOpenTabs(prev => [...prev, newTab]);
+      setActiveTab(filePath);
+      setFileContent(content);
       setSelectedFile(filePath);
     } catch (error) {
       console.error('Error loading file content:', error);
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+
+  const closeTab = (filePath) => {
+    setOpenTabs(prev => prev.filter(tab => tab.path !== filePath));
+    
+    // If closing active tab, switch to another tab or clear selection
+    if (activeTab === filePath) {
+      const remainingTabs = openTabs.filter(tab => tab.path !== filePath);
+      if (remainingTabs.length > 0) {
+        const newActiveTab = remainingTabs[remainingTabs.length - 1];
+        setActiveTab(newActiveTab.path);
+        setSelectedFile(newActiveTab.path);
+        setFileContent(newActiveTab.content);
+      } else {
+        setActiveTab(null);
+        setSelectedFile(null);
+        setFileContent('');
+      }
+    }
+  };
+
+  const updateTabContent = (filePath, content) => {
+    setOpenTabs(prev => prev.map(tab => 
+      tab.path === filePath 
+        ? { ...tab, content, hasChanges: content !== tab.originalContent }
+        : tab
+    ));
+    
+    if (activeTab === filePath) {
+      setFileContent(content);
     }
   };
 
