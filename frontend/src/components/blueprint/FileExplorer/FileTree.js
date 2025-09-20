@@ -200,8 +200,13 @@ export default function FileTree({ files }) {
         <div key={item.path}>
           <div
             className={`flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
-              depth > 0 ? `ml-${depth * 4}` : ''
-            }`}
+              dragOverItem === item.path ? 'bg-blue-100 border-l-4 border-blue-500' : ''
+            } ${depth > 0 ? `ml-${depth * 4}` : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, item)}
+            onDragOver={(e) => handleDragOver(e, item)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, item)}
           >
             <div className="flex items-center space-x-1 flex-1" onClick={() => toggleFolder(item.path)}>
               {isExpanded ? (
