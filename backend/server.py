@@ -840,10 +840,12 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
         logger.error(f"Error validating blueprint config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/validate-script/{filename}")
-async def validate_blueprint_script(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/validate-script/{filepath:path}")
+async def validate_blueprint_script(filepath: str, request: DeploymentRequest):
     """Run validateBlueprint.sh script with specified parameters"""
-    logger.info(f"🔧 Script validation requested for file: {filename}")
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔧 Script validation requested for filepath: {filepath}, filename: {filename}")
     logger.info(f"🔧 Request data: environment={request.environment}, action={request.action}")
     
     if not blueprint_file_manager or not environment_manager:
