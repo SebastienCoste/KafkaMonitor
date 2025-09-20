@@ -621,6 +621,37 @@ async def move_blueprint_file(request: Dict[str, str]):
         logger.error(f"Error moving file {source_path} to {destination_path}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/blueprint/rename-file")
+async def rename_blueprint_file(request: Dict[str, str]):
+    """Rename a blueprint file/directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    source_path = request.get('source_path')
+    new_name = request.get('new_name')
+    
+    if not source_path or not new_name:
+        raise HTTPException(status_code=400, detail="Source path and new name are required")
+    
+    try:
+        # Calculate destination path
+        source_dir = os.path.dirname(source_path)
+        destination_path = os.path.join(source_dir, new_name) if source_dir else new_name
+        
+        await blueprint_file_manager.move_file(source_path, destination_path)
+        
+        # Notify WebSocket clients about file rename
+        await broadcast_blueprint_change("file_renamed", {
+            "source_path": source_path,
+            "destination_path": destination_path,
+            "new_name": new_name
+        })
+        
+        return {"success": True, "new_path": destination_path}
+    except Exception as e:
+        logger.error(f"Error renaming file {source_path} to {new_name}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/blueprint/create-directory")
 async def create_blueprint_directory(request: FileOperationRequest):
     """Create a new directory"""
