@@ -196,26 +196,8 @@ export default function FileTree({ files }) {
     }
 
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/rename-file`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            source_path: renamingItem,
-            new_name: renameValue.trim()
-          })
-        }
-      );
-      
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(`Renamed to: ${renameValue}`);
-        // Refresh file tree to show changes
-        refreshFileTree();
-      } else {
-        throw new Error(`Failed to rename: ${response.status}`);
-      }
+      await renameFile(renamingItem, renameValue.trim());
+      toast.success(`Renamed to: ${renameValue}`);
     } catch (error) {
       toast.error(`Failed to rename: ${error.message}`);
     } finally {
