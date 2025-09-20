@@ -5730,7 +5730,7 @@ def run_deployment_endpoints_405_fix_test():
     
     return success
 
-    def test_blueprint_deployment_endpoints_filepath_fix(self) -> bool:
+def test_blueprint_deployment_endpoints_filepath_fix(self) -> bool:
         """Test the FIXED 405 API endpoints for blueprint deployment with filepath handling"""
         print("\n" + "=" * 60)
         print("🔧 Testing Blueprint Deployment Endpoints - Filepath Handling Fix")
