@@ -5181,7 +5181,7 @@ def run_blueprint_creator_tests():
         print("   💡 Check if Blueprint file manager is properly initialized")
         print("   💡 Verify Blueprint Creator components are loaded")
     
-    return blueprint_success
+        return blueprint_success
 
     def run_blueprint_creator_review_tests(self) -> bool:
         """Run comprehensive Blueprint Creator API tests for the review request"""
