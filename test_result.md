@@ -562,6 +562,42 @@ test_plan:
         agent: "testing"
         comment: "✅ BLUEPRINT CREATOR FRONTEND ENHANCEMENTS TESTING COMPLETED - ALL REQUIREMENTS VERIFIED: ✅ REQ7 - Browse for Directory UI: Button shows correct text 'Browse for Directory' (not 'Upload'), manual entry option also available. ✅ REQ8 - Refresh Button Auto-refresh Fix: Refresh button does NOT reactivate auto-refresh toggle, state preserved correctly (tested: true before refresh, true after refresh). ✅ File Extension Color Coding: Color classes implemented in code (text-blue-500, text-indigo-500, text-purple-500, text-orange-500, text-yellow-500, text-green-600), different extensions mapped to different colors (JSON=blue, JSLT=indigo, PROTO=purple, YAML=orange, JS/TS=yellow, SH=green). ✅ Rename Functionality: Edit buttons implemented to appear on hover, input fields for renaming functionality, rename API endpoint integrated. ✅ Create Files/Folders Inside Directories: Create File and Create Folder buttons available, functionality to create items in specific directories, quick create options for common file types (Config, JSLT). ✅ Drag and Drop Functionality: Drag & drop upload area found with text 'Drag & drop files or click to browse', supported file types display 'Supports: JSON, JSLT, Proto, YAML, Text', file tree items are draggable for moving. ✅ Enhanced File Tree Display: Project Files header and current path display present, scrollable file tree container, proper file and folder icons with colors, settings button for changing directories. ✅ Additional Features: Tab navigation (Files, Build, Deploy) working correctly, auto-refresh controls with checkbox properly implemented, WebSocket connectivity for real-time updates, responsive UI layout, environment selection (DEV, INT, LOAD, PROD, TEST) in Deploy tab. RESULT: All Blueprint Creator enhancements from review request successfully verified and working correctly."
 
+  - task: "Blueprint Creator File Switching Fix"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/blueprint/Common/BlueprintContext.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 1 - File Switching Issue: Navigate to Blueprint Creator tab, set root path to /app using manual path entry, click on multiple files (README.md, package.json, server.py), verify that file content changes correctly when switching between files, ensure the editor displays the correct content for each file immediately upon clicking"
+
+  - task: "Blueprint Creator Folder Operations Fix"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/blueprint/FileExplorer/FileTree.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 2 - Folder Rename/Delete Operations: In the file tree, test folder operations - hover over folders to reveal action buttons, verify rename button (Edit icon) is visible for folders, verify delete button (Trash icon) is visible for folders, test renaming a folder (create test folder first if needed), test deleting an empty folder, verify operations work correctly for both files and folders"
+
+  - task: "Blueprint Creator Syntax Highlighting Fix"
+    implemented: true
+    working: "NA"
+    file: "frontend/src/components/blueprint/Editors/CodeEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 3 - Syntax Highlighting for Different File Types: Click on files with different extensions (.json, .md, .yaml, .js, .py, .sh files), verify syntax highlighting is applied correctly for each file type, verify Edit/Preview toggle button is present in the editor, test switching between Edit mode (textarea) and Preview mode (syntax highlighted), verify syntax highlighting is functional with proper language detection"
+
 agent_communication:
   - agent: "main"
     message: "✅ FRONTEND API URL ISSUE RESOLVED: Successfully fixed the frontend API URL configuration by updating .env.local file to use https://trace-blueprint.preview.emergentagent.com instead of localhost:8001. Also fixed missing protoc dependency that was causing backend 503 errors. Browser console now shows correct API_BASE_URL and backend APIs are responding properly. The gRPC integration UI testing blocker has been completely resolved."
