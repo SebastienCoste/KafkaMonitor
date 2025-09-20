@@ -27,6 +27,7 @@ export function BlueprintProvider({ children }) {
   const [buildOutput, setBuildOutput] = useState([]);
   const [outputFiles, setOutputFiles] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
