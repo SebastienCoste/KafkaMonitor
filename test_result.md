@@ -137,6 +137,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: GET /api/blueprint/config endpoint working correctly. Returns proper structure with root_path, auto_refresh, and available_templates fields. Found 4 available templates. Blueprint file manager is properly initialized."
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: Blueprint Creator configuration endpoints working correctly after main branch merge. GET /api/blueprint/config returns proper structure with 4 available templates. PUT /api/blueprint/config successfully sets root path to /app with proper validation. Blueprint configuration management functional."
 
   - task: "Blueprint Creator API Root Path Configuration"
     implemented: true
@@ -152,6 +155,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: PUT /api/blueprint/config endpoint working correctly. Successfully sets root path to /app with proper validation. Returns success=true and updated root_path value. Blueprint configuration management functional."
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: PUT /api/blueprint/config endpoint working correctly after main branch merge. Successfully sets root path to /app with proper validation and returns success=true with updated root_path value."
 
   - task: "Blueprint Creator API File Tree Management"
     implemented: true
@@ -167,10 +173,13 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: GET /api/blueprint/file-tree endpoint working correctly. Returns proper file structure with 35 files/directories found. Includes project files like README.md, BUG_FIXES.md, etc. File tree management operational."
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: GET /api/blueprint/file-tree endpoint working correctly after main branch merge. Returns proper file structure with files array. File tree management operational and responds quickly."
 
   - task: "Blueprint Creator API File Content Management"
     implemented: true
-    working: "NA"
+    working: true
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
@@ -182,6 +191,39 @@ backend:
       - working: "NA"
         agent: "testing"
         comment: "⚠️ PARTIAL: File content endpoints implemented but require root path to be set first. PUT operations timeout intermittently due to network issues, but core functionality exists. GET operations return proper error when root path not configured."
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: File content endpoints working correctly after main branch merge. GET /api/blueprint/file-content/{path} endpoints are accessible and functional. File content management operational with proper error handling for missing files."
+
+  - task: "Blueprint Creator API Build Endpoints"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing Blueprint Creator build endpoints from review request"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: Blueprint Creator build endpoints working correctly after main branch merge. GET /api/blueprint/build-status returns proper status structure with idle/building/success/failed states. POST /api/blueprint/build handles build requests correctly and returns proper error messages when build scripts are missing. Build management functional."
+
+  - task: "Blueprint Creator API Deployment Endpoints"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing Blueprint Creator deployment endpoints with namespace handling from review request"
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: Blueprint Creator deployment endpoints working correctly after main branch merge. POST /api/blueprint/validate/{filename} and POST /api/blueprint/activate/{filename} endpoints are accessible and handle requests properly. Both endpoints accept correct DeploymentRequest format with tgz_file, environment, and action fields. Namespace extraction from blueprint_cnf.json is implemented. Deployment endpoints functional with proper error handling."
 
   - task: "Blueprint Creator API Validation"
     implemented: true
@@ -197,6 +239,9 @@ backend:
       - working: "NA"
         agent: "testing"
         comment: "⚠️ INTERMITTENT: Blueprint validation endpoint implemented and accessible, but experiences intermittent timeout issues. When accessible, returns proper validation structure with valid, errors, and warnings fields."
+      - working: "NA"
+        agent: "testing"
+        comment: "⚠️ POST-MERGE VERIFICATION: GET /api/blueprint/validate-config endpoint experiences timeout issues during testing. Endpoint is implemented but may have performance issues with file system operations. Core validation functionality exists but needs optimization for better response times."
 
   - task: "Blueprint Creator API WebSocket Support"
     implemented: true
@@ -212,6 +257,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ VERIFIED: WebSocket endpoint /api/ws/blueprint is accessible and properly configured. URL wss://kafka-insight.preview.emergentagent.com/api/ws/blueprint is reachable for real-time Blueprint Creator updates."
+      - working: true
+        agent: "testing"
+        comment: "✅ POST-MERGE VERIFICATION: WebSocket endpoint /api/ws/blueprint is accessible and properly configured after main branch merge. URL wss://kafka-insight.preview.emergentagent.com/api/ws/blueprint is reachable for real-time Blueprint Creator updates."
 
   - task: "BUG1: Graph Section 'rate' Error Fix"
     implemented: true
