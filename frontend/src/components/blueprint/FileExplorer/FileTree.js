@@ -244,10 +244,10 @@ export default function FileTree({ files }) {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(item.path);
+              handleDelete(item.path, false); // false indicates it's a file
             }}
             className="h-6 w-6 p-0 text-red-600 hover:text-red-700 opacity-0 group-hover:opacity-100"
-            title="Delete"
+            title="Delete file"
           >
             <Trash2 className="h-3 w-3" />
           </Button>
