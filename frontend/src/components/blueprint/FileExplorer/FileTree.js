@@ -162,6 +162,8 @@ export default function FileTree({ files }) {
       setDraggedItem(null);
     }
   };
+
+  const handleDelete = async (itemPath, isDirectory = false) => {
     const itemType = isDirectory ? 'folder' : 'file';
     if (!window.confirm(`Are you sure you want to delete this ${itemType} "${itemPath}"?${isDirectory ? '\n\nThis will delete all contents permanently.' : ''}`)) {
       return;
