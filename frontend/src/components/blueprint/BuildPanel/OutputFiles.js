@@ -27,9 +27,34 @@ export default function OutputFiles() {
     return new Date(timestamp * 1000).toLocaleString();
   };
 
+  const handleDelete = async (file) => {
+    if (!window.confirm(`Are you sure you want to delete "${file.name}"?`)) {
+      return;
+    }
+    
+    try {
+      // Call backend to delete the file
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/delete-file/${encodeURIComponent(file.path)}`,
+        { method: 'DELETE' }
+      );
+      
+      if (response.ok) {
+        toast.success(`Deleted ${file.name}`);
+        loadOutputFiles(); // Refresh the list
+      } else {
+        throw new Error(`Failed to delete file: ${response.status}`);
+      }
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      toast.error(`Failed to delete ${file.name}: ${error.message}`);
+    }
+  };
+
   const handleDownload = (file) => {
     // In a real implementation, this would trigger a file download
     console.log('Download file:', file);
+    toast.info('Download functionality to be implemented');
   };
 
   return (
