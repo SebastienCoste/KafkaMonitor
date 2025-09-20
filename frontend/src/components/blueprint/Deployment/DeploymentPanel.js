@@ -11,7 +11,8 @@ import {
   FileArchive, 
   AlertTriangle,
   Clock,
-  RefreshCw
+  RefreshCw,
+  Terminal
 } from 'lucide-react';
 
 export default function DeploymentPanel() {
@@ -27,6 +28,8 @@ export default function DeploymentPanel() {
   const [selectedFile, setSelectedFile] = useState('');
   const [deploymentResults, setDeploymentResults] = useState([]);
   const [deploymentLoading, setDeploymentLoading] = useState(false);
+  const [scriptOutput, setScriptOutput] = useState('');
+  const [showScriptConsole, setShowScriptConsole] = useState(false);
 
   const handleValidate = async () => {
     if (!selectedFile) {
@@ -62,6 +65,9 @@ export default function DeploymentPanel() {
     }
 
     setDeploymentLoading(true);
+    setScriptOutput('');
+    setShowScriptConsole(true);
+    
     try {
       const response = await fetch(
         `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/validate-script/${selectedFile}`,
@@ -76,6 +82,10 @@ export default function DeploymentPanel() {
       );
       
       const result = await response.json();
+      
+      // Display script output in console
+      setScriptOutput(result.output || 'No output received');
+      
       setDeploymentResults([{
         action: 'validate-script',
         timestamp: new Date(),
@@ -85,10 +95,12 @@ export default function DeploymentPanel() {
       if (result.success) {
         toast.success('Blueprint validation script completed successfully');
       } else {
-        toast.error(`Blueprint validation script failed: ${result.output}`);
+        toast.error(`Blueprint validation script failed (exit code: ${result.return_code})`);
       }
     } catch (error) {
-      toast.error(`Script execution failed: ${error.message}`);
+      const errorMsg = `Script execution failed: ${error.message}`;
+      setScriptOutput(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setDeploymentLoading(false);
     }
@@ -101,6 +113,9 @@ export default function DeploymentPanel() {
     }
 
     setDeploymentLoading(true);
+    setScriptOutput('');
+    setShowScriptConsole(true);
+    
     try {
       const response = await fetch(
         `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/activate-script/${selectedFile}`,
@@ -115,6 +130,10 @@ export default function DeploymentPanel() {
       );
       
       const result = await response.json();
+      
+      // Display script output in console
+      setScriptOutput(result.output || 'No output received');
+      
       setDeploymentResults([{
         action: 'activate-script',
         timestamp: new Date(),
@@ -124,10 +143,12 @@ export default function DeploymentPanel() {
       if (result.success) {
         toast.success('Blueprint activation script completed successfully');
       } else {
-        toast.error(`Blueprint activation script failed: ${result.output}`);
+        toast.error(`Blueprint activation script failed (exit code: ${result.return_code})`);
       }
     } catch (error) {
-      toast.error(`Script execution failed: ${error.message}`);
+      const errorMsg = `Script execution failed: ${error.message}`;
+      setScriptOutput(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setDeploymentLoading(false);
     }
@@ -357,6 +378,32 @@ export default function DeploymentPanel() {
                   </div>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Script Console */}
+      {showScriptConsole && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Terminal className="h-5 w-5" />
+                <span>Script Console</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowScriptConsole(false)}
+              >
+                ✕
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-900 text-gray-100 font-mono text-sm p-4 rounded max-h-64 overflow-y-auto">
+              <pre className="whitespace-pre-wrap">{scriptOutput || 'Waiting for script output...'}</pre>
             </div>
           </CardContent>
         </Card>

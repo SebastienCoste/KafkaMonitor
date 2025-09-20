@@ -37,6 +37,10 @@ export default function FileBrowser() {
       // Use the File System Access API if available (modern browsers)
       if ('showDirectoryPicker' in window) {
         const directoryHandle = await window.showDirectoryPicker();
+        
+        // Try to get the path from the directory handle
+        // Note: For security reasons, we can't get the full system path directly
+        // We'll prompt the user to confirm the path
         const path = prompt(
           `Selected directory: "${directoryHandle.name}"\n\nPlease enter the full path to this directory:`,
           `/path/to/${directoryHandle.name}`
@@ -46,15 +50,35 @@ export default function FileBrowser() {
           await handleSetPathDirectly(path);
         }
       } else {
-        // Fallback: Ask user to manually enter the path
-        const path = prompt(
-          'Please enter the full path to your blueprint directory:',
-          '/path/to/your/blueprint/directory'
-        );
+        // Fallback for older browsers: use hidden file input to browse directories
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.webkitdirectory = true;
+        input.multiple = false; // We don't want to upload files
         
-        if (path) {
-          await handleSetPathDirectly(path);
-        }
+        input.onchange = (event) => {
+          const files = event.target.files;
+          if (files && files.length > 0) {
+            // Get directory name from the first file's path
+            const firstFile = files[0];
+            const pathParts = firstFile.webkitRelativePath.split('/');
+            if (pathParts.length > 1) {
+              const dirName = pathParts[0];
+              const path = prompt(
+                `Selected directory: "${dirName}"\n\nPlease enter the full path to this directory:`,
+                `/path/to/${dirName}`
+              );
+              
+              if (path) {
+                handleSetPathDirectly(path);
+              }
+            }
+          }
+          // Clear the input to avoid keeping file references
+          input.value = '';
+        };
+        
+        input.click();
       }
     } catch (error) {
       if (error.name !== 'AbortError') {

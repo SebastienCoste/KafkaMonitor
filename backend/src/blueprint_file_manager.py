@@ -17,6 +17,8 @@ from .blueprint_models import (
     ALLOWED_EXTENSIONS, MAX_FILE_SIZE, DEFAULT_TEMPLATES
 )
 
+# Persistent config file location
+BLUEPRINT_CONFIG_FILE = "/tmp/blueprint_config.json"
 
 class BlueprintFileSystemEventHandler(FileSystemEventHandler):
     """File system event handler for blueprint directory monitoring"""
@@ -42,12 +44,44 @@ class BlueprintFileManager:
         self.root_path = root_path
         self.observer = None
         self.change_callbacks = []
+        
+        # Load persisted configuration on initialization
+        self._load_config()
+    
+    def _save_config(self):
+        """Save current configuration to persistent storage"""
+        try:
+            config = {
+                "root_path": self.root_path,
+                "timestamp": datetime.now().isoformat()
+            }
+            with open(BLUEPRINT_CONFIG_FILE, 'w') as f:
+                json.dump(config, f)
+        except Exception as e:
+            print(f"Warning: Could not save blueprint config: {e}")
+    
+    def _load_config(self):
+        """Load configuration from persistent storage"""
+        try:
+            if os.path.exists(BLUEPRINT_CONFIG_FILE):
+                with open(BLUEPRINT_CONFIG_FILE, 'r') as f:
+                    config = json.load(f)
+                    saved_root_path = config.get('root_path')
+                    if saved_root_path and os.path.exists(saved_root_path):
+                        self.root_path = saved_root_path
+                        print(f"Restored blueprint root path: {self.root_path}")
+        except Exception as e:
+            print(f"Warning: Could not load blueprint config: {e}")
     
     def set_root_path(self, root_path: str):
         """Set the root path for blueprint operations"""
         self.root_path = os.path.abspath(root_path)
         if not os.path.exists(self.root_path):
             raise FileNotFoundError(f"Root path does not exist: {self.root_path}")
+        
+        # Persist the configuration
+        self._save_config()
+        print(f"Set and persisted blueprint root path: {self.root_path}")
     
     def validate_path(self, relative_path: str) -> str:
         """Validate and resolve a relative path within the root directory"""

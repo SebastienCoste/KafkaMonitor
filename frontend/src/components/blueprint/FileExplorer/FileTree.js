@@ -22,13 +22,16 @@ export default function FileTree({ files }) {
     loadFileContent,
     createFile,
     createDirectory,
-    deleteFile
+    deleteFile,
+    refreshFileTree
   } = useBlueprintContext();
   
   const [expandedFolders, setExpandedFolders] = useState(new Set(['']));
   const [creatingIn, setCreatingIn] = useState(null);
   const [createType, setCreateType] = useState(null); // 'file' or 'folder'
   const [createName, setCreateName] = useState('');
+  const [draggedItem, setDraggedItem] = useState(null);
+  const [dragOverItem, setDragOverItem] = useState(null);
 
   const toggleFolder = (path) => {
     const newExpanded = new Set(expandedFolders);
@@ -91,16 +94,87 @@ export default function FileTree({ files }) {
     setCreateName('');
   };
 
-  const handleDelete = async (itemPath) => {
-    if (!window.confirm(`Are you sure you want to delete "${itemPath}"?`)) {
+  const handleDragStart = (e, item) => {
+    setDraggedItem(item);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', ''); // Required for Firefox
+  };
+
+  const handleDragOver = (e, item) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    // Only allow dropping into directories
+    if (item.type === 'directory') {
+      setDragOverItem(item.path);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    // Only clear if leaving to a non-child element
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverItem(null);
+    }
+  };
+
+  const handleDrop = async (e, targetItem) => {
+    e.preventDefault();
+    setDragOverItem(null);
+    
+    if (!draggedItem || !targetItem || targetItem.type !== 'directory') {
+      return;
+    }
+    
+    // Don't allow dropping item into itself or its children
+    if (draggedItem.path === targetItem.path || targetItem.path.startsWith(draggedItem.path + '/')) {
+      toast.error('Cannot move item into itself or its children');
+      return;
+    }
+    
+    try {
+      const sourcePath = draggedItem.path;
+      const targetDir = targetItem.path;
+      const fileName = draggedItem.name;
+      const newPath = targetDir ? `${targetDir}/${fileName}` : fileName;
+      
+      // Use backend API to move the file/folder
+      const response = await fetch(
+        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/move-file`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source_path: sourcePath,
+            destination_path: newPath
+          })
+        }
+      );
+      
+      if (response.ok) {
+        toast.success(`Moved ${draggedItem.name} to ${targetItem.name}`);
+        // Refresh file tree to show changes
+        refreshFileTree();
+      } else {
+        throw new Error(`Failed to move item: ${response.status}`);
+      }
+    } catch (error) {
+      toast.error(`Failed to move item: ${error.message}`);
+    } finally {
+      setDraggedItem(null);
+    }
+  };
+
+  const handleDelete = async (itemPath, isDirectory = false) => {
+    const itemType = isDirectory ? 'folder' : 'file';
+    if (!window.confirm(`Are you sure you want to delete this ${itemType} "${itemPath}"?${isDirectory ? '\n\nThis will delete all contents permanently.' : ''}`)) {
       return;
     }
 
     try {
       await deleteFile(itemPath);
-      toast.success(`Deleted: ${itemPath}`);
+      toast.success(`Deleted ${itemType}: ${itemPath}`);
     } catch (error) {
-      toast.error(`Failed to delete: ${error.message}`);
+      toast.error(`Failed to delete ${itemType}: ${error.message}`);
     }
   };
 
@@ -126,8 +200,13 @@ export default function FileTree({ files }) {
         <div key={item.path}>
           <div
             className={`flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
-              depth > 0 ? `ml-${depth * 4}` : ''
-            }`}
+              dragOverItem === item.path ? 'bg-blue-100 border-l-4 border-blue-500' : ''
+            } ${depth > 0 ? `ml-${depth * 4}` : ''}`}
+            draggable
+            onDragStart={(e) => handleDragStart(e, item)}
+            onDragOver={(e) => handleDragOver(e, item)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, item)}
           >
             <div className="flex items-center space-x-1 flex-1" onClick={() => toggleFolder(item.path)}>
               {isExpanded ? (
@@ -169,10 +248,10 @@ export default function FileTree({ files }) {
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDelete(item.path);
+                  handleDelete(item.path, true); // true indicates it's a directory
                 }}
                 className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                title="Delete"
+                title="Delete folder"
               >
                 <Trash2 className="h-3 w-3" />
               </Button>
@@ -227,6 +306,8 @@ export default function FileTree({ files }) {
         className={`group flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
           isSelected ? 'bg-blue-50 border-r-2 border-blue-500' : ''
         } ${depth > 0 ? `ml-${depth * 4}` : ''}`}
+        draggable
+        onDragStart={(e) => handleDragStart(e, item)}
       >
         <div className="flex items-center space-x-2 flex-1" onClick={() => handleFileClick(item.path)}>
           {getFileIcon(item.name)}
@@ -243,10 +324,10 @@ export default function FileTree({ files }) {
             size="sm"
             onClick={(e) => {
               e.stopPropagation();
-              handleDelete(item.path);
+              handleDelete(item.path, false); // false indicates it's a file
             }}
             className="h-6 w-6 p-0 text-red-600 hover:text-red-700 opacity-0 group-hover:opacity-100"
-            title="Delete"
+            title="Delete file"
           >
             <Trash2 className="h-3 w-3" />
           </Button>
