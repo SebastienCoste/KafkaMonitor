@@ -595,6 +595,32 @@ async def delete_blueprint_file(path: str):
         logger.error(f"Error deleting file {path}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/blueprint/move-file")
+async def move_blueprint_file(request: Dict[str, str]):
+    """Move or rename a blueprint file/directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    
+    source_path = request.get('source_path')
+    destination_path = request.get('destination_path')
+    
+    if not source_path or not destination_path:
+        raise HTTPException(status_code=400, detail="Source and destination paths are required")
+    
+    try:
+        await blueprint_file_manager.move_file(source_path, destination_path)
+        
+        # Notify WebSocket clients about file move
+        await broadcast_blueprint_change("file_moved", {
+            "source_path": source_path,
+            "destination_path": destination_path
+        })
+        
+        return {"success": True}
+    except Exception as e:
+        logger.error(f"Error moving file {source_path} to {destination_path}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.post("/blueprint/create-directory")
 async def create_blueprint_directory(request: FileOperationRequest):
     """Create a new directory"""
