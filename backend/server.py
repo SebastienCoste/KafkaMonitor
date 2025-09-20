@@ -781,8 +781,8 @@ async def validate_blueprint(filepath: str, request: DeploymentRequest):
         logger.error(f"❌ Error validating blueprint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/activate/{filename}")
-async def activate_blueprint(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/activate/{filepath:path}")
+async def activate_blueprint(filepath: str, request: DeploymentRequest):
     """Activate blueprint with blueprint server"""
     if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
