@@ -72,12 +72,21 @@ export function BlueprintProvider({ children }) {
     // Load existing configuration on mount
     const loadInitialConfig = async () => {
       try {
-        const config = await getBlueprintConfig();
+        console.log('Loading initial blueprint configuration...');
+        const response = await axios.get(`${API_BASE_URL}/api/blueprint/config`);
+        const config = response.data;
+        console.log('Loaded config:', config);
+        
         if (config.root_path) {
+          console.log('Setting root path:', config.root_path);
           setRootPath(config.root_path);
           setAutoRefresh(config.auto_refresh);
+          
           // Auto-load file tree if root path is set
-          await refreshFileTree();
+          console.log('Loading file tree...');
+          const fileTreeResponse = await axios.get(`${API_BASE_URL}/api/blueprint/file-tree`);
+          setFileTree(fileTreeResponse.data.files || []);
+          console.log('File tree loaded successfully');
         }
       } catch (error) {
         console.error('Error loading initial config:', error);
