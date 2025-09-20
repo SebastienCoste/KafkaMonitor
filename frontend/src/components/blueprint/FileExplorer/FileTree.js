@@ -35,6 +35,8 @@ export default function FileTree({ files }) {
   const [createName, setCreateName] = useState('');
   const [draggedItem, setDraggedItem] = useState(null);
   const [dragOverItem, setDragOverItem] = useState(null);
+  const [renamingItem, setRenamingItem] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const toggleFolder = (path) => {
     const newExpanded = new Set(expandedFolders);
