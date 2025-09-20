@@ -450,11 +450,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix gRPC Message Class Resolution Bug"
-    - "P10/P50/P95 Message Age Metrics Backend"
-    - "P10/P50/P95 Display on Topics Page"
-    - "Graph Visualization Window Size Fix"
-    - "gRPC Proto Files Integration"
+    - "Blueprint Creator File Switching Fix"
+    - "Blueprint Creator Folder Operations Fix"
+    - "Blueprint Creator Syntax Highlighting Fix"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
