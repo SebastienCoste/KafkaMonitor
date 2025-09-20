@@ -91,6 +91,8 @@ export function BlueprintProvider({ children }) {
         }
       } catch (error) {
         console.error('Error loading initial config:', error);
+      } finally {
+        setInitializing(false);
       }
     };
 
