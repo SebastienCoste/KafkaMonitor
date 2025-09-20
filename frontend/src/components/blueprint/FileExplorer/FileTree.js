@@ -231,10 +231,33 @@ export default function FileTree({ files }) {
     const ext = filename.split('.').pop()?.toLowerCase();
     switch (ext) {
       case 'json':
-      case 'jslt':
         return <FileText className="h-4 w-4 text-blue-500" />;
+      case 'jslt':
+        return <FileText className="h-4 w-4 text-indigo-500" />;
       case 'proto':
         return <Settings className="h-4 w-4 text-purple-500" />;
+      case 'yaml':
+      case 'yml':
+        return <FileText className="h-4 w-4 text-orange-500" />;
+      case 'js':
+      case 'ts':
+        return <FileText className="h-4 w-4 text-yellow-500" />;
+      case 'sh':
+        return <FileText className="h-4 w-4 text-green-600" />;
+      case 'md':
+        return <FileText className="h-4 w-4 text-blue-600" />;
+      case 'xml':
+        return <FileText className="h-4 w-4 text-red-500" />;
+      case 'txt':
+        return <FileText className="h-4 w-4 text-gray-600" />;
+      case 'py':
+        return <FileText className="h-4 w-4 text-green-500" />;
+      case 'java':
+        return <FileText className="h-4 w-4 text-red-600" />;
+      case 'css':
+        return <FileText className="h-4 w-4 text-blue-400" />;
+      case 'html':
+        return <FileText className="h-4 w-4 text-orange-600" />;
       default:
         return <File className="h-4 w-4 text-gray-400" />;
     }
