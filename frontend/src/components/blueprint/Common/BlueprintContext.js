@@ -74,24 +74,36 @@ export function BlueprintProvider({ children }) {
     const loadInitialConfig = async () => {
       try {
         console.log('Loading initial blueprint configuration...');
+        console.log('API_BASE_URL:', API_BASE_URL);
+        
         const response = await axios.get(`${API_BASE_URL}/api/blueprint/config`);
+        console.log('Config response status:', response.status);
+        console.log('Config response data:', response.data);
+        
         const config = response.data;
         console.log('Loaded config:', config);
         
-        if (config.root_path) {
+        if (config && config.root_path) {
           console.log('Setting root path:', config.root_path);
           setRootPath(config.root_path);
-          setAutoRefresh(config.auto_refresh);
+          setAutoRefresh(config.auto_refresh || true);
           
           // Auto-load file tree if root path is set
           console.log('Loading file tree...');
           const fileTreeResponse = await axios.get(`${API_BASE_URL}/api/blueprint/file-tree`);
+          console.log('File tree response status:', fileTreeResponse.status);
+          console.log('File tree response data:', fileTreeResponse.data);
+          
           setFileTree(fileTreeResponse.data.files || []);
           console.log('File tree loaded successfully');
+        } else {
+          console.log('No root path found in config, staying on setup screen');
         }
       } catch (error) {
         console.error('Error loading initial config:', error);
+        console.error('Error details:', error.response || error.message || error);
       } finally {
+        console.log('Setting initializing to false');
         setInitializing(false);
       }
     };
