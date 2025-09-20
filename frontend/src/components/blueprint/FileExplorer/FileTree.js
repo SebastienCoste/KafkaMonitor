@@ -26,6 +26,9 @@ export default function FileTree({ files }) {
   } = useBlueprintContext();
   
   const [expandedFolders, setExpandedFolders] = useState(new Set(['']));
+  const [creatingIn, setCreatingIn] = useState(null);
+  const [createType, setCreateType] = useState(null); // 'file' or 'folder'
+  const [createName, setCreateName] = useState('');
 
   const toggleFolder = (path) => {
     const newExpanded = new Set(expandedFolders);
@@ -42,6 +45,62 @@ export default function FileTree({ files }) {
       await loadFileContent(filePath);
     } catch (error) {
       console.error('Error loading file:', error);
+    }
+  };
+
+  const handleCreateFile = (parentPath) => {
+    setCreatingIn(parentPath);
+    setCreateType('file');
+    setCreateName('');
+  };
+
+  const handleCreateFolder = (parentPath) => {
+    setCreatingIn(parentPath);
+    setCreateType('folder');
+    setCreateName('');
+  };
+
+  const handleConfirmCreate = async () => {
+    if (!createName.trim()) {
+      toast.error('Please enter a name');
+      return;
+    }
+
+    try {
+      const fullPath = creatingIn ? `${creatingIn}/${createName}` : createName;
+      
+      if (createType === 'file') {
+        await createFile(fullPath);
+        toast.success(`Created file: ${createName}`);
+      } else {
+        await createDirectory(fullPath);
+        toast.success(`Created folder: ${createName}`);
+      }
+      
+      setCreatingIn(null);
+      setCreateType(null);
+      setCreateName('');
+    } catch (error) {
+      toast.error(`Failed to create ${createType}: ${error.message}`);
+    }
+  };
+
+  const handleCancelCreate = () => {
+    setCreatingIn(null);
+    setCreateType(null);
+    setCreateName('');
+  };
+
+  const handleDelete = async (itemPath) => {
+    if (!window.confirm(`Are you sure you want to delete "${itemPath}"?`)) {
+      return;
+    }
+
+    try {
+      await deleteFile(itemPath);
+      toast.success(`Deleted: ${itemPath}`);
+    } catch (error) {
+      toast.error(`Failed to delete: ${error.message}`);
     }
   };
 
