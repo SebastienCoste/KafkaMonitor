@@ -163,9 +163,10 @@ export function BlueprintProvider({ children }) {
       
       if (response.data.success) {
         setRootPath(path);
-        // Force immediate refresh with a small delay to ensure backend is ready
+        // Force immediate file tree refresh
         setTimeout(async () => {
           await refreshFileTree();
+          console.log('✅ Auto-loaded file tree after setting root path');
         }, 500);
       }
     } catch (error) {
