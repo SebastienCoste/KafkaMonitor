@@ -22,7 +22,8 @@ export default function FileTree({ files }) {
     loadFileContent,
     createFile,
     createDirectory,
-    deleteFile
+    deleteFile,
+    refreshFileTree
   } = useBlueprintContext();
   
   const [expandedFolders, setExpandedFolders] = useState(new Set(['']));
