@@ -68,18 +68,6 @@ export default function CodeEditor({ filePath }) {
     setCurrentContent(fileContent);
     setHasChanges(false);
     toast.info('Changes reverted');
-    
-    // Update CodeMirror editor
-    if (viewRef.current) {
-      const transaction = viewRef.current.state.update({
-        changes: {
-          from: 0,
-          to: viewRef.current.state.doc.length,
-          insert: fileContent
-        }
-      });
-      viewRef.current.dispatch(transaction);
-    }
   };
 
   if (!filePath) {
