@@ -75,6 +75,7 @@ export default function DeploymentPanel() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            tgz_file: selectedFile,
             environment: selectedEnvironment,
             action: 'validate'
           })
