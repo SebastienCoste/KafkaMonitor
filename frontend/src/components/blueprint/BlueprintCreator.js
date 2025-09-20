@@ -42,7 +42,8 @@ export default function BlueprintCreator() {
     setAutoRefresh,
     loading,
     refreshFileTree,
-    loadOutputFiles
+    loadOutputFiles,
+    setRootPath: setBlueprintRootPath
   } = useBlueprintContext();
 
   const [activeTab, setActiveTab] = useState('files');
