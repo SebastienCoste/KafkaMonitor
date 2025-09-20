@@ -230,7 +230,7 @@ class BlueprintBuildManager:
     async def deploy_blueprint(self, root_path: str, tgz_file: str, environment: str, 
                              action: DeploymentAction, env_config: EnvironmentConfig, 
                              namespace: str = None) -> DeploymentResult:
-        """Deploy blueprint to blueprint server"""
+        """Deploy blueprint to blueprint server using correct PUT endpoint"""
         
         try:
             # Validate .tgz file exists
@@ -243,19 +243,19 @@ class BlueprintBuildManager:
             if not os.path.exists(full_tgz_path):
                 raise FileNotFoundError(f"Blueprint file not found: {tgz_file}")
             
-            # Determine API endpoint with namespace substitution
-            if action == DeploymentAction.VALIDATE:
-                endpoint_path = env_config.validate_path
-            else:
-                endpoint_path = env_config.activate_path
+            # Use namespace if provided, otherwise use a default
+            if not namespace:
+                namespace = "default"
             
-            # Replace namespace placeholder if provided
-            if namespace and '{namespace}' in endpoint_path:
-                endpoint_path = endpoint_path.replace('{namespace}', namespace)
+            # Determine API endpoint with namespace
+            if action == DeploymentAction.VALIDATE:
+                endpoint_path = env_config.validate_path.replace('{namespace}', namespace)
+            else:
+                endpoint_path = env_config.activate_path.replace('{namespace}', namespace)
             
             endpoint = env_config.base_url + endpoint_path
             
-            # Prepare headers
+            # Prepare headers for binary upload
             headers = {
                 env_config.auth_header_name: env_config.auth_header_value,
                 'Content-Type': 'application/octet-stream'
@@ -265,9 +265,9 @@ class BlueprintBuildManager:
             with open(full_tgz_path, 'rb') as f:
                 blueprint_data = f.read()
             
-            # Make HTTP request
+            # Make HTTP PUT request (not POST)
             async with httpx.AsyncClient(timeout=60.0) as client:
-                response = await client.post(
+                response = await client.put(  # Changed from POST to PUT
                     endpoint,
                     content=blueprint_data,
                     headers=headers
