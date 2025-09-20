@@ -129,6 +129,23 @@ export default function CodeEditor({ filePath }) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={() => setIsEditing(!isEditing)}
+          >
+            {isEditing ? (
+              <>
+                <Eye className="h-4 w-4 mr-1" />
+                Preview
+              </>
+            ) : (
+              <>
+                <Edit className="h-4 w-4 mr-1" />
+                Edit
+              </>
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleRevert}
             disabled={!hasChanges || loading}
           >
