@@ -487,6 +487,7 @@ export function BlueprintProvider({ children }) {
     createFile,
     deleteFile,
     createDirectory,
+    renameFile,
     buildBlueprint,
     cancelBuild,
     loadOutputFiles,
