@@ -306,6 +306,8 @@ export default function FileTree({ files }) {
         className={`group flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
           isSelected ? 'bg-blue-50 border-r-2 border-blue-500' : ''
         } ${depth > 0 ? `ml-${depth * 4}` : ''}`}
+        draggable
+        onDragStart={(e) => handleDragStart(e, item)}
       >
         <div className="flex items-center space-x-2 flex-1" onClick={() => handleFileClick(item.path)}>
           {getFileIcon(item.name)}
