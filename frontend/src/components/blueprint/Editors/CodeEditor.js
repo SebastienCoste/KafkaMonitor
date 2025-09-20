@@ -1,18 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
 import { Save, RotateCcw } from 'lucide-react';
-
-// CodeMirror imports
-import { EditorView } from '@codemirror/view';
-import { EditorState } from '@codemirror/state';
-import { basicSetup } from 'codemirror';
-import { json } from '@codemirror/lang-json';
-import { javascript } from '@codemirror/lang-javascript';
-import { yaml } from '@codemirror/lang-yaml';
-import { oneDark } from '@codemirror/theme-one-dark';
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
