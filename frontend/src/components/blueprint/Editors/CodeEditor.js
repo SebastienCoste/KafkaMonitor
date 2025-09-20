@@ -6,8 +6,9 @@ import { toast } from 'sonner';
 import { Save, RotateCcw } from 'lucide-react';
 
 // CodeMirror imports
-import { EditorView, basicSetup } from '@codemirror/basic-setup';
+import { EditorView } from '@codemirror/view';
 import { EditorState } from '@codemirror/state';
+import { basicSetup } from 'codemirror';
 import { json } from '@codemirror/lang-json';
 import { javascript } from '@codemirror/lang-javascript';
 import { yaml } from '@codemirror/lang-yaml';
