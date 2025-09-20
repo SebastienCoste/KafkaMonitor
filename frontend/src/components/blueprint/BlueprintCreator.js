@@ -171,7 +171,29 @@ export default function BlueprintCreator() {
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-semibold text-gray-900">Project Files</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Allow changing the blueprint folder
+                      const newPath = prompt('Enter new blueprint directory path:', rootPath || '');
+                      if (newPath && newPath !== rootPath) {
+                        setBlueprintRootPath(newPath).catch(error => {
+                          toast.error(`Failed to change directory: ${error.message}`);
+                        });
+                      }
+                    }}
+                    title="Change Blueprint Directory"
+                  >
+                    <Settings className="h-4 w-4" />
+                  </Button>
                 </div>
+                
+                {rootPath && (
+                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-3">
+                    <strong>Current:</strong> {rootPath}
+                  </div>
+                )}
               </div>
               
               <div className="flex-1 overflow-hidden">
