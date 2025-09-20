@@ -232,7 +232,16 @@ export default function BlueprintCreator() {
                 <div className="flex-1 overflow-hidden">
                   <TabsContent value="files" className="h-full m-0">
                     <div className="h-full flex flex-col">
-                      {selectedFile ? (
+                      {openTabs.length > 0 ? (
+                        <div className="flex-1 overflow-hidden">
+                          <div className="h-full border-l border-gray-200">
+                            <FileTabs />
+                            <div className="flex-1">
+                              <CodeEditor filePath={activeFileTab} />
+                            </div>
+                          </div>
+                        </div>
+                      ) : selectedFile ? (
                         <div className="flex-1 overflow-hidden">
                           <div className="h-full border-l border-gray-200">
                             <div className="p-4 bg-gray-50 border-b border-gray-200">
