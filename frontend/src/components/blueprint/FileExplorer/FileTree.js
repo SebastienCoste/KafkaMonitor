@@ -13,7 +13,10 @@ import {
   Plus,
   Trash2,
   FolderPlus,
-  FilePlus
+  FilePlus,
+  Edit,
+  Check,
+  X
 } from 'lucide-react';
 
 export default function FileTree({ files }) {
