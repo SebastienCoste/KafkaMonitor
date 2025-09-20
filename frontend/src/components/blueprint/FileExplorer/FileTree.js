@@ -257,16 +257,94 @@ export default function FileTree({ files }) {
 
   if (!files || files.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500">
-        <Folder className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-        <p className="text-sm">No files found</p>
+      <div className="p-4">
+        <div className="text-center text-gray-500 mb-4">
+          <Folder className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+          <p className="text-sm">No files found</p>
+        </div>
+        
+        <div className="space-y-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleCreateFile('')}
+            className="w-full justify-start"
+          >
+            <FilePlus className="h-4 w-4 mr-2" />
+            Create File
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleCreateFolder('')}
+            className="w-full justify-start"
+          >
+            <FolderPlus className="h-4 w-4 mr-2" />
+            Create Folder
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="h-full overflow-y-auto">
+      {/* Root level create input */}
+      {creatingIn === '' && (
+        <div className="flex items-center p-2 bg-blue-50 border-b">
+          <div className="flex items-center space-x-1 flex-1">
+            {createType === 'file' ? (
+              <File className="h-4 w-4 text-gray-400" />
+            ) : (
+              <Folder className="h-4 w-4 text-yellow-500" />
+            )}
+            <Input
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder={`Enter ${createType} name`}
+              className="h-6 text-sm"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleConfirmCreate();
+                } else if (e.key === 'Escape') {
+                  handleCancelCreate();
+                }
+              }}
+            />
+            <Button size="sm" onClick={handleConfirmCreate} className="h-6">
+              ✓
+            </Button>
+            <Button size="sm" variant="ghost" onClick={handleCancelCreate} className="h-6">
+              ✕
+            </Button>
+          </div>
+        </div>
+      )}
+      
       {files.map(item => renderFileTreeItem(item))}
+      
+      {/* Root level create buttons */}
+      <div className="p-2 border-t space-y-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleCreateFile('')}
+          className="w-full justify-start"
+        >
+          <FilePlus className="h-4 w-4 mr-2" />
+          Create File
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleCreateFolder('')}
+          className="w-full justify-start"
+        >
+          <FolderPlus className="h-4 w-4 mr-2" />
+          Create Folder
+        </Button>
+      </div>
     </div>
   );
 }
