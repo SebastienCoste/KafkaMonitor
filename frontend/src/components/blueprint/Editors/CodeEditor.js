@@ -11,6 +11,7 @@ export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
   const [currentContent, setCurrentContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
   // Update content when file changes
   useEffect(() => {
