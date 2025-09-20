@@ -913,9 +913,13 @@ async def validate_blueprint_script(filepath: str, request: DeploymentRequest):
         logger.error(f"❌ Error running validate script: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/activate-script/{filename}")
-async def activate_blueprint_script(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/activate-script/{filepath:path}")
+async def activate_blueprint_script(filepath: str, request: DeploymentRequest):
     """Run activateBlueprint.sh script with specified parameters"""
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔧 Script activation requested for filepath: {filepath}, filename: {filename}")
+    
     if not blueprint_file_manager or not environment_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
