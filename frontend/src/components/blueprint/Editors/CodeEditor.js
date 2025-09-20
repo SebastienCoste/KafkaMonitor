@@ -18,90 +18,21 @@ export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
   const [currentContent, setCurrentContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
-  const editorRef = useRef(null);
-  const viewRef = useRef(null);
 
   // Update content when file changes
   useEffect(() => {
-    setCurrentContent(fileContent);
+    setCurrentContent(fileContent || '');
     setHasChanges(false);
-    
-    // Update CodeMirror editor if it exists
-    if (viewRef.current) {
-      const transaction = viewRef.current.state.update({
-        changes: {
-          from: 0,
-          to: viewRef.current.state.doc.length,
-          insert: fileContent
-        }
-      });
-      viewRef.current.dispatch(transaction);
-    }
   }, [fileContent]);
 
-  // Initialize CodeMirror editor
-  useEffect(() => {
-    if (!editorRef.current || !filePath) return;
+  const handleContentChange = (event) => {
+    const newContent = event.target.value;
+    setCurrentContent(newContent);
+    setHasChanges(newContent !== fileContent);
+  };
 
-    const extensions = [
-      basicSetup,
-      EditorView.updateListener.of((update) => {
-        if (update.docChanged) {
-          const content = update.state.doc.toString();
-          setCurrentContent(content);
-          setHasChanges(content !== fileContent);
-        }
-      }),
-      EditorView.theme({
-        '&': { height: '100%' },
-        '.cm-scroller': { overflow: 'auto' },
-        '.cm-editor': { height: '100%' },
-        '.cm-focused': { outline: 'none' }
-      })
-    ];
-
-    // Add language support based on file extension
-    const ext = getFileExtension(filePath);
-    switch (ext) {
-      case 'json':
-        extensions.push(json());
-        break;
-      case 'jslt':
-        extensions.push(javascript()); // JSLT is JavaScript-like
-        break;
-      case 'yaml':
-      case 'yml':
-        extensions.push(yaml());
-        break;
-      case 'js':
-      case 'sh':
-        extensions.push(javascript());
-        break;
-      default:
-        // Plain text, no special highlighting
-        break;
-    }
-
-    const startState = EditorState.create({
-      doc: currentContent,
-      extensions
-    });
-
-    const view = new EditorView({
-      state: startState,
-      parent: editorRef.current
-    });
-
-    viewRef.current = view;
-
-    return () => {
-      view.destroy();
-      viewRef.current = null;
-    };
-  }, [filePath]);
-
-  const getFileExtension = (filename) => {
-    return filename.split('.').pop()?.toLowerCase() || '';
+  const getFileExtension = (filePath) => {
+    return filePath?.split('.').pop()?.toLowerCase() || '';
   };
 
   const getFileMode = (filename) => {
