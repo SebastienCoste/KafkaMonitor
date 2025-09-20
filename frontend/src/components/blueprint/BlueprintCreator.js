@@ -14,6 +14,7 @@ import FileTree from './FileExplorer/FileTree';
 import FileBrowser from './FileExplorer/FileBrowser';
 import FileUpload from './FileExplorer/FileUpload';
 import CodeEditor from './Editors/CodeEditor';
+import FileTabs from './Editors/FileTabs';
 import BuildControls from './BuildPanel/BuildControls';
 import ConsoleOutput from './BuildPanel/ConsoleOutput';
 import OutputFiles from './BuildPanel/OutputFiles';
