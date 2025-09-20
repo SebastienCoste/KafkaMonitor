@@ -249,7 +249,17 @@ export function BlueprintProvider({ children }) {
       await axios.put(`${API_BASE_URL}/api/blueprint/file-content/${filePath}`, {
         content: content
       });
-      setFileContent(content);
+      
+      // Update tab content and mark as saved
+      setOpenTabs(prev => prev.map(tab => 
+        tab.path === filePath 
+          ? { ...tab, content, hasChanges: false, originalContent: content }
+          : tab
+      ));
+      
+      if (activeTab === filePath) {
+        setFileContent(content);
+      }
     } catch (error) {
       console.error('Error saving file content:', error);
       throw error;
