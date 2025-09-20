@@ -122,7 +122,10 @@ export default function BlueprintCreator() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={refreshFileTree}
+                  onClick={() => {
+                    // Only refresh file tree, don't affect auto-refresh state
+                    refreshFileTree();
+                  }}
                   disabled={loading}
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
