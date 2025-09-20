@@ -5931,8 +5931,8 @@ if __name__ == "__main__":
     
     success = tester.test_blueprint_deployment_endpoints_filepath_fix()
     
-    # Print final summary
-    tester.print_summary()
+    # Print final results
+    print(f"\n📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if success:
         print("\n🎉 Blueprint Deployment Endpoints Filepath Fix Test PASSED!")
