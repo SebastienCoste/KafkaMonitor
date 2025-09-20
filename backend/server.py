@@ -948,7 +948,7 @@ async def activate_blueprint_script(filepath: str, request: DeploymentRequest):
             'bash', script_path,
             f'--env={request.environment.upper()}',
             f'--api-key={api_key}',
-            filename,
+            filepath,  # Pass the full filepath (e.g., "out/blueprint.tgz") to the script
             cwd=blueprint_file_manager.root_path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT
