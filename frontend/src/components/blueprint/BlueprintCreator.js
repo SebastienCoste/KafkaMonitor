@@ -285,6 +285,10 @@ export default function BlueprintCreator() {
                       <Settings className="h-4 w-4" />
                       <span>Deploy</span>
                     </TabsTrigger>
+                    <TabsTrigger value="verify" className="flex items-center space-x-2">
+                      <Database className="h-4 w-4" />
+                      <span>Verify</span>
+                    </TabsTrigger>
                   </TabsList>
                 </div>
 
