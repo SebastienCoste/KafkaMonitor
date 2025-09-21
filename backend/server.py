@@ -855,6 +855,134 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
 
 # Script endpoints removed as per FIX 1 requirement
 
+# Redis Verify Endpoints
+
+@api_router.get("/redis/files")
+async def get_redis_files(environment: str, namespace: Optional[str] = None):
+    """Get Redis files for environment and namespace"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    try:
+        # Use provided namespace or detect from blueprint
+        if not namespace:
+            if not blueprint_manager:
+                raise HTTPException(status_code=503, detail="Blueprint manager not initialized")
+            
+            namespace = await blueprint_manager.get_current_namespace()
+            if not namespace:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="No namespace provided and unable to detect from blueprint configuration"
+                )
+        
+        logger.info(f"🔍 Getting Redis files for environment: {environment}, namespace: {namespace}")
+        files = await redis_service.get_files_by_namespace(environment, namespace)
+        
+        return {
+            "status": "success",
+            "environment": environment,
+            "namespace": namespace,
+            "files": [
+                {
+                    "key": file.key,
+                    "size_bytes": file.size_bytes,
+                    "last_modified": file.last_modified
+                }
+                for file in files
+            ],
+            "total_count": len(files)
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get Redis files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/redis/file-content")
+async def get_redis_file_content(key: str, environment: str):
+    """Get content of specific Redis file"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    try:
+        logger.info(f"🔍 Getting Redis file content for key: {key}, environment: {environment}")
+        content = await redis_service.get_file_content(environment, key)
+        
+        return {
+            "status": "success",
+            "key": key,
+            "environment": environment,
+            "content": content,
+            "content_type": "application/json"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get Redis file content: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/redis/test-connection")
+async def test_redis_connection(request: Dict[str, str]):
+    """Test Redis connection for environment"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    environment = request.get('environment')
+    if not environment:
+        raise HTTPException(status_code=400, detail="Environment is required")
+    
+    try:
+        logger.info(f"🔍 Testing Redis connection for environment: {environment}")
+        result = await redis_service.test_connection(environment)
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Redis connection test failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/redis/environments")
+async def get_redis_environments():
+    """Get list of environments with Redis configuration"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    try:
+        environments = redis_service.get_available_environments()
+        return {
+            "status": "success",
+            "environments": environments
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get Redis environments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/namespace")
+async def get_blueprint_namespace():
+    """Get current blueprint namespace"""
+    if not blueprint_manager:
+        raise HTTPException(status_code=503, detail="Blueprint manager not initialized")
+    
+    try:
+        logger.info("🔍 Getting current blueprint namespace")
+        namespace = await blueprint_manager.get_current_namespace()
+        
+        if not namespace:
+            raise HTTPException(
+                status_code=404,
+                detail="Blueprint namespace not found in configuration"
+            )
+        
+        return {
+            "namespace": namespace,
+            "source": "blueprint_cnf.json"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get blueprint namespace: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 async def broadcast_blueprint_change(event_type: str, data: Dict[str, Any]):
     """Broadcast blueprint changes to all WebSocket clients"""
     if blueprint_websocket_connections:
