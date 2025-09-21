@@ -32,7 +32,9 @@ import {
   AlertTriangle,
   CheckCircle,
   Clock,
-  Database
+  Database,
+  Plus,
+  X
 } from 'lucide-react';
 
 export default function BlueprintCreator() {
