@@ -12,9 +12,12 @@ import {
   Zap, 
   Shield, 
   BarChart3,
-  Network,
-  Database,
-  Settings
+  Map,
+  MapPin,
+  Settings,
+  Eye,
+  Route,
+  Compass
 } from 'lucide-react';
 
 const LandingPage = ({ onNavigate, availableTabs }) => {
