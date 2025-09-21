@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw, FolderOpen } from 'lucide-react';
+import { Search, Activity, Map as MapIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw, FolderOpen } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 console.log('🌐 Main App API_BASE_URL:', API_BASE_URL);
