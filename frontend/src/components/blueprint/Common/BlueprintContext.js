@@ -94,16 +94,24 @@ export function BlueprintProvider({ children }) {
         console.log('📋 Config root_path:', config?.root_path);
         
         if (config && config.root_path) {
-          console.log('Setting root path:', config.root_path);
+          console.log('✅ Config has root_path, initializing blueprint...');
+          console.log('📂 Setting root path:', config.root_path);
           setRootPath(config.root_path);
-          setAutoRefresh(config.auto_refresh || false); // FIX 4: Default to false
+          
+          console.log('⚙️ Setting auto-refresh to false (FIX 4)');
+          setAutoRefresh(false); // FIX 4: Always default to false, ignore backend config
           
           // Try to detect namespace
+          console.log('🔍 Detecting namespace...');
           try {
             const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+            console.log('📡 Namespace response status:', namespaceResponse.status);
+            
             if (namespaceResponse.ok) {
               const namespaceData = await namespaceResponse.json();
+              console.log('📋 Namespace data received:', namespaceData);
               const detectedNamespace = namespaceData.namespace || '';
+              console.log('🏷️ Detected namespace:', detectedNamespace);
               setNamespace(detectedNamespace);
               
               // Add to blueprints array
@@ -113,29 +121,37 @@ export function BlueprintProvider({ children }) {
                 namespace: detectedNamespace,
                 name: detectedNamespace || config.root_path.split('/').pop() || config.root_path
               };
+              console.log('📚 Adding blueprint to array:', newBlueprint);
               setBlueprints([newBlueprint]);
               setActiveBlueprint(newBlueprint.id);
+              console.log('✅ Blueprint added and activated');
+            } else {
+              console.warn('⚠️ Namespace request failed with status:', namespaceResponse.status);
             }
           } catch (error) {
-            console.warn('Could not detect namespace:', error);
+            console.warn('⚠️ Could not detect namespace:', error);
           }
           
           // Auto-load file tree if root path is set
-          console.log('Loading file tree...');
+          console.log('📁 Loading file tree...');
           const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`);
-          console.log('File tree response received, status:', fileTreeResponse.status);
+          console.log('📡 File tree response received, status:', fileTreeResponse.status);
           
           if (!fileTreeResponse.ok) {
+            console.error('❌ File tree request failed:', fileTreeResponse.status, fileTreeResponse.statusText);
             throw new Error(`File tree request failed: ${fileTreeResponse.status} ${fileTreeResponse.statusText}`);
           }
           
           const fileTreeData = await fileTreeResponse.json();
-          console.log('File tree response data:', fileTreeData);
+          console.log('📋 File tree response data length:', fileTreeData?.files?.length || 0);
           
           setFileTree(fileTreeData.files || []);
-          console.log('File tree loaded successfully');
+          console.log('✅ File tree loaded successfully');
+          
+          console.log('🎉 Blueprint initialization completed!');
         } else {
-          console.log('No root path found in config, staying on setup screen');
+          console.log('❌ No root path found in config, staying on setup screen');
+          console.log('📋 Config object:', config);
         }
       } catch (error) {
         console.error('Error loading initial config:', error);
