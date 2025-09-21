@@ -365,6 +365,10 @@ export default function BlueprintCreator() {
                       </div>
                     </div>
                   </TabsContent>
+
+                  <TabsContent value="verify" className="h-full m-0">
+                    <VerifySection />
+                  </TabsContent>
                 </div>
               </Tabs>
             </div>
