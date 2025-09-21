@@ -6,6 +6,7 @@ across different environments with TLS security.
 """
 
 import redis
+from redis.cluster import RedisCluster
 import ssl
 import json
 import logging
