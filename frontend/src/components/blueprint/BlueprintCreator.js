@@ -142,9 +142,55 @@ export default function BlueprintCreator() {
               <h1 className="text-xl font-bold text-gray-900">
                 {namespace || 'Blueprint Creator'}
               </h1>
-              <p className="text-sm text-gray-600">
-                {rootPath || 'Select a blueprint root directory to get started'}
-              </p>
+              {/* Multi-blueprint tabs */}
+              {blueprints.length > 0 ? (
+                <div className="flex items-center space-x-2 mt-2">
+                  {blueprints.map((blueprint) => (
+                    <div
+                      key={blueprint.id}
+                      className={`flex items-center space-x-2 px-3 py-1 rounded-md text-sm cursor-pointer transition-colors ${
+                        activeBlueprint === blueprint.id
+                          ? 'bg-blue-100 text-blue-800 border border-blue-300'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                      onClick={() => switchBlueprint(blueprint.id)}
+                    >
+                      <span className="font-mono text-xs">
+                        {blueprint.namespace || blueprint.name}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeBlueprint(blueprint.id);
+                        }}
+                        className="text-gray-500 hover:text-red-600 transition-colors"
+                        title="Close blueprint"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    onClick={() => {
+                      const newPath = prompt('Enter new blueprint directory path:');
+                      if (newPath) {
+                        addBlueprint(newPath).catch(error => {
+                          toast.error(`Failed to add blueprint: ${error.message}`);
+                        });
+                      }
+                    }}
+                    className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                    title="Add another blueprint"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Add</span>
+                  </button>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">
+                  {rootPath || 'Select a blueprint root directory to get started'}
+                </p>
+              )}
             </div>
           </div>
           
