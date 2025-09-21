@@ -563,30 +563,53 @@ function App() {
             <div className="flex items-center space-x-4">
               {/* Page Navigation */}
               <div className="flex items-center space-x-2">
-                <Button
-                  variant={currentPage === 'traces' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage('traces')}
-                >
-                  <Activity className="h-4 w-4 mr-2" />
-                  Trace Viewer
-                </Button>
-                <Button
-                  variant={currentPage === 'grpc' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage('grpc')}
-                >
-                  <Server className="h-4 w-4 mr-2" />
-                  gRPC Integration
-                </Button>
-                <Button
-                  variant={currentPage === 'blueprint' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage('blueprint')}
-                >
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Blueprint Creator
-                </Button>
+                {/* Landing Page Button */}
+                {appConfig?.landing_page?.enabled && (
+                  <Button
+                    variant={currentPage === 'landing' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('landing')}
+                  >
+                    <NetworkIcon className="h-4 w-4 mr-2" />
+                    Home
+                  </Button>
+                )}
+                
+                {/* Trace Viewer */}
+                {availableTabs?.trace_viewer?.enabled && (
+                  <Button
+                    variant={currentPage === 'traces' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('traces')}
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    {availableTabs.trace_viewer.title || 'Trace Viewer'}
+                  </Button>
+                )}
+                
+                {/* gRPC Integration */}
+                {availableTabs?.grpc_integration?.enabled && (
+                  <Button
+                    variant={currentPage === 'grpc' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('grpc')}
+                  >
+                    <Server className="h-4 w-4 mr-2" />
+                    {availableTabs.grpc_integration.title || 'gRPC Integration'}
+                  </Button>
+                )}
+                
+                {/* Blueprint Creator */}
+                {availableTabs?.blueprint_creator?.enabled && (
+                  <Button
+                    variant={currentPage === 'blueprint' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('blueprint')}
+                  >
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    {availableTabs.blueprint_creator.title || 'Blueprint Creator'}
+                  </Button>
+                )}
               </div>
               
               {/* Status indicators - only for trace viewer */}
