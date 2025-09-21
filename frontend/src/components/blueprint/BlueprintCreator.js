@@ -259,6 +259,13 @@ export default function BlueprintCreator() {
               </div>
             </div>
 
+            {/* Resize Handle */}
+            <div
+              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+              onMouseDown={handleMouseDown}
+              title="Drag to resize"
+            />
+
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
