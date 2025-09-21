@@ -3694,7 +3694,7 @@ class KafkaTraceViewerTester:
                 f"{self.base_url}/api/redis/test-connection",
                 json=payload,
                 headers={"Content-Type": "application/json"},
-                timeout=10
+                timeout=15
             )
             
             if response.status_code == 200:
