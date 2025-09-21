@@ -545,6 +545,7 @@ export function BlueprintProvider({ children }) {
     setAutoRefresh,
     setSelectedEnvironment,
     setBuildOutput,
+    setNamespace,
     
     // Tab Management
     switchToTab,
