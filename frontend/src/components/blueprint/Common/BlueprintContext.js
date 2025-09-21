@@ -29,6 +29,8 @@ export function BlueprintProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(false);
   const [namespace, setNamespace] = useState('');
+  const [blueprints, setBlueprints] = useState([]); // Multiple blueprints support
+  const [activeBlueprint, setActiveBlueprint] = useState(null);
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
