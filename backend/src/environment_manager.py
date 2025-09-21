@@ -1,8 +1,8 @@
 """
-Environment Manager for Kafka Monitoring
+Environment Manager for Marauder's Map
 
-Manages switching between different environments (DEV/TEST/INT/LOAD/PROD)
-each with their own Kafka and gRPC configurations.
+This module provides functionality to load and manage different environment
+configurations for the magical monitoring application.
 """
 import os
 import yaml
