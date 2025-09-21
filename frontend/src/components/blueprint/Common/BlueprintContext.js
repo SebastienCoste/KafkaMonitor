@@ -19,7 +19,7 @@ export function BlueprintProvider({ children }) {
   const [fileContent, setFileContent] = useState('');
   const [openTabs, setOpenTabs] = useState([]); // Array of {path, content, hasChanges}
   const [activeTab, setActiveTab] = useState(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false); // FIX 4: Default to false
   const [environments, setEnvironments] = useState([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState('dev');
   const [websocket, setWebsocket] = useState(null);
@@ -28,6 +28,9 @@ export function BlueprintProvider({ children }) {
   const [outputFiles, setOutputFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(false);
+  const [namespace, setNamespace] = useState('');
+  const [blueprints, setBlueprints] = useState([]); // Multiple blueprints support
+  const [activeBlueprint, setActiveBlueprint] = useState(null);
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -73,48 +76,105 @@ export function BlueprintProvider({ children }) {
     // Load existing configuration on mount
     const loadInitialConfig = async () => {
       try {
-        console.log('Loading initial blueprint configuration...');
-        console.log('API_BASE_URL:', API_BASE_URL);
+        console.log('🔄 Loading initial blueprint configuration...');
+        console.log('📍 API_BASE_URL:', API_BASE_URL);
+        setInitializing(true); // Set initializing to true at the start
         
         // Use fetch instead of axios for more reliable requests
-        console.log('Making config request...');
+        console.log('📡 Making config request...');
         const configResponse = await fetch(`${API_BASE_URL}/api/blueprint/config`);
-        console.log('Config response received, status:', configResponse.status);
+        console.log('📡 Config response received, status:', configResponse.status);
         
         if (!configResponse.ok) {
+          console.error('❌ Config request failed:', configResponse.status, configResponse.statusText);
           throw new Error(`Config request failed: ${configResponse.status} ${configResponse.statusText}`);
         }
         
         const config = await configResponse.json();
-        console.log('Loaded config:', config);
+        console.log('📋 Loaded config:', config);
+        console.log('📋 Config root_path:', config?.root_path);
         
         if (config && config.root_path) {
-          console.log('Setting root path:', config.root_path);
+          console.log('✅ Config has root_path, initializing blueprint...');
+          console.log('📂 Setting root path:', config.root_path);
           setRootPath(config.root_path);
-          setAutoRefresh(config.auto_refresh || true);
           
-          // Auto-load file tree if root path is set
-          console.log('Loading file tree...');
-          const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`);
-          console.log('File tree response received, status:', fileTreeResponse.status);
+          console.log('⚙️ Setting auto-refresh to false (FIX 4)');
+          setAutoRefresh(false); // FIX 4: Always default to false, ignore backend config
           
-          if (!fileTreeResponse.ok) {
-            throw new Error(`File tree request failed: ${fileTreeResponse.status} ${fileTreeResponse.statusText}`);
+          // Try to detect namespace
+          console.log('🔍 Detecting namespace...');
+          try {
+            const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+            console.log('📡 Namespace response status:', namespaceResponse.status);
+            
+            if (namespaceResponse.ok) {
+              const namespaceData = await namespaceResponse.json();
+              console.log('📋 Namespace data received:', namespaceData);
+              const detectedNamespace = namespaceData.namespace || '';
+              console.log('🏷️ Detected namespace:', detectedNamespace);
+              setNamespace(detectedNamespace);
+              
+              // Add to blueprints array
+              const newBlueprint = {
+                id: Date.now().toString(),
+                rootPath: config.root_path,
+                namespace: detectedNamespace,
+                name: detectedNamespace || config.root_path.split('/').pop() || config.root_path
+              };
+              console.log('📚 Adding blueprint to array:', newBlueprint);
+              setBlueprints([newBlueprint]);
+              setActiveBlueprint(newBlueprint.id);
+              console.log('✅ Blueprint added and activated');
+            } else {
+              console.warn('⚠️ Namespace request failed with status:', namespaceResponse.status);
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not detect namespace:', error);
           }
           
-          const fileTreeData = await fileTreeResponse.json();
-          console.log('File tree response data:', fileTreeData);
+          // Auto-load file tree if root path is set (with timeout and non-blocking)
+          console.log('📁 Loading file tree with timeout...');
+          try {
+            const fileTreeController = new AbortController();
+            const fileTreeTimeout = setTimeout(() => {
+              console.warn('⏰ File tree request timeout after 5 seconds');
+              fileTreeController.abort();
+            }, 5000);
+
+            const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`, {
+              signal: fileTreeController.signal
+            });
+            clearTimeout(fileTreeTimeout);
+            console.log('📡 File tree response received, status:', fileTreeResponse.status);
+            
+            if (fileTreeResponse.ok) {
+              const fileTreeData = await fileTreeResponse.json();
+              console.log('📋 File tree response data length:', fileTreeData?.files?.length || 0);
+              setFileTree(fileTreeData.files || []);
+              console.log('✅ File tree loaded successfully');
+            } else {
+              console.warn('⚠️ File tree request failed:', fileTreeResponse.status, fileTreeResponse.statusText);
+              // Don't block initialization for file tree failures
+              setFileTree([]);
+            }
+          } catch (fileTreeError) {
+            console.warn('⚠️ File tree loading failed (non-blocking):', fileTreeError.message);
+            // Set empty file tree and continue initialization
+            setFileTree([]);
+          }
           
-          setFileTree(fileTreeData.files || []);
-          console.log('File tree loaded successfully');
+          console.log('🎉 Blueprint initialization completed!');
         } else {
-          console.log('No root path found in config, staying on setup screen');
+          console.log('❌ No root path found in config, staying on setup screen');
+          console.log('📋 Config object:', config);
         }
       } catch (error) {
-        console.error('Error loading initial config:', error);
-        console.error('Error details:', error.message);
+        console.error('❌ Error loading initial config:', error);
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
       } finally {
-        console.log('Setting initializing to false');
+        console.log('🏁 Setting initializing to false');
         setInitializing(false);
       }
     };
@@ -208,20 +268,64 @@ export function BlueprintProvider({ children }) {
   const setBlueprintRootPath = async (path) => {
     try {
       setLoading(true);
-      const response = await axios.put(`${API_BASE_URL}/api/blueprint/config`, {
-        root_path: path
-      });
       
-      if (response.data.success) {
-        setRootPath(path);
-        // Force immediate file tree refresh
-        setTimeout(async () => {
-          await refreshFileTree();
-          console.log('✅ Auto-loaded file tree after setting root path');
-        }, 500);
+      const response = await fetch(`${API_BASE_URL}/api/blueprint/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ root_path: path })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to set blueprint path: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // FIX 3: Reset all selections when path changes
+        setSelectedFile(null);
+        setOpenTabs([]);
+        setActiveTab(null);
+        setFileContent('');
+        
+        setRootPath(data.root_path);
+        
+        // Try to detect namespace
+        let detectedNamespace = '';
+        try {
+          const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+          if (namespaceResponse.ok) {
+            const namespaceData = await namespaceResponse.json();
+            detectedNamespace = namespaceData.namespace || '';
+            setNamespace(detectedNamespace);
+          }
+        } catch (error) {
+          console.warn('Could not detect namespace:', error);
+          setNamespace('');
+        }
+
+        // Add to blueprints array if not already present
+        if (!blueprints.find(bp => bp.rootPath === data.root_path)) {
+          const newBlueprint = {
+            id: Date.now().toString(),
+            rootPath: data.root_path,
+            namespace: detectedNamespace,
+            name: detectedNamespace || data.root_path.split('/').pop() || data.root_path
+          };
+          setBlueprints(prev => [...prev, newBlueprint]);
+          setActiveBlueprint(newBlueprint.id);
+        }
+        
+        // Immediately refresh file tree after setting path
+        await refreshFileTree();
+        
+        console.log(`Blueprint path set to: ${data.root_path}`);
+      } else {
+        throw new Error('Failed to set blueprint path');
       }
     } catch (error) {
-      console.error('Error setting root path:', error);
+      console.error('Error setting blueprint path:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -517,6 +621,82 @@ export function BlueprintProvider({ children }) {
     }
   };
 
+  // Multi-blueprint management functions
+  const addNewBlueprint = async (path) => {
+    try {
+      // Check if blueprint already exists
+      const existingBlueprint = blueprints.find(bp => bp.rootPath === path);
+      if (existingBlueprint) {
+        switchBlueprint(existingBlueprint.id);
+        return;
+      }
+
+      // Create new blueprint entry
+      const newBlueprint = {
+        id: Date.now().toString(),
+        rootPath: path,
+        namespace: '',
+        name: path.split('/').pop() || path
+      };
+
+      // Add to blueprints list
+      setBlueprints(prev => [...prev, newBlueprint]);
+      
+      // Set as active and load
+      setActiveBlueprint(newBlueprint.id);
+      await setBlueprintRootPath(path);
+      
+    } catch (error) {
+      console.error('Error adding blueprint:', error);
+      throw error;
+    }
+  };
+
+  const removeBlueprint = (blueprintId) => {
+    setBlueprints(prev => {
+      const filtered = prev.filter(bp => bp.id !== blueprintId);
+      
+      // If we're removing the active blueprint, switch to another or clear
+      if (activeBlueprint === blueprintId) {
+        if (filtered.length > 0) {
+          const newActive = filtered[0];
+          setActiveBlueprint(newActive.id);
+          setBlueprintRootPath(newActive.rootPath);
+        } else {
+          setActiveBlueprint(null);
+          setRootPath('');
+          setNamespace('');
+          setSelectedFile(null);
+          setOpenTabs([]);
+          setActiveTab(null);
+          setFileContent('');
+          setFileTree([]);
+        }
+      }
+      
+      return filtered;
+    });
+  };
+
+  const switchBlueprint = async (blueprintId) => {
+    const blueprint = blueprints.find(bp => bp.id === blueprintId);
+    if (blueprint) {
+      setActiveBlueprint(blueprintId);
+      await setBlueprintRootPath(blueprint.rootPath);
+    }
+  };
+
+  // Update namespace in blueprint when it changes
+  useEffect(() => {
+    if (activeBlueprint && namespace) {
+      setBlueprints(prev => prev.map(bp => 
+        bp.id === activeBlueprint 
+          ? { ...bp, namespace, name: namespace || bp.name }
+          : bp
+      ));
+    }
+  }, [namespace, activeBlueprint]);
+
   const contextValue = {
     // State
     rootPath,
@@ -534,6 +714,9 @@ export function BlueprintProvider({ children }) {
     outputFiles,
     loading,
     initializing,
+    namespace,
+    blueprints,
+    activeBlueprint,
     
     // Actions
     setRootPath: setBlueprintRootPath,
@@ -543,6 +726,10 @@ export function BlueprintProvider({ children }) {
     setAutoRefresh,
     setSelectedEnvironment,
     setBuildOutput,
+    setNamespace,
+    addBlueprint: addNewBlueprint,
+    removeBlueprint,
+    switchBlueprint,
     
     // Tab Management
     switchToTab,

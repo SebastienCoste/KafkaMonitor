@@ -26,6 +26,8 @@ from src.environment_manager import EnvironmentManager
 from src.blueprint_models import *
 from src.blueprint_file_manager import BlueprintFileManager
 from src.blueprint_build_manager import BlueprintBuildManager
+from src.redis_service import RedisService
+from src.blueprint_manager import BlueprintManager
 
 
 ROOT_DIR = Path(__file__).parent
@@ -48,23 +50,58 @@ blueprint_file_manager: Optional[BlueprintFileManager] = None
 blueprint_build_manager: Optional[BlueprintBuildManager] = None
 blueprint_websocket_connections: List[WebSocket] = []
 
+# Global variables for Redis Verify components
+redis_service: Optional[RedisService] = None
+blueprint_manager: Optional[BlueprintManager] = None
+
 # Configuration paths
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
 ENVIRONMENTS_DIR = CONFIG_DIR / "environments"
 GRPC_PROTOS_DIR = PROTO_DIR / "grpc"  # Updated to use subfolder under proto
 
+async def initialize_blueprint_components():
+    """Initialize Blueprint Creator components (independent of Kafka)"""
+    logger.info("🏗️ Initializing Blueprint Creator components...")
+    global blueprint_file_manager, blueprint_build_manager, redis_service, blueprint_manager, environment_manager
+    
+    try:
+        blueprint_file_manager = BlueprintFileManager()
+        blueprint_build_manager = BlueprintBuildManager()
+        logger.info("✅ Blueprint Creator base components initialized")
+        
+        # Initialize minimal environment manager for blueprint operations
+        if not environment_manager:
+            from src.environment_manager import EnvironmentManager
+            
+            # Create minimal environment manager without protobuf decoder
+            environment_manager = EnvironmentManager(
+                environments_dir=str(CONFIG_DIR / "environments"),
+                protobuf_decoder=None,  # No protobuf support in minimal mode
+                settings={}
+            )
+            logger.info("✅ Minimal Environment Manager initialized for blueprints")
+        
+        # Initialize Redis and Blueprint Manager components
+        logger.info("🔧 Initializing Redis and Blueprint Manager components...")
+        redis_service = RedisService(environment_manager)
+        blueprint_manager = BlueprintManager(blueprint_file_manager)
+        logger.info("✅ Redis and Blueprint Manager components initialized")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Blueprint components: {str(e)}")
+        logger.error(f"🔴 Traceback: {traceback.format_exc()}")
+        raise
+
 async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
     logger.info("🚀 Starting Kafka trace viewer component initialization")
     global graph_builder, kafka_consumer, grpc_client, environment_manager
     global blueprint_file_manager, blueprint_build_manager
+    global redis_service, blueprint_manager
     
-    # Initialize Blueprint Creator components
-    logger.info("🏗️ Initializing Blueprint Creator components...")
-    blueprint_file_manager = BlueprintFileManager()
-    blueprint_build_manager = BlueprintBuildManager()
-    logger.info("✅ Blueprint Creator components initialized")
+    # First initialize Blueprint components (these should always work)
+    await initialize_blueprint_components()
     
     # Check if required directories exist
     if not CONFIG_DIR.exists():
@@ -130,14 +167,19 @@ async def initialize_kafka_components():
                 logger.error(f"🔴 Traceback: {traceback.format_exc()}")
                 raise
         
-        # Initialize Environment Manager
-        logger.info("🌍 Initializing Environment Manager...")
+        # Update Environment Manager with full Kafka setup
+        logger.info("🌍 Updating Environment Manager with Kafka support...")
         environment_manager = EnvironmentManager(
             environments_dir=str(CONFIG_DIR / "environments"),
             protobuf_decoder=decoder,
             settings=settings
         )
-        logger.info("✅ Environment Manager initialized")
+        logger.info("✅ Full Environment Manager initialized with Kafka support")
+        
+        # Update Redis service with full environment manager
+        logger.info("🔧 Updating Redis service with full environment manager...")
+        redis_service = RedisService(environment_manager)
+        logger.info("✅ Redis service updated with full environment support")
         
         # Default to DEV environment (or first available)
         available_envs = environment_manager.list_environments()
@@ -842,6 +884,134 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
 
 # Script endpoints removed as per FIX 1 requirement
 
+# Redis Verify Endpoints
+
+@api_router.get("/redis/files")
+async def get_redis_files(environment: str, namespace: Optional[str] = None):
+    """Get Redis files for environment and namespace"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    try:
+        # Use provided namespace or detect from blueprint
+        if not namespace:
+            if not blueprint_manager:
+                raise HTTPException(status_code=503, detail="Blueprint manager not initialized")
+            
+            namespace = await blueprint_manager.get_current_namespace()
+            if not namespace:
+                raise HTTPException(
+                    status_code=400, 
+                    detail="No namespace provided and unable to detect from blueprint configuration"
+                )
+        
+        logger.info(f"🔍 Getting Redis files for environment: {environment}, namespace: {namespace}")
+        files = await redis_service.get_files_by_namespace(environment, namespace)
+        
+        return {
+            "status": "success",
+            "environment": environment,
+            "namespace": namespace,
+            "files": [
+                {
+                    "key": file.key,
+                    "size_bytes": file.size_bytes,
+                    "last_modified": file.last_modified
+                }
+                for file in files
+            ],
+            "total_count": len(files)
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get Redis files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/redis/file-content")
+async def get_redis_file_content(key: str, environment: str):
+    """Get content of specific Redis file"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    try:
+        logger.info(f"🔍 Getting Redis file content for key: {key}, environment: {environment}")
+        content = await redis_service.get_file_content(environment, key)
+        
+        return {
+            "status": "success",
+            "key": key,
+            "environment": environment,
+            "content": content,
+            "content_type": "application/json"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get Redis file content: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/redis/test-connection")
+async def test_redis_connection(request: Dict[str, str]):
+    """Test Redis connection for environment"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    environment = request.get('environment')
+    if not environment:
+        raise HTTPException(status_code=400, detail="Environment is required")
+    
+    try:
+        logger.info(f"🔍 Testing Redis connection for environment: {environment}")
+        result = await redis_service.test_connection(environment)
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Redis connection test failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/redis/environments")
+async def get_redis_environments():
+    """Get list of environments with Redis configuration"""
+    if not redis_service:
+        raise HTTPException(status_code=503, detail="Redis service not initialized")
+    
+    try:
+        environments = redis_service.get_available_environments()
+        return {
+            "status": "success",
+            "environments": environments
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to get Redis environments: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/namespace")
+async def get_blueprint_namespace():
+    """Get current blueprint namespace"""
+    if not blueprint_manager:
+        raise HTTPException(status_code=503, detail="Blueprint manager not initialized")
+    
+    try:
+        logger.info("🔍 Getting current blueprint namespace")
+        namespace = await blueprint_manager.get_current_namespace()
+        
+        if not namespace:
+            raise HTTPException(
+                status_code=404,
+                detail="Blueprint namespace not found in configuration"
+            )
+        
+        return {
+            "namespace": namespace,
+            "source": "blueprint_cnf.json"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Failed to get blueprint namespace: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 async def broadcast_blueprint_change(event_type: str, data: Dict[str, Any]):
     """Broadcast blueprint changes to all WebSocket clients"""
     if blueprint_websocket_connections:
@@ -1383,9 +1553,19 @@ async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
     logger.info("🚀 Application starting up...")
+    
+    # Always initialize Blueprint components first
+    try:
+        await initialize_blueprint_components()
+        logger.info("✅ Blueprint components startup complete")
+    except Exception as e:
+        logger.error(f"❌ Failed to start Blueprint components: {e}")
+        logger.error("⚠️  Blueprint functionality may be limited")
+    
+    # Then try to initialize Kafka components
     try:
         await initialize_kafka_components()
-        logger.info("✅ Application startup complete")
+        logger.info("✅ Full application startup complete")
     except Exception as e:
         logger.error(f"❌ Failed to start Kafka components: {e}")
         logger.error("⚠️  Continuing without Kafka components - manual initialization required")
@@ -1396,6 +1576,10 @@ async def lifespan(app: FastAPI):
     logger.info("🔄 Application shutting down...")
     if kafka_consumer:
         kafka_consumer.stop_consuming()
+    
+    # Close Redis connections
+    if redis_service:
+        redis_service.close_all_connections()
     
     # Close WebSocket connections
     for websocket in websocket_connections:

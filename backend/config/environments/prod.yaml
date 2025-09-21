@@ -36,5 +36,16 @@ blueprint_server:
   auth_header_name: "x-api-key"
   auth_header_value: "Bearer prod-api-token"
 
+# Redis Configuration for Blueprint Verification
+redis:
+  host: "redis-prod.example.com"
+  port: 6380
+  token: "prod-redis-auth-token-here"
+  ca_cert_path: "config/redis-ca.pem"
+  connection_timeout: 10
+  socket_timeout: 10
+  retry_on_timeout: true
+  health_check_interval: 30
+
 # Note: gRPC Credentials are provided at runtime via UI
 # and stored in memory only - never in config files
