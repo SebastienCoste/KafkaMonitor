@@ -154,10 +154,11 @@ export function BlueprintProvider({ children }) {
           console.log('📋 Config object:', config);
         }
       } catch (error) {
-        console.error('Error loading initial config:', error);
-        console.error('Error details:', error.message);
+        console.error('❌ Error loading initial config:', error);
+        console.error('❌ Error details:', error.message);
+        console.error('❌ Error stack:', error.stack);
       } finally {
-        console.log('Setting initializing to false');
+        console.log('🏁 Setting initializing to false');
         setInitializing(false);
       }
     };
