@@ -28,8 +28,6 @@ export default function DeploymentPanel() {
   const [selectedFile, setSelectedFile] = useState('');
   const [deploymentResults, setDeploymentResults] = useState([]);
   const [deploymentLoading, setDeploymentLoading] = useState(false);
-  const [scriptOutput, setScriptOutput] = useState('');
-  const [showScriptConsole, setShowScriptConsole] = useState(false);
 
   const handleValidate = async () => {
     if (!selectedFile) {
