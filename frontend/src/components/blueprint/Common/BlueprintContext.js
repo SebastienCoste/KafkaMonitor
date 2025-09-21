@@ -568,6 +568,8 @@ export function BlueprintProvider({ children }) {
     loading,
     initializing,
     namespace,
+    blueprints,
+    activeBlueprint,
     
     // Actions
     setRootPath: setBlueprintRootPath,
