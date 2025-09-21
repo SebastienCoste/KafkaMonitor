@@ -65,16 +65,19 @@ const LandingPage = ({ onNavigate, availableTabs }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <div className="flex justify-center mb-6">
-              <div className="p-4 bg-blue-600 rounded-full">
-                <Network className="h-12 w-12 text-white" />
+              <div className="p-4 bg-amber-700 rounded-full shadow-lg border-2 border-amber-600">
+                <Map className="h-12 w-12 text-amber-100" />
               </div>
             </div>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-              <span className="block">Kafka Monitor</span>
-              <span className="block text-blue-600">Dashboard</span>
+              <span className="block text-amber-800">Marauder's</span>
+              <span className="block text-amber-700">Map</span>
             </h1>
-            <p className="mt-6 max-w-md mx-auto text-lg text-gray-500 sm:text-xl md:mt-8 md:max-w-3xl">
-              Comprehensive monitoring and management platform for Kafka traces, gRPC integrations, and blueprint creation with Redis verification.
+            <p className="mt-4 text-lg font-medium text-amber-700 italic">
+              "I solemnly swear I am up to no good"
+            </p>
+            <p className="mt-6 max-w-md mx-auto text-lg text-gray-600 sm:text-xl md:mt-8 md:max-w-3xl">
+              Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection.
             </p>
             
             {/* Quick Stats */}
