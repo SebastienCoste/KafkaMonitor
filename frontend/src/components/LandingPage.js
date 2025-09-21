@@ -24,29 +24,29 @@ const LandingPage = ({ onNavigate, availableTabs }) => {
   const features = [
     {
       id: 'traces',
-      icon: Activity,
-      title: 'Kafka Trace Viewer',
-      description: 'Real-time visualization of Kafka message flows with comprehensive tracing and analytics',
-      features: ['Message Flow Tracking', 'Topic Statistics', 'Performance Metrics', 'Real-time Monitoring'],
-      color: 'bg-blue-500',
+      icon: Route,
+      title: 'Trace Viewer',
+      description: 'Follow the footsteps through Kafka corridors and reveal every message\'s journey',
+      features: ['Footstep Tracking', 'Corridor Statistics', 'Movement Patterns', 'Live Surveillance'],
+      color: 'bg-amber-600',
       enabled: availableTabs?.trace_viewer?.enabled
     },
     {
       id: 'grpc',
-      icon: Server,
+      icon: Eye,
       title: 'gRPC Integration',
-      description: 'Seamless gRPC service integration with advanced testing and management capabilities',
-      features: ['Service Discovery', 'Method Testing', 'Schema Management', 'Environment Switching'],
-      color: 'bg-green-500',
+      description: 'Unlock secret passages and discover hidden gRPC service entrances',
+      features: ['Passage Discovery', 'Secret Testing', 'Map Updates', 'Portal Switching'],
+      color: 'bg-emerald-600',
       enabled: availableTabs?.grpc_integration?.enabled
     },
     {
       id: 'blueprint',
-      icon: FolderOpen,
+      icon: Compass,
       title: 'Blueprint Creator',
-      description: 'Create and manage blueprints with integrated Redis verification and deployment tools',
-      features: ['File Management', 'Redis Verification', 'Multi-Blueprint Support', 'Syntax Highlighting'],
-      color: 'bg-purple-500',
+      description: 'Chart new territories and guard the Redis chamber secrets',
+      features: ['Territory Mapping', 'Chamber Verification', 'Multiple Maps', 'Enchanted Syntax'],
+      color: 'bg-indigo-600',
       enabled: availableTabs?.blueprint_creator?.enabled
     }
   ];
