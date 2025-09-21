@@ -455,10 +455,12 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "Blueprint Creator Frontend Initialization Fix"
+  stuck_tasks:
+    - "Blueprint Creator Frontend Initialization Fix"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
 
   - task: "Enhanced Topic Statistics Implementation (REQ1 & REQ2)"
     implemented: true
