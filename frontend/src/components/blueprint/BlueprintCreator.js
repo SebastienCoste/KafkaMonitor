@@ -31,7 +31,8 @@ import {
   RefreshCw,
   AlertTriangle,
   CheckCircle,
-  Clock
+  Clock,
+  Database
 } from 'lucide-react';
 
 export default function BlueprintCreator() {
