@@ -535,6 +535,7 @@ export function BlueprintProvider({ children }) {
     outputFiles,
     loading,
     initializing,
+    namespace,
     
     // Actions
     setRootPath: setBlueprintRootPath,
