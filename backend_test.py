@@ -3785,6 +3785,10 @@ class KafkaTraceViewerTester:
         result4 = self.test_configuration_structure()
         test_results.append(("Configuration Structure", result4))
         
+        # Test 5: Redis API Endpoints (NEW)
+        result5 = self.test_redis_api_endpoints_comprehensive()
+        test_results.append(("Redis API Endpoints", result5))
+        
         # Print final summary
         print("\n" + "=" * 80)
         print("📊 REVIEW REQUEST TEST SUMMARY")
