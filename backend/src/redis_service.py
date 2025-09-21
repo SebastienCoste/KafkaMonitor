@@ -202,26 +202,74 @@ class RedisService:
         try:
             connection = self._get_connection(environment)
             
-            # Use SCAN to find keys containing namespace
+            # Use multiple search strategies to ensure we find all keys
             files = []
-            cursor = 0
+            found_keys = set()  # Use set to avoid duplicates
             
             logger.info(f"🔍 Scanning Redis keys for namespace '{namespace}' in {environment}")
-            logger.info(f"🔍 Using Redis scan pattern: '*{namespace}*'")
             
-            total_scanned = 0
-            scan_iterations = 0
+            # Strategy 1: Direct pattern match
+            files_found = await self._scan_with_pattern(connection, f"*{namespace}*")
+            for file in files_found:
+                if file.key not in found_keys:
+                    files.append(file)
+                    found_keys.add(file.key)
             
-            while True:
+            # Strategy 2: Try different patterns to catch edge cases
+            additional_patterns = [
+                f"{namespace}*",     # Starting with namespace
+                f"*{namespace}",     # Ending with namespace
+                f"*{namespace.lower()}*",  # Lowercase version
+                f"*{namespace.upper()}*",  # Uppercase version
+            ]
+            
+            for pattern in additional_patterns:
+                if pattern != f"*{namespace}*":  # Skip if same as strategy 1
+                    additional_files = await self._scan_with_pattern(connection, pattern)
+                    for file in additional_files:
+                        # Client-side filter to ensure namespace is actually in the key
+                        if namespace.lower() in file.key.lower() and file.key not in found_keys:
+                            files.append(file)
+                            found_keys.add(file.key)
+            
+            # Sort files by key for consistent ordering
+            files.sort(key=lambda f: f.key)
+            
+            logger.info(f"✅ Found {len(files)} total files containing namespace '{namespace}' in {environment}")
+            
+            # Log first few keys for debugging
+            if files:
+                sample_keys = [f.key for f in files[:5]]
+                logger.info(f"📝 Sample keys found: {sample_keys}")
+            else:
+                logger.warning(f"⚠️ No keys found for namespace '{namespace}' in {environment}")
+            
+            return files
+            
+        except Exception as e:
+            logger.error(f"Failed to get files for namespace '{namespace}' in {environment}: {e}")
+            raise
+    
+    async def _scan_with_pattern(self, connection, pattern: str) -> List[RedisFile]:
+        """Scan Redis with a specific pattern"""
+        files = []
+        cursor = 0
+        total_scanned = 0
+        scan_iterations = 0
+        
+        logger.info(f"🔍 Scanning with pattern: '{pattern}'")
+        
+        while True:
+            try:
                 cursor, keys = connection.scan(
                     cursor=cursor,
-                    match=f"*{namespace}*",
+                    match=pattern,
                     count=1000  # Increased count for better performance
                 )
                 
                 scan_iterations += 1
                 total_scanned += len(keys)
-                logger.debug(f"Scan iteration {scan_iterations}: cursor={cursor}, found {len(keys)} keys")
+                logger.debug(f"Pattern '{pattern}' - Iteration {scan_iterations}: cursor={cursor}, found {len(keys)} keys")
                 
                 for key in keys:
                     try:
@@ -238,7 +286,6 @@ class RedisService:
                         if "MOVED" in str(e) or "ASK" in str(e):
                             logger.debug(f"Redis cluster redirect for key {key}: {e}")
                             # The cluster client should handle redirects automatically
-                            # If we get here, there might be a cluster configuration issue
                             continue
                         else:
                             logger.warning(f"Redis error processing key {key}: {e}")
@@ -249,19 +296,13 @@ class RedisService:
                 
                 if cursor == 0:
                     break
-            
-            # Sort files by key for consistent ordering
-            files.sort(key=lambda f: f.key)
-            
-            logger.info(f"📊 Scan completed: {scan_iterations} iterations, {total_scanned} keys scanned, {len(files)} files found")
-            logger.info(f"✅ Found {len(files)} files for namespace '{namespace}' in {environment}")
-            
-            # Log first few keys for debugging
-            if files:
-                sample_keys = [f.key for f in files[:5]]
-                logger.info(f"📝 Sample keys found: {sample_keys}")
-            
-            return files
+                    
+            except Exception as e:
+                logger.error(f"Error during scan with pattern '{pattern}': {e}")
+                break
+        
+        logger.info(f"📊 Pattern '{pattern}' completed: {scan_iterations} iterations, {total_scanned} keys scanned, {len(files)} files found")
+        return files
             
         except Exception as e:
             logger.error(f"Failed to get files for namespace '{namespace}' in {environment}: {e}")
