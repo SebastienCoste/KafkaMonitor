@@ -244,6 +244,31 @@ async def health_check():
         "traces_count": len(graph_builder.traces) if graph_builder else 0
     }
 
+@api_router.get("/settings")
+async def get_settings():
+    """Get application settings"""
+    return {
+        "trace_header_field": settings.get("trace_header_field", "trace_id"),
+        "max_traces": settings.get("max_traces", 1000),
+        "cleanup_interval": settings.get("cleanup_interval", 300)
+    }
+
+@api_router.get("/app-config")
+async def get_app_config():
+    """Get application configuration including tab settings"""
+    return {
+        "tabs": settings.get("tabs", {
+            "trace_viewer": {"enabled": True, "title": "Trace Viewer"},
+            "grpc_integration": {"enabled": True, "title": "gRPC Integration"},
+            "blueprint_creator": {"enabled": True, "title": "Blueprint Creator"}
+        }),
+        "landing_page": settings.get("landing_page", {
+            "enabled": True,
+            "title": "Kafka Monitor Dashboard",
+            "subtitle": "Comprehensive monitoring and management platform"
+        })
+    }
+
 # Environment Management Endpoints
 
 @api_router.get("/environments")
