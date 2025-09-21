@@ -276,6 +276,13 @@ class RedisService:
             
             return content
             
+        except redis.exceptions.ResponseError as e:
+            if "MOVED" in str(e) or "ASK" in str(e):
+                logger.error(f"Redis cluster redirect error for key '{key}': {e}")
+                raise ValueError(f"Redis cluster configuration issue - key moved: {key}")
+            else:
+                logger.error(f"Redis error getting content for key '{key}': {e}")
+                raise
         except Exception as e:
             logger.error(f"Failed to get content for key '{key}' in {environment}: {e}")
             raise
