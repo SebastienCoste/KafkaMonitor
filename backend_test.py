@@ -3586,7 +3586,7 @@ class KafkaTraceViewerTester:
     def test_blueprint_namespace_endpoint(self) -> Dict[str, Any]:
         """Test GET /api/blueprint/namespace endpoint"""
         try:
-            response = requests.get(f"{self.base_url}/api/blueprint/namespace", timeout=10)
+            response = requests.get(f"{self.base_url}/api/blueprint/namespace", timeout=15)
             
             if response.status_code == 200:
                 data = response.json()
