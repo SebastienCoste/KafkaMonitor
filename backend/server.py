@@ -1597,7 +1597,7 @@ async def lifespan(app: FastAPI):
         logger.info("🔍 Trace Viewer is enabled - initializing Kafka components")
         try:
             await initialize_kafka_components()
-            logger.info("✅ Full application startup complete")
+            logger.info("✅ Marauder's Map fully activated - 'Mischief Managed'")
         except Exception as e:
             logger.error(f"❌ Failed to start Kafka components: {e}")
             logger.error("⚠️  Continuing without Kafka components - manual initialization required")
