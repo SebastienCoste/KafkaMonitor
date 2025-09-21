@@ -207,13 +207,21 @@ class RedisService:
             cursor = 0
             
             logger.info(f"🔍 Scanning Redis keys for namespace '{namespace}' in {environment}")
+            logger.info(f"🔍 Using Redis scan pattern: '*{namespace}*'")
+            
+            total_scanned = 0
+            scan_iterations = 0
             
             while True:
                 cursor, keys = connection.scan(
                     cursor=cursor,
                     match=f"*{namespace}*",
-                    count=100
+                    count=1000  # Increased count for better performance
                 )
+                
+                scan_iterations += 1
+                total_scanned += len(keys)
+                logger.debug(f"Scan iteration {scan_iterations}: cursor={cursor}, found {len(keys)} keys")
                 
                 for key in keys:
                     try:
