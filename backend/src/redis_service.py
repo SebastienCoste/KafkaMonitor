@@ -112,7 +112,7 @@ class RedisService:
             raise
     
     def _get_connection(self, environment: str):
-        """Get or create Redis connection for environment (supports both single and cluster)"""
+        """Get or create Redis connection for environment (always cluster)"""
         if environment in self.connections:
             # Test existing connection
             try:
@@ -127,22 +127,16 @@ class RedisService:
         config = self._get_redis_config(environment)
         
         try:
-            # Try Redis cluster first, fallback to single instance
+            # Always try cluster first since user confirmed it's always a cluster
+            logger.info(f"🔗 Creating Redis cluster connection for {environment}")
             connection = self._create_cluster_connection(config)
-            if connection:
-                self.connections[environment] = connection
-                logger.info(f"✅ Connected to Redis Cluster in {environment} environment")
-                return connection
-            
-            # Fallback to single Redis instance
-            connection = self._create_single_connection(config)
             self.connections[environment] = connection
-            logger.info(f"✅ Connected to Redis (single instance) in {environment} environment")
-            
+            logger.info(f"✅ Connected to Redis Cluster in {environment} environment - connection type: {type(connection)}")
             return connection
             
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Redis in {environment}: {e}")
+            logger.error(f"❌ Failed to connect to Redis cluster in {environment}: {e}")
+            logger.error(f"❌ Error details: {str(e)}")
             raise
     
     def _create_cluster_connection(self, config: RedisConfig):
