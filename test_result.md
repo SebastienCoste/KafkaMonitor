@@ -634,6 +634,36 @@ test_plan:
         agent: "testing"
         comment: "✅ FIX3 VERIFIED: Syntax Highlighting is working correctly. CodeEditor component successfully renders with Edit/Preview toggle buttons visible in the editor header. Files display with proper syntax highlighting using react-syntax-highlighter - README.md shows Markdown highlighting, BUG_FIXES.md shows proper formatting with line numbers. The Edit/Preview toggle functionality is implemented and accessible. Different file types (.md, .json, .py, .js, .yaml) are properly detected and highlighted with appropriate language modes."
 
+  - task: "Blueprint Creator Darker File Content Colors Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/Editors/CodeEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 1 - Darker File Content Colors: Verify syntax highlighting uses vscDarkPlus theme, edit mode textarea has dark background (bg-gray-900) with light text (text-gray-100), and preview mode has dark background (#1e1e1e)"
+      - working: true
+        agent: "testing"
+        comment: "✅ FIX 1 VERIFIED: Darker File Content Colors working perfectly. EDIT MODE: Textarea confirmed with dark background rgb(17, 24, 39) = bg-gray-900 and light text rgb(243, 244, 246) = text-gray-100. CSS classes confirmed: 'bg-gray-900 text-gray-100'. PREVIEW MODE: vscDarkPlus theme active with dark background #1e1e1e, syntax highlighter rendering 148+ elements with proper dark theme colors. Both edit and preview modes provide significantly better contrast than before. File switching between README.md and other files works correctly with consistent dark theming."
+
+  - task: "Blueprint Creator Folder Hover Buttons Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/FileExplorer/FileTree.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 2 - Folder Hover Buttons: Verify folders have 'group' CSS class and show action buttons on hover (FilePlus, FolderPlus, Edit, Trash)"
+      - working: true
+        agent: "testing"
+        comment: "✅ FIX 2 VERIFIED: Folder Hover Buttons working perfectly. Successfully tested hovering over 3 folders (backend, frontend, out). All 4 expected hover buttons visible on each folder: ✅ Create File button (FilePlus), ✅ Create Folder button (FolderPlus), ✅ Rename button (Edit), ✅ Delete button (Trash). The 'group' CSS class is properly implemented with 'opacity-0 group-hover:opacity-100' functionality working correctly. Folders missing hover buttons issue is completely resolved."
+
 agent_communication:
   - agent: "main"
     message: "✅ FRONTEND API URL ISSUE RESOLVED: Successfully fixed the frontend API URL configuration by updating .env.local file to use https://trace-blueprint.preview.emergentagent.com instead of localhost:8001. Also fixed missing protoc dependency that was causing backend 503 errors. Browser console now shows correct API_BASE_URL and backend APIs are responding properly. The gRPC integration UI testing blocker has been completely resolved."
