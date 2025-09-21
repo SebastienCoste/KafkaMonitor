@@ -26,7 +26,7 @@ const VerifySection = () => {
   const [fileContent, setFileContent] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [environment, setEnvironment] = useState('DEV');
+  const [environment, setEnvironment] = useState('');
   const [namespace, setNamespace] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [availableEnvironments, setAvailableEnvironments] = useState([]);
