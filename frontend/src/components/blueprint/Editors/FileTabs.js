@@ -5,7 +5,7 @@ import { Badge } from '../../ui/badge';
 import { X, FileText, Settings, Code } from 'lucide-react';
 
 export default function FileTabs() {
-  const { openTabs, activeTab, setActiveTab, closeTab } = useBlueprintContext();
+  const { openTabs, activeTab, switchToTab, closeTab } = useBlueprintContext();
 
   if (openTabs.length === 0) {
     return null;
@@ -43,7 +43,7 @@ export default function FileTabs() {
               ? 'bg-white border-b-2 border-blue-500'
               : 'hover:bg-gray-50'
           }`}
-          onClick={() => setActiveTab(tab.path)}
+          onClick={() => switchToTab(tab.path)}
         >
           <div className="flex items-center space-x-2 min-w-0">
             {getFileIcon(tab.path)}

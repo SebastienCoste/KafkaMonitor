@@ -270,6 +270,16 @@ export function BlueprintProvider({ children }) {
     }
   };
 
+  const switchToTab = (filePath) => {
+    // Find the tab and update all related states
+    const tab = openTabs.find(t => t.path === filePath);
+    if (tab) {
+      setActiveTab(filePath);
+      setSelectedFile(filePath);
+      setFileContent(tab.content);
+    }
+  };
+
   const closeTab = (filePath) => {
     setOpenTabs(prev => prev.filter(tab => tab.path !== filePath));
     
@@ -278,9 +288,7 @@ export function BlueprintProvider({ children }) {
       const remainingTabs = openTabs.filter(tab => tab.path !== filePath);
       if (remainingTabs.length > 0) {
         const newActiveTab = remainingTabs[remainingTabs.length - 1];
-        setActiveTab(newActiveTab.path);
-        setSelectedFile(newActiveTab.path);
-        setFileContent(newActiveTab.content);
+        switchToTab(newActiveTab.path);
       } else {
         setActiveTab(null);
         setSelectedFile(null);
@@ -537,6 +545,7 @@ export function BlueprintProvider({ children }) {
     setBuildOutput,
     
     // Tab Management
+    switchToTab,
     closeTab,
     updateTabContent,
     
