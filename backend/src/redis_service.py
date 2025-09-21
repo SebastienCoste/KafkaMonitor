@@ -226,6 +226,15 @@ class RedisService:
                             size_bytes=size
                         ))
                         
+                    except redis.exceptions.ResponseError as e:
+                        if "MOVED" in str(e) or "ASK" in str(e):
+                            logger.debug(f"Redis cluster redirect for key {key}: {e}")
+                            # The cluster client should handle redirects automatically
+                            # If we get here, there might be a cluster configuration issue
+                            continue
+                        else:
+                            logger.warning(f"Redis error processing key {key}: {e}")
+                            continue
                     except Exception as e:
                         logger.warning(f"Failed to process key {key}: {e}")
                         continue
