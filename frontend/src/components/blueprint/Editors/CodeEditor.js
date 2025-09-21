@@ -170,7 +170,7 @@ export default function CodeEditor({ filePath }) {
           <textarea
             value={currentContent}
             onChange={handleContentChange}
-            className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm bg-gray-50"
+            className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm bg-gray-900 text-gray-100"
             style={{ 
               minHeight: 'calc(100vh - 250px)',
               fontSize: '14px',
