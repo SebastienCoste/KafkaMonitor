@@ -269,25 +269,19 @@ const VerifySection = () => {
     }
   };
 
-  const highlightJSON = (content) => {
+  const formatJSONForDisplay = (content) => {
     try {
-      // Try to parse as JSON first
+      // Try to parse and format as proper JSON
       const parsed = JSON.parse(content);
-      const formatted = JSON.stringify(parsed, null, 2);
-      
-      if (contentRef.current) {
-        contentRef.current.innerHTML = formatJSONWithColors(formatted);
-      }
-      
+      return JSON.stringify(parsed, null, 2);
     } catch (error) {
-      // If not valid JSON, try to format it as JSON-like content anyway
+      // If not valid JSON, try to clean it up
       try {
-        // Attempt to make it look like JSON by adding proper formatting
         let formattedContent = content;
         
         // If it looks like it might be JSON-ish, try to format it
         if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
-          // Try to fix common JSON formatting issues and parse again
+          // Try to fix common JSON formatting issues
           formattedContent = content
             .replace(/'/g, '"')  // Replace single quotes with double quotes
             .replace(/([{,]\s*)(\w+):/g, '$1"$2":')  // Quote unquoted keys
@@ -295,48 +289,18 @@ const VerifySection = () => {
           
           try {
             const parsed = JSON.parse(formattedContent);
-            const formatted = JSON.stringify(parsed, null, 2);
-            if (contentRef.current) {
-              contentRef.current.innerHTML = formatJSONWithColors(formatted);
-            }
-            return;
+            return JSON.stringify(parsed, null, 2);
           } catch (e) {
-            // Still not valid JSON, continue to plain formatting
+            // Still not valid JSON, return original
           }
         }
         
-        // Format as JSON-like content with syntax highlighting anyway
-        if (contentRef.current) {
-          contentRef.current.innerHTML = formatJSONWithColors(formattedContent);
-        }
+        return content;
         
       } catch (e) {
-        // Fallback to plain text with JSON-like styling
-        if (contentRef.current) {
-          contentRef.current.innerHTML = formatJSONWithColors(content);
-        }
+        return content;
       }
     }
-  };
-
-  const formatJSONWithColors = (json) => {
-    return json
-      // JSON keys (quoted strings followed by colon) - bright blue for dark theme
-      .replace(/("([^"\\]|\\.)*")\s*:/g, '<span style="color: #569cd6; font-weight: 500;">$1</span>:')
-      // JSON string values - bright green for dark theme
-      .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span style="color: #ce9178;">$1</span>')
-      // JSON boolean values - bright purple for dark theme
-      .replace(/:\s*(true|false)/g, ': <span style="color: #569cd6; font-weight: 500;">$1</span>')
-      // JSON null values - gray for dark theme
-      .replace(/:\s*(null)/g, ': <span style="color: #808080; font-style: italic;">$1</span>')
-      // JSON numeric values - bright orange for dark theme
-      .replace(/:\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, ': <span style="color: #b5cea8;">$1</span>')
-      // Highlight brackets and braces - light gray for dark theme
-      .replace(/([{}[\]])/g, '<span style="color: #cccccc; font-weight: bold;">$1</span>')
-      // Highlight commas - light gray for dark theme
-      .replace(/,/g, '<span style="color: #cccccc;">,</span>')
-      // Make any unquoted text look like JSON keys (for non-standard content)
-      .replace(/^(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/gm, '$1<span style="color: #569cd6; font-weight: 500;">"$2"</span>:');
   };
 
   const formatFileSize = (bytes) => {
