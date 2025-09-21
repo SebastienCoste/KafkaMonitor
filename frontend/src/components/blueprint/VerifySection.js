@@ -450,19 +450,23 @@ const VerifySection = () => {
           </Badge>
         </div>
         
-        <div className="flex-1 overflow-auto p-4 bg-gray-900">
-          <pre 
-            ref={contentRef} 
-            className="text-sm font-mono leading-relaxed text-gray-100 whitespace-pre-wrap break-words"
-            style={{ 
-              minHeight: '100%',
-              backgroundColor: '#1e1e1e',
+        <div className="flex-1 overflow-auto">
+          <SyntaxHighlighter
+            language="json"
+            style={vscDarkPlus}
+            showLineNumbers={true}
+            wrapLines={true}
+            customStyle={{
+              margin: 0,
               padding: '16px',
-              borderRadius: '4px'
+              fontSize: '14px',
+              fontFamily: 'Monaco, "Lucida Console", monospace',
+              minHeight: 'calc(100vh - 250px)',
+              background: '#1e1e1e'
             }}
           >
-            {fileContent}
-          </pre>
+            {formatJSONForDisplay(fileContent)}
+          </SyntaxHighlighter>
         </div>
       </div>
     );
