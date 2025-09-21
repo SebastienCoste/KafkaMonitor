@@ -11,8 +11,7 @@ import {
   FileArchive, 
   AlertTriangle,
   Clock,
-  RefreshCw,
-  Terminal
+  RefreshCw
 } from 'lucide-react';
 
 export default function DeploymentPanel() {
