@@ -5,7 +5,7 @@ import { Badge } from '../../ui/badge';
 import { X, FileText, Settings, Code } from 'lucide-react';
 
 export default function FileTabs() {
-  const { openTabs, activeTab, setActiveTab, closeTab } = useBlueprintContext();
+  const { openTabs, activeTab, switchToTab, closeTab } = useBlueprintContext();
 
   if (openTabs.length === 0) {
     return null;
