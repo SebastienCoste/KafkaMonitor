@@ -235,15 +235,29 @@ export function BlueprintProvider({ children }) {
         setRootPath(data.root_path);
         
         // Try to detect namespace
+        let detectedNamespace = '';
         try {
           const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
           if (namespaceResponse.ok) {
             const namespaceData = await namespaceResponse.json();
-            setNamespace(namespaceData.namespace || '');
+            detectedNamespace = namespaceData.namespace || '';
+            setNamespace(detectedNamespace);
           }
         } catch (error) {
           console.warn('Could not detect namespace:', error);
           setNamespace('');
+        }
+
+        // Add to blueprints array if not already present
+        if (!blueprints.find(bp => bp.rootPath === data.root_path)) {
+          const newBlueprint = {
+            id: Date.now().toString(),
+            rootPath: data.root_path,
+            namespace: detectedNamespace,
+            name: detectedNamespace || data.root_path.split('/').pop() || data.root_path
+          };
+          setBlueprints(prev => [...prev, newBlueprint]);
+          setActiveBlueprint(newBlueprint.id);
         }
         
         // Immediately refresh file tree after setting path
