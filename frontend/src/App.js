@@ -120,9 +120,47 @@ function App() {
     }
   };
 
-  // Load initial data
+  // Load app configuration
+  const loadAppConfig = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/app-config`);
+      setAppConfig(response.data);
+      setAvailableTabs(response.data.tabs || {});
+      
+      // Set default page based on configuration
+      const enabledTabs = Object.entries(response.data.tabs || {})
+        .filter(([_, config]) => config.enabled)
+        .map(([key, _]) => key);
+      
+      if (response.data.landing_page?.enabled) {
+        setCurrentPage('landing');
+      } else if (enabledTabs.length > 0) {
+        // Map tab keys to page names
+        const tabToPageMap = {
+          'trace_viewer': 'traces',
+          'grpc_integration': 'grpc',
+          'blueprint_creator': 'blueprint'
+        };
+        const firstEnabledPage = tabToPageMap[enabledTabs[0]] || enabledTabs[0];
+        setCurrentPage(firstEnabledPage);
+      }
+      
+    } catch (error) {
+      console.error('Failed to load app configuration:', error);
+      // Use defaults if config fails to load
+      setAvailableTabs({
+        trace_viewer: { enabled: true, title: "Trace Viewer" },
+        grpc_integration: { enabled: true, title: "gRPC Integration" },
+        blueprint_creator: { enabled: true, title: "Blueprint Creator" }
+      });
+    }
+  };
+
+  // Initialize app on mount
   useEffect(() => {
-    loadInitialData();
+    loadAppConfig().then(() => {
+      loadInitialData();
+    });
   }, []);
 
   const loadInitialData = async () => {
