@@ -197,38 +197,15 @@ export default function DeploymentPanel() {
                 disabled={!selectedFile || deploymentLoading || loading}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                API Validate
+                Validate
               </Button>
               <Button
                 onClick={handleActivate}
                 disabled={!selectedFile || deploymentLoading || loading}
               >
                 <Play className="h-4 w-4 mr-2" />
-                API Activate
+                Activate
               </Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={handleValidateScript}
-                disabled={!selectedFile || deploymentLoading || loading}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Script Validate
-              </Button>
-              <Button
-                onClick={handleActivateScript}
-                disabled={!selectedFile || deploymentLoading || loading}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Script Activate
-              </Button>
-            </div>
-
-            <div className="text-xs text-gray-600 space-y-1">
-              <p><strong>API Validate/Activate:</strong> Direct API calls to blueprint server</p>
-              <p><strong>Script Validate/Activate:</strong> Run local .sh scripts with environment and API key</p>
             </div>
           </div>
         </CardContent>
