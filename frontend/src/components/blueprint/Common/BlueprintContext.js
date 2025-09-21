@@ -78,6 +78,7 @@ export function BlueprintProvider({ children }) {
       try {
         console.log('🔄 Loading initial blueprint configuration...');
         console.log('📍 API_BASE_URL:', API_BASE_URL);
+        setInitializing(true); // Set initializing to true at the start
         
         // Use fetch instead of axios for more reliable requests
         console.log('📡 Making config request...');
