@@ -177,9 +177,6 @@ class RedisService:
     
     def _create_single_connection(self, config: RedisConfig):
         """Create single Redis instance connection"""
-        # Create SSL context
-        ssl_context = self._create_ssl_context()
-        
         connection = redis.Redis(
             host=config.host,
             port=config.port,
