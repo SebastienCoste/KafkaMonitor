@@ -256,15 +256,22 @@ class RedisService:
         
         logger.info(f"🔍 Scanning with pattern: '{pattern}'")
         
-        # Check if this is a Redis Cluster connection
-        if hasattr(connection, 'get_nodes') and callable(getattr(connection, 'get_nodes')):
+        # Check if this is a Redis Cluster connection - improved detection
+        is_cluster = (
+            isinstance(connection, RedisCluster) or 
+            hasattr(connection, 'get_nodes') or 
+            hasattr(connection, 'nodes') or
+            str(type(connection)).find('cluster') != -1
+        )
+        
+        if is_cluster:
             # Redis Cluster mode - scan all nodes
             logger.info(f"🔗 Detected Redis Cluster, scanning all nodes")
             files = await self._scan_cluster_nodes(connection, pattern)
         else:
-            # Single Redis instance mode
-            logger.info(f"🔧 Detected single Redis instance")
-            files = await self._scan_single_instance(connection, pattern)
+            # Force cluster mode since user confirmed it's always a cluster
+            logger.info(f"⚠️ Forcing cluster mode - user confirmed it's always a cluster")
+            files = await self._scan_cluster_nodes(connection, pattern)
         
         logger.info(f"📊 Pattern '{pattern}' completed: {len(files)} files found")
         return files
