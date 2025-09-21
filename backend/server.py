@@ -1410,6 +1410,10 @@ async def lifespan(app: FastAPI):
     if kafka_consumer:
         kafka_consumer.stop_consuming()
     
+    # Close Redis connections
+    if redis_service:
+        redis_service.close_all_connections()
+    
     # Close WebSocket connections
     for websocket in websocket_connections:
         try:
