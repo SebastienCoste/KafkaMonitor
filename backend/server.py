@@ -73,16 +73,12 @@ async def initialize_blueprint_components():
         # Initialize minimal environment manager for blueprint operations
         if not environment_manager:
             from src.environment_manager import EnvironmentManager
-            from src.protobuf_decoder import ProtobufDecoder
             
-            # Create minimal decoder for environment manager
-            settings = {}
-            decoder = ProtobufDecoder(settings)
-            
+            # Create minimal environment manager without protobuf decoder
             environment_manager = EnvironmentManager(
                 environments_dir=str(CONFIG_DIR / "environments"),
-                protobuf_decoder=decoder,
-                settings=settings
+                protobuf_decoder=None,  # No protobuf support in minimal mode
+                settings={}
             )
             logger.info("✅ Minimal Environment Manager initialized for blueprints")
         
