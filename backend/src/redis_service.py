@@ -253,7 +253,14 @@ class RedisService:
             # Sort files by key for consistent ordering
             files.sort(key=lambda f: f.key)
             
-            logger.info(f"Found {len(files)} files for namespace '{namespace}' in {environment}")
+            logger.info(f"📊 Scan completed: {scan_iterations} iterations, {total_scanned} keys scanned, {len(files)} files found")
+            logger.info(f"✅ Found {len(files)} files for namespace '{namespace}' in {environment}")
+            
+            # Log first few keys for debugging
+            if files:
+                sample_keys = [f.key for f in files[:5]]
+                logger.info(f"📝 Sample keys found: {sample_keys}")
+            
             return files
             
         except Exception as e:
