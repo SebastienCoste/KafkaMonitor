@@ -557,8 +557,13 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <NetworkIcon className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Kafka Monitor</h1>
+              <div className="p-2 bg-amber-100 rounded-lg border-2 border-amber-200">
+                <MapIcon className="h-8 w-8 text-amber-700" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-amber-800">Marauder's Map</h1>
+                <p className="text-sm text-amber-600 italic">"I solemnly swear I am up to no good"</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               {/* Page Navigation */}
