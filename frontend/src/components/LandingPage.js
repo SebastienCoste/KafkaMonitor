@@ -158,14 +158,14 @@ const LandingPage = ({ onNavigate, availableTabs }) => {
       </div>
 
       {/* Call to Action Section */}
-      <div className="bg-blue-600 text-white">
+      <div className="bg-gradient-to-r from-amber-800 to-amber-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
             <h2 className="text-3xl font-bold mb-4">
-              Ready to Get Started?
+              Ready to Explore?
             </h2>
-            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-              Choose a feature above to begin monitoring, integrating, or creating with our powerful platform
+            <p className="text-xl text-amber-100 mb-8 max-w-2xl mx-auto">
+              Choose your path and begin your journey through the hidden corridors of your systems
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               {features.filter(f => f.enabled).map((feature) => (
