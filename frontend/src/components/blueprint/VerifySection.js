@@ -481,7 +481,7 @@ const VerifySection = () => {
           <div>
             <h3 className="font-medium text-gray-900 font-mono text-sm">{selectedFile}</h3>
             <p className="text-xs text-gray-600">
-              {selectedFileInfo ? formatFileSize(selectedFileInfo.size_bytes) : ''} • JSON
+              {selectedFileInfo ? formatFileSize(selectedFileInfo.size_bytes) : ''} • JSON Format
             </p>
           </div>
           <Badge variant="outline" className="text-xs">
