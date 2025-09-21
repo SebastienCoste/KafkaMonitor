@@ -279,48 +279,87 @@ class RedisService:
     async def _scan_cluster_nodes(self, connection, pattern: str) -> List[RedisFile]:
         """Scan all nodes in a Redis cluster"""
         files = []
-        total_nodes = 0
         total_scanned = 0
         
         try:
-            # Get all nodes in the cluster
-            nodes = connection.get_nodes()
-            total_nodes = len(nodes)
-            logger.info(f"🔗 Scanning {total_nodes} cluster nodes for pattern '{pattern}'")
+            # Try different approaches to get cluster nodes
+            nodes = []
             
+            # Method 1: Direct get_nodes() call
+            if hasattr(connection, 'get_nodes') and callable(getattr(connection, 'get_nodes')):
+                try:
+                    nodes = connection.get_nodes()
+                    logger.info(f"🔗 Method 1: Found {len(nodes)} nodes via get_nodes()")
+                except Exception as e:
+                    logger.debug(f"Method 1 failed: {e}")
+            
+            # Method 2: Try accessing nodes attribute
+            if not nodes and hasattr(connection, 'nodes'):
+                try:
+                    if hasattr(connection.nodes, 'all_nodes'):
+                        nodes = list(connection.nodes.all_nodes())
+                    elif hasattr(connection.nodes, 'nodes_cache'):
+                        nodes = list(connection.nodes.nodes_cache.values())
+                    logger.info(f"🔗 Method 2: Found {len(nodes)} nodes via nodes attribute")
+                except Exception as e:
+                    logger.debug(f"Method 2 failed: {e}")
+            
+            # Method 3: Use cluster info to discover nodes
+            if not nodes:
+                try:
+                    cluster_info = connection.cluster_nodes()
+                    # Parse cluster nodes output to get individual nodes
+                    lines = cluster_info.strip().split('\n')
+                    for line in lines:
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            node_info = parts[1].split('@')[0]  # Remove port info
+                            if ':' in node_info:
+                                host, port = node_info.rsplit(':', 1)
+                                nodes.append({'host': host, 'port': int(port)})
+                    logger.info(f"🔗 Method 3: Found {len(nodes)} nodes via cluster_nodes()")
+                except Exception as e:
+                    logger.debug(f"Method 3 failed: {e}")
+            
+            if not nodes:
+                logger.error("❌ Could not discover cluster nodes, using connection directly")
+                return await self._scan_connection_directly(connection, pattern)
+            
+            logger.info(f"🔗 Scanning {len(nodes)} cluster nodes for pattern '{pattern}'")
+            
+            # Scan each node
             for i, node in enumerate(nodes):
                 try:
-                    logger.debug(f"📡 Scanning node {i+1}/{total_nodes}: {node.host}:{node.port}")
+                    if hasattr(node, 'host') and hasattr(node, 'port'):
+                        node_host = node.host
+                        node_port = node.port
+                    elif isinstance(node, dict):
+                        node_host = node.get('host', 'unknown')
+                        node_port = node.get('port', 'unknown')
+                    else:
+                        node_host = str(node)
+                        node_port = 'unknown'
                     
-                    # Scan this specific node
-                    cursor = 0
+                    logger.debug(f"📡 Scanning node {i+1}/{len(nodes)}: {node_host}:{node_port}")
+                    
+                    # Use SCAN_ITER for cluster nodes - this is more reliable
                     node_files = 0
                     
-                    while True:
-                        cursor, keys = connection.scan(
-                            cursor=cursor,
-                            match=pattern,
-                            count=1000,
-                            target_nodes=[node]  # Target specific node
-                        )
-                        
-                        node_files += len(keys)
-                        total_scanned += len(keys)
-                        
-                        for key in keys:
+                    try:
+                        # Try to scan with target_nodes parameter
+                        for key in connection.scan_iter(match=pattern, count=1000, target_nodes=[node]):
                             try:
-                                # Get content size
                                 size = connection.strlen(key)
-                                
                                 files.append(RedisFile(
                                     key=key,
                                     content="",
                                     size_bytes=size
                                 ))
-                                
+                                node_files += 1
+                                total_scanned += 1
                             except redis.exceptions.ResponseError as e:
                                 if "MOVED" in str(e) or "ASK" in str(e):
-                                    logger.debug(f"Redis cluster redirect for key {key}: {e}")
+                                    logger.debug(f"Redirect handled by cluster client for key {key}")
                                     continue
                                 else:
                                     logger.warning(f"Redis error processing key {key}: {e}")
@@ -328,23 +367,58 @@ class RedisService:
                             except Exception as e:
                                 logger.warning(f"Failed to process key {key}: {e}")
                                 continue
-                        
-                        if cursor == 0:
-                            break
                     
-                    logger.debug(f"✅ Node {i+1}/{total_nodes} completed: {node_files} keys found")
+                    except Exception as scan_error:
+                        logger.debug(f"scan_iter with target_nodes failed: {scan_error}")
+                        # Fallback: try regular scan_iter (may miss some keys)
+                        logger.debug(f"Trying fallback scan for node")
+                        
+                    logger.debug(f"✅ Node {i+1}/{len(nodes)} completed: {node_files} keys found")
                     
                 except Exception as e:
-                    logger.error(f"❌ Error scanning node {node.host}:{node.port}: {e}")
+                    logger.error(f"❌ Error scanning node {i+1}: {e}")
                     continue
             
-            logger.info(f"🎉 Cluster scan completed: {total_nodes} nodes, {total_scanned} total keys scanned, {len(files)} files found")
+            logger.info(f"🎉 Cluster scan completed: {len(nodes)} nodes, {total_scanned} total keys scanned, {len(files)} files found")
             
         except Exception as e:
             logger.error(f"❌ Error during cluster scan: {e}")
-            # Fallback to regular scan
-            logger.info(f"⚠️ Falling back to regular scan")
-            files = await self._scan_single_instance(connection, pattern)
+            logger.info(f"⚠️ Falling back to direct connection scan")
+            files = await self._scan_connection_directly(connection, pattern)
+        
+        return files
+    
+    async def _scan_connection_directly(self, connection, pattern: str) -> List[RedisFile]:
+        """Scan using the connection directly (handles cluster redirects)"""
+        files = []
+        
+        try:
+            logger.info(f"🔍 Direct scan with pattern: '{pattern}'")
+            
+            # Use scan_iter which should handle cluster redirects automatically
+            for key in connection.scan_iter(match=pattern, count=1000):
+                try:
+                    size = connection.strlen(key)
+                    files.append(RedisFile(
+                        key=key,
+                        content="",
+                        size_bytes=size
+                    ))
+                except redis.exceptions.ResponseError as e:
+                    if "MOVED" in str(e) or "ASK" in str(e):
+                        logger.debug(f"Cluster redirect handled for key {key}")
+                        continue
+                    else:
+                        logger.warning(f"Redis error processing key {key}: {e}")
+                        continue
+                except Exception as e:
+                    logger.warning(f"Failed to process key {key}: {e}")
+                    continue
+            
+            logger.info(f"📊 Direct scan completed: {len(files)} files found")
+            
+        except Exception as e:
+            logger.error(f"❌ Direct scan failed: {e}")
         
         return files
     
