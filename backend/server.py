@@ -267,7 +267,7 @@ async def get_app_config():
         }),
         "landing_page": settings.get("landing_page", {
             "enabled": True,
-            "title": "Kafka Monitor Dashboard",
+            "title": "Marauder's Map",
             "subtitle": "Comprehensive monitoring and management platform"
         })
     }
