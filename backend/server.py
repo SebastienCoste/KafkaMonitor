@@ -26,6 +26,8 @@ from src.environment_manager import EnvironmentManager
 from src.blueprint_models import *
 from src.blueprint_file_manager import BlueprintFileManager
 from src.blueprint_build_manager import BlueprintBuildManager
+from src.redis_service import RedisService
+from src.blueprint_manager import BlueprintManager
 
 
 ROOT_DIR = Path(__file__).parent
