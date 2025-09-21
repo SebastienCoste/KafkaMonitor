@@ -43,7 +43,7 @@ export default function FileTabs() {
               ? 'bg-white border-b-2 border-blue-500'
               : 'hover:bg-gray-50'
           }`}
-          onClick={() => setActiveTab(tab.path)}
+          onClick={() => switchToTab(tab.path)}
         >
           <div className="flex items-center space-x-2 min-w-0">
             {getFileIcon(tab.path)}
