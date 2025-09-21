@@ -163,17 +163,20 @@ class RedisService:
                 retry_on_timeout=True,
                 decode_responses=True,
                 skip_full_coverage_check=True,  # Allow partial cluster coverage
-                health_check_interval=30
+                health_check_interval=30,
+                retry_on_cluster_down=True,  # Retry when cluster is down
+                cluster_error_retry_attempts=3  # Retry cluster operations
             )
             
             # Test cluster connection
             connection.ping()
-            logger.info("🔗 Redis cluster connection successful")
+            logger.info(f"🔗 Redis cluster connection successful - type: {type(connection)}")
             return connection
             
         except Exception as e:
-            logger.debug(f"Redis cluster connection failed: {e}")
-            return None
+            logger.error(f"❌ Redis cluster connection failed: {e}")
+            # Don't return None - raise the exception so we know what's wrong
+            raise
     
     def _create_single_connection(self, config: RedisConfig):
         """Create single Redis instance connection"""
