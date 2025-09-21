@@ -148,9 +148,6 @@ class RedisService:
     def _create_cluster_connection(self, config: RedisConfig):
         """Try to create Redis cluster connection"""
         try:
-            # Create SSL context
-            ssl_context = self._create_ssl_context()
-            
             # For cluster, we only need the startup node
             startup_nodes = [{"host": config.host, "port": config.port}]
             
