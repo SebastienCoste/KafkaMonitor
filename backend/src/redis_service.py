@@ -168,7 +168,7 @@ class RedisService:
             
             # Test cluster connection
             connection.ping()
-            logger.info(f"🔗 Redis cluster connection successful")
+            logger.info("🔗 Redis cluster connection successful")
             return connection
             
         except Exception as e:
