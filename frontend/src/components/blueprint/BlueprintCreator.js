@@ -132,7 +132,9 @@ export default function BlueprintCreator() {
               <FolderOpen className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Blueprint Creator</h1>
+              <h1 className="text-xl font-bold text-gray-900">
+                {namespace || 'Blueprint Creator'}
+              </h1>
               <p className="text-sm text-gray-600">
                 {rootPath || 'Select a blueprint root directory to get started'}
               </p>
