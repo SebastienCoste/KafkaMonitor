@@ -812,10 +812,10 @@ async def activate_blueprint(filepath: str, request: DeploymentRequest):
         
         env_config = EnvironmentConfig(**blueprint_config)
         
-        # Deploy with activate action
+        # Deploy with activate action - use full filepath to locate file in out/ directory
         result = await blueprint_build_manager.deploy_blueprint(
             request.root_path if hasattr(request, 'root_path') else blueprint_file_manager.root_path,
-            filename,
+            filepath,
             request.environment,
             DeploymentAction.ACTIVATE,
             env_config,
