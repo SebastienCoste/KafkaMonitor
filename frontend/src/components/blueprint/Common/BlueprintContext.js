@@ -580,6 +580,9 @@ export function BlueprintProvider({ children }) {
     setSelectedEnvironment,
     setBuildOutput,
     setNamespace,
+    addBlueprint: addNewBlueprint,
+    removeBlueprint,
+    switchBlueprint,
     
     // Tab Management
     switchToTab,
