@@ -192,7 +192,7 @@ export default function CodeEditor({ filePath }) {
                 fontSize: '14px',
                 fontFamily: 'Monaco, "Lucida Console", monospace',
                 minHeight: 'calc(100vh - 250px)',
-                background: '#fafafa'
+                background: '#1e1e1e'
               }}
             >
               {currentContent || '// File content will appear here...'}
