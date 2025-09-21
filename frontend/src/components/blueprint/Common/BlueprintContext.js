@@ -209,20 +209,50 @@ export function BlueprintProvider({ children }) {
   const setBlueprintRootPath = async (path) => {
     try {
       setLoading(true);
-      const response = await axios.put(`${API_BASE_URL}/api/blueprint/config`, {
-        root_path: path
-      });
       
-      if (response.data.success) {
-        setRootPath(path);
-        // Force immediate file tree refresh
-        setTimeout(async () => {
-          await refreshFileTree();
-          console.log('✅ Auto-loaded file tree after setting root path');
-        }, 500);
+      const response = await fetch(`${API_BASE_URL}/api/blueprint/config`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ root_path: path })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to set blueprint path: ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        // FIX 3: Reset all selections when path changes
+        setSelectedFile(null);
+        setOpenTabs([]);
+        setActiveTab(null);
+        setFileContent('');
+        
+        setRootPath(data.root_path);
+        
+        // Try to detect namespace
+        try {
+          const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+          if (namespaceResponse.ok) {
+            const namespaceData = await namespaceResponse.json();
+            setNamespace(namespaceData.namespace || '');
+          }
+        } catch (error) {
+          console.warn('Could not detect namespace:', error);
+          setNamespace('');
+        }
+        
+        // Immediately refresh file tree after setting path
+        await refreshFileTree();
+        
+        console.log(`Blueprint path set to: ${data.root_path}`);
+      } else {
+        throw new Error('Failed to set blueprint path');
       }
     } catch (error) {
-      console.error('Error setting root path:', error);
+      console.error('Error setting blueprint path:', error);
       throw error;
     } finally {
       setLoading(false);
