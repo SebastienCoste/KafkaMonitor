@@ -269,6 +269,7 @@ const VerifySection = () => {
 
   const highlightJSON = (content) => {
     try {
+      // Try to parse as JSON first
       const parsed = JSON.parse(content);
       const formatted = JSON.stringify(parsed, null, 2);
       
@@ -277,9 +278,41 @@ const VerifySection = () => {
       }
       
     } catch (error) {
-      // Not valid JSON, display as plain text
-      if (contentRef.current) {
-        contentRef.current.textContent = content;
+      // If not valid JSON, try to format it as JSON-like content anyway
+      try {
+        // Attempt to make it look like JSON by adding proper formatting
+        let formattedContent = content;
+        
+        // If it looks like it might be JSON-ish, try to format it
+        if (content.trim().startsWith('{') || content.trim().startsWith('[')) {
+          // Try to fix common JSON formatting issues and parse again
+          formattedContent = content
+            .replace(/'/g, '"')  // Replace single quotes with double quotes
+            .replace(/([{,]\s*)(\w+):/g, '$1"$2":')  // Quote unquoted keys
+            .replace(/:\s*([^",{\[\]}\s]+)(?=[,}\]])/g, ': "$1"');  // Quote unquoted values
+          
+          try {
+            const parsed = JSON.parse(formattedContent);
+            const formatted = JSON.stringify(parsed, null, 2);
+            if (contentRef.current) {
+              contentRef.current.innerHTML = formatJSONWithColors(formatted);
+            }
+            return;
+          } catch (e) {
+            // Still not valid JSON, continue to plain formatting
+          }
+        }
+        
+        // Format as JSON-like content with syntax highlighting anyway
+        if (contentRef.current) {
+          contentRef.current.innerHTML = formatJSONWithColors(formattedContent);
+        }
+        
+      } catch (e) {
+        // Fallback to plain text with JSON-like styling
+        if (contentRef.current) {
+          contentRef.current.innerHTML = formatJSONWithColors(content);
+        }
       }
     }
   };
