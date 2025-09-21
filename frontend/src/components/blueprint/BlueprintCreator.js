@@ -314,12 +314,18 @@ export default function BlueprintCreator() {
                               variant="ghost"
                               size="sm"
                               onClick={() => {
-                                // Allow changing the blueprint folder
-                                const newPath = prompt('Enter new blueprint directory path:', rootPath || '');
-                                if (newPath && newPath !== rootPath) {
-                                  setBlueprintRootPath(newPath).catch(error => {
-                                    toast.error(`Failed to change directory: ${error.message}`);
-                                  });
+                                // Allow adding another blueprint or changing current one
+                                const newPath = prompt('Enter blueprint directory path:', rootPath || '');
+                                if (newPath) {
+                                  if (blueprints.length === 0 && newPath !== rootPath) {
+                                    setBlueprintRootPath(newPath).catch(error => {
+                                      toast.error(`Failed to change directory: ${error.message}`);
+                                    });
+                                  } else {
+                                    addBlueprint(newPath).catch(error => {
+                                      toast.error(`Failed to add blueprint: ${error.message}`);
+                                    });
+                                  }
                                 }
                               }}
                               title="Change Blueprint Directory"
