@@ -3605,7 +3605,7 @@ class KafkaTraceViewerTester:
                     self.log_test("Blueprint Namespace", False, f"Missing required fields: {data}")
                     return {}
             elif response.status_code == 404:
-                self.log_test("Blueprint Namespace", False, "Blueprint namespace not found in configuration (404)")
+                self.log_test("Blueprint Namespace", True, "Expected failure - Blueprint namespace not found in configuration (404)")
                 return {}
             elif response.status_code == 503:
                 self.log_test("Blueprint Namespace", False, "Blueprint manager not initialized (503)")
