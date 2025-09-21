@@ -301,8 +301,9 @@ const VerifySection = () => {
     return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
   };
 
-  const renderTreeNode = (node, name, path = '') => {
+  const TreeNode = ({ node, name, path = '' }) => {
     const fullPath = path ? `${path}:${name}` : name;
+    const [isExpanded, setIsExpanded] = useState(true);
     
     if (node.type === 'file') {
       return (
@@ -322,8 +323,6 @@ const VerifySection = () => {
       );
     } else {
       // Folder
-      const [isExpanded, setIsExpanded] = useState(true);
-      
       return (
         <div key={fullPath} className="mb-1">
           <div
@@ -341,7 +340,7 @@ const VerifySection = () => {
           {isExpanded && node.children && (
             <div className="ml-6 border-l border-gray-200 pl-2">
               {Object.entries(node.children).map(([childName, childNode]) =>
-                renderTreeNode(childNode, childName, fullPath)
+                <TreeNode key={childName} node={childNode} name={childName} path={fullPath} />
               )}
             </div>
           )}
