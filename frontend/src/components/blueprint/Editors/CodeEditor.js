@@ -183,7 +183,7 @@ export default function CodeEditor({ filePath }) {
           <div className="h-full overflow-auto">
             <SyntaxHighlighter
               language={getSyntaxLanguage(filePath)}
-              style={tomorrow}
+              style={vscDarkPlus}
               showLineNumbers={true}
               wrapLines={true}
               customStyle={{
