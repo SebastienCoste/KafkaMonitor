@@ -52,10 +52,10 @@ const LandingPage = ({ onNavigate, availableTabs }) => {
   ];
 
   const stats = [
-    { label: 'Active Features', value: features.filter(f => f.enabled).length, icon: Zap },
-    { label: 'Environments', value: 'Multi', icon: Settings },
-    { label: 'Security', value: 'TLS', icon: Shield },
-    { label: 'Performance', value: 'Real-time', icon: BarChart3 },
+    { label: 'Active Spells', value: features.filter(f => f.enabled).length, icon: Zap },
+    { label: 'Territories', value: 'Multi', icon: MapPin },
+    { label: 'Protection', value: 'Enchanted', icon: Shield },
+    { label: 'Tracking', value: 'Live', icon: Eye },
   ];
 
   return (
