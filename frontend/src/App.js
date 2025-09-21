@@ -43,12 +43,16 @@ function App() {
   const [availableTopics, setAvailableTopics] = useState([]);
   const [monitoredTopics, setMonitoredTopics] = useState([]);
   const [expandedMessages, setExpandedMessages] = useState(new Set());
-  const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
+  const [currentPage, setCurrentPage] = useState('landing'); // Start with landing page
   const [activeTab, setActiveTab] = useState('traces'); // New state for tracking active tab
   // Environment management
   const [environments, setEnvironments] = useState([]);
   const [currentEnvironment, setCurrentEnvironment] = useState('');
   const [environmentLoading, setEnvironmentLoading] = useState(false);
+  
+  // App configuration state
+  const [appConfig, setAppConfig] = useState(null);
+  const [availableTabs, setAvailableTabs] = useState({});
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
