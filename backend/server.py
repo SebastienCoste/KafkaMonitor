@@ -1590,13 +1590,20 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to start Blueprint components: {e}")
         logger.error("⚠️  Blueprint functionality may be limited")
     
-    # Then try to initialize Kafka components
-    try:
-        await initialize_kafka_components()
-        logger.info("✅ Full application startup complete")
-    except Exception as e:
-        logger.error(f"❌ Failed to start Kafka components: {e}")
-        logger.error("⚠️  Continuing without Kafka components - manual initialization required")
+    # Check if Trace Viewer is enabled before starting Kafka components
+    trace_viewer_enabled = settings.get("tabs", {}).get("trace_viewer", {}).get("enabled", True)
+    
+    if trace_viewer_enabled:
+        logger.info("🔍 Trace Viewer is enabled - initializing Kafka components")
+        try:
+            await initialize_kafka_components()
+            logger.info("✅ Full application startup complete")
+        except Exception as e:
+            logger.error(f"❌ Failed to start Kafka components: {e}")
+            logger.error("⚠️  Continuing without Kafka components - manual initialization required")
+    else:
+        logger.info("⚠️  Trace Viewer is disabled - skipping Kafka components initialization")
+        logger.info("✅ Application startup complete (without Kafka)")
     
     yield
     
