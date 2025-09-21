@@ -396,26 +396,71 @@ class RedisService:
             logger.info(f"🔍 Direct scan with pattern: '{pattern}'")
             
             # Use scan_iter which should handle cluster redirects automatically
+            key_count = 0
+            processed_count = 0
+            
             for key in connection.scan_iter(match=pattern, count=1000):
+                key_count += 1
+                logger.debug(f"🔑 Found key: {key}")
+                
                 try:
+                    # Try to get the key size - this will trigger redirect handling
                     size = connection.strlen(key)
+                    
                     files.append(RedisFile(
                         key=key,
                         content="",
                         size_bytes=size
                     ))
+                    processed_count += 1
+                    logger.debug(f"✅ Successfully processed key: {key} (size: {size})")
+                    
                 except redis.exceptions.ResponseError as e:
                     if "MOVED" in str(e) or "ASK" in str(e):
-                        logger.debug(f"Cluster redirect handled for key {key}")
-                        continue
+                        logger.debug(f"🔄 Retry after redirect for key: {key}")
+                        # Try again - the cluster client should have updated its slot mapping
+                        try:
+                            size = connection.strlen(key)
+                            files.append(RedisFile(
+                                key=key,
+                                content="",
+                                size_bytes=size
+                            ))
+                            processed_count += 1
+                            logger.debug(f"✅ Successfully processed after retry: {key} (size: {size})")
+                        except Exception as retry_e:
+                            logger.warning(f"❌ Failed even after retry for key {key}: {retry_e}")
+                            # Add key anyway with size 0 so it shows up
+                            files.append(RedisFile(
+                                key=key,
+                                content="",
+                                size_bytes=0
+                            ))
+                            processed_count += 1
+                            logger.info(f"⚠️ Added key with unknown size: {key}")
                     else:
-                        logger.warning(f"Redis error processing key {key}: {e}")
-                        continue
+                        logger.warning(f"❌ Redis error processing key {key}: {e}")
+                        # Add key anyway with size 0
+                        files.append(RedisFile(
+                            key=key,
+                            content="",
+                            size_bytes=0
+                        ))
+                        processed_count += 1
+                        logger.info(f"⚠️ Added key despite error: {key}")
+                        
                 except Exception as e:
-                    logger.warning(f"Failed to process key {key}: {e}")
-                    continue
+                    logger.warning(f"❌ Failed to process key {key}: {e}")
+                    # Add key anyway with size 0
+                    files.append(RedisFile(
+                        key=key,
+                        content="",
+                        size_bytes=0
+                    ))
+                    processed_count += 1
+                    logger.info(f"⚠️ Added key despite processing error: {key}")
             
-            logger.info(f"📊 Direct scan completed: {len(files)} files found")
+            logger.info(f"📊 Direct scan completed: {key_count} keys found, {processed_count} keys processed, {len(files)} files in result")
             
         except Exception as e:
             logger.error(f"❌ Direct scan failed: {e}")
