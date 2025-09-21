@@ -190,11 +190,11 @@ const LandingPage = ({ onNavigate, availableTabs }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-500">
             <div className="flex items-center justify-center mb-2">
-              <Database className="h-5 w-5 mr-2" />
-              <span className="font-medium">Kafka Monitor Dashboard</span>
+              <Map className="h-5 w-5 mr-2 text-amber-600" />
+              <span className="font-medium text-amber-800">Marauder's Map</span>
             </div>
             <p className="text-sm">
-              Comprehensive platform for Kafka monitoring, gRPC integration, and blueprint management
+              "Mischief Managed" - Magical platform for system monitoring and service discovery
             </p>
           </div>
         </div>
