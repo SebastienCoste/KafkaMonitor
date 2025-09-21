@@ -222,56 +222,7 @@ export default function BlueprintCreator() {
         ) : (
           // Main blueprint interface
           <>
-            {/* Left Sidebar - File Explorer */}
-            <div 
-              className="bg-white border-r border-gray-200 flex flex-col overflow-hidden relative"
-              style={{ width: `${leftPanelWidth}px` }}
-            >
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-semibold text-gray-900">Project Files</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      // Allow changing the blueprint folder
-                      const newPath = prompt('Enter new blueprint directory path:', rootPath || '');
-                      if (newPath && newPath !== rootPath) {
-                        setBlueprintRootPath(newPath).catch(error => {
-                          toast.error(`Failed to change directory: ${error.message}`);
-                        });
-                      }
-                    }}
-                    title="Change Blueprint Directory"
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                {rootPath && (
-                  <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded mb-3">
-                    <strong>Current:</strong> {rootPath}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex-1 overflow-hidden">
-                <FileTree files={fileTree} />
-              </div>
-              
-              <div className="p-4 border-t border-gray-200">
-                <FileUpload />
-              </div>
-            </div>
-
-            {/* Resize Handle */}
-            <div
-              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
-              onMouseDown={handleMouseDown}
-              title="Drag to resize"
-            />
-
-            {/* Main Content Area */}
+            {/* Main Content Area - Full Width */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                 <div className="border-b border-gray-200 px-4">
