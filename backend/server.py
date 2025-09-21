@@ -1557,9 +1557,19 @@ async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
     logger.info("🚀 Application starting up...")
+    
+    # Always initialize Blueprint components first
+    try:
+        await initialize_blueprint_components()
+        logger.info("✅ Blueprint components startup complete")
+    except Exception as e:
+        logger.error(f"❌ Failed to start Blueprint components: {e}")
+        logger.error("⚠️  Blueprint functionality may be limited")
+    
+    # Then try to initialize Kafka components
     try:
         await initialize_kafka_components()
-        logger.info("✅ Application startup complete")
+        logger.info("✅ Full application startup complete")
     except Exception as e:
         logger.error(f"❌ Failed to start Kafka components: {e}")
         logger.error("⚠️  Continuing without Kafka components - manual initialization required")
