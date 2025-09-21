@@ -60,6 +60,43 @@ PROTO_DIR = CONFIG_DIR / "proto"
 ENVIRONMENTS_DIR = CONFIG_DIR / "environments"
 GRPC_PROTOS_DIR = PROTO_DIR / "grpc"  # Updated to use subfolder under proto
 
+async def initialize_blueprint_components():
+    """Initialize Blueprint Creator components (independent of Kafka)"""
+    logger.info("🏗️ Initializing Blueprint Creator components...")
+    global blueprint_file_manager, blueprint_build_manager, redis_service, blueprint_manager, environment_manager
+    
+    try:
+        blueprint_file_manager = BlueprintFileManager()
+        blueprint_build_manager = BlueprintBuildManager()
+        logger.info("✅ Blueprint Creator base components initialized")
+        
+        # Initialize minimal environment manager for blueprint operations
+        if not environment_manager:
+            from src.environment_manager import EnvironmentManager
+            from src.protobuf_decoder import ProtobufDecoder
+            
+            # Create minimal decoder for environment manager
+            settings = {}
+            decoder = ProtobufDecoder(settings)
+            
+            environment_manager = EnvironmentManager(
+                environments_dir=str(CONFIG_DIR / "environments"),
+                protobuf_decoder=decoder,
+                settings=settings
+            )
+            logger.info("✅ Minimal Environment Manager initialized for blueprints")
+        
+        # Initialize Redis and Blueprint Manager components
+        logger.info("🔧 Initializing Redis and Blueprint Manager components...")
+        redis_service = RedisService(environment_manager)
+        blueprint_manager = BlueprintManager(blueprint_file_manager)
+        logger.info("✅ Redis and Blueprint Manager components initialized")
+        
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize Blueprint components: {str(e)}")
+        logger.error(f"🔴 Traceback: {traceback.format_exc()}")
+        raise
+
 async def initialize_kafka_components():
     """Initialize Kafka trace viewer components"""
     logger.info("🚀 Starting Kafka trace viewer component initialization")
@@ -67,11 +104,8 @@ async def initialize_kafka_components():
     global blueprint_file_manager, blueprint_build_manager
     global redis_service, blueprint_manager
     
-    # Initialize Blueprint Creator components
-    logger.info("🏗️ Initializing Blueprint Creator components...")
-    blueprint_file_manager = BlueprintFileManager()
-    blueprint_build_manager = BlueprintBuildManager()
-    logger.info("✅ Blueprint Creator components initialized")
+    # First initialize Blueprint components (these should always work)
+    await initialize_blueprint_components()
     
     # Check if required directories exist
     if not CONFIG_DIR.exists():
