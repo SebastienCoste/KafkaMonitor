@@ -54,6 +54,9 @@ blueprint_websocket_connections: List[WebSocket] = []
 redis_service: Optional[RedisService] = None
 blueprint_manager: Optional[BlueprintManager] = None
 
+# Global settings
+settings: Dict[str, Any] = {}
+
 # Configuration paths
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
