@@ -133,21 +133,36 @@ export function BlueprintProvider({ children }) {
             console.warn('⚠️ Could not detect namespace:', error);
           }
           
-          // Auto-load file tree if root path is set
-          console.log('📁 Loading file tree...');
-          const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`);
-          console.log('📡 File tree response received, status:', fileTreeResponse.status);
-          
-          if (!fileTreeResponse.ok) {
-            console.error('❌ File tree request failed:', fileTreeResponse.status, fileTreeResponse.statusText);
-            throw new Error(`File tree request failed: ${fileTreeResponse.status} ${fileTreeResponse.statusText}`);
+          // Auto-load file tree if root path is set (with timeout and non-blocking)
+          console.log('📁 Loading file tree with timeout...');
+          try {
+            const fileTreeController = new AbortController();
+            const fileTreeTimeout = setTimeout(() => {
+              console.warn('⏰ File tree request timeout after 5 seconds');
+              fileTreeController.abort();
+            }, 5000);
+
+            const fileTreeResponse = await fetch(`${API_BASE_URL}/api/blueprint/file-tree`, {
+              signal: fileTreeController.signal
+            });
+            clearTimeout(fileTreeTimeout);
+            console.log('📡 File tree response received, status:', fileTreeResponse.status);
+            
+            if (fileTreeResponse.ok) {
+              const fileTreeData = await fileTreeResponse.json();
+              console.log('📋 File tree response data length:', fileTreeData?.files?.length || 0);
+              setFileTree(fileTreeData.files || []);
+              console.log('✅ File tree loaded successfully');
+            } else {
+              console.warn('⚠️ File tree request failed:', fileTreeResponse.status, fileTreeResponse.statusText);
+              // Don't block initialization for file tree failures
+              setFileTree([]);
+            }
+          } catch (fileTreeError) {
+            console.warn('⚠️ File tree loading failed (non-blocking):', fileTreeError.message);
+            // Set empty file tree and continue initialization
+            setFileTree([]);
           }
-          
-          const fileTreeData = await fileTreeResponse.json();
-          console.log('📋 File tree response data length:', fileTreeData?.files?.length || 0);
-          
-          setFileTree(fileTreeData.files || []);
-          console.log('✅ File tree loaded successfully');
           
           console.log('🎉 Blueprint initialization completed!');
         } else {
