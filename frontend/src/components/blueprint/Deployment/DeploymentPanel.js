@@ -264,31 +264,7 @@ export default function DeploymentPanel() {
         </Card>
       )}
 
-      {/* Script Console */}
-      {showScriptConsole && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Terminal className="h-5 w-5" />
-                <span>Script Console</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowScriptConsole(false)}
-              >
-                ✕
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-900 text-gray-100 font-mono text-sm p-4 rounded max-h-64 overflow-y-auto">
-              <pre className="whitespace-pre-wrap">{scriptOutput || 'Waiting for script output...'}</pre>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Script Console removed as per FIX 1 requirement */}
     </div>
   );
 }
