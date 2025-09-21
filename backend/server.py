@@ -723,10 +723,12 @@ async def get_blueprint_output_files(root_path: str):
         logger.error(f"Error listing output files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/validate/{filename}")
-async def validate_blueprint(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/validate/{filepath:path}")
+async def validate_blueprint(filepath: str, request: DeploymentRequest):
     """Validate blueprint with blueprint server"""
-    logger.info(f"🔍 Blueprint validation requested for file: {filename}")
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔍 Blueprint validation requested for filepath: {filepath}, filename: {filename}")
     logger.info(f"🔍 Request data: environment={request.environment}, action={request.action}")
     
     if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
@@ -779,9 +781,13 @@ async def validate_blueprint(filename: str, request: DeploymentRequest):
         logger.error(f"❌ Error validating blueprint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/activate/{filename}")
-async def activate_blueprint(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/activate/{filepath:path}")
+async def activate_blueprint(filepath: str, request: DeploymentRequest):
     """Activate blueprint with blueprint server"""
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔍 Blueprint activation requested for filepath: {filepath}, filename: {filename}")
+    
     if not blueprint_build_manager or not environment_manager or not blueprint_file_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
@@ -834,10 +840,12 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
         logger.error(f"Error validating blueprint config: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/validate-script/{filename}")
-async def validate_blueprint_script(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/validate-script/{filepath:path}")
+async def validate_blueprint_script(filepath: str, request: DeploymentRequest):
     """Run validateBlueprint.sh script with specified parameters"""
-    logger.info(f"🔧 Script validation requested for file: {filename}")
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔧 Script validation requested for filepath: {filepath}, filename: {filename}")
     logger.info(f"🔧 Request data: environment={request.environment}, action={request.action}")
     
     if not blueprint_file_manager or not environment_manager:
@@ -877,9 +885,9 @@ async def validate_blueprint_script(filename: str, request: DeploymentRequest):
             'bash', script_path,
             f'--env={request.environment.upper()}',
             f'--api-key={api_key}',
-            filename
+            filepath  # Pass the full filepath (e.g., "out/blueprint.tgz") to the script
         ]
-        logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filename]")  # Hide API key in logs
+        logger.info(f"🔧 Executing command: {' '.join(cmd[:-1])} [filepath]")  # Hide API key in logs
         
         process = await asyncio.create_subprocess_exec(
             *cmd,
@@ -898,16 +906,20 @@ async def validate_blueprint_script(filename: str, request: DeploymentRequest):
             "success": process.returncode == 0,
             "return_code": process.returncode,
             "output": output,
-            "command": f"validateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filename}"
+            "command": f"validateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filepath}"
         }
         
     except Exception as e:
         logger.error(f"❌ Error running validate script: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/blueprint/activate-script/{filename}")
-async def activate_blueprint_script(filename: str, request: DeploymentRequest):
+@api_router.post("/blueprint/activate-script/{filepath:path}")
+async def activate_blueprint_script(filepath: str, request: DeploymentRequest):
     """Run activateBlueprint.sh script with specified parameters"""
+    # Extract just the filename from the filepath (remove 'out/' prefix if present)
+    filename = filepath.split('/')[-1] if '/' in filepath else filepath
+    logger.info(f"🔧 Script activation requested for filepath: {filepath}, filename: {filename}")
+    
     if not blueprint_file_manager or not environment_manager:
         raise HTTPException(status_code=503, detail="Required managers not initialized")
     
@@ -936,7 +948,7 @@ async def activate_blueprint_script(filename: str, request: DeploymentRequest):
             'bash', script_path,
             f'--env={request.environment.upper()}',
             f'--api-key={api_key}',
-            filename,
+            filepath,  # Pass the full filepath (e.g., "out/blueprint.tgz") to the script
             cwd=blueprint_file_manager.root_path,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.STDOUT
@@ -949,7 +961,7 @@ async def activate_blueprint_script(filename: str, request: DeploymentRequest):
             "success": process.returncode == 0,
             "return_code": process.returncode,
             "output": output,
-            "command": f"activateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filename}"
+            "command": f"activateBlueprint.sh --env={request.environment.upper()} --api-key=*** {filepath}"
         }
         
     except Exception as e:
