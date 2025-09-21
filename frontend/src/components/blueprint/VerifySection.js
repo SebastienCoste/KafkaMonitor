@@ -319,11 +319,22 @@ const VerifySection = () => {
 
   const formatJSONWithColors = (json) => {
     return json
+      // JSON keys (quoted strings followed by colon)
       .replace(/("([^"\\]|\\.)*")\s*:/g, '<span class="text-blue-600 font-medium">$1</span>:')
+      // JSON string values
       .replace(/:\s*("([^"\\]|\\.)*")/g, ': <span class="text-green-600">$1</span>')
+      // JSON boolean values
       .replace(/:\s*(true|false)/g, ': <span class="text-purple-600 font-medium">$1</span>')
+      // JSON null values
       .replace(/:\s*(null)/g, ': <span class="text-gray-500 italic">$1</span>')
-      .replace(/:\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, ': <span class="text-orange-600">$1</span>');
+      // JSON numeric values
+      .replace(/:\s*(-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)/g, ': <span class="text-orange-600">$1</span>')
+      // Highlight brackets and braces
+      .replace(/([{}[\]])/g, '<span class="text-gray-700 font-bold">$1</span>')
+      // Highlight commas
+      .replace(/,/g, '<span class="text-gray-600">,</span>')
+      // Make any unquoted text look like JSON keys (for non-standard content)
+      .replace(/^(\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/gm, '$1<span class="text-blue-600 font-medium">"$2"</span>:');
   };
 
   const formatFileSize = (bytes) => {
