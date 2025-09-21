@@ -1603,7 +1603,7 @@ async def lifespan(app: FastAPI):
             logger.error("⚠️  Continuing without Kafka components - manual initialization required")
     else:
         logger.info("⚠️  Trace Viewer is disabled - skipping Kafka components initialization")
-        logger.info("✅ Application startup complete (without Kafka)")
+        logger.info("✅ Marauder's Map revealed - 'Mischief Managed' (tracking mode only)")
     
     yield
     
