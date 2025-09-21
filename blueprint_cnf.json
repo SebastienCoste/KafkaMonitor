@@ -1,0 +1,12 @@
+{
+  "root": {
+    "namespace": "ea.afb.cfb",
+    "version": "1.0.0",
+    "description": "Test Blueprint for Kafka Monitor"
+  },
+  "configuration": {
+    "build": {
+      "output_directory": "out"
+    }
+  }
+}
