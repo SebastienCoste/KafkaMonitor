@@ -274,12 +274,12 @@ class BlueprintBuildManager:
                 )
                 
                 return DeploymentResult(
-                    success=response.status_code == 200,
+                    success=200 <= response.status_code < 300,  # Accept any 2XX status code
                     status_code=response.status_code,
                     response=response.text,
                     environment=environment,
                     action=action,
-                    error_message=None if response.status_code == 200 else f"HTTP {response.status_code}: {response.text}"
+                    error_message=None if 200 <= response.status_code < 300 else f"HTTP {response.status_code}: {response.text}"
                 )
         
         except FileNotFoundError as e:

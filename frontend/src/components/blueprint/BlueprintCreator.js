@@ -49,8 +49,40 @@ export default function BlueprintCreator() {
     loadOutputFiles,
     setRootPath: setBlueprintRootPath
   } = useBlueprintContext();
+  const [leftPanelWidth, setLeftPanelWidth] = useState(320); // 320px = w-80
+  const [isResizing, setIsResizing] = useState(false);
 
   const [activeTab, setActiveTab] = useState('files');
+
+  // Mouse resize handlers
+  const handleMouseDown = (e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isResizing) return;
+    
+    const newWidth = e.clientX - 16; // Account for padding
+    if (newWidth >= 200 && newWidth <= 600) { // Min 200px, Max 600px
+      setLeftPanelWidth(newWidth);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  React.useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing]);
 
   // Load output files when root path changes
   useEffect(() => {
@@ -186,7 +218,10 @@ export default function BlueprintCreator() {
           // Main blueprint interface
           <>
             {/* Left Sidebar - File Explorer */}
-            <div className="w-80 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+            <div 
+              className="bg-white border-r border-gray-200 flex flex-col overflow-hidden relative"
+              style={{ width: `${leftPanelWidth}px` }}
+            >
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-semibold text-gray-900">Project Files</h2>
@@ -223,6 +258,13 @@ export default function BlueprintCreator() {
                 <FileUpload />
               </div>
             </div>
+
+            {/* Resize Handle */}
+            <div
+              className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0 transition-colors"
+              onMouseDown={handleMouseDown}
+              title="Drag to resize"
+            />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col overflow-hidden">

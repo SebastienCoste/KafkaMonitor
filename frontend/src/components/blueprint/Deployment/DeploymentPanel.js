@@ -11,8 +11,7 @@ import {
   FileArchive, 
   AlertTriangle,
   Clock,
-  RefreshCw,
-  Terminal
+  RefreshCw
 } from 'lucide-react';
 
 export default function DeploymentPanel() {
@@ -28,8 +27,6 @@ export default function DeploymentPanel() {
   const [selectedFile, setSelectedFile] = useState('');
   const [deploymentResults, setDeploymentResults] = useState([]);
   const [deploymentLoading, setDeploymentLoading] = useState(false);
-  const [scriptOutput, setScriptOutput] = useState('');
-  const [showScriptConsole, setShowScriptConsole] = useState(false);
 
   const handleValidate = async () => {
     if (!selectedFile) {
@@ -58,103 +55,7 @@ export default function DeploymentPanel() {
     }
   };
 
-  const handleValidateScript = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a blueprint file to validate');
-      return;
-    }
-
-    setDeploymentLoading(true);
-    setScriptOutput('');
-    setShowScriptConsole(true);
-    
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/validate-script/${selectedFile}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tgz_file: selectedFile,
-            environment: selectedEnvironment,
-            action: 'validate'
-          })
-        }
-      );
-      
-      const result = await response.json();
-      
-      // Display script output in console
-      setScriptOutput(result.output || 'No output received');
-      
-      setDeploymentResults([{
-        action: 'validate-script',
-        timestamp: new Date(),
-        ...result
-      }, ...deploymentResults]);
-      
-      if (result.success) {
-        toast.success('Blueprint validation script completed successfully');
-      } else {
-        toast.error(`Blueprint validation script failed (exit code: ${result.return_code})`);
-      }
-    } catch (error) {
-      const errorMsg = `Script execution failed: ${error.message}`;
-      setScriptOutput(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setDeploymentLoading(false);
-    }
-  };
-
-  const handleActivateScript = async () => {
-    if (!selectedFile) {
-      toast.error('Please select a blueprint file to activate');
-      return;
-    }
-
-    setDeploymentLoading(true);
-    setScriptOutput('');
-    setShowScriptConsole(true);
-    
-    try {
-      const response = await fetch(
-        `${process.env.REACT_APP_BACKEND_URL}/api/blueprint/activate-script/${selectedFile}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tgz_file: selectedFile,
-            environment: selectedEnvironment,
-            action: 'activate'
-          })
-        }
-      );
-      
-      const result = await response.json();
-      
-      // Display script output in console
-      setScriptOutput(result.output || 'No output received');
-      
-      setDeploymentResults([{
-        action: 'activate-script',
-        timestamp: new Date(),
-        ...result
-      }, ...deploymentResults]);
-      
-      if (result.success) {
-        toast.success('Blueprint activation script completed successfully');
-      } else {
-        toast.error(`Blueprint activation script failed (exit code: ${result.return_code})`);
-      }
-    } catch (error) {
-      const errorMsg = `Script execution failed: ${error.message}`;
-      setScriptOutput(errorMsg);
-      toast.error(errorMsg);
-    } finally {
-      setDeploymentLoading(false);
-    }
-  };
+  // Script functionality removed as per FIX 1 requirement
 
   const handleActivate = async () => {
     if (!selectedFile) {
@@ -192,16 +93,16 @@ export default function DeploymentPanel() {
   };
 
   const getActionBadge = (action) => {
-    if (action === 'validate' || action === 'validate-script') {
+    if (action === 'validate') {
       return (
         <Badge variant="outline" className="text-blue-600 border-blue-200">
-          {action === 'validate-script' ? 'Script Validate' : 'API Validate'}
+          Validate
         </Badge>
       );
     } else {
       return (
         <Badge className="bg-green-500">
-          {action === 'activate-script' ? 'Script Activate' : 'API Activate'}
+          Activate
         </Badge>
       );
     }
@@ -295,38 +196,15 @@ export default function DeploymentPanel() {
                 disabled={!selectedFile || deploymentLoading || loading}
               >
                 <CheckCircle className="h-4 w-4 mr-2" />
-                API Validate
+                Validate
               </Button>
               <Button
                 onClick={handleActivate}
                 disabled={!selectedFile || deploymentLoading || loading}
               >
                 <Play className="h-4 w-4 mr-2" />
-                API Activate
+                Activate
               </Button>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                variant="outline"
-                onClick={handleValidateScript}
-                disabled={!selectedFile || deploymentLoading || loading}
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Script Validate
-              </Button>
-              <Button
-                onClick={handleActivateScript}
-                disabled={!selectedFile || deploymentLoading || loading}
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Script Activate
-              </Button>
-            </div>
-
-            <div className="text-xs text-gray-600 space-y-1">
-              <p><strong>API Validate/Activate:</strong> Direct API calls to blueprint server</p>
-              <p><strong>Script Validate/Activate:</strong> Run local .sh scripts with environment and API key</p>
             </div>
           </div>
         </CardContent>
@@ -385,31 +263,7 @@ export default function DeploymentPanel() {
         </Card>
       )}
 
-      {/* Script Console */}
-      {showScriptConsole && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Terminal className="h-5 w-5" />
-                <span>Script Console</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowScriptConsole(false)}
-              >
-                ✕
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-900 text-gray-100 font-mono text-sm p-4 rounded max-h-64 overflow-y-auto">
-              <pre className="whitespace-pre-wrap">{scriptOutput || 'Waiting for script output...'}</pre>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Script Console removed as per FIX 1 requirement */}
     </div>
   );
 }
