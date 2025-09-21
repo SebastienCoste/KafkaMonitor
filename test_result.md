@@ -455,10 +455,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "Blueprint Creator File Switching Fix"
-    - "Blueprint Creator Folder Operations Fix"
-    - "Blueprint Creator Syntax Highlighting Fix"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
