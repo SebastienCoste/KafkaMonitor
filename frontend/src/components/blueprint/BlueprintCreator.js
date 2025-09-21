@@ -54,6 +54,36 @@ export default function BlueprintCreator() {
 
   const [activeTab, setActiveTab] = useState('files');
 
+  // Mouse resize handlers
+  const handleMouseDown = (e) => {
+    setIsResizing(true);
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isResizing) return;
+    
+    const newWidth = e.clientX - 16; // Account for padding
+    if (newWidth >= 200 && newWidth <= 600) { // Min 200px, Max 600px
+      setLeftPanelWidth(newWidth);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsResizing(false);
+  };
+
+  React.useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing]);
+
   // Load output files when root path changes
   useEffect(() => {
     if (rootPath) {
