@@ -49,7 +49,8 @@ export default function BlueprintCreator() {
     initializing,
     refreshFileTree,
     loadOutputFiles,
-    setRootPath: setBlueprintRootPath
+    setRootPath: setBlueprintRootPath,
+    namespace
   } = useBlueprintContext();
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // 320px = w-80
   const [isResizing, setIsResizing] = useState(false);
