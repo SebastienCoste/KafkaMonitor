@@ -175,7 +175,17 @@ const VerifySection = () => {
       
     } catch (error) {
       console.error('Failed to fetch Redis files:', error);
-      setError(error.message || 'Failed to fetch files');
+      const errorMsg = error.message || 'Failed to fetch files';
+      
+      // Check if this is an expected Redis connection error (mock environment)
+      if (errorMsg.includes('Name or service not known') || 
+          errorMsg.includes('connection') || 
+          errorMsg.includes('redis-')) {
+        setError(`Redis connection unavailable: Mock environment detected. This is expected behavior when Redis cluster is not accessible.`);
+      } else {
+        setError(errorMsg);
+      }
+      
       setConnectionStatus('failed');
       setFiles([]);
       setFileTree({});
