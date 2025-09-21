@@ -142,11 +142,13 @@ class RedisService:
     def _create_cluster_connection(self, config: RedisConfig):
         """Try to create Redis cluster connection"""
         try:
-            # For cluster, we only need the startup node
-            startup_nodes = [{"host": config.host, "port": config.port}]
+            # For Redis cluster, use the correct format for startup nodes
+            # Option 1: Use host and port directly (redis-py 4.x+ format)
+            logger.info(f"🔗 Attempting cluster connection to {config.host}:{config.port}")
             
             connection = RedisCluster(
-                startup_nodes=startup_nodes,
+                host=config.host,  # Use direct host/port parameters
+                port=config.port,
                 password=config.token,
                 ssl=True,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -157,9 +159,7 @@ class RedisService:
                 retry_on_timeout=True,
                 decode_responses=True,
                 skip_full_coverage_check=True,  # Allow partial cluster coverage
-                health_check_interval=30,
-                retry_on_cluster_down=True,  # Retry when cluster is down
-                cluster_error_retry_attempts=3  # Retry cluster operations
+                health_check_interval=30
             )
             
             # Test cluster connection
@@ -168,9 +168,65 @@ class RedisService:
             return connection
             
         except Exception as e:
-            logger.error(f"❌ Redis cluster connection failed: {e}")
-            # Don't return None - raise the exception so we know what's wrong
-            raise
+            logger.error(f"❌ Redis cluster connection failed with direct host/port: {e}")
+            
+            # Option 2: Try with startup_nodes list format
+            try:
+                logger.info(f"🔗 Attempting cluster connection with startup_nodes format")
+                
+                # Create startup nodes in the correct format for older redis-py versions
+                startup_nodes = [f"{config.host}:{config.port}"]
+                
+                connection = RedisCluster(
+                    startup_nodes=startup_nodes,
+                    password=config.token,
+                    ssl=True,
+                    ssl_cert_reqs=ssl.CERT_REQUIRED,
+                    ssl_ca_certs=str(self.ca_cert_path) if self.ca_cert_path.exists() else None,
+                    ssl_check_hostname=True,
+                    socket_connect_timeout=config.connection_timeout,
+                    socket_timeout=config.socket_timeout,
+                    retry_on_timeout=True,
+                    decode_responses=True,
+                    skip_full_coverage_check=True,
+                    health_check_interval=30
+                )
+                
+                # Test cluster connection
+                connection.ping()
+                logger.info(f"🔗 Redis cluster connection successful with startup_nodes - type: {type(connection)}")
+                return connection
+                
+            except Exception as e2:
+                logger.error(f"❌ Redis cluster connection failed with startup_nodes: {e2}")
+                
+                # Option 3: Try creating a regular Redis connection that might auto-detect cluster
+                try:
+                    logger.info(f"🔗 Attempting regular Redis connection (may auto-detect cluster)")
+                    
+                    connection = redis.Redis(
+                        host=config.host,
+                        port=config.port,
+                        password=config.token,
+                        ssl=True,
+                        ssl_cert_reqs=ssl.CERT_REQUIRED,
+                        ssl_ca_certs=str(self.ca_cert_path) if self.ca_cert_path.exists() else None,
+                        ssl_check_hostname=True,
+                        socket_connect_timeout=config.connection_timeout,
+                        socket_timeout=config.socket_timeout,
+                        retry_on_timeout=True,
+                        health_check_interval=30,
+                        decode_responses=True
+                    )
+                    
+                    # Test connection
+                    connection.ping()
+                    logger.info(f"🔗 Regular Redis connection successful - type: {type(connection)}")
+                    return connection
+                    
+                except Exception as e3:
+                    logger.error(f"❌ All Redis connection attempts failed: {e3}")
+                    raise Exception(f"Failed to connect to Redis cluster: direct ({e}), startup_nodes ({e2}), regular ({e3})")
     
     def _create_single_connection(self, config: RedisConfig):
         """Create single Redis instance connection"""
