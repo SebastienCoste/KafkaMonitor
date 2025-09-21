@@ -3714,8 +3714,18 @@ class KafkaTraceViewerTester:
                 return False
             elif response.status_code == 500:
                 # Expected if Redis connection fails (mock Redis)
-                self.log_test("Redis Connection Test", True, "Expected failure - Redis connection failed (500)")
-                return True
+                try:
+                    error_data = response.json()
+                    error_detail = error_data.get('detail', '')
+                    if 'Redis' in error_detail and ('ssl_context' in error_detail or 'connection' in error_detail.lower()):
+                        self.log_test("Redis Connection Test", True, f"Expected Redis connection failure (500): {error_detail[:50]}...")
+                        return True
+                    else:
+                        self.log_test("Redis Connection Test", False, f"Unexpected 500 error: {error_detail}")
+                        return False
+                except:
+                    self.log_test("Redis Connection Test", True, "Expected failure - Redis connection failed (500)")
+                    return True
             elif response.status_code == 503:
                 self.log_test("Redis Connection Test", False, "Redis service not initialized (503)")
                 return False
