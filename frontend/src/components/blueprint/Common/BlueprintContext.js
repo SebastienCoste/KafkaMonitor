@@ -94,7 +94,29 @@ export function BlueprintProvider({ children }) {
         if (config && config.root_path) {
           console.log('Setting root path:', config.root_path);
           setRootPath(config.root_path);
-          setAutoRefresh(config.auto_refresh || true);
+          setAutoRefresh(config.auto_refresh || false); // FIX 4: Default to false
+          
+          // Try to detect namespace
+          try {
+            const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+            if (namespaceResponse.ok) {
+              const namespaceData = await namespaceResponse.json();
+              const detectedNamespace = namespaceData.namespace || '';
+              setNamespace(detectedNamespace);
+              
+              // Add to blueprints array
+              const newBlueprint = {
+                id: Date.now().toString(),
+                rootPath: config.root_path,
+                namespace: detectedNamespace,
+                name: detectedNamespace || config.root_path.split('/').pop() || config.root_path
+              };
+              setBlueprints([newBlueprint]);
+              setActiveBlueprint(newBlueprint.id);
+            }
+          } catch (error) {
+            console.warn('Could not detect namespace:', error);
+          }
           
           // Auto-load file tree if root path is set
           console.log('Loading file tree...');
