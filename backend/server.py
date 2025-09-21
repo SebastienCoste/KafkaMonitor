@@ -171,20 +171,19 @@ async def initialize_kafka_components():
                 logger.error(f"🔴 Traceback: {traceback.format_exc()}")
                 raise
         
-        # Initialize Environment Manager
-        logger.info("🌍 Initializing Environment Manager...")
+        # Update Environment Manager with full Kafka setup
+        logger.info("🌍 Updating Environment Manager with Kafka support...")
         environment_manager = EnvironmentManager(
             environments_dir=str(CONFIG_DIR / "environments"),
             protobuf_decoder=decoder,
             settings=settings
         )
-        logger.info("✅ Environment Manager initialized")
+        logger.info("✅ Full Environment Manager initialized with Kafka support")
         
-        # Initialize Redis and Blueprint Manager components
-        logger.info("🔧 Initializing Redis and Blueprint Manager components...")
+        # Update Redis service with full environment manager
+        logger.info("🔧 Updating Redis service with full environment manager...")
         redis_service = RedisService(environment_manager)
-        blueprint_manager = BlueprintManager(blueprint_file_manager)
-        logger.info("✅ Redis and Blueprint Manager components initialized")
+        logger.info("✅ Redis service updated with full environment support")
         
         # Default to DEV environment (or first available)
         available_envs = environment_manager.list_environments()
