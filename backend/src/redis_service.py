@@ -129,13 +129,15 @@ class RedisService:
             # Create SSL context
             ssl_context = self._create_ssl_context()
             
+            # For Redis cluster with SSL, use proper SSL parameters
             connection = redis.Redis(
                 host=config.host,
                 port=config.port,
                 password=config.token,
                 ssl=True,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
-                ssl_context=ssl_context,
+                ssl_ca_certs=str(self.ca_cert_path) if self.ca_cert_path.exists() else None,
+                ssl_check_hostname=True,
                 socket_connect_timeout=config.connection_timeout,
                 socket_timeout=config.socket_timeout,
                 retry_on_timeout=True,
