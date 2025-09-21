@@ -146,6 +146,12 @@ async def initialize_kafka_components():
         )
         logger.info("✅ Environment Manager initialized")
         
+        # Initialize Redis and Blueprint Manager components
+        logger.info("🔧 Initializing Redis and Blueprint Manager components...")
+        redis_service = RedisService(environment_manager)
+        blueprint_manager = BlueprintManager(blueprint_file_manager)
+        logger.info("✅ Redis and Blueprint Manager components initialized")
+        
         # Default to DEV environment (or first available)
         available_envs = environment_manager.list_environments()
         config_default_env = settings.get('application', {}).get('start_env', 'DEV')
