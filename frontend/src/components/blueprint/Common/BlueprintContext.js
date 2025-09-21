@@ -19,7 +19,7 @@ export function BlueprintProvider({ children }) {
   const [fileContent, setFileContent] = useState('');
   const [openTabs, setOpenTabs] = useState([]); // Array of {path, content, hasChanges}
   const [activeTab, setActiveTab] = useState(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false); // FIX 4: Default to false
   const [environments, setEnvironments] = useState([]);
   const [selectedEnvironment, setSelectedEnvironment] = useState('dev');
   const [websocket, setWebsocket] = useState(null);
