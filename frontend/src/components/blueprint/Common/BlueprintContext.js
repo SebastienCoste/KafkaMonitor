@@ -545,6 +545,7 @@ export function BlueprintProvider({ children }) {
     setBuildOutput,
     
     // Tab Management
+    switchToTab,
     closeTab,
     updateTabContent,
     
