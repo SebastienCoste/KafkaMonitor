@@ -34,3 +34,25 @@ topic_monitoring:
 
 application:
   start_env: INT
+
+# Application tabs configuration
+tabs:
+  trace_viewer:
+    enabled: true
+    title: "Trace Viewer"
+    description: "Kafka message flow visualization and tracing"
+  grpc_integration:
+    enabled: true
+    title: "gRPC Integration"
+    description: "gRPC service integration and testing"
+  blueprint_creator:
+    enabled: true
+    title: "Blueprint Creator"
+    description: "Blueprint management and Redis verification"
+
+# Landing page configuration
+landing_page:
+  enabled: true
+  title: "Kafka Monitor Dashboard"
+  subtitle: "Comprehensive monitoring and management platform"
+  description: "Monitor Kafka traces, manage gRPC integrations, and create blueprints with Redis verification"
