@@ -50,6 +50,10 @@ blueprint_file_manager: Optional[BlueprintFileManager] = None
 blueprint_build_manager: Optional[BlueprintBuildManager] = None
 blueprint_websocket_connections: List[WebSocket] = []
 
+# Global variables for Redis Verify components
+redis_service: Optional[RedisService] = None
+blueprint_manager: Optional[BlueprintManager] = None
+
 # Configuration paths
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
