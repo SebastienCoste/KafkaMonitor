@@ -1580,7 +1580,7 @@ from fastapi.responses import FileResponse, Response
 async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
-    logger.info("🚀 Application starting up...")
+    logger.info("🗺️ Marauder's Map awakening... 'I solemnly swear I am up to no good'")
     
     # Always initialize Blueprint components first
     try:
