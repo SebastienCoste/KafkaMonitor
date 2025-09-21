@@ -489,11 +489,16 @@ const VerifySection = () => {
           </Badge>
         </div>
         
-        <div className="flex-1 overflow-auto p-4 bg-white">
+        <div className="flex-1 overflow-auto p-4 bg-gray-900">
           <pre 
             ref={contentRef} 
-            className="text-sm font-mono leading-relaxed text-gray-800 whitespace-pre-wrap break-words"
-            style={{ minHeight: '100%' }}
+            className="text-sm font-mono leading-relaxed text-gray-100 whitespace-pre-wrap break-words"
+            style={{ 
+              minHeight: '100%',
+              backgroundColor: '#1e1e1e',
+              padding: '16px',
+              borderRadius: '4px'
+            }}
           >
             {fileContent}
           </pre>
