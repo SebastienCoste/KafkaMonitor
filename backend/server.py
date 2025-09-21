@@ -764,11 +764,11 @@ async def validate_blueprint(filepath: str, request: DeploymentRequest):
         logger.info(f"🔍 Blueprint server config: {blueprint_config}")
         env_config = EnvironmentConfig(**blueprint_config)
         
-        logger.info(f"🔍 Starting blueprint validation - file: {filename}, env: {request.environment}, namespace: {namespace}")
-        # Deploy with validate action
+        logger.info(f"🔍 Starting blueprint validation - file: {filepath}, env: {request.environment}, namespace: {namespace}")
+        # Deploy with validate action - use full filepath to locate file in out/ directory
         result = await blueprint_build_manager.deploy_blueprint(
             request.root_path if hasattr(request, 'root_path') else blueprint_file_manager.root_path,
-            filename,
+            filepath,
             request.environment,
             DeploymentAction.VALIDATE,
             env_config,
