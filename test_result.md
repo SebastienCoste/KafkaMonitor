@@ -634,6 +634,36 @@ test_plan:
         agent: "testing"
         comment: "✅ FIX3 VERIFIED: Syntax Highlighting is working correctly. CodeEditor component successfully renders with Edit/Preview toggle buttons visible in the editor header. Files display with proper syntax highlighting using react-syntax-highlighter - README.md shows Markdown highlighting, BUG_FIXES.md shows proper formatting with line numbers. The Edit/Preview toggle functionality is implemented and accessible. Different file types (.md, .json, .py, .js, .yaml) are properly detected and highlighted with appropriate language modes."
 
+  - task: "Blueprint Creator Darker File Content Colors Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/Editors/CodeEditor.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 1 - Darker File Content Colors: Verify syntax highlighting uses vscDarkPlus theme, edit mode textarea has dark background (bg-gray-900) with light text (text-gray-100), and preview mode has dark background (#1e1e1e)"
+      - working: true
+        agent: "testing"
+        comment: "✅ FIX 1 VERIFIED: Darker File Content Colors working perfectly. EDIT MODE: Textarea confirmed with dark background rgb(17, 24, 39) = bg-gray-900 and light text rgb(243, 244, 246) = text-gray-100. CSS classes confirmed: 'bg-gray-900 text-gray-100'. PREVIEW MODE: vscDarkPlus theme active with dark background #1e1e1e, syntax highlighter rendering 148+ elements with proper dark theme colors. Both edit and preview modes provide significantly better contrast than before. File switching between README.md and other files works correctly with consistent dark theming."
+
+  - task: "Blueprint Creator Folder Hover Buttons Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/FileExplorer/FileTree.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing FIX 2 - Folder Hover Buttons: Verify folders have 'group' CSS class and show action buttons on hover (FilePlus, FolderPlus, Edit, Trash)"
+      - working: true
+        agent: "testing"
+        comment: "✅ FIX 2 VERIFIED: Folder Hover Buttons working perfectly. Successfully tested hovering over 3 folders (backend, frontend, out). All 4 expected hover buttons visible on each folder: ✅ Create File button (FilePlus), ✅ Create Folder button (FolderPlus), ✅ Rename button (Edit), ✅ Delete button (Trash). The 'group' CSS class is properly implemented with 'opacity-0 group-hover:opacity-100' functionality working correctly. Folders missing hover buttons issue is completely resolved."
+
 agent_communication:
   - agent: "main"
     message: "✅ FRONTEND API URL ISSUE RESOLVED: Successfully fixed the frontend API URL configuration by updating .env.local file to use https://trace-blueprint.preview.emergentagent.com instead of localhost:8001. Also fixed missing protoc dependency that was causing backend 503 errors. Browser console now shows correct API_BASE_URL and backend APIs are responding properly. The gRPC integration UI testing blocker has been completely resolved."
@@ -658,6 +688,8 @@ agent_communication:
   - agent: "main"
     message: "🎉 SIX NEW FIXES IMPLEMENTATION COMPLETED: ✅ FIX1 (Script Validate/Activate Removal) - Completely removed script endpoints from backend and all script UI from DeploymentPanel. Only API Validate/Activate buttons remain. ✅ FIX2 (Stronger File Colors) - Enhanced file icon colors from pale (text-*-500) to stronger variants (text-*-700, text-*-800) for better visibility. ✅ FIX3 (HTTP 2XX Success) - Updated deployment success condition from 'status_code == 200' to '200 <= status_code < 300' to accept HTTP 204 and all 2XX responses. ✅ FIX4 (Folder Rename/Delete) - Folder operations already implemented with Edit/Delete buttons on hover. ✅ FIX5 (Create File/Folder in Directories) - FilePlus/FolderPlus buttons already working for each folder. ✅ FIX6 (Resizable Left Column) - Added mouse resize functionality with drag handle, 200px-600px constraints, proper cursor states. TESTING: 5/6 fixes fully verified working, Blueprint Creator fully operational with enhanced UX."
   - agent: "main"
+    message: "🎯 TWO CRITICAL UI FIXES COMPLETED AND VERIFIED: ✅ FIX1 (Darker File Content Colors) - Replaced 'tomorrow' theme with 'vscDarkPlus' theme in syntax highlighter, updated edit mode textarea to bg-gray-900 with text-gray-100, changed preview background from #fafafa to #1e1e1e for significantly improved contrast and readability. ✅ FIX2 (Folder Hover Buttons Visibility) - Fixed missing 'group' CSS class on directory containers in FileTree.js that was preventing hover buttons from appearing. All folder action buttons (Create File, Create Folder, Rename, Delete) now correctly visible on hover with opacity-0 group-hover:opacity-100 functionality. COMPREHENSIVE TESTING: Both fixes verified working perfectly - dark theme provides excellent contrast, folder hover buttons functional on all directories (backend, frontend, out folders tested). Blueprint Creator UI now fully operational with enhanced visual clarity and complete folder management capabilities."
+  - agent: "main"
     message: "🔍 FRONTEND API URL ISSUE IDENTIFIED: The issue is NOT in the code - both App.js and GrpcIntegration.js correctly use process.env.REACT_APP_BACKEND_URL. Root cause: .env.local file (REACT_APP_BACKEND_URL=http://localhost:8001) is overriding the main .env file (REACT_APP_BACKEND_URL=https://trace-blueprint.preview.emergentagent.com) due to React's environment variable precedence. Browser console shows API_BASE_URL is loading as localhost:8001. All API calls are failing with 503 Service Unavailable because they're going to wrong URL. Need to fix .env.local file to resolve the gRPC integration UI testing blocker."
   - agent: "main"
     message: "🎉 ALL THREE REQUIREMENTS SUCCESSFULLY IMPLEMENTED: ✅ REQ1: Added P10/P50/P95 message age metrics in milliseconds to backend statistics endpoint and frontend topics display with color-coded visualization (P10-emerald, P50-amber, P95-red). ✅ REQ2: Fixed graph visualization size - increased from 600-800px to 800-1200px range with better scaling (60px per topic vs 40px) and improved zoom controls with tooltips and proper container references. ✅ REQ3: Successfully integrated uploaded gRPC proto files - resolved proto compilation issues by creating missing dependencies (eadp proto files), fixed import path conflicts by renaming 'grpc' to 'proto_gen', resolved gRPC version compatibility issues by upgrading to grpcio 1.75.0 and creating missing _utilities.py module. gRPC client now initializes successfully with available services: IngressServer (UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings) and AssetStorageService (BatchGetSignedUrls, BatchUpdateStatuses). All environments (DEV, INT, LOAD, PROD, TEST) are accessible. Application is fully functional with working trace viewer, enhanced topics page with P95 metrics, larger graph visualization, and fully operational gRPC integration page."
@@ -673,6 +705,8 @@ agent_communication:
     message: "🎯 CRITICAL REVIEW REQUEST TESTING COMPLETED - ALL FIXES VERIFIED: ✅ 1) gRPC UpsertContent Call Fix: No '_call_with_retry() missing 1 required positional argument: request' errors detected. Both simple (0.08s) and complex nested protobuf requests (0.06s) work correctly. ✅ 2) gRPC Example Generation: All 6 methods (UpsertContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings, BatchGetSignedUrls, BatchUpdateStatuses) generate valid examples with proper field structures for Load Example buttons. ✅ 3) All gRPC Service Methods: Comprehensive regression testing shows all methods are free of parameter errors (0.05-0.06s response times). ✅ 4) Message Class Resolution: UpsertContentRequest found correctly, no regression in other message classes. RESULT: 20/20 critical tests passed (100% success rate). Both reported issues from review request are completely resolved: UpsertContent gRPC calls succeed without parameter errors, and example generation works correctly for all Load Example buttons."
   - agent: "main"
     message: "🔧 PHASE 2 UI FIXES COMPLETED: ✅ RefreshCw Icon Import: Already properly imported on line 30 and used in 'Reload Credentials' button. ✅ Load Button Placement Bug Fix: Fixed the issue where 'Load save' button was appearing in wrong place for UpsertContent (next to BatchAddRatings). Root cause was shared saveDialogOpen and currentSaveContext state across all method cards. Solution: Made save dialog state method-specific by converting saveDialogOpen and saveName to objects with method-specific keys, removed shared currentSaveContext state that was causing conflicts. Each method now has independent save dialog with proper context isolation."
+  - agent: "testing"
+    message: "🎉 BLUEPRINT CREATOR TWO SPECIFIC FIXES TESTING COMPLETED - BOTH FIXES VERIFIED WORKING: ✅ FIX 1 (Darker File Content Colors): Edit mode textarea has confirmed dark background rgb(17, 24, 39) = bg-gray-900 with light text rgb(243, 244, 246) = text-gray-100. Preview mode uses vscDarkPlus theme with dark background #1e1e1e and proper syntax highlighting (148+ elements detected). Significantly improved contrast over previous light themes. ✅ FIX 2 (Folder Hover Buttons): All folder hover functionality working perfectly. Tested 3 folders (backend, frontend, out) - each shows 4 action buttons on hover: Create File (FilePlus), Create Folder (FolderPlus), Rename (Edit), Delete (Trash). The 'group' CSS class with 'opacity-0 group-hover:opacity-100' is properly implemented. Both reported issues from review request are completely resolved and ready for production use."
   - agent: "testing"
     message: "🔍 PHASE 2 UI FIXES TESTING RESULTS: ✅ CODE REVIEW VERIFICATION: Confirmed RefreshCw icon is properly imported (line 30) and used in 'Reload Credentials' button (line 846). Verified Load Button Placement Bug Fix implementation - saveDialogOpen and saveName are now method-specific objects, eliminating cross-contamination between methods. ✅ BACKEND FUNCTIONALITY: gRPC initialization working correctly on backend (logs show successful initialization with available services). ❌ FRONTEND INITIALIZATION ISSUE: gRPC client initialization not completing on frontend - page remains in 'gRPC Integration Setup' mode preventing full UI testing. The Phase 2 fixes are properly implemented in code but cannot be fully tested due to initialization timing issue. RECOMMENDATION: Main agent should investigate frontend gRPC initialization completion logic or add timeout handling for initialization response."
   - agent: "testing"

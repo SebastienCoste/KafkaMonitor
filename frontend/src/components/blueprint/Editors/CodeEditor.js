@@ -5,7 +5,7 @@ import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
 import { Save, RotateCcw, Eye, Edit } from 'lucide-react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
@@ -170,7 +170,7 @@ export default function CodeEditor({ filePath }) {
           <textarea
             value={currentContent}
             onChange={handleContentChange}
-            className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm bg-gray-50"
+            className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm bg-gray-900 text-gray-100"
             style={{ 
               minHeight: 'calc(100vh - 250px)',
               fontSize: '14px',
@@ -183,7 +183,7 @@ export default function CodeEditor({ filePath }) {
           <div className="h-full overflow-auto">
             <SyntaxHighlighter
               language={getSyntaxLanguage(filePath)}
-              style={tomorrow}
+              style={vscDarkPlus}
               showLineNumbers={true}
               wrapLines={true}
               customStyle={{
@@ -192,7 +192,7 @@ export default function CodeEditor({ filePath }) {
                 fontSize: '14px',
                 fontFamily: 'Monaco, "Lucida Console", monospace',
                 minHeight: 'calc(100vh - 250px)',
-                background: '#fafafa'
+                background: '#1e1e1e'
               }}
             >
               {currentContent || '// File content will appear here...'}
