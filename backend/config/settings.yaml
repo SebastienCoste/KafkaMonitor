@@ -53,6 +53,6 @@ tabs:
 # Landing page configuration
 landing_page:
   enabled: true
-  title: "Kafka Monitor Dashboard"
-  subtitle: "Comprehensive monitoring and management platform"
-  description: "Monitor Kafka traces, manage gRPC integrations, and create blueprints with Redis verification"
+  title: "Marauder's Map"
+  subtitle: "I solemnly swear I am up to no good"
+  description: "Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection."
