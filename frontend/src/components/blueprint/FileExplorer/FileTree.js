@@ -254,7 +254,7 @@ export default function FileTree({ files }) {
       return (
         <div key={item.path}>
           <div
-            className={`flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
+            className={`group flex items-center p-2 hover:bg-gray-100 cursor-pointer select-none ${
               dragOverItem === item.path ? 'bg-blue-100 border-l-4 border-blue-500' : ''
             } ${depth > 0 ? `ml-${depth * 4}` : ''}`}
             draggable
