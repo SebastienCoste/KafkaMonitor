@@ -138,7 +138,7 @@ const VerifySection = () => {
       
     } catch (error) {
       setConnectionStatus('failed');
-      setError('Failed to test Redis connection');
+      setError(`Connection test failed: ${error.message || 'Redis server not accessible'}`);
     }
   };
 
