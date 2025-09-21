@@ -550,6 +550,82 @@ export function BlueprintProvider({ children }) {
     }
   };
 
+  // Multi-blueprint management functions
+  const addNewBlueprint = async (path) => {
+    try {
+      // Check if blueprint already exists
+      const existingBlueprint = blueprints.find(bp => bp.rootPath === path);
+      if (existingBlueprint) {
+        switchBlueprint(existingBlueprint.id);
+        return;
+      }
+
+      // Create new blueprint entry
+      const newBlueprint = {
+        id: Date.now().toString(),
+        rootPath: path,
+        namespace: '',
+        name: path.split('/').pop() || path
+      };
+
+      // Add to blueprints list
+      setBlueprints(prev => [...prev, newBlueprint]);
+      
+      // Set as active and load
+      setActiveBlueprint(newBlueprint.id);
+      await setBlueprintRootPath(path);
+      
+    } catch (error) {
+      console.error('Error adding blueprint:', error);
+      throw error;
+    }
+  };
+
+  const removeBlueprint = (blueprintId) => {
+    setBlueprints(prev => {
+      const filtered = prev.filter(bp => bp.id !== blueprintId);
+      
+      // If we're removing the active blueprint, switch to another or clear
+      if (activeBlueprint === blueprintId) {
+        if (filtered.length > 0) {
+          const newActive = filtered[0];
+          setActiveBlueprint(newActive.id);
+          setBlueprintRootPath(newActive.rootPath);
+        } else {
+          setActiveBlueprint(null);
+          setRootPath('');
+          setNamespace('');
+          setSelectedFile(null);
+          setOpenTabs([]);
+          setActiveTab(null);
+          setFileContent('');
+          setFileTree([]);
+        }
+      }
+      
+      return filtered;
+    });
+  };
+
+  const switchBlueprint = async (blueprintId) => {
+    const blueprint = blueprints.find(bp => bp.id === blueprintId);
+    if (blueprint) {
+      setActiveBlueprint(blueprintId);
+      await setBlueprintRootPath(blueprint.rootPath);
+    }
+  };
+
+  // Update namespace in blueprint when it changes
+  useEffect(() => {
+    if (activeBlueprint && namespace) {
+      setBlueprints(prev => prev.map(bp => 
+        bp.id === activeBlueprint 
+          ? { ...bp, namespace, name: namespace || bp.name }
+          : bp
+      ));
+    }
+  }, [namespace, activeBlueprint]);
+
   const contextValue = {
     // State
     rootPath,
