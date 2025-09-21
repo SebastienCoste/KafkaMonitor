@@ -166,18 +166,32 @@ export default function CodeEditor({ filePath }) {
       {/* Editor Area */}
       <div className="flex-1 overflow-hidden relative">
         {isEditing ? (
-          /* Edit Mode - Textarea */
-          <textarea
-            value={currentContent}
-            onChange={handleContentChange}
-            className="h-full w-full p-4 border-0 resize-none focus:outline-none font-mono text-sm bg-gray-900 text-gray-100"
-            style={{ 
-              minHeight: 'calc(100vh - 250px)',
-              fontSize: '14px',
-              fontFamily: 'Monaco, "Lucida Console", monospace'
-            }}
-            placeholder="File content will appear here..."
-          />
+          /* Edit Mode - Enhanced Textarea with Better Styling */
+          <div className="h-full overflow-auto" style={{ background: '#1e1e1e' }}>
+            <textarea
+              value={currentContent}
+              onChange={handleContentChange}
+              className="h-full w-full border-0 resize-none focus:outline-none font-mono text-sm"
+              style={{ 
+                minHeight: 'calc(100vh - 250px)',
+                fontSize: '14px',
+                fontFamily: 'Monaco, "Lucida Console", monospace',
+                background: '#1e1e1e',
+                color: '#d4d4d4',
+                padding: '16px',
+                lineHeight: '1.5',
+                tabSize: '2',
+                outline: 'none',
+                border: 'none',
+                caretColor: '#ffffff'
+              }}
+              placeholder="File content will appear here..."
+              spellCheck={false}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+            />
+          </div>
         ) : (
           /* Preview Mode - Syntax Highlighted */
           <div className="h-full overflow-auto">
