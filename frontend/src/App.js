@@ -1211,6 +1211,20 @@ function App() {
             </div>
           )}
         </div>
+      ) : currentPage === 'landing' ? (
+        <div className="min-h-screen bg-gray-50">
+          <LandingPage 
+            onNavigate={(pageId) => {
+              const pageMap = {
+                'traces': 'traces',
+                'grpc': 'grpc', 
+                'blueprint': 'blueprint'
+              };
+              setCurrentPage(pageMap[pageId] || pageId);
+            }}
+            availableTabs={availableTabs}
+          />
+        </div>
       ) : currentPage === 'grpc' ? (
         // gRPC Integration Page
         <GrpcIntegration />
