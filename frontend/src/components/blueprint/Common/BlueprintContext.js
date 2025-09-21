@@ -76,20 +76,22 @@ export function BlueprintProvider({ children }) {
     // Load existing configuration on mount
     const loadInitialConfig = async () => {
       try {
-        console.log('Loading initial blueprint configuration...');
-        console.log('API_BASE_URL:', API_BASE_URL);
+        console.log('🔄 Loading initial blueprint configuration...');
+        console.log('📍 API_BASE_URL:', API_BASE_URL);
         
         // Use fetch instead of axios for more reliable requests
-        console.log('Making config request...');
+        console.log('📡 Making config request...');
         const configResponse = await fetch(`${API_BASE_URL}/api/blueprint/config`);
-        console.log('Config response received, status:', configResponse.status);
+        console.log('📡 Config response received, status:', configResponse.status);
         
         if (!configResponse.ok) {
+          console.error('❌ Config request failed:', configResponse.status, configResponse.statusText);
           throw new Error(`Config request failed: ${configResponse.status} ${configResponse.statusText}`);
         }
         
         const config = await configResponse.json();
-        console.log('Loaded config:', config);
+        console.log('📋 Loaded config:', config);
+        console.log('📋 Config root_path:', config?.root_path);
         
         if (config && config.root_path) {
           console.log('Setting root path:', config.root_path);
