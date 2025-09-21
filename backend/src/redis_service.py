@@ -251,25 +251,114 @@ class RedisService:
             raise
     
     async def _scan_with_pattern(self, connection, pattern: str) -> List[RedisFile]:
-        """Scan Redis with a specific pattern"""
+        """Scan Redis with a specific pattern (cluster-aware)"""
+        files = []
+        
+        logger.info(f"🔍 Scanning with pattern: '{pattern}'")
+        
+        # Check if this is a Redis Cluster connection
+        if hasattr(connection, 'get_nodes') and callable(getattr(connection, 'get_nodes')):
+            # Redis Cluster mode - scan all nodes
+            logger.info(f"🔗 Detected Redis Cluster, scanning all nodes")
+            files = await self._scan_cluster_nodes(connection, pattern)
+        else:
+            # Single Redis instance mode
+            logger.info(f"🔧 Detected single Redis instance")
+            files = await self._scan_single_instance(connection, pattern)
+        
+        logger.info(f"📊 Pattern '{pattern}' completed: {len(files)} files found")
+        return files
+    
+    async def _scan_cluster_nodes(self, connection, pattern: str) -> List[RedisFile]:
+        """Scan all nodes in a Redis cluster"""
+        files = []
+        total_nodes = 0
+        total_scanned = 0
+        
+        try:
+            # Get all nodes in the cluster
+            nodes = connection.get_nodes()
+            total_nodes = len(nodes)
+            logger.info(f"🔗 Scanning {total_nodes} cluster nodes for pattern '{pattern}'")
+            
+            for i, node in enumerate(nodes):
+                try:
+                    logger.debug(f"📡 Scanning node {i+1}/{total_nodes}: {node.host}:{node.port}")
+                    
+                    # Scan this specific node
+                    cursor = 0
+                    node_files = 0
+                    
+                    while True:
+                        cursor, keys = connection.scan(
+                            cursor=cursor,
+                            match=pattern,
+                            count=1000,
+                            target_nodes=[node]  # Target specific node
+                        )
+                        
+                        node_files += len(keys)
+                        total_scanned += len(keys)
+                        
+                        for key in keys:
+                            try:
+                                # Get content size
+                                size = connection.strlen(key)
+                                
+                                files.append(RedisFile(
+                                    key=key,
+                                    content="",
+                                    size_bytes=size
+                                ))
+                                
+                            except redis.exceptions.ResponseError as e:
+                                if "MOVED" in str(e) or "ASK" in str(e):
+                                    logger.debug(f"Redis cluster redirect for key {key}: {e}")
+                                    continue
+                                else:
+                                    logger.warning(f"Redis error processing key {key}: {e}")
+                                    continue
+                            except Exception as e:
+                                logger.warning(f"Failed to process key {key}: {e}")
+                                continue
+                        
+                        if cursor == 0:
+                            break
+                    
+                    logger.debug(f"✅ Node {i+1}/{total_nodes} completed: {node_files} keys found")
+                    
+                except Exception as e:
+                    logger.error(f"❌ Error scanning node {node.host}:{node.port}: {e}")
+                    continue
+            
+            logger.info(f"🎉 Cluster scan completed: {total_nodes} nodes, {total_scanned} total keys scanned, {len(files)} files found")
+            
+        except Exception as e:
+            logger.error(f"❌ Error during cluster scan: {e}")
+            # Fallback to regular scan
+            logger.info(f"⚠️ Falling back to regular scan")
+            files = await self._scan_single_instance(connection, pattern)
+        
+        return files
+    
+    async def _scan_single_instance(self, connection, pattern: str) -> List[RedisFile]:
+        """Scan a single Redis instance"""
         files = []
         cursor = 0
         total_scanned = 0
         scan_iterations = 0
-        
-        logger.info(f"🔍 Scanning with pattern: '{pattern}'")
         
         while True:
             try:
                 cursor, keys = connection.scan(
                     cursor=cursor,
                     match=pattern,
-                    count=1000  # Increased count for better performance
+                    count=1000
                 )
                 
                 scan_iterations += 1
                 total_scanned += len(keys)
-                logger.debug(f"Pattern '{pattern}' - Iteration {scan_iterations}: cursor={cursor}, found {len(keys)} keys")
+                logger.debug(f"Single instance scan - Iteration {scan_iterations}: cursor={cursor}, found {len(keys)} keys")
                 
                 for key in keys:
                     try:
@@ -278,14 +367,13 @@ class RedisService:
                         
                         files.append(RedisFile(
                             key=key,
-                            content="",  # Content loaded separately
+                            content="",
                             size_bytes=size
                         ))
                         
                     except redis.exceptions.ResponseError as e:
                         if "MOVED" in str(e) or "ASK" in str(e):
                             logger.debug(f"Redis cluster redirect for key {key}: {e}")
-                            # The cluster client should handle redirects automatically
                             continue
                         else:
                             logger.warning(f"Redis error processing key {key}: {e}")
@@ -298,10 +386,10 @@ class RedisService:
                     break
                     
             except Exception as e:
-                logger.error(f"Error during scan with pattern '{pattern}': {e}")
+                logger.error(f"Error during single instance scan: {e}")
                 break
         
-        logger.info(f"📊 Pattern '{pattern}' completed: {scan_iterations} iterations, {total_scanned} keys scanned, {len(files)} files found")
+        logger.info(f"📊 Single instance scan completed: {scan_iterations} iterations, {total_scanned} keys scanned, {len(files)} files found")
         return files
             
         except Exception as e:
