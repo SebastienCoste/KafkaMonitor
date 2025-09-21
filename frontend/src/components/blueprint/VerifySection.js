@@ -255,11 +255,6 @@ const VerifySection = () => {
       const data = await response.json();
       setFileContent(data.content);
       
-      // Apply JSON syntax highlighting
-      if (contentRef.current) {
-        highlightJSON(data.content);
-      }
-      
     } catch (error) {
       console.error('Failed to fetch file content:', error);
       setFileContent(`Error loading file content: ${error.message}`);
