@@ -399,7 +399,7 @@ const VerifySection = () => {
     return (
       <div className="p-2">
         {Object.entries(fileTree).map(([name, node]) =>
-          renderTreeNode(node, name)
+          <TreeNode key={name} node={node} name={name} />
         )}
       </div>
     );
