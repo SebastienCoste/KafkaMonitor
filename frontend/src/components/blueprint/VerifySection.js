@@ -47,17 +47,52 @@ const VerifySection = () => {
     try {
       setLoading(true);
       
+      // Get current environment from the main app or localStorage
+      const getCurrentEnvironment = () => {
+        // Try to get from localStorage (where gRPC stores it)
+        const savedGrpcEnv = localStorage.getItem('grpcCurrentEnvironment');
+        if (savedGrpcEnv) {
+          return savedGrpcEnv;
+        }
+        
+        // Try to get from main app's current environment API
+        return null;
+      };
+      
       // Get available environments
       const envResponse = await fetch(`${API_BASE_URL}/api/redis/environments`);
       if (envResponse.ok) {
         const envData = await envResponse.json();
         setAvailableEnvironments(envData.environments || []);
         
-        // Set default environment to first available
-        if (envData.environments && envData.environments.length > 0) {
-          const defaultEnv = envData.environments.includes('DEV') ? 'DEV' : envData.environments[0];
-          setEnvironment(defaultEnv);
+        // Sync with current environment from app
+        const currentEnv = getCurrentEnvironment();
+        let defaultEnv = 'DEV'; // fallback
+        
+        if (currentEnv && envData.environments.includes(currentEnv)) {
+          defaultEnv = currentEnv;
+        } else if (envData.environments && envData.environments.length > 0) {
+          // Try to get current environment from main app
+          try {
+            const appEnvResponse = await fetch(`${API_BASE_URL}/api/environments`);
+            if (appEnvResponse.ok) {
+              const appEnvData = await appEnvResponse.json();
+              const appCurrentEnv = appEnvData.current_environment;
+              if (appCurrentEnv && envData.environments.includes(appCurrentEnv)) {
+                defaultEnv = appCurrentEnv;
+              } else {
+                defaultEnv = envData.environments.includes('DEV') ? 'DEV' : envData.environments[0];
+              }
+            } else {
+              defaultEnv = envData.environments.includes('DEV') ? 'DEV' : envData.environments[0];
+            }
+          } catch (error) {
+            console.warn('Could not sync with main app environment:', error);
+            defaultEnv = envData.environments.includes('DEV') ? 'DEV' : envData.environments[0];
+          }
         }
+        
+        setEnvironment(defaultEnv);
       }
       
       // Get blueprint namespace
