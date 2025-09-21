@@ -111,8 +111,8 @@ class RedisService:
             logger.error(f"Failed to create SSL context: {e}")
             raise
     
-    def _get_connection(self, environment: str) -> redis.Redis:
-        """Get or create Redis connection for environment"""
+    def _get_connection(self, environment: str):
+        """Get or create Redis connection for environment (supports both single and cluster)"""
         if environment in self.connections:
             # Test existing connection
             try:
@@ -127,13 +127,35 @@ class RedisService:
         config = self._get_redis_config(environment)
         
         try:
+            # Try Redis cluster first, fallback to single instance
+            connection = self._create_cluster_connection(config)
+            if connection:
+                self.connections[environment] = connection
+                logger.info(f"✅ Connected to Redis Cluster in {environment} environment")
+                return connection
+            
+            # Fallback to single Redis instance
+            connection = self._create_single_connection(config)
+            self.connections[environment] = connection
+            logger.info(f"✅ Connected to Redis (single instance) in {environment} environment")
+            
+            return connection
+            
+        except Exception as e:
+            logger.error(f"❌ Failed to connect to Redis in {environment}: {e}")
+            raise
+    
+    def _create_cluster_connection(self, config: RedisConfig):
+        """Try to create Redis cluster connection"""
+        try:
             # Create SSL context
             ssl_context = self._create_ssl_context()
             
-            # For Redis cluster with SSL, use proper SSL parameters
-            connection = redis.Redis(
-                host=config.host,
-                port=config.port,
+            # For cluster, we only need the startup node
+            startup_nodes = [{"host": config.host, "port": config.port}]
+            
+            connection = RedisCluster(
+                startup_nodes=startup_nodes,
                 password=config.token,
                 ssl=True,
                 ssl_cert_reqs=ssl.CERT_REQUIRED,
@@ -142,21 +164,44 @@ class RedisService:
                 socket_connect_timeout=config.connection_timeout,
                 socket_timeout=config.socket_timeout,
                 retry_on_timeout=True,
-                health_check_interval=30,
-                decode_responses=True  # Automatically decode bytes to strings
+                decode_responses=True,
+                skip_full_coverage_check=True,  # Allow partial cluster coverage
+                health_check_interval=30
             )
             
-            # Test connection
+            # Test cluster connection
             connection.ping()
-            
-            self.connections[environment] = connection
-            logger.info(f"✅ Connected to Redis in {environment} environment")
-            
+            logger.info(f"🔗 Redis cluster connection successful")
             return connection
             
         except Exception as e:
-            logger.error(f"❌ Failed to connect to Redis in {environment}: {e}")
-            raise
+            logger.debug(f"Redis cluster connection failed: {e}")
+            return None
+    
+    def _create_single_connection(self, config: RedisConfig):
+        """Create single Redis instance connection"""
+        # Create SSL context
+        ssl_context = self._create_ssl_context()
+        
+        connection = redis.Redis(
+            host=config.host,
+            port=config.port,
+            password=config.token,
+            ssl=True,
+            ssl_cert_reqs=ssl.CERT_REQUIRED,
+            ssl_ca_certs=str(self.ca_cert_path) if self.ca_cert_path.exists() else None,
+            ssl_check_hostname=True,
+            socket_connect_timeout=config.connection_timeout,
+            socket_timeout=config.socket_timeout,
+            retry_on_timeout=True,
+            health_check_interval=30,
+            decode_responses=True  # Automatically decode bytes to strings
+        )
+        
+        # Test connection
+        connection.ping()
+        
+        return connection
     
     async def get_files_by_namespace(self, environment: str, namespace: str) -> List[RedisFile]:
         """Get all Redis files containing the namespace in their key"""
