@@ -505,7 +505,7 @@ class GrpcClient:
                     }
                 
                 # Make the call
-                logger.debug(f"🔄 Attempt {retry_count + 1} for {method_key}")
+                logger.debug(f"[{self.current_environment}] 🔄 Attempt {retry_count + 1} for {method_key}")
                 
                 # Debug: Log the actual request message content AND headers
                 try:

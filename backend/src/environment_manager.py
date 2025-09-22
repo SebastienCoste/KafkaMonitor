@@ -26,7 +26,7 @@ class EnvironmentManager:
         self.current_config = None
         self.kafka_consumer = None
         self.graph_builder = None
-        self.trace_header_field = "trace_id"  # Default trace header field
+        self.trace_header_field = "traceparent"  # Default trace header field
         
         logger.info(f"🌍 EnvironmentManager initialized with directory: {environments_dir}")
     

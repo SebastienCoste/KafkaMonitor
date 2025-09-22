@@ -562,7 +562,7 @@ function App() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-amber-800">Marauder's Map</h1>
-                <p className="text-sm text-amber-600 italic">"I solemnly swear I am up to no good"</p>
+                <p className="text-sm text-amber-600 italic">"Expecto Debuggius"</p>
               </div>
             </div>
             <div className="flex items-center space-x-4">

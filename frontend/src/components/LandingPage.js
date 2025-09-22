@@ -74,7 +74,7 @@ const LandingPage = ({ onNavigate, availableTabs }) => {
               <span className="block text-amber-700">Map</span>
             </h1>
             <p className="mt-4 text-lg font-medium text-amber-700 italic">
-              "I solemnly swear I am up to no good"
+              "Expecto Debuggius"
             </p>
             <p className="mt-6 max-w-md mx-auto text-lg text-gray-600 sm:text-xl md:mt-8 md:max-w-3xl">
               Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection.

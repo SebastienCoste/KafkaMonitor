@@ -1,6 +1,6 @@
 {
   "root": {
-    "namespace": "ea.afb.cfb",
+    "namespace": "com.test.example",
     "version": "1.0.0",
     "description": "Test Blueprint for Kafka Monitor"
   },
