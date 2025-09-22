@@ -54,6 +54,9 @@ blueprint_websocket_connections: List[WebSocket] = []
 redis_service: Optional[RedisService] = None
 blueprint_manager: Optional[BlueprintManager] = None
 
+# Global settings
+settings: Dict[str, Any] = {}
+
 # Configuration paths
 CONFIG_DIR = ROOT_DIR / "config"
 PROTO_DIR = CONFIG_DIR / "proto"
@@ -98,7 +101,7 @@ async def initialize_kafka_components():
     logger.info("🚀 Starting Kafka trace viewer component initialization")
     global graph_builder, kafka_consumer, grpc_client, environment_manager
     global blueprint_file_manager, blueprint_build_manager
-    global redis_service, blueprint_manager
+    global redis_service, blueprint_manager, settings
     
     # First initialize Blueprint components (these should always work)
     await initialize_blueprint_components()
@@ -242,6 +245,31 @@ async def health_check():
     return {
         "status": "healthy",
         "traces_count": len(graph_builder.traces) if graph_builder else 0
+    }
+
+@api_router.get("/settings")
+async def get_settings():
+    """Get application settings"""
+    return {
+        "trace_header_field": settings.get("trace_header_field", "trace_id"),
+        "max_traces": settings.get("max_traces", 1000),
+        "cleanup_interval": settings.get("cleanup_interval", 300)
+    }
+
+@api_router.get("/app-config")
+async def get_app_config():
+    """Get application configuration including tab settings"""
+    return {
+        "tabs": settings.get("tabs", {
+            "trace_viewer": {"enabled": True, "title": "Trace Viewer"},
+            "grpc_integration": {"enabled": True, "title": "gRPC Integration"},
+            "blueprint_creator": {"enabled": True, "title": "Blueprint Creator"}
+        }),
+        "landing_page": settings.get("landing_page", {
+            "enabled": True,
+            "title": "Marauder's Map",
+            "subtitle": "Comprehensive monitoring and management platform"
+        })
     }
 
 # Environment Management Endpoints
@@ -1552,7 +1580,7 @@ from fastapi.responses import FileResponse, Response
 async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
-    logger.info("🚀 Application starting up...")
+    logger.info("🗺️ Marauder's Map awakening... 'I solemnly swear I am up to no good'")
     
     # Always initialize Blueprint components first
     try:
@@ -1562,13 +1590,20 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Failed to start Blueprint components: {e}")
         logger.error("⚠️  Blueprint functionality may be limited")
     
-    # Then try to initialize Kafka components
-    try:
-        await initialize_kafka_components()
-        logger.info("✅ Full application startup complete")
-    except Exception as e:
-        logger.error(f"❌ Failed to start Kafka components: {e}")
-        logger.error("⚠️  Continuing without Kafka components - manual initialization required")
+    # Check if Trace Viewer is enabled before starting Kafka components
+    trace_viewer_enabled = settings.get("tabs", {}).get("trace_viewer", {}).get("enabled", True)
+    
+    if trace_viewer_enabled:
+        logger.info("🔍 Trace Viewer is enabled - initializing Kafka components")
+        try:
+            await initialize_kafka_components()
+            logger.info("✅ Marauder's Map fully activated - 'Mischief Managed'")
+        except Exception as e:
+            logger.error(f"❌ Failed to start Kafka components: {e}")
+            logger.error("⚠️  Continuing without Kafka components - manual initialization required")
+    else:
+        logger.info("⚠️  Trace Viewer is disabled - skipping Kafka components initialization")
+        logger.info("✅ Marauder's Map revealed - 'Mischief Managed' (tracking mode only)")
     
     yield
     

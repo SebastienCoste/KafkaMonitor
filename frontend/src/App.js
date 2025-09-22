@@ -9,6 +9,7 @@ import GrpcIntegration from './components/GrpcIntegration';
 import EnhancedGraphVisualization from './components/EnhancedGraphVisualization';
 import BlueprintCreator from './components/blueprint/BlueprintCreator';
 import { BlueprintProvider } from './components/blueprint/Common/BlueprintContext';
+import LandingPage from './components/LandingPage';
 
 // Shadcn UI components
 import { Button } from './components/ui/button';
@@ -24,7 +25,7 @@ import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 
 // Icons
-import { Search, Activity, Network as NetworkIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw, FolderOpen } from 'lucide-react';
+import { Search, Activity, Map as MapIcon, Settings, Play, Pause, RotateCcw, Server, RefreshCw, FolderOpen } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 console.log('🌐 Main App API_BASE_URL:', API_BASE_URL);
@@ -42,12 +43,16 @@ function App() {
   const [availableTopics, setAvailableTopics] = useState([]);
   const [monitoredTopics, setMonitoredTopics] = useState([]);
   const [expandedMessages, setExpandedMessages] = useState(new Set());
-  const [currentPage, setCurrentPage] = useState('traces'); // New state for page navigation
+  const [currentPage, setCurrentPage] = useState('landing'); // Start with landing page
   const [activeTab, setActiveTab] = useState('traces'); // New state for tracking active tab
   // Environment management
   const [environments, setEnvironments] = useState([]);
   const [currentEnvironment, setCurrentEnvironment] = useState('');
   const [environmentLoading, setEnvironmentLoading] = useState(false);
+  
+  // App configuration state
+  const [appConfig, setAppConfig] = useState(null);
+  const [availableTabs, setAvailableTabs] = useState({});
 
   // Network instances
   const [topicNetwork, setTopicNetwork] = useState(null);
@@ -115,9 +120,47 @@ function App() {
     }
   };
 
-  // Load initial data
+  // Load app configuration
+  const loadAppConfig = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/app-config`);
+      setAppConfig(response.data);
+      setAvailableTabs(response.data.tabs || {});
+      
+      // Set default page based on configuration
+      const enabledTabs = Object.entries(response.data.tabs || {})
+        .filter(([_, config]) => config.enabled)
+        .map(([key, _]) => key);
+      
+      if (response.data.landing_page?.enabled) {
+        setCurrentPage('landing');
+      } else if (enabledTabs.length > 0) {
+        // Map tab keys to page names
+        const tabToPageMap = {
+          'trace_viewer': 'traces',
+          'grpc_integration': 'grpc',
+          'blueprint_creator': 'blueprint'
+        };
+        const firstEnabledPage = tabToPageMap[enabledTabs[0]] || enabledTabs[0];
+        setCurrentPage(firstEnabledPage);
+      }
+      
+    } catch (error) {
+      console.error('Failed to load app configuration:', error);
+      // Use defaults if config fails to load
+      setAvailableTabs({
+        trace_viewer: { enabled: true, title: "Trace Viewer" },
+        grpc_integration: { enabled: true, title: "gRPC Integration" },
+        blueprint_creator: { enabled: true, title: "Blueprint Creator" }
+      });
+    }
+  };
+
+  // Initialize app on mount
   useEffect(() => {
-    loadInitialData();
+    loadAppConfig().then(() => {
+      loadInitialData();
+    });
   }, []);
 
   const loadInitialData = async () => {
@@ -514,36 +557,64 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <NetworkIcon className="h-8 w-8 text-blue-600" />
-              <h1 className="text-2xl font-bold text-gray-900">Kafka Monitor</h1>
+              <div className="p-2 bg-amber-100 rounded-lg border-2 border-amber-200">
+                <MapIcon className="h-8 w-8 text-amber-700" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-amber-800">Marauder's Map</h1>
+                <p className="text-sm text-amber-600 italic">"Expecto Debuggius"</p>
+              </div>
             </div>
             <div className="flex items-center space-x-4">
               {/* Page Navigation */}
               <div className="flex items-center space-x-2">
-                <Button
-                  variant={currentPage === 'traces' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage('traces')}
-                >
-                  <Activity className="h-4 w-4 mr-2" />
-                  Trace Viewer
-                </Button>
-                <Button
-                  variant={currentPage === 'grpc' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage('grpc')}
-                >
-                  <Server className="h-4 w-4 mr-2" />
-                  gRPC Integration
-                </Button>
-                <Button
-                  variant={currentPage === 'blueprint' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setCurrentPage('blueprint')}
-                >
-                  <FolderOpen className="h-4 w-4 mr-2" />
-                  Blueprint Creator
-                </Button>
+                {/* Landing Page Button */}
+                {appConfig?.landing_page?.enabled && (
+                  <Button
+                    variant={currentPage === 'landing' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('landing')}
+                  >
+                    <MapIcon className="h-4 w-4 mr-2" />
+                    Map
+                  </Button>
+                )}
+                
+                {/* Trace Viewer */}
+                {availableTabs?.trace_viewer?.enabled && (
+                  <Button
+                    variant={currentPage === 'traces' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('traces')}
+                  >
+                    <Activity className="h-4 w-4 mr-2" />
+                    {availableTabs.trace_viewer.title || 'Trace Viewer'}
+                  </Button>
+                )}
+                
+                {/* gRPC Integration */}
+                {availableTabs?.grpc_integration?.enabled && (
+                  <Button
+                    variant={currentPage === 'grpc' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('grpc')}
+                  >
+                    <Server className="h-4 w-4 mr-2" />
+                    {availableTabs.grpc_integration.title || 'gRPC Integration'}
+                  </Button>
+                )}
+                
+                {/* Blueprint Creator */}
+                {availableTabs?.blueprint_creator?.enabled && (
+                  <Button
+                    variant={currentPage === 'blueprint' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setCurrentPage('blueprint')}
+                  >
+                    <FolderOpen className="h-4 w-4 mr-2" />
+                    {availableTabs.blueprint_creator.title || 'Blueprint Creator'}
+                  </Button>
+                )}
               </div>
               
               {/* Status indicators - only for trace viewer */}
@@ -1144,6 +1215,20 @@ function App() {
               </div>
             </div>
           )}
+        </div>
+      ) : currentPage === 'landing' ? (
+        <div className="min-h-screen bg-gray-50">
+          <LandingPage 
+            onNavigate={(pageId) => {
+              const pageMap = {
+                'traces': 'traces',
+                'grpc': 'grpc', 
+                'blueprint': 'blueprint'
+              };
+              setCurrentPage(pageMap[pageId] || pageId);
+            }}
+            availableTabs={availableTabs}
+          />
         </div>
       ) : currentPage === 'grpc' ? (
         // gRPC Integration Page

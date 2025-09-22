@@ -570,10 +570,6 @@ class RedisService:
         
         logger.info(f"📊 Single instance scan completed: {scan_iterations} iterations, {total_scanned} keys scanned, {len(files)} files found")
         return files
-            
-        except Exception as e:
-            logger.error(f"Failed to get files for namespace '{namespace}' in {environment}: {e}")
-            raise
     
     async def get_file_content(self, environment: str, key: str) -> str:
         """Get content of specific Redis key"""

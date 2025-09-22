@@ -1,8 +1,8 @@
 """
-Environment Manager for Kafka Monitoring
+Environment Manager for Marauder's Map
 
-Manages switching between different environments (DEV/TEST/INT/LOAD/PROD)
-each with their own Kafka and gRPC configurations.
+This module provides functionality to load and manage different environment
+configurations for the magical monitoring application.
 """
 import os
 import yaml
@@ -16,7 +16,7 @@ from src.protobuf_decoder import ProtobufDecoder
 logger = logging.getLogger(__name__)
 
 class EnvironmentManager:
-    """Manages environment switching for Kafka monitoring"""
+    """Manages environment switching for the Marauder's Map monitoring system"""
     
     def __init__(self, environments_dir: str, protobuf_decoder: ProtobufDecoder, settings: dict = None):
         self.environments_dir = Path(environments_dir)

@@ -3618,7 +3618,7 @@ class KafkaTraceViewerTester:
             self.log_test("Blueprint Namespace", False, f"Exception: {str(e)}")
             return {}
 
-    def test_redis_files_endpoint(self, environment: str = "DEV", namespace: str = "ea.afb.cfb") -> bool:
+    def test_redis_files_endpoint(self, environment: str = "DEV", namespace: str = "com.test.example") -> bool:
         """Test GET /api/redis/files endpoint"""
         try:
             params = {
@@ -3753,7 +3753,7 @@ class KafkaTraceViewerTester:
         # Test 2: GET /api/blueprint/namespace
         print("📋 Testing blueprint namespace endpoint...")
         namespace_data = self.test_blueprint_namespace_endpoint()
-        extracted_namespace = namespace_data.get("namespace", "ea.afb.cfb")  # fallback to expected namespace
+        extracted_namespace = namespace_data.get("namespace", "com.test.example")  # fallback to expected namespace
         
         # Test 3: GET /api/redis/files
         print("📋 Testing Redis files endpoint...")
