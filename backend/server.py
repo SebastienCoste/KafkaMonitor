@@ -1235,7 +1235,7 @@ async def set_environment_override(entity_id: str, request: EnvironmentOverrideR
         if not root_path:
             raise HTTPException(status_code=400, detail="Blueprint root path not set")
         
-        success, warnings = await blueprint_config_manager.set_environment_override(root_path, request)
+        success, warnings, status_code = await blueprint_config_manager.set_environment_override(root_path, request)
         
         if success:
             # Broadcast change to WebSocket clients
@@ -1250,10 +1250,15 @@ async def set_environment_override(entity_id: str, request: EnvironmentOverrideR
                 "warnings": warnings
             }
         else:
-            raise HTTPException(status_code=400, detail=f"Failed to set environment override: {warnings}")
+            # Use the status code returned by the manager
+            error_messages = warnings if warnings else ["Failed to set environment override"]
+            raise HTTPException(status_code=status_code, detail="; ".join(error_messages))
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         logger.error(f"❌ Failed to set environment override: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error occurred while setting environment override")
 
 @api_router.post("/blueprint/config/generate")
 async def generate_configuration_files(request: GenerateFilesRequest):
