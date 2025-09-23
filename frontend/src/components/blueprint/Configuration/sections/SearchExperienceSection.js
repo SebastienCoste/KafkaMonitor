@@ -331,6 +331,7 @@ export default function SearchExperienceSection({ entityDefinitions, uiConfig, o
               environments={entityDefinitions?.environments || []}
               onUpdateEntity={updateEntity}
               onDeleteEntity={deleteEntity}
+              availableEntities={selectedSchema ? getSearchEntities(selectedSchema) : []}
             />
           </div>
         ) : (
