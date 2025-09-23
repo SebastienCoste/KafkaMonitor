@@ -271,16 +271,22 @@ class BlueprintConfigurationManager:
             logger.error(f"Error updating entity: {e}")
             return False, [f"Failed to update entity: {str(e)}"], 500
     
-    async def delete_entity(self, blueprint_path: str, entity_id: str) -> Tuple[bool, List[str]]:
+    async def delete_entity(self, blueprint_path: str, entity_id: str) -> Tuple[bool, List[str], int]:
         """Delete an entity configuration"""
         try:
+            # Validate entity ID
+            if not entity_id or not entity_id.strip():
+                return False, ["Entity ID is required"], 400
+            
             ui_config, warnings = await self.load_blueprint_config(blueprint_path)
             
             # Find and remove target entity
             removed = False
+            removed_entity_name = None
             for schema in ui_config.schemas:
                 for i, entity in enumerate(schema.configurations):
                     if entity.id == entity_id:
+                        removed_entity_name = entity.name
                         schema.configurations.pop(i)
                         removed = True
                         break
@@ -288,15 +294,18 @@ class BlueprintConfigurationManager:
                     break
             
             if not removed:
-                return False, warnings + ["Entity not found"]
+                return False, warnings + [f"Entity with ID '{entity_id}' not found"], 404
             
             # Save configuration
             success = await self.save_blueprint_config(blueprint_path, ui_config)
-            return success, warnings if success else warnings + ["Failed to save configuration"]
+            if success:
+                return True, warnings + [f"Entity '{removed_entity_name}' deleted successfully"], 200
+            else:
+                return False, warnings + ["Failed to save configuration to disk"], 500
             
         except Exception as e:
             logger.error(f"Error deleting entity: {e}")
-            return False, [f"Failed to delete entity: {str(e)}"]
+            return False, [f"Failed to delete entity: {str(e)}"], 500
     
     async def set_environment_override(
         self, 
