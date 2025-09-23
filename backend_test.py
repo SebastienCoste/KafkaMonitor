@@ -6508,18 +6508,18 @@ def run_deployment_endpoints_405_fix_test():
 if __name__ == "__main__":
     tester = KafkaTraceViewerTester()
     
-    # Run the specific test for blueprint deployment endpoints filepath fix
-    print("🎯 RUNNING SPECIFIC TEST: Blueprint Deployment Endpoints Filepath Fix")
+    # Run the specific test for Blueprint Configuration API
+    print("🎯 RUNNING SPECIFIC TEST: Blueprint Configuration API Implementation")
     print("=" * 80)
     
-    success = tester.test_blueprint_deployment_endpoints_filepath_fix()
+    success = tester.test_blueprint_configuration_api()
     
     # Print final results
     print(f"\n📊 Test Results: {tester.tests_passed}/{tester.tests_run} tests passed")
     
     if success:
-        print("\n🎉 Blueprint Deployment Endpoints Filepath Fix Test PASSED!")
+        print("\n🎉 Blueprint Configuration API Test PASSED!")
     else:
-        print("\n❌ Blueprint Deployment Endpoints Filepath Fix Test FAILED!")
+        print("\n❌ Blueprint Configuration API Test FAILED!")
     
     sys.exit(0 if success else 1)
