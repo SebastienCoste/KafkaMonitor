@@ -473,29 +473,44 @@ export default function EntityEditor({
               <div>
                 <Label className="text-sm font-medium">Inheritance</Label>
                 <div className="space-y-2">
-                  {localEntity.inherit?.map((inheritName, index) => (
-                    <div key={index} className="flex items-center space-x-2">
-                      <Input
-                        value={inheritName}
-                        onChange={(e) => {
-                          const newInherit = [...(localEntity.inherit || [])];
-                          newInherit[index] = e.target.value;
-                          updateLocalEntity({ inherit: newInherit });
-                        }}
-                        placeholder="Configuration name to inherit from"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          const newInherit = localEntity.inherit.filter((_, i) => i !== index);
-                          updateLocalEntity({ inherit: newInherit.length > 0 ? newInherit : null });
-                        }}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
+                  {localEntity.inherit?.map((inheritName, index) => {
+                    // Get available entities from the same schema/file for inheritance
+                    const availableEntities = getAvailableEntitiesForInheritance();
+                    
+                    return (
+                      <div key={index} className="flex items-center space-x-2">
+                        <Select
+                          value={inheritName}
+                          onValueChange={(value) => {
+                            const newInherit = [...(localEntity.inherit || [])];
+                            newInherit[index] = value;
+                            updateLocalEntity({ inherit: newInherit });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select entity to inherit from" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableEntities.map(entityName => (
+                              <SelectItem key={entityName} value={entityName}>
+                                {entityName}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newInherit = localEntity.inherit.filter((_, i) => i !== index);
+                            updateLocalEntity({ inherit: newInherit.length > 0 ? newInherit : null });
+                          }}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
                   <Button
                     variant="ghost"
                     size="sm"
