@@ -533,6 +533,28 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "660a2d3f-28fa-4819-82d5-2778161087c7",
+          "entityType": "access",
+          "name": "test_access_entity",
+          "baseConfig": {
+            "serverAccessOnlyAccount": false,
+            "authorisation": {
+              "adminClientIds": [
+                "TEST_CLIENT"
+              ],
+              "readClientIds": [
+                "TEST_READ_CLIENT"
+              ],
+              "writeClientIds": [
+                "TEST_WRITE_CLIENT"
+              ]
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -543,5 +565,5 @@
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:03:20.812649"
+  "lastModified": "2025-09-23T02:11:10.934437"
 }
