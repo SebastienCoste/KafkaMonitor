@@ -1,0 +1,5 @@
+{
+  "realId": ._system.id,
+  "postData": .content,
+  * - content, access, assets: .
+}

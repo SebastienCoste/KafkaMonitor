@@ -1,0 +1,103 @@
+{
+  "messageConfigs": {
+    "embeddingsConfig": {
+      "embeddings": [
+        {
+          "embeddingGlobalConfigId": "axsOutfitV1",
+          "serviceValueName": "teamEmbedding",
+          "inputs": {
+            "helmet": {
+              "values": [
+                {
+                  "remoteDataType": "REMOTE_DATA_TYPE_PRESIGNED_URL",
+                  "remoteData": {
+                    "ids": {
+                      "fields": [
+                        "moderatedContent.teams.helmet"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                  }
+                }
+              ]
+            },
+            "jersey": {
+              "values": [
+                {
+                  "remoteDataType": "REMOTE_DATA_TYPE_PRESIGNED_URL",
+                  "remoteData": {
+                    "ids": {
+                      "fields": [
+                        "moderatedContent.teams.jersey"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                  }
+                }
+              ]
+            },
+            "socks": {
+              "values": [
+                {
+                  "remoteDataType": "REMOTE_DATA_TYPE_PRESIGNED_URL",
+                  "remoteData": {
+                    "ids": {
+                      "fields": [
+                        "moderatedContent.teams.socks"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                  }
+                }
+              ]
+            },
+            "pants": {
+              "values": [
+                {
+                  "remoteDataType": "REMOTE_DATA_TYPE_PRESIGNED_URL",
+                  "remoteData": {
+                    "ids": {
+                      "fields": [
+                        "moderatedContent.teams.pants"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                  }
+                }
+              ]
+            },
+            "gloves": {
+              "values": [
+                {
+                  "remoteDataType": "REMOTE_DATA_TYPE_PRESIGNED_URL",
+                  "remoteData": {
+                    "ids": {
+                      "fields": [
+                        "moderatedContent.teams.gloves"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                  }
+                }
+              ]
+            },
+            "teamDescription": {
+              "values": [
+                {
+                  "localData": [
+                    {
+                      "fields": [
+                        "moderatedContent.title",
+                        "moderatedContent.description"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
