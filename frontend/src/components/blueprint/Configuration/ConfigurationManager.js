@@ -81,6 +81,23 @@ export default function ConfigurationManager() {
       setLoading(false);
     }
   };
+  const generateAllFiles = async () => {
+    setLoading(true);
+    try {
+      const result = await ConfigurationAPI.generateAllFiles();
+      
+      if (result.success) {
+        toast.success(`Generated ${result.filesGenerated} files successfully`);
+      } else {
+        toast.error(`Failed to generate files: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Failed to generate files:', error);
+      toast.error(`Failed to generate files: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (loading && !entityDefinitions) {
     return (
