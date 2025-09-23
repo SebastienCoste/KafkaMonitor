@@ -303,17 +303,31 @@ class BlueprintConfigurationParser:
     
     def _detect_entity_type(self, config_data: Dict[str, Any]) -> Optional[str]:
         """Detect entity type based on configuration structure"""
+        # Check for direct entity types first
         if 'binaryAssets' in config_data:
             return 'binaryAssets'
-        elif 'preProcessing' in config_data:
-            if 'imageModeration' in config_data['preProcessing']:
-                return 'imageModeration'
-            elif 'textModeration' in config_data['preProcessing']:
-                return 'textModeration'
         elif 'customTransformation' in config_data:
             return 'transformation'
-        elif 'access' in config_data:
+        elif 'access' in config_data and 'defaultAccessType' in config_data.get('access', {}):
             return 'discoveryFeatures'
+        
+        # Check for preprocessing-based entities
+        if 'preProcessing' in config_data:
+            preprocessing = config_data['preProcessing']
+            if 'imageModeration' in preprocessing:
+                return 'imageModeration'
+            elif 'textModeration' in preprocessing:
+                return 'textModeration'
+        
+        # Check for moderation configs directly (alternative structure)
+        if any(key in config_data for key in ['imageModerationConfig', 'imageModeration']):
+            return 'imageModeration'
+        elif any(key in config_data for key in ['textModerationConfig', 'textModeration']):
+            return 'textModeration'
+        
+        # Check for transformation without customTransformation wrapper
+        if 'outputModel' in config_data or 'inputSpec' in config_data:
+            return 'transformation'
         
         return None
     
