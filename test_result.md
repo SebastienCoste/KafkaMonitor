@@ -152,15 +152,18 @@ backend:
         
   - task: "Blueprint Configuration Generator"
     implemented: true
-    working: "NA"
+    working: false
     file: "backend/src/blueprint_config_generator.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented BlueprintConfigurationGenerator to generate blueprint files from UI configuration. Supports global.json, message config files, search experience files, and blueprint_cnf.json generation with proper file structure and environment handling."
+      - working: false
+        agent: "testing"
+        comment: "❌ ISSUE FOUND: File Generation failing with 'Schema not found' error. POST /api/blueprint/config/generate returns success=false with empty files array."
         
   - task: "Blueprint Configuration Manager"
     implemented: true
