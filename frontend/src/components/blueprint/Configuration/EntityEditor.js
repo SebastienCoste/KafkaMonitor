@@ -94,6 +94,14 @@ export default function EntityEditor({
     await onDeleteEntity(localEntity.id);
   };
 
+  const getAvailableEntitiesForInheritance = () => {
+    // Filter out the current entity and return names of other entities
+    return availableEntities
+      .filter(e => e.id !== localEntity.id)
+      .map(e => e.name)
+      .sort();
+  };
+
   const renderField = (fieldName, fieldDef, parentPath = '') => {
     const fullPath = parentPath ? `${parentPath}.${fieldName}` : fieldName;
     const currentValue = getNestedProperty(localEntity.baseConfig, fullPath, fieldDef.default);
