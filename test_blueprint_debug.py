@@ -7,7 +7,7 @@ import requests
 import json
 import time
 
-base_url = "https://protobuf-explorer.preview.emergentagent.com"
+base_url = "https://blueprint-creator-2.preview.emergentagent.com"
 
 def test_blueprint_config():
     print("🔧 Testing Blueprint Configuration...")

@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 class KafkaTraceViewerTester:
-    def __init__(self, base_url: str = "https://protobuf-explorer.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "https://blueprint-creator-2.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -4790,7 +4790,7 @@ def run_review_request_tests():
     print("=" * 80)
     
     # Use the correct backend URL from frontend .env
-    tester = KafkaTraceViewerTester("https://protobuf-explorer.preview.emergentagent.com")
+    tester = KafkaTraceViewerTester("https://blueprint-creator-2.preview.emergentagent.com")
     
     # Run the critical tests for the review request
     print("\n🎯 CRITICAL TESTS FOR REVIEW REQUEST:")
@@ -6038,7 +6038,7 @@ def run_blueprint_creator_tests():
     print("=" * 80)
     
     # Use the correct backend URL
-    tester = KafkaTraceViewerTester("https://protobuf-explorer.preview.emergentagent.com")
+    tester = KafkaTraceViewerTester("https://blueprint-creator-2.preview.emergentagent.com")
     
     # Run Blueprint Creator tests
     blueprint_success = tester.test_blueprint_creator_comprehensive()
@@ -6081,7 +6081,7 @@ def run_blueprint_creator_tests():
     print("=" * 80)
     
     # Use the correct backend URL
-    tester = KafkaTraceViewerTester("https://protobuf-explorer.preview.emergentagent.com")
+    tester = KafkaTraceViewerTester("https://blueprint-creator-2.preview.emergentagent.com")
     
     # Run Blueprint Creator tests
     blueprint_success = tester.test_blueprint_creator_comprehensive()
@@ -6123,7 +6123,7 @@ def run_deployment_endpoints_405_fix_test():
     print("=" * 80)
     
     # Use the correct backend URL
-    tester = KafkaTraceViewerTester("https://protobuf-explorer.preview.emergentagent.com")
+    tester = KafkaTraceViewerTester("https://blueprint-creator-2.preview.emergentagent.com")
     
     # Run the specific test
     success = tester.test_deployment_endpoints_405_fix()
