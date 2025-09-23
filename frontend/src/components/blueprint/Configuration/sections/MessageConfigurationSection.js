@@ -145,6 +145,36 @@ export default function MessageConfigurationSection({ entityDefinitions, uiConfi
     }
   };
 
+  const generateMessageFiles = async () => {
+    if (!selectedSchema) {
+      toast.error('Please select a schema first');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await ConfigurationAPI.generateFiles({
+        schemaId: selectedSchema.id,
+        environments: entityDefinitions?.environments || []
+      });
+
+      if (result.success) {
+        const messageFiles = result.files.filter(file => 
+          file.path.includes('configs/messages') || file.filename.startsWith('config')
+        );
+        toast.success(`Generated ${messageFiles.length} message configuration files`);
+        console.log('Generated message files:', messageFiles);
+      } else {
+        toast.error(`Failed to generate files: ${result.errors.join(', ')}`);
+      }
+    } catch (error) {
+      console.error('Failed to generate files:', error);
+      toast.error(`Failed to generate files: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getEntityTypeColor = (entityType) => {
     switch (entityType) {
       case 'binaryAssets':
