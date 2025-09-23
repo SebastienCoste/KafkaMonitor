@@ -51,6 +51,7 @@
           "title": "Storage Services",
           "valueType": {
             "type": "object",
+            "title": "Storage Service",
             "fields": {
               "serviceIdentifier": {
                 "type": "string",
