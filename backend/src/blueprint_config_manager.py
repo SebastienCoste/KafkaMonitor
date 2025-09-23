@@ -215,9 +215,13 @@ class BlueprintConfigurationManager:
         blueprint_path: str, 
         entity_id: str, 
         request: UpdateEntityRequest
-    ) -> Tuple[bool, List[str]]:
+    ) -> Tuple[bool, List[str], int]:
         """Update an existing entity configuration"""
         try:
+            # Validate entity ID
+            if not entity_id or not entity_id.strip():
+                return False, ["Entity ID is required"], 400
+            
             ui_config, warnings = await self.load_blueprint_config(blueprint_path)
             
             # Find target entity
@@ -231,11 +235,22 @@ class BlueprintConfigurationManager:
                     break
             
             if not target_entity:
-                return False, warnings + ["Entity not found"]
+                return False, warnings + [f"Entity with ID '{entity_id}' not found"], 404
+            
+            # Validate name if being updated
+            if request.name is not None:
+                if not request.name.strip():
+                    return False, warnings + ["Entity name cannot be empty"], 400
+                
+                # Check for duplicate names within the same schema
+                for schema in ui_config.schemas:
+                    for entity in schema.configurations:
+                        if entity.id != entity_id and entity.name == request.name.strip():
+                            return False, warnings + [f"Entity with name '{request.name}' already exists"], 400
             
             # Update entity properties
             if request.name is not None:
-                target_entity.name = request.name
+                target_entity.name = request.name.strip()
             if request.baseConfig is not None:
                 target_entity.baseConfig = request.baseConfig
             if request.environmentOverrides is not None:
@@ -247,11 +262,14 @@ class BlueprintConfigurationManager:
             
             # Save configuration
             success = await self.save_blueprint_config(blueprint_path, ui_config)
-            return success, warnings if success else warnings + ["Failed to save configuration"]
+            if success:
+                return True, warnings, 200
+            else:
+                return False, warnings + ["Failed to save configuration to disk"], 500
             
         except Exception as e:
             logger.error(f"Error updating entity: {e}")
-            return False, [f"Failed to update entity: {str(e)}"]
+            return False, [f"Failed to update entity: {str(e)}"], 500
     
     async def delete_entity(self, blueprint_path: str, entity_id: str) -> Tuple[bool, List[str]]:
         """Delete an entity configuration"""
