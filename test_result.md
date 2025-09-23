@@ -539,7 +539,6 @@ test_plan:
   stuck_tasks:
     - "Blueprint Configuration Parser"
     - "Blueprint Configuration Manager"
-    - "Blueprint Configuration Generator"
   test_all: false
   test_priority: "high_first"
 
