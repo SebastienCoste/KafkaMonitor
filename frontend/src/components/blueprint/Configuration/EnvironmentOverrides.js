@@ -76,9 +76,179 @@ export default function EnvironmentOverrides({
     onUpdateOverrides(newOverrides);
   };
 
-  const renderJsonEditor = (env, data) => {
+  const renderConfigurationBuilder = (env, data) => {
+    // Helper functions from EntityEditor
+    const updateEnvironmentConfig = (path, value) => {
+      const newOverrides = { ...data };
+      setNestedProperty(newOverrides, path, value);
+      updateEnvironmentOverride(env, newOverrides);
+    };
+
+    const setNestedProperty = (obj, path, value) => {
+      const keys = path.split('.');
+      let current = obj;
+      
+      for (let i = 0; i < keys.length - 1; i++) {
+        const key = keys[i];
+        if (!(key in current) || typeof current[key] !== 'object') {
+          current[key] = {};
+        }
+        current = current[key];
+      }
+      
+      current[keys[keys.length - 1]] = value;
+    };
+
+    const getNestedProperty = (obj, path, defaultValue = '') => {
+      return path.split('.').reduce((current, key) => {
+        return current && current[key] !== undefined ? current[key] : defaultValue;
+      }, obj);
+    };
+
+    const renderField = (fieldName, fieldDef, parentPath = '') => {
+      const fullPath = parentPath ? `${parentPath}.${fieldName}` : fieldName;
+      const currentValue = getNestedProperty(data, fullPath, fieldDef.default);
+
+      switch (fieldDef.type) {
+        case 'string':
+          return (
+            <div key={fullPath} className="space-y-2">
+              <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+              <Input
+                value={currentValue || ''}
+                onChange={(e) => updateEnvironmentConfig(fullPath, e.target.value)}
+                placeholder={fieldDef.default?.toString() || ''}
+              />
+            </div>
+          );
+
+        case 'integer':
+        case 'number':
+          return (
+            <div key={fullPath} className="space-y-2">
+              <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+              <Input
+                type="number"
+                value={currentValue || ''}
+                onChange={(e) => updateEnvironmentConfig(fullPath, fieldDef.type === 'integer' ? parseInt(e.target.value) || 0 : parseFloat(e.target.value) || 0)}
+                min={fieldDef.min}
+                max={fieldDef.max}
+                placeholder={fieldDef.default?.toString() || ''}
+              />
+            </div>
+          );
+
+        case 'boolean':
+          return (
+            <div key={fullPath} className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  checked={currentValue || false}
+                  onCheckedChange={(checked) => updateEnvironmentConfig(fullPath, checked)}
+                />
+                <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              </div>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+            </div>
+          );
+
+        case 'select':
+          return (
+            <div key={fullPath} className="space-y-2">
+              <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+              <Select 
+                value={currentValue || fieldDef.default || ''} 
+                onValueChange={(value) => updateEnvironmentConfig(fullPath, value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={`Select ${fieldDef.title.toLowerCase()}`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {fieldDef.options?.map(option => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          );
+
+        case 'object':
+          if (fieldDef.fields) {
+            return (
+              <div key={fullPath} className="space-y-4">
+                <Label className="text-sm font-medium">{fieldDef.title}</Label>
+                {fieldDef.description && (
+                  <p className="text-xs text-gray-600">{fieldDef.description}</p>
+                )}
+                <Card>
+                  <CardContent className="p-4 space-y-4">
+                    {Object.entries(fieldDef.fields).map(([subFieldName, subFieldDef]) =>
+                      renderField(subFieldName, subFieldDef, fullPath)
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            );
+          }
+          // Fallback to JSON editor for complex objects
+          return (
+            <div key={fullPath} className="space-y-2">
+              <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+              <Textarea
+                value={typeof currentValue === 'object' ? JSON.stringify(currentValue, null, 2) : currentValue || ''}
+                onChange={(e) => {
+                  try {
+                    updateEnvironmentConfig(fullPath, JSON.parse(e.target.value));
+                  } catch {
+                    updateEnvironmentConfig(fullPath, e.target.value);
+                  }
+                }}
+                rows={4}
+                className="font-mono text-sm"
+              />
+            </div>
+          );
+
+        default:
+          // Fallback to JSON editor
+          return (
+            <div key={fullPath} className="space-y-2">
+              <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              <Textarea
+                value={typeof currentValue === 'object' ? JSON.stringify(currentValue, null, 2) : currentValue || ''}
+                onChange={(e) => {
+                  try {
+                    updateEnvironmentConfig(fullPath, JSON.parse(e.target.value));
+                  } catch {
+                    updateEnvironmentConfig(fullPath, e.target.value);
+                  }
+                }}
+                rows={3}
+                className="font-mono text-sm"
+              />
+            </div>
+          );
+      }
+    };
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h4 className="font-medium">Environment Configuration</h4>
           <div className="flex space-x-2">
@@ -108,26 +278,19 @@ export default function EnvironmentOverrides({
           </div>
         </div>
 
-        <Textarea
-          value={JSON.stringify(data, null, 2)}
-          onChange={(e) => {
-            try {
-              const parsed = JSON.parse(e.target.value);
-              updateEnvironmentOverride(env, parsed);
-            } catch (error) {
-              // Invalid JSON, but allow editing
-            }
-          }}
-          rows={15}
-          className="font-mono text-sm"
-          placeholder="Enter JSON configuration for this environment"
-        />
+        {entityDefinition?.fields && (
+          <div className="space-y-4">
+            {Object.entries(entityDefinition.fields).map(([fieldName, fieldDef]) =>
+              renderField(fieldName, fieldDef)
+            )}
+          </div>
+        )}
 
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Environment overrides will be merged with the base configuration. 
-            Nested objects will be deeply merged, arrays will be completely replaced.
+            Only configure fields that need to differ from the base configuration for this environment.
           </AlertDescription>
         </Alert>
       </div>
