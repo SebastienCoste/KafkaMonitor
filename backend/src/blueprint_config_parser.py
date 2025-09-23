@@ -335,21 +335,39 @@ class BlueprintConfigurationParser:
         """Extract all entity types present in configuration"""
         entity_types = []
         
-        known_types = [
-            'transformation', 'discoveryFeatures', 'binaryAssets', 
-            'preProcessing', 'discoverable', 'processingOnly'
-        ]
+        # Direct entity type mappings
+        direct_mappings = {
+            'transformation': 'transformation',
+            'customTransformation': 'transformation',
+            'discoveryFeatures': 'discoveryFeatures',
+            'binaryAssets': 'binaryAssets',
+            'imageModerationConfig': 'imageModeration',
+            'textModerationConfig': 'textModeration',
+            'imageModeration': 'imageModeration',
+            'textModeration': 'textModeration'
+        }
         
+        # Check for direct matches
         for key in config_data.keys():
-            if key in known_types:
-                if key == 'preProcessing':
-                    # Check sub-types
-                    preprocessing = config_data[key]
-                    if 'imageModeration' in preprocessing:
-                        entity_types.append('imageModeration')
-                    if 'textModeration' in preprocessing:
-                        entity_types.append('textModeration')
-                else:
-                    entity_types.append(key)
+            if key in direct_mappings:
+                entity_type = direct_mappings[key]
+                if entity_type not in entity_types:
+                    entity_types.append(entity_type)
+        
+        # Check for preprocessing sub-types
+        if 'preProcessing' in config_data:
+            preprocessing = config_data['preProcessing']
+            if 'imageModeration' in preprocessing:
+                if 'imageModeration' not in entity_types:
+                    entity_types.append('imageModeration')
+            if 'textModeration' in preprocessing:
+                if 'textModeration' not in entity_types:
+                    entity_types.append('textModeration')
+        
+        # Check for access-based discovery features
+        if 'access' in config_data and isinstance(config_data['access'], dict):
+            if 'defaultAccessType' in config_data['access']:
+                if 'discoveryFeatures' not in entity_types:
+                    entity_types.append('discoveryFeatures')
         
         return entity_types
