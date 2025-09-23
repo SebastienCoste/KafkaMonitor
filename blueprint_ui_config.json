@@ -3,14 +3,33 @@
     {
       "id": "3b5f8ddd-aefe-4350-ac6d-575b85fa189a",
       "namespace": "com.test.blueprint.config",
-      "configurations": []
+      "configurations": [
+        {
+          "id": "b992d4e1-176c-408c-a2f7-57bddb63ec11",
+          "entityType": "access",
+          "name": "override-test-entity",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "DEV": {
+              "debug": true
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        }
+      ]
     },
     {
       "id": "79152d2f-1f8b-49f3-9fbf-efdea4208860",
       "namespace": "com.test.fix",
       "configurations": []
+    },
+    {
+      "id": "18c81bc3-8c45-45ad-94b8-4da4bcf4d974",
+      "namespace": "com.final.test",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:26:49.203946"
+  "lastModified": "2025-09-23T02:27:34.184344"
 }
