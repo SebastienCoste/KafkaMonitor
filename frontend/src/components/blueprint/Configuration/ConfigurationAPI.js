@@ -81,6 +81,55 @@ class ConfigurationAPI {
   static async validateConfiguration() {
     return this.request('/api/blueprint/config/validate');
   }
+
+  // Generate all files for all schemas
+  static async generateAllFiles() {
+    try {
+      // Get UI config first to get all schemas
+      const uiConfig = await this.getUIConfig();
+      
+      if (!uiConfig.config.schemas || uiConfig.config.schemas.length === 0) {
+        return {
+          success: false,
+          error: 'No schemas found to generate files'
+        };
+      }
+
+      let totalFilesGenerated = 0;
+      const errors = [];
+
+      // Generate files for each schema
+      for (const schema of uiConfig.config.schemas) {
+        try {
+          const result = await this.generateFiles({
+            schemaId: schema.id,
+            environments: ['DEV', 'TEST', 'INT', 'LOAD', 'PROD'] // Generate for all environments
+          });
+
+          if (result.success) {
+            totalFilesGenerated += result.files.length;
+          } else {
+            errors.push(...(result.errors || [`Failed to generate files for schema ${schema.namespace}`]));
+          }
+        } catch (error) {
+          errors.push(`Error generating files for schema ${schema.namespace}: ${error.message}`);
+        }
+      }
+
+      return {
+        success: errors.length === 0,
+        filesGenerated: totalFilesGenerated,
+        error: errors.length > 0 ? errors.join('; ') : null
+      };
+
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+        filesGenerated: 0
+      };
+    }
+  }
 }
 
 export default ConfigurationAPI;
