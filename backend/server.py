@@ -1166,7 +1166,7 @@ async def update_entity_configuration(entity_id: str, request: UpdateEntityReque
         if not root_path:
             raise HTTPException(status_code=400, detail="Blueprint root path not set")
         
-        success, warnings = await blueprint_config_manager.update_entity(root_path, entity_id, request)
+        success, warnings, status_code = await blueprint_config_manager.update_entity(root_path, entity_id, request)
         
         if success:
             # Broadcast change to WebSocket clients
@@ -1180,10 +1180,15 @@ async def update_entity_configuration(entity_id: str, request: UpdateEntityReque
                 "warnings": warnings
             }
         else:
-            raise HTTPException(status_code=400, detail=f"Failed to update entity: {warnings}")
+            # Use the status code returned by the manager
+            error_messages = warnings if warnings else ["Failed to update entity"]
+            raise HTTPException(status_code=status_code, detail="; ".join(error_messages))
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         logger.error(f"❌ Failed to update entity configuration: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error occurred while updating entity")
 
 @api_router.delete("/blueprint/config/entities/{entity_id}")
 async def delete_entity_configuration(entity_id: str):
