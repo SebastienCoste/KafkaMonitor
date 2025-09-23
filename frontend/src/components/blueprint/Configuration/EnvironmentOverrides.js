@@ -393,7 +393,7 @@ export default function EnvironmentOverrides({
               <span className="text-sm text-gray-600">Environment Override</span>
             </div>
 
-            {renderJsonEditor(editingEnv, entity.environmentOverrides[editingEnv])}
+            {renderConfigurationBuilder(editingEnv, entity.environmentOverrides[editingEnv])}
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
