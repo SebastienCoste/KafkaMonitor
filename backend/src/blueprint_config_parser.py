@@ -1,0 +1,341 @@
+import json
+import os
+from pathlib import Path
+from typing import Dict, List, Any, Optional, Tuple
+import logging
+from .blueprint_config_models import (
+    EntityDefinitionsSchema, ConfigurationParseResult, ParsedConfiguration,
+    EntityConfiguration, ConfigurationSchema, BlueprintUIConfig
+)
+
+logger = logging.getLogger(__name__)
+
+class BlueprintConfigurationParser:
+    def __init__(self, entity_definitions: EntityDefinitionsSchema):
+        self.entity_definitions = entity_definitions
+        self.environments = entity_definitions.environments
+        
+    async def parse_blueprint_directory(self, blueprint_path: str) -> Tuple[ConfigurationParseResult, Optional[BlueprintUIConfig]]:
+        """Parse existing blueprint directory and extract configurations"""
+        try:
+            blueprint_path = Path(blueprint_path)
+            
+            # Read blueprint_cnf.json
+            blueprint_cnf_path = blueprint_path / "blueprint_cnf.json"
+            if not blueprint_cnf_path.exists():
+                return ConfigurationParseResult(
+                    success=False,
+                    errors=[f"blueprint_cnf.json not found in {blueprint_path}"]
+                ), None
+            
+            with open(blueprint_cnf_path, 'r') as f:
+                blueprint_cnf = json.load(f)
+            
+            # Extract namespace and schemas
+            namespace = blueprint_cnf.get('namespace', '')
+            schemas_config = blueprint_cnf.get('schemas', [])
+            
+            if not schemas_config:
+                return ConfigurationParseResult(
+                    success=False,
+                    errors=["No schemas found in blueprint_cnf.json"]
+                ), None
+            
+            # Parse configurations for each schema
+            ui_config = BlueprintUIConfig()
+            all_configurations = []
+            parse_errors = []
+            parse_warnings = []
+            
+            for schema_config in schemas_config:
+                schema_namespace = schema_config.get('namespace', namespace)
+                
+                # Create configuration schema
+                config_schema = ConfigurationSchema(
+                    namespace=schema_namespace,
+                    configurations=[]
+                )
+                
+                # Parse global configurations
+                global_files = schema_config.get('global', [])
+                for global_file in global_files:
+                    global_path = blueprint_path / "src" / "configs" / "global" / global_file
+                    if global_path.exists():
+                        result = await self._parse_global_config(global_path)
+                        if result.success:
+                            all_configurations.extend(result.configurations)
+                            config_schema.configurations.extend(
+                                [EntityConfiguration(
+                                    entityType=config.entityType,
+                                    name=config.name,
+                                    baseConfig=config.config,
+                                    environmentOverrides=config.environments,
+                                    inherit=config.inherit
+                                ) for config in result.configurations]
+                            )
+                        else:
+                            parse_errors.extend(result.errors)
+                            parse_warnings.extend(result.warnings)
+                
+                # Parse message configurations
+                message_files = schema_config.get('messages', [])
+                for message_file in message_files:
+                    message_path = blueprint_path / "src" / "configs" / "messages" / message_file
+                    if message_path.exists():
+                        result = await self._parse_message_config(message_path)
+                        if result.success:
+                            all_configurations.extend(result.configurations)
+                            config_schema.configurations.extend(
+                                [EntityConfiguration(
+                                    entityType=config.entityType,
+                                    name=config.name,
+                                    baseConfig=config.config,
+                                    environmentOverrides=config.environments,
+                                    inherit=config.inherit
+                                ) for config in result.configurations]
+                            )
+                        else:
+                            parse_errors.extend(result.errors)
+                            parse_warnings.extend(result.warnings)
+                
+                ui_config.schemas.append(config_schema)
+            
+            # Parse search experience configurations
+            search_experience = blueprint_cnf.get('searchExperience', {})
+            if search_experience:
+                search_configs = search_experience.get('configs', [])
+                for search_config in search_configs:
+                    search_path = blueprint_path / "src" / "searchExperience" / search_config
+                    if search_path.exists():
+                        result = await self._parse_search_experience_config(search_path)
+                        if result.success:
+                            all_configurations.extend(result.configurations)
+                            # Add to first schema (or create new one if needed)
+                            if ui_config.schemas:
+                                ui_config.schemas[0].configurations.extend(
+                                    [EntityConfiguration(
+                                        entityType=config.entityType,
+                                        name=config.name,
+                                        baseConfig=config.config,
+                                        environmentOverrides=config.environments,
+                                        inherit=config.inherit
+                                    ) for config in result.configurations]
+                                )
+                        else:
+                            parse_errors.extend(result.errors)
+                            parse_warnings.extend(result.warnings)
+            
+            return ConfigurationParseResult(
+                success=len(parse_errors) == 0,
+                configurations=all_configurations,
+                errors=parse_errors,
+                warnings=parse_warnings
+            ), ui_config
+            
+        except Exception as e:
+            logger.error(f"Error parsing blueprint directory: {e}")
+            return ConfigurationParseResult(
+                success=False,
+                errors=[f"Failed to parse blueprint directory: {str(e)}"]
+            ), None
+    
+    async def _parse_global_config(self, config_path: Path) -> ConfigurationParseResult:
+        """Parse global configuration file"""
+        try:
+            with open(config_path, 'r') as f:
+                config_data = json.load(f)
+            
+            configurations = []
+            errors = []
+            warnings = []
+            
+            # Parse global config section
+            global_config = config_data.get('config', {})
+            if global_config:
+                # Extract different entity types from global config
+                for entity_type in ['access', 'messageStorage', 'discoveryStorage', 'inferenceServiceConfigs']:
+                    if entity_type in global_config:
+                        configurations.append(ParsedConfiguration(
+                            entityType=entity_type,
+                            name=f"global_{entity_type}",
+                            config=global_config[entity_type],
+                            environments={}
+                        ))
+            
+            # Parse environment-specific configurations
+            environments_config = config_data.get('environments', {})
+            if environments_config:
+                for env, env_config in environments_config.items():
+                    if env.upper() in self.environments:
+                        # Extract storages
+                        if 'storages' in env_config:
+                            configurations.append(ParsedConfiguration(
+                                entityType='storages',
+                                name='global_storages',
+                                config={},
+                                environments={env.upper(): env_config['storages']}
+                            ))
+                        
+                        # Extract inferenceServiceConfigs
+                        if 'inferenceServiceConfigs' in env_config:
+                            configurations.append(ParsedConfiguration(
+                                entityType='inferenceServiceConfigs',
+                                name='global_inference',
+                                config={},
+                                environments={env.upper(): env_config['inferenceServiceConfigs']}
+                            ))
+                        
+                        # Extract access
+                        if 'access' in env_config:
+                            configurations.append(ParsedConfiguration(
+                                entityType='access',
+                                name='global_access',
+                                config={},
+                                environments={env.upper(): env_config['access']}
+                            ))
+            
+            return ConfigurationParseResult(
+                success=True,
+                configurations=configurations,
+                errors=errors,
+                warnings=warnings
+            )
+            
+        except Exception as e:
+            logger.error(f"Error parsing global config {config_path}: {e}")
+            return ConfigurationParseResult(
+                success=False,
+                errors=[f"Failed to parse global config: {str(e)}"]
+            )
+    
+    async def _parse_message_config(self, config_path: Path) -> ConfigurationParseResult:
+        """Parse message configuration file"""
+        try:
+            with open(config_path, 'r') as f:
+                config_data = json.load(f)
+            
+            configurations = []
+            errors = []
+            warnings = []
+            
+            # Parse environment-specific configurations
+            environments_config = config_data.get('environments', {})
+            if environments_config:
+                for env, env_config in environments_config.items():
+                    if env.upper() in self.environments:
+                        configs = env_config.get('configs', {})
+                        for config_name, config_value in configs.items():
+                            # Determine entity type based on config structure
+                            entity_type = self._detect_entity_type(config_value)
+                            if entity_type:
+                                configurations.append(ParsedConfiguration(
+                                    entityType=entity_type,
+                                    name=config_name,
+                                    config={},
+                                    environments={env.upper(): config_value}
+                                ))
+            
+            # Parse message configurations
+            message_configs = config_data.get('messageConfigs', {})
+            if message_configs:
+                for config_name, config_value in message_configs.items():
+                    # Extract inherit if present
+                    inherit = config_value.get('inherit', [])
+                    
+                    # Determine entity types in this config
+                    entity_types = self._extract_entity_types(config_value)
+                    
+                    for entity_type in entity_types:
+                        if entity_type in config_value:
+                            configurations.append(ParsedConfiguration(
+                                entityType=entity_type,
+                                name=config_name,
+                                config=config_value[entity_type],
+                                environments={},
+                                inherit=inherit if inherit else None
+                            ))
+            
+            return ConfigurationParseResult(
+                success=True,
+                configurations=configurations,
+                errors=errors,
+                warnings=warnings
+            )
+            
+        except Exception as e:
+            logger.error(f"Error parsing message config {config_path}: {e}")
+            return ConfigurationParseResult(
+                success=False,
+                errors=[f"Failed to parse message config: {str(e)}"]
+            )
+    
+    async def _parse_search_experience_config(self, config_path: Path) -> ConfigurationParseResult:
+        """Parse search experience configuration file"""
+        try:
+            with open(config_path, 'r') as f:
+                config_data = json.load(f)
+            
+            configurations = []
+            
+            # Parse queries
+            queries = config_data.get('queries', {})
+            if queries:
+                configurations.append(ParsedConfiguration(
+                    entityType='queries',
+                    name='search_queries',
+                    config={'queries': queries},
+                    environments={}
+                ))
+            
+            return ConfigurationParseResult(
+                success=True,
+                configurations=configurations,
+                errors=[],
+                warnings=[]
+            )
+            
+        except Exception as e:
+            logger.error(f"Error parsing search experience config {config_path}: {e}")
+            return ConfigurationParseResult(
+                success=False,
+                errors=[f"Failed to parse search experience config: {str(e)}"]
+            )
+    
+    def _detect_entity_type(self, config_data: Dict[str, Any]) -> Optional[str]:
+        """Detect entity type based on configuration structure"""
+        if 'binaryAssets' in config_data:
+            return 'binaryAssets'
+        elif 'preProcessing' in config_data:
+            if 'imageModeration' in config_data['preProcessing']:
+                return 'imageModeration'
+            elif 'textModeration' in config_data['preProcessing']:
+                return 'textModeration'
+        elif 'customTransformation' in config_data:
+            return 'transformation'
+        elif 'access' in config_data:
+            return 'discoveryFeatures'
+        
+        return None
+    
+    def _extract_entity_types(self, config_data: Dict[str, Any]) -> List[str]:
+        """Extract all entity types present in configuration"""
+        entity_types = []
+        
+        known_types = [
+            'transformation', 'discoveryFeatures', 'binaryAssets', 
+            'preProcessing', 'discoverable', 'processingOnly'
+        ]
+        
+        for key in config_data.keys():
+            if key in known_types:
+                if key == 'preProcessing':
+                    # Check sub-types
+                    preprocessing = config_data[key]
+                    if 'imageModeration' in preprocessing:
+                        entity_types.append('imageModeration')
+                    if 'textModeration' in preprocessing:
+                        entity_types.append('textModeration')
+                else:
+                    entity_types.append(key)
+        
+        return entity_types
