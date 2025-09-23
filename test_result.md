@@ -175,7 +175,7 @@ backend:
     implemented: true
     working: false
     file: "backend/src/blueprint_config_manager.py"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -185,6 +185,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL ISSUES FOUND: 1) Entity Creation failing with HTTP 500 errors, 2) Environment Overrides not working, 3) Entity Update/Delete operations failing with HTTP 500, 4) Error handling returning 500 instead of proper 400/404 for invalid requests. Core CRUD operations are not functional."
+      - working: false
+        agent: "testing"
+        comment: "❌ RE-TESTED: CRITICAL ISSUES REMAIN: 1) Entity Definitions API returning invalid response structure (missing entities field), 2) Entity Update/Delete/Environment Overrides still returning HTTP 500 instead of proper 400/404 errors, 3) Error handling not working correctly for validation errors. Some progress: Entity Creation now works for valid data, Schema Creation works, Configuration Validation works."
 
   - task: "Blueprint Configuration API Endpoints"
     implemented: true
