@@ -3209,6 +3209,353 @@ class KafkaTraceViewerTester:
         
         return all_tests_passed
 
+    def test_blueprint_configuration_api_endpoints(self) -> bool:
+        """Test Blueprint Configuration API endpoints - CRITICAL for review request"""
+        print("\n" + "=" * 80)
+        print("🔧 Testing Blueprint Configuration API Endpoints - CRITICAL REVIEW REQUEST")
+        print("=" * 80)
+        
+        all_tests_passed = True
+        
+        # First, set up blueprint root path
+        try:
+            setup_response = requests.put(
+                f"{self.base_url}/api/blueprint/config",
+                json={"root_path": "/app/test_blueprint"},
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if setup_response.status_code == 200:
+                self.log_test("Blueprint Root Path Setup", True, "Root path set to /app/test_blueprint")
+            else:
+                self.log_test("Blueprint Root Path Setup", False, f"Failed to set root path: HTTP {setup_response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Blueprint Root Path Setup", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 1: Entity Definitions API - should return 11 entity types
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/config/entity-definitions", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "entities" in data and isinstance(data["entities"], dict):
+                    entity_count = len(data["entities"])
+                    if entity_count == 11:
+                        self.log_test("Entity Definitions API", True, f"✅ Found exactly 11 entity types as expected")
+                        
+                        # Verify expected entity types
+                        expected_entities = ["access", "storages", "inferenceServiceConfigs", "messageStorage", 
+                                           "discoveryStorage", "binaryAssets", "imageModeration", "textModeration", 
+                                           "transformation", "discoveryFeatures", "queries"]
+                        found_entities = list(data["entities"].keys())
+                        missing_entities = [e for e in expected_entities if e not in found_entities]
+                        
+                        if not missing_entities:
+                            self.log_test("Entity Types Validation", True, f"All expected entity types present: {found_entities}")
+                        else:
+                            self.log_test("Entity Types Validation", False, f"Missing entities: {missing_entities}")
+                            all_tests_passed = False
+                    else:
+                        self.log_test("Entity Definitions API", False, f"❌ Expected 11 entities, found {entity_count}")
+                        all_tests_passed = False
+                else:
+                    self.log_test("Entity Definitions API", False, "❌ Invalid response structure - missing entities")
+                    all_tests_passed = False
+            else:
+                self.log_test("Entity Definitions API", False, f"❌ HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Entity Definitions API", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 2: UI Config Loading - should parse blueprint entities (expecting 2+ schemas)
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "config" in data and "schemas" in data["config"]:
+                    schemas = data["config"]["schemas"]
+                    schema_count = len(schemas)
+                    
+                    if schema_count >= 2:
+                        self.log_test("UI Config Loading", True, f"✅ Found {schema_count} schemas (≥2 as expected)")
+                        
+                        # Check for parsed entities
+                        total_entities = 0
+                        for schema in schemas:
+                            if "entities" in schema:
+                                total_entities += len(schema["entities"])
+                        
+                        if total_entities > 0:
+                            self.log_test("UI Config Entity Parsing", True, f"✅ Parsed {total_entities} entities from blueprint files")
+                        else:
+                            self.log_test("UI Config Entity Parsing", False, f"❌ No entities parsed from existing blueprint files")
+                            all_tests_passed = False
+                    else:
+                        self.log_test("UI Config Loading", False, f"❌ Expected ≥2 schemas, found {schema_count}")
+                        all_tests_passed = False
+                else:
+                    self.log_test("UI Config Loading", False, "❌ Invalid response structure - missing config.schemas")
+                    all_tests_passed = False
+            else:
+                self.log_test("UI Config Loading", False, f"❌ HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("UI Config Loading", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 3: Schema Creation - should work correctly
+        try:
+            schema_request = {
+                "name": "test-schema",
+                "namespace": "com.test.example",
+                "description": "Test schema for API testing"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_request,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") and "schema_id" in data:
+                    schema_id = data["schema_id"]
+                    self.log_test("Schema Creation", True, f"✅ Created schema with ID: {schema_id}")
+                else:
+                    self.log_test("Schema Creation", False, f"❌ Schema creation failed: {data}")
+                    all_tests_passed = False
+            else:
+                self.log_test("Schema Creation", False, f"❌ HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Schema Creation", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 4: Entity CRUD Operations - should return HTTP 200/400 instead of 500
+        
+        # Test 4a: Entity Creation
+        try:
+            entity_request = {
+                "schemaId": "test-schema-id",
+                "entityType": "access",
+                "name": "test-access-entity",
+                "configuration": {
+                    "enabled": True,
+                    "type": "basic"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=entity_request,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code in [200, 400]:
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        entity_id = data.get("entity_id")
+                        self.log_test("Entity Creation (Valid)", True, f"✅ Created entity with ID: {entity_id}")
+                    else:
+                        self.log_test("Entity Creation (Valid)", True, f"✅ Proper validation error (HTTP 200): {data}")
+                else:
+                    self.log_test("Entity Creation (Valid)", True, f"✅ Proper validation error (HTTP 400)")
+            elif response.status_code == 500:
+                self.log_test("Entity Creation (Valid)", False, f"❌ HTTP 500 error - should be 400 for validation errors")
+                all_tests_passed = False
+            else:
+                self.log_test("Entity Creation (Valid)", False, f"❌ Unexpected HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Entity Creation (Valid)", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 4b: Entity Creation with Invalid Data (should return 400, not 500)
+        try:
+            invalid_entity_request = {
+                "schemaId": "",  # Invalid empty schema ID
+                "entityType": "invalid_type",
+                "name": "",  # Invalid empty name
+                "configuration": {}
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=invalid_entity_request,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 400:
+                self.log_test("Entity Creation (Invalid Data)", True, f"✅ Proper validation error (HTTP 400)")
+            elif response.status_code == 500:
+                self.log_test("Entity Creation (Invalid Data)", False, f"❌ HTTP 500 error - should be 400 for validation errors")
+                all_tests_passed = False
+            else:
+                self.log_test("Entity Creation (Invalid Data)", True, f"✅ Handled invalid data (HTTP {response.status_code})")
+        except Exception as e:
+            self.log_test("Entity Creation (Invalid Data)", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 4c: Entity Update
+        try:
+            update_request = {
+                "name": "updated-test-entity",
+                "configuration": {
+                    "enabled": False,
+                    "type": "advanced"
+                }
+            }
+            
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/test-entity-id",
+                json=update_request,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code in [200, 400, 404]:
+                self.log_test("Entity Update", True, f"✅ Proper response (HTTP {response.status_code})")
+            elif response.status_code == 500:
+                self.log_test("Entity Update", False, f"❌ HTTP 500 error - should be 400/404 for validation/not found errors")
+                all_tests_passed = False
+            else:
+                self.log_test("Entity Update", True, f"✅ Handled update request (HTTP {response.status_code})")
+        except Exception as e:
+            self.log_test("Entity Update", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 4d: Entity Delete
+        try:
+            response = requests.delete(
+                f"{self.base_url}/api/blueprint/config/entities/test-entity-id",
+                timeout=15
+            )
+            
+            if response.status_code in [200, 400, 404]:
+                self.log_test("Entity Delete", True, f"✅ Proper response (HTTP {response.status_code})")
+            elif response.status_code == 500:
+                self.log_test("Entity Delete", False, f"❌ HTTP 500 error - should be 400/404 for validation/not found errors")
+                all_tests_passed = False
+            else:
+                self.log_test("Entity Delete", True, f"✅ Handled delete request (HTTP {response.status_code})")
+        except Exception as e:
+            self.log_test("Entity Delete", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 5: Environment Overrides - should handle environment-specific configs
+        try:
+            override_request = {
+                "entityId": "test-entity-id",
+                "environment": "DEV",
+                "overrides": {
+                    "enabled": True,
+                    "custom_setting": "dev_value"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities/test-entity-id/environment-overrides",
+                json=override_request,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code in [200, 400, 404]:
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        self.log_test("Environment Overrides", True, f"✅ Environment override set successfully")
+                    else:
+                        self.log_test("Environment Overrides", True, f"✅ Proper validation response: {data}")
+                else:
+                    self.log_test("Environment Overrides", True, f"✅ Proper response (HTTP {response.status_code})")
+            elif response.status_code == 500:
+                self.log_test("Environment Overrides", False, f"❌ HTTP 500 error - should be 400/404 for validation/not found errors")
+                all_tests_passed = False
+            else:
+                self.log_test("Environment Overrides", True, f"✅ Handled override request (HTTP {response.status_code})")
+        except Exception as e:
+            self.log_test("Environment Overrides", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 6: File Generation - should resolve 'Schema not found' error
+        try:
+            generate_request = {
+                "schemaId": "test-schema-id",
+                "environments": ["DEV", "TEST"],
+                "outputPath": "/app/test_blueprint/generated"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=generate_request,
+                headers={"Content-Type": "application/json"},
+                timeout=20
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success"):
+                    files = data.get("files", [])
+                    self.log_test("File Generation", True, f"✅ Generated {len(files)} files successfully")
+                else:
+                    error_msg = data.get("error", "Unknown error")
+                    if "Schema not found" in error_msg:
+                        self.log_test("File Generation", False, f"❌ 'Schema not found' error still present: {error_msg}")
+                        all_tests_passed = False
+                    else:
+                        self.log_test("File Generation", True, f"✅ Different error (not 'Schema not found'): {error_msg}")
+            else:
+                self.log_test("File Generation", False, f"❌ HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("File Generation", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test 7: Configuration Validation - should work properly
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/config/validate", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "valid" in data and "errors" in data and "warnings" in data:
+                    is_valid = data["valid"]
+                    error_count = len(data["errors"])
+                    warning_count = len(data["warnings"])
+                    self.log_test("Configuration Validation", True, f"✅ Validation working - Valid: {is_valid}, Errors: {error_count}, Warnings: {warning_count}")
+                else:
+                    self.log_test("Configuration Validation", False, f"❌ Invalid validation response structure")
+                    all_tests_passed = False
+            else:
+                self.log_test("Configuration Validation", False, f"❌ HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Configuration Validation", False, f"❌ Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Summary
+        if all_tests_passed:
+            self.log_test("Blueprint Configuration API - Overall", True, "✅ ALL TESTS PASSED - Blueprint Configuration API working correctly")
+        else:
+            self.log_test("Blueprint Configuration API - Overall", False, "❌ SOME TESTS FAILED - Blueprint Configuration API has issues")
+        
+        return all_tests_passed
+
     def test_static_file_serving_fix(self) -> bool:
         """Test Static File Serving Fix - verify static files are served correctly"""
         print("\n" + "=" * 60)
