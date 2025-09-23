@@ -285,6 +285,10 @@ export default function BlueprintCreator() {
                       <FileText className="h-4 w-4" />
                       <span>Files</span>
                     </TabsTrigger>
+                    <TabsTrigger value="configuration" className="flex items-center space-x-2">
+                      <Settings className="h-4 w-4" />
+                      <span>Configuration</span>
+                    </TabsTrigger>
                     <TabsTrigger value="build" className="flex items-center space-x-2">
                       <Play className="h-4 w-4" />
                       <span>Build</span>
