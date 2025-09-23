@@ -29,8 +29,8 @@ class BlueprintConfigurationManager:
         # Load entity definitions synchronously to avoid race conditions
         self._load_entity_definitions_sync()
     
-    async def load_entity_definitions(self):
-        """Load entity definitions from configuration file"""
+    def _load_entity_definitions_sync(self):
+        """Load entity definitions from configuration file synchronously"""
         try:
             with open(self.entity_definitions_path, 'r') as f:
                 definitions_data = json.load(f)
@@ -44,6 +44,11 @@ class BlueprintConfigurationManager:
         except Exception as e:
             logger.error(f"Failed to load entity definitions: {e}")
             raise
+
+    async def load_entity_definitions(self):
+        """Load entity definitions from configuration file (async version for backward compatibility)"""
+        if not self.entity_definitions:
+            self._load_entity_definitions_sync()
     
     async def get_entity_definitions(self) -> EntityDefinitionsSchema:
         """Get entity definitions schema"""
