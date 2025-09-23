@@ -139,6 +139,20 @@ class BlueprintConfigurationManager:
     async def create_entity(self, blueprint_path: str, request: CreateEntityRequest) -> Tuple[str, List[str]]:
         """Create a new entity configuration"""
         try:
+            # Validate entity type first
+            if not self.entity_definitions:
+                await self.load_entity_definitions()
+            
+            if not self.entity_definitions:
+                return "", ["Entity definitions not loaded"]
+            
+            if request.entityType not in self.entity_definitions.entityTypes:
+                return "", [f"Invalid entity type: {request.entityType}. Valid types: {list(self.entity_definitions.entityTypes.keys())}"]
+            
+            # Validate entity name
+            if not request.name or not request.name.strip():
+                return "", ["Entity name is required and cannot be empty"]
+            
             ui_config, warnings = await self.load_blueprint_config(blueprint_path)
             
             # Find target schema - handle both ID and namespace lookups
@@ -168,19 +182,20 @@ class BlueprintConfigurationManager:
             if not target_schema:
                 return "", warnings + ["Could not find or create target schema"]
             
-            # Validate entity type
-            if not self.entity_definitions:
-                await self.load_entity_definitions()
-            
-            if request.entityType not in self.entity_definitions.entityTypes:
-                return "", warnings + [f"Invalid entity type: {request.entityType}"]
+            # Check for duplicate names within the schema
+            existing_names = [entity.name for entity in target_schema.configurations]
+            if request.name in existing_names:
+                return "", warnings + [f"Entity with name '{request.name}' already exists in this schema"]
             
             # Create new entity
-            new_entity = EntityConfiguration(
-                entityType=request.entityType,
-                name=request.name,
-                baseConfig=request.baseConfig
-            )
+            try:
+                new_entity = EntityConfiguration(
+                    entityType=request.entityType,
+                    name=request.name.strip(),
+                    baseConfig=request.baseConfig or {}
+                )
+            except Exception as e:
+                return "", warnings + [f"Failed to create entity configuration: {str(e)}"]
             
             target_schema.configurations.append(new_entity)
             
@@ -189,7 +204,7 @@ class BlueprintConfigurationManager:
             if success:
                 return new_entity.id, warnings
             else:
-                return "", warnings + ["Failed to save configuration"]
+                return "", warnings + ["Failed to save configuration to disk"]
                 
         except Exception as e:
             logger.error(f"Error creating entity: {e}")
