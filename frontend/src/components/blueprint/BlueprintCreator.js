@@ -21,7 +21,7 @@ import OutputFiles from './BuildPanel/OutputFiles';
 import EnvironmentSelector from './Deployment/EnvironmentSelector';
 import DeploymentPanel from './Deployment/DeploymentPanel';
 import VerifySection from './VerifySection';
-import ConfigurationTab from './Configuration/ConfigurationTab';
+import ConfigurationManager from './Configuration/ConfigurationManager';
 
 // Icons
 import { 
