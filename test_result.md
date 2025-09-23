@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Implement three new features for Kafka trace viewer: REQ1: Add P10/P50/P95 message age metrics to topics page in milliseconds alongside existing metrics. REQ2: Fix graph visualization window size to be bigger for 14+ topics. REQ3: Use uploaded gRPC zip file to test gRPC integration properly."
+user_problem_statement: "Implement a complete Blueprint Configuration UI and backend, according to the attached technical design document, with full CRUD support for configuration entities and environment overrides. The new UI and backend must fit into the existing Blueprint Creation flow, adding a new Configuration section/tab between the Files and Build sections."
 
 backend:
   - task: "P10/P50/P95 Message Age Metrics Backend"
