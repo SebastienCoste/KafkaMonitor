@@ -411,6 +411,10 @@ export default function BlueprintCreator() {
                     </div>
                   </TabsContent>
 
+                  <TabsContent value="configuration" className="h-full m-0">
+                    <ConfigurationTab />
+                  </TabsContent>
+
                   <TabsContent value="build" className="h-full m-0">
                     <div className="h-full grid grid-cols-1 lg:grid-cols-2">
                       <div className="p-4 border-r border-gray-200">
