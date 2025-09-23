@@ -6153,7 +6153,7 @@ def run_deployment_endpoints_405_fix_test():
     
     return success
 
-    def test_blueprint_configuration_api(self) -> bool:
+def test_blueprint_configuration_api(self) -> bool:
         """Test Blueprint Configuration API endpoints comprehensively"""
         print("\n" + "=" * 60)
         print("🔧 Testing Blueprint Configuration API Implementation")
