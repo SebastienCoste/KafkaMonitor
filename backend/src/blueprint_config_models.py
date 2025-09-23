@@ -119,6 +119,10 @@ class ParsedConfiguration(BaseModel):
     config: Dict[str, Any]
     environments: Dict[str, Dict[str, Any]] = Field(default_factory=dict)
     inherit: Optional[List[str]] = None
+    
+    class Config:
+        # Allow extra fields to handle complex nested structures
+        extra = "allow"
 
 class ConfigurationParseResult(BaseModel):
     success: bool
