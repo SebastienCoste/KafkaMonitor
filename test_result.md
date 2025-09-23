@@ -165,23 +165,17 @@ backend:
         agent: "main"
         comment: "Implemented main BlueprintConfigurationManager with full CRUD operations: create/update/delete schemas and entities, environment overrides, file generation, configuration validation, and UI state persistence to blueprint_ui_config.json."
 
-  - task: "Blueprint Creator API Configuration Endpoints"
+  - task: "Blueprint Configuration API Endpoints"
     implemented: true
-    working: true
+    working: "NA"
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
-        agent: "testing"
-        comment: "Testing Blueprint Creator API configuration endpoints from review request"
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: GET /api/blueprint/config endpoint working correctly. Returns proper structure with root_path, auto_refresh, and available_templates fields. Found 4 available templates. Blueprint file manager is properly initialized."
-      - working: true
-        agent: "testing"
-        comment: "✅ POST-MERGE VERIFICATION: Blueprint Creator configuration endpoints working correctly after main branch merge. GET /api/blueprint/config returns proper structure with 4 available templates. PUT /api/blueprint/config successfully sets root path to /app with proper validation. Blueprint configuration management functional."
+        agent: "main"
+        comment: "Implemented 8 new Blueprint Configuration API endpoints: GET /api/blueprint/config/entity-definitions, GET /api/blueprint/config/ui-config, POST /api/blueprint/config/schemas, POST /api/blueprint/config/entities, PUT /api/blueprint/config/entities/{id}, DELETE /api/blueprint/config/entities/{id}, POST /api/blueprint/config/entities/{id}/environment-overrides, POST /api/blueprint/config/generate, GET /api/blueprint/config/validate. All endpoints integrated with WebSocket broadcasting."
 
   - task: "Blueprint Creator API Root Path Configuration"
     implemented: true
