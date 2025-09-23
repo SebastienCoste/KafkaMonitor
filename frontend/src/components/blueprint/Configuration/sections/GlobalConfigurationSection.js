@@ -369,6 +369,7 @@ export default function GlobalConfigurationSection({ entityDefinitions, uiConfig
               environments={entityDefinitions?.environments || []}
               onUpdateEntity={updateEntity}
               onDeleteEntity={deleteEntity}
+              availableEntities={selectedSchema ? getGlobalEntities(selectedSchema) : []}
             />
           </div>
         ) : (
