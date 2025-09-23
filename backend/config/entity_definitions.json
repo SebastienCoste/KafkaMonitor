@@ -321,6 +321,7 @@
           "title": "Query Definitions",
           "valueType": {
             "type": "object",
+            "title": "Query Definition",
             "fields": {
               "lexical": {
                 "type": "object",
