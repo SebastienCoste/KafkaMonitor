@@ -27,9 +27,19 @@
     {
       "id": "18c81bc3-8c45-45ad-94b8-4da4bcf4d974",
       "namespace": "com.final.test",
-      "configurations": []
+      "configurations": [
+        {
+          "id": "3d27893e-e9da-45cc-b5af-8eceb4b7aa69",
+          "entityType": "storages",
+          "name": "Syore",
+          "baseConfig": {},
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:27:34.184344"
+  "lastModified": "2025-09-23T02:29:29.441842"
 }

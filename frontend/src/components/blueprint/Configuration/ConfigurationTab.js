@@ -112,6 +112,7 @@ export default function ConfigurationTab() {
       return;
     }
 
+    const currentSchemaId = activeSchema.id; // Store current schema ID
     setSaving(true);
     try {
       const result = await ConfigurationAPI.createEntity({
@@ -124,6 +125,16 @@ export default function ConfigurationTab() {
       if (result.success) {
         toast.success(`Entity "${name}" created successfully`);
         await loadConfiguration(); // Reload to get updated config
+        
+        // Restore focus to the same schema after reload
+        setTimeout(() => {
+          if (uiConfig?.schemas) {
+            const restoredSchema = uiConfig.schemas.find(s => s.id === currentSchemaId);
+            if (restoredSchema) {
+              setActiveSchema(restoredSchema);
+            }
+          }
+        }, 100);
       } else {
         toast.error('Failed to create entity');
       }
