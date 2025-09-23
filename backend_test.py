@@ -4564,6 +4564,358 @@ class KafkaTraceViewerTester:
         
         return all_tests_passed
 
+    def test_blueprint_configuration_api(self) -> bool:
+        """Test Blueprint Configuration API endpoints comprehensively"""
+        print("\n" + "=" * 60)
+        print("🔧 Testing Blueprint Configuration API Implementation")
+        print("=" * 60)
+        
+        all_tests_passed = True
+        
+        # Step 1: Set blueprint root path to test_blueprint
+        try:
+            print("🔄 Setting blueprint root path to /app/test_blueprint...")
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config",
+                json={"root_path": "/app/test_blueprint"},
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("root_path") == "/app/test_blueprint":
+                    self.log_test("Set Blueprint Root Path", True, f"Root path set to: {data['root_path']}")
+                else:
+                    self.log_test("Set Blueprint Root Path", False, f"Failed to set root path: {data}")
+                    return False
+            else:
+                self.log_test("Set Blueprint Root Path", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Set Blueprint Root Path", False, f"Exception: {str(e)}")
+            return False
+        
+        # Step 2: Test GET /api/blueprint/config/entity-definitions
+        try:
+            print("🔄 Testing entity definitions endpoint...")
+            response = requests.get(f"{self.base_url}/api/blueprint/config/entity-definitions", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                entity_types = data.get("entityTypes", {})
+                
+                # Verify we have the expected 11 entity types
+                expected_entities = [
+                    "access", "storages", "inferenceServiceConfigs", "messageStorage", 
+                    "discoveryStorage", "binaryAssets", "imageModeration", "textModeration", 
+                    "transformation", "discoveryFeatures", "queries"
+                ]
+                
+                found_entities = list(entity_types.keys())
+                if len(found_entities) == 11 and all(entity in found_entities for entity in expected_entities):
+                    self.log_test("Entity Definitions API", True, f"Found all 11 entity types: {found_entities}")
+                else:
+                    self.log_test("Entity Definitions API", False, f"Expected 11 entities, found {len(found_entities)}: {found_entities}")
+                    all_tests_passed = False
+            else:
+                self.log_test("Entity Definitions API", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Entity Definitions API", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Step 3: Test GET /api/blueprint/config/ui-config
+        try:
+            print("🔄 Testing UI config loading and blueprint parsing...")
+            response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                config = data.get("config", {})
+                warnings = data.get("warnings", [])
+                
+                # Verify namespace detection
+                if "schemas" in config and len(config["schemas"]) > 0:
+                    schema = config["schemas"][0]
+                    namespace = schema.get("namespace")
+                    entities = schema.get("entities", [])
+                    
+                    if namespace == "ea.cadie.fy26.veewan.internal.v2":
+                        self.log_test("UI Config Namespace Detection", True, f"Detected namespace: {namespace}")
+                    else:
+                        self.log_test("UI Config Namespace Detection", False, f"Expected 'ea.cadie.fy26.veewan.internal.v2', got: {namespace}")
+                        all_tests_passed = False
+                    
+                    # Verify entity parsing
+                    if len(entities) >= 10:  # Should have parsed entities from existing files
+                        self.log_test("UI Config Entity Parsing", True, f"Parsed {len(entities)} entities from blueprint files")
+                    else:
+                        self.log_test("UI Config Entity Parsing", False, f"Expected multiple entities, found {len(entities)}")
+                        all_tests_passed = False
+                else:
+                    self.log_test("UI Config Blueprint Parsing", False, "No schemas found in UI config")
+                    all_tests_passed = False
+            else:
+                self.log_test("UI Config Loading", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("UI Config Loading", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Step 4: Test POST /api/blueprint/config/schemas (Create new schema)
+        try:
+            print("🔄 Testing schema creation...")
+            schema_request = {
+                "namespace": "test.schema.namespace",
+                "description": "Test schema for API testing"
+            }
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_request,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("schema_id"):
+                    self.log_test("Schema Creation", True, f"Created schema: {data['schema_id']}")
+                else:
+                    self.log_test("Schema Creation", False, f"Schema creation failed: {data}")
+                    all_tests_passed = False
+            else:
+                self.log_test("Schema Creation", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Schema Creation", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Step 5: Test POST /api/blueprint/config/entities (Create entity)
+        try:
+            print("🔄 Testing entity creation...")
+            entity_request = {
+                "schemaId": "ea.cadie.fy26.veewan.internal.v2",
+                "entityType": "access",
+                "name": "test_access_entity",
+                "baseConfig": {
+                    "serverAccessOnlyAccount": False,
+                    "authorisation": {
+                        "adminClientIds": ["TEST_CLIENT"],
+                        "readClientIds": ["TEST_READ_CLIENT"],
+                        "writeClientIds": ["TEST_WRITE_CLIENT"]
+                    }
+                }
+            }
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=entity_request,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("entity_id"):
+                    created_entity_id = data["entity_id"]
+                    self.log_test("Entity Creation", True, f"Created entity: {created_entity_id}")
+                    
+                    # Step 6: Test PUT /api/blueprint/config/entities/{id} (Update entity)
+                    try:
+                        print("🔄 Testing entity update...")
+                        update_request = {
+                            "baseConfig": {
+                                "serverAccessOnlyAccount": True,
+                                "authorisation": {
+                                    "adminClientIds": ["UPDATED_CLIENT"],
+                                    "readClientIds": ["UPDATED_READ_CLIENT"],
+                                    "writeClientIds": ["UPDATED_WRITE_CLIENT"]
+                                }
+                            }
+                        }
+                        update_response = requests.put(
+                            f"{self.base_url}/api/blueprint/config/entities/{created_entity_id}",
+                            json=update_request,
+                            headers={"Content-Type": "application/json"},
+                            timeout=10
+                        )
+                        
+                        if update_response.status_code == 200:
+                            update_data = update_response.json()
+                            if update_data.get("success"):
+                                self.log_test("Entity Update", True, f"Updated entity: {created_entity_id}")
+                            else:
+                                self.log_test("Entity Update", False, f"Update failed: {update_data}")
+                                all_tests_passed = False
+                        else:
+                            self.log_test("Entity Update", False, f"HTTP {update_response.status_code}")
+                            all_tests_passed = False
+                    except Exception as e:
+                        self.log_test("Entity Update", False, f"Exception: {str(e)}")
+                        all_tests_passed = False
+                    
+                    # Step 7: Test POST /api/blueprint/config/entities/{id}/environment-overrides
+                    try:
+                        print("🔄 Testing environment overrides...")
+                        override_request = {
+                            "entityId": created_entity_id,
+                            "environment": "DEV",
+                            "overrides": {
+                                "serverAccessOnlyAccount": False
+                            }
+                        }
+                        override_response = requests.post(
+                            f"{self.base_url}/api/blueprint/config/entities/{created_entity_id}/environment-overrides",
+                            json=override_request,
+                            headers={"Content-Type": "application/json"},
+                            timeout=10
+                        )
+                        
+                        if override_response.status_code == 200:
+                            override_data = override_response.json()
+                            if override_data.get("success"):
+                                self.log_test("Environment Overrides", True, f"Set DEV override for: {created_entity_id}")
+                            else:
+                                self.log_test("Environment Overrides", False, f"Override failed: {override_data}")
+                                all_tests_passed = False
+                        else:
+                            self.log_test("Environment Overrides", False, f"HTTP {override_response.status_code}")
+                            all_tests_passed = False
+                    except Exception as e:
+                        self.log_test("Environment Overrides", False, f"Exception: {str(e)}")
+                        all_tests_passed = False
+                    
+                    # Step 8: Test DELETE /api/blueprint/config/entities/{id}
+                    try:
+                        print("🔄 Testing entity deletion...")
+                        delete_response = requests.delete(
+                            f"{self.base_url}/api/blueprint/config/entities/{created_entity_id}",
+                            timeout=10
+                        )
+                        
+                        if delete_response.status_code == 200:
+                            delete_data = delete_response.json()
+                            if delete_data.get("success"):
+                                self.log_test("Entity Deletion", True, f"Deleted entity: {created_entity_id}")
+                            else:
+                                self.log_test("Entity Deletion", False, f"Deletion failed: {delete_data}")
+                                all_tests_passed = False
+                        else:
+                            self.log_test("Entity Deletion", False, f"HTTP {delete_response.status_code}")
+                            all_tests_passed = False
+                    except Exception as e:
+                        self.log_test("Entity Deletion", False, f"Exception: {str(e)}")
+                        all_tests_passed = False
+                        
+                else:
+                    self.log_test("Entity Creation", False, f"Entity creation failed: {data}")
+                    all_tests_passed = False
+            else:
+                self.log_test("Entity Creation", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Entity Creation", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Step 9: Test POST /api/blueprint/config/generate (File generation)
+        try:
+            print("🔄 Testing file generation...")
+            generate_request = {
+                "schemaId": "ea.cadie.fy26.veewan.internal.v2",
+                "environments": ["DEV", "TEST"],
+                "outputPath": "/app/test_blueprint"
+            }
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=generate_request,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and data.get("files"):
+                    files_generated = len(data["files"])
+                    self.log_test("File Generation", True, f"Generated {files_generated} files for DEV and TEST environments")
+                else:
+                    self.log_test("File Generation", False, f"Generation failed: {data}")
+                    all_tests_passed = False
+            else:
+                self.log_test("File Generation", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("File Generation", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Step 10: Test GET /api/blueprint/config/validate (Configuration validation)
+        try:
+            print("🔄 Testing configuration validation...")
+            response = requests.get(f"{self.base_url}/api/blueprint/config/validate", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "valid" in data and "errors" in data and "warnings" in data:
+                    is_valid = data.get("valid", False)
+                    errors_count = len(data.get("errors", []))
+                    warnings_count = len(data.get("warnings", []))
+                    self.log_test("Configuration Validation", True, f"Validation complete - Valid: {is_valid}, Errors: {errors_count}, Warnings: {warnings_count}")
+                else:
+                    self.log_test("Configuration Validation", False, f"Invalid validation response structure: {data}")
+                    all_tests_passed = False
+            else:
+                self.log_test("Configuration Validation", False, f"HTTP {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Configuration Validation", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test error scenarios
+        print("🔄 Testing error scenarios...")
+        
+        # Test invalid entity type
+        try:
+            invalid_entity_request = {
+                "schemaId": "ea.cadie.fy26.veewan.internal.v2",
+                "entityType": "invalid_entity_type",
+                "name": "test_invalid_entity",
+                "baseConfig": {}
+            }
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=invalid_entity_request,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 400:
+                self.log_test("Invalid Entity Type Error", True, "Correctly rejected invalid entity type")
+            else:
+                self.log_test("Invalid Entity Type Error", False, f"Expected 400, got {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Invalid Entity Type Error", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        # Test non-existent entity ID
+        try:
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/non-existent-id",
+                json={"baseConfig": {}},
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code in [400, 404]:
+                self.log_test("Non-existent Entity Error", True, f"Correctly rejected non-existent entity (HTTP {response.status_code})")
+            else:
+                self.log_test("Non-existent Entity Error", False, f"Expected 400/404, got {response.status_code}")
+                all_tests_passed = False
+        except Exception as e:
+            self.log_test("Non-existent Entity Error", False, f"Exception: {str(e)}")
+            all_tests_passed = False
+        
+        return all_tests_passed
+
     def test_blueprint_deployment_endpoints_filepath_fix(self) -> bool:
         """Test the FIXED 405 API endpoints for blueprint deployment with filepath handling"""
         print("\n" + "=" * 60)
