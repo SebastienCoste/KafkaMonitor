@@ -149,6 +149,9 @@ backend:
       - working: false
         agent: "testing"
         comment: "❌ ISSUE FOUND: UI Config Entity Parsing failing - expected multiple entities from existing blueprint files but found 0. Namespace detection works correctly (ea.cadie.fy26.veewan.internal.v2) but entity parsing from existing files is not working."
+      - working: false
+        agent: "testing"
+        comment: "❌ RE-TESTED: UI Config Entity Parsing still failing - Found 3 schemas (≥2 as expected) but 0 entities parsed from existing blueprint files. The parser is not extracting entities from complex nested structures like configModeration.json files."
         
   - task: "Blueprint Configuration Generator"
     implemented: true
