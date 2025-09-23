@@ -1054,6 +1054,238 @@ async def get_blueprint_namespace():
         logger.error(f"❌ Failed to get blueprint namespace: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# Blueprint Configuration API Endpoints
+
+@api_router.get("/blueprint/config/entity-definitions")
+async def get_entity_definitions():
+    """Get entity definitions schema"""
+    if not blueprint_config_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        definitions = await blueprint_config_manager.get_entity_definitions()
+        return definitions.dict()
+    except Exception as e:
+        logger.error(f"❌ Failed to get entity definitions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/config/ui-config")
+async def get_blueprint_ui_config():
+    """Get blueprint UI configuration"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        ui_config, warnings = await blueprint_config_manager.load_blueprint_config(root_path)
+        
+        response = {
+            "config": ui_config.dict(),
+            "warnings": warnings
+        }
+        
+        return response
+    except Exception as e:
+        logger.error(f"❌ Failed to get blueprint UI config: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/config/schemas")
+async def create_configuration_schema(request: CreateSchemaRequest):
+    """Create a new configuration schema"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        schema_id, warnings = await blueprint_config_manager.create_schema(root_path, request)
+        
+        if schema_id:
+            return {
+                "success": True,
+                "schema_id": schema_id,
+                "warnings": warnings
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to create schema: {warnings}")
+    except Exception as e:
+        logger.error(f"❌ Failed to create configuration schema: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/config/entities")
+async def create_entity_configuration(request: CreateEntityRequest):
+    """Create a new entity configuration"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        entity_id, warnings = await blueprint_config_manager.create_entity(root_path, request)
+        
+        if entity_id:
+            # Broadcast change to WebSocket clients
+            await broadcast_blueprint_change("entity_created", {
+                "entity_id": entity_id,
+                "entity_type": request.entityType,
+                "name": request.name
+            })
+            
+            return {
+                "success": True,
+                "entity_id": entity_id,
+                "warnings": warnings
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to create entity: {warnings}")
+    except Exception as e:
+        logger.error(f"❌ Failed to create entity configuration: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.put("/blueprint/config/entities/{entity_id}")
+async def update_entity_configuration(entity_id: str, request: UpdateEntityRequest):
+    """Update an entity configuration"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        success, warnings = await blueprint_config_manager.update_entity(root_path, entity_id, request)
+        
+        if success:
+            # Broadcast change to WebSocket clients
+            await broadcast_blueprint_change("entity_updated", {
+                "entity_id": entity_id,
+                "changes": request.dict(exclude_unset=True)
+            })
+            
+            return {
+                "success": True,
+                "warnings": warnings
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to update entity: {warnings}")
+    except Exception as e:
+        logger.error(f"❌ Failed to update entity configuration: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/blueprint/config/entities/{entity_id}")
+async def delete_entity_configuration(entity_id: str):
+    """Delete an entity configuration"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        success, warnings = await blueprint_config_manager.delete_entity(root_path, entity_id)
+        
+        if success:
+            # Broadcast change to WebSocket clients
+            await broadcast_blueprint_change("entity_deleted", {
+                "entity_id": entity_id
+            })
+            
+            return {
+                "success": True,
+                "warnings": warnings
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to delete entity: {warnings}")
+    except Exception as e:
+        logger.error(f"❌ Failed to delete entity configuration: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/config/entities/{entity_id}/environment-overrides")
+async def set_environment_override(entity_id: str, request: EnvironmentOverrideRequest):
+    """Set environment-specific override for an entity"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        success, warnings = await blueprint_config_manager.set_environment_override(root_path, request)
+        
+        if success:
+            # Broadcast change to WebSocket clients
+            await broadcast_blueprint_change("environment_override_set", {
+                "entity_id": entity_id,
+                "environment": request.environment,
+                "overrides": request.overrides
+            })
+            
+            return {
+                "success": True,
+                "warnings": warnings
+            }
+        else:
+            raise HTTPException(status_code=400, detail=f"Failed to set environment override: {warnings}")
+    except Exception as e:
+        logger.error(f"❌ Failed to set environment override: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/config/generate")
+async def generate_configuration_files(request: GenerateFilesRequest):
+    """Generate blueprint configuration files"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        # Set output path to blueprint root if not specified
+        if not request.outputPath:
+            request.outputPath = root_path
+        
+        result = await blueprint_config_manager.generate_files(root_path, request)
+        
+        if result.success:
+            # Broadcast change to WebSocket clients
+            await broadcast_blueprint_change("files_generated", {
+                "schema_id": request.schemaId,
+                "environments": request.environments,
+                "files_count": len(result.files)
+            })
+        
+        return result.dict()
+    except Exception as e:
+        logger.error(f"❌ Failed to generate configuration files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/config/validate")
+async def validate_blueprint_configuration():
+    """Validate current blueprint configuration"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        validation = await blueprint_config_manager.validate_configuration(root_path)
+        return validation.dict()
+    except Exception as e:
+        logger.error(f"❌ Failed to validate blueprint configuration: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 async def broadcast_blueprint_change(event_type: str, data: Dict[str, Any]):
     """Broadcast blueprint changes to all WebSocket clients"""
     if blueprint_websocket_connections:
