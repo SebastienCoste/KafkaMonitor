@@ -311,9 +311,16 @@ class BlueprintConfigurationManager:
         self, 
         blueprint_path: str, 
         request: EnvironmentOverrideRequest
-    ) -> Tuple[bool, List[str]]:
+    ) -> Tuple[bool, List[str], int]:
         """Set environment-specific override for an entity"""
         try:
+            # Validate request
+            if not request.entityId or not request.entityId.strip():
+                return False, ["Entity ID is required"], 400
+            
+            if not request.environment or not request.environment.strip():
+                return False, ["Environment is required"], 400
+            
             ui_config, warnings = await self.load_blueprint_config(blueprint_path)
             
             # Find target entity
@@ -327,25 +334,29 @@ class BlueprintConfigurationManager:
                     break
             
             if not target_entity:
-                return False, warnings + ["Entity not found"]
+                return False, warnings + [f"Entity with ID '{request.entityId}' not found"], 404
             
             # Validate environment
             if not self.entity_definitions:
                 await self.load_entity_definitions()
             
             if request.environment not in self.entity_definitions.environments:
-                return False, warnings + [f"Invalid environment: {request.environment}"]
+                valid_envs = ", ".join(self.entity_definitions.environments)
+                return False, warnings + [f"Invalid environment: {request.environment}. Valid environments: {valid_envs}"], 400
             
             # Set override
             target_entity.environmentOverrides[request.environment] = request.overrides
             
             # Save configuration
             success = await self.save_blueprint_config(blueprint_path, ui_config)
-            return success, warnings if success else warnings + ["Failed to save configuration"]
+            if success:
+                return True, warnings + [f"Environment override set for {request.environment}"], 200
+            else:
+                return False, warnings + ["Failed to save configuration to disk"], 500
             
         except Exception as e:
             logger.error(f"Error setting environment override: {e}")
-            return False, [f"Failed to set environment override: {str(e)}"]
+            return False, [f"Failed to set environment override: {str(e)}"], 500
     
     async def generate_files(self, blueprint_path: str, request: GenerateFilesRequest) -> FileGenerationResult:
         """Generate blueprint configuration files"""
