@@ -245,15 +245,48 @@ class BlueprintConfigurationParser:
                     # Determine entity types in this config
                     entity_types = self._extract_entity_types(config_value)
                     
-                    for entity_type in entity_types:
-                        if entity_type in config_value:
+                    if entity_types:
+                        for entity_type in entity_types:
+                            # Extract the specific config for this entity type
+                            entity_config = {}
+                            
+                            if entity_type == 'transformation' and 'customTransformation' in config_value:
+                                entity_config = config_value['customTransformation']
+                            elif entity_type == 'imageModeration':
+                                if 'preProcessing' in config_value and 'imageModeration' in config_value['preProcessing']:
+                                    entity_config = config_value['preProcessing']['imageModeration']
+                                elif 'imageModerationConfig' in config_value:
+                                    entity_config = config_value['imageModerationConfig']
+                                elif 'imageModeration' in config_value:
+                                    entity_config = config_value['imageModeration']
+                            elif entity_type == 'textModeration':
+                                if 'preProcessing' in config_value and 'textModeration' in config_value['preProcessing']:
+                                    entity_config = config_value['preProcessing']['textModeration']
+                                elif 'textModerationConfig' in config_value:
+                                    entity_config = config_value['textModerationConfig']
+                                elif 'textModeration' in config_value:
+                                    entity_config = config_value['textModeration']
+                            elif entity_type == 'discoveryFeatures' and 'access' in config_value:
+                                entity_config = config_value['access']
+                            elif entity_type in config_value:
+                                entity_config = config_value[entity_type]
+                            
                             configurations.append(ParsedConfiguration(
                                 entityType=entity_type,
-                                name=config_name,
-                                config=config_value[entity_type],
+                                name=f"{config_name}_{entity_type}",
+                                config=entity_config,
                                 environments={},
                                 inherit=inherit if inherit else None
                             ))
+                    else:
+                        # Fallback: create a generic configuration if no specific type detected
+                        configurations.append(ParsedConfiguration(
+                            entityType='unknown',
+                            name=config_name,
+                            config=config_value,
+                            environments={},
+                            inherit=inherit if inherit else None
+                        ))
             
             return ConfigurationParseResult(
                 success=True,
