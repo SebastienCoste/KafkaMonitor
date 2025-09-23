@@ -29,7 +29,8 @@ export default function EntityEditor({
   entityDefinition, 
   environments, 
   onUpdateEntity, 
-  onDeleteEntity 
+  onDeleteEntity,
+  availableEntities = [] // Add available entities prop
 }) {
   const [localEntity, setLocalEntity] = useState(entity);
   const [hasChanges, setHasChanges] = useState(false);
