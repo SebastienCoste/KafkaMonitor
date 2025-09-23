@@ -117,11 +117,12 @@ class BlueprintConfigurationGenerator:
     
     async def _generate_global_config(
         self, 
-        configurations: List[EntityConfiguration], 
+        configurations: List[EntityConfiguration],
+        schema_namespace: str,
         environments: List[str],
         output_path: Optional[str] = None
     ) -> Optional[GeneratedFile]:
-        """Generate global.json configuration file"""
+        """Generate schema-specific global configuration file"""
         try:
             global_config = {
                 "environments": {},
@@ -145,12 +146,15 @@ class BlueprintConfigurationGenerator:
                         
                         global_config["environments"][env][config.entityType] = config.environmentOverrides[env]
             
-            # Create file
+            # Create schema-specific filename to avoid conflicts
             mapping = self.file_mappings['global']
-            file_path = mapping.path + mapping.filename
+            # Convert namespace to safe filename (replace dots with underscores)
+            safe_namespace = schema_namespace.replace('.', '_').replace('-', '_')
+            schema_filename = f"global_{safe_namespace}.json"
+            file_path = mapping.path + schema_filename
             
             return GeneratedFile(
-                filename=mapping.filename,
+                filename=schema_filename,
                 path=file_path,
                 content=global_config
             )
