@@ -1,5 +1,5 @@
 # Application configuration
-trace_header_field: "trace_id"  # Configurable trace header field name
+trace_header_field: "traceparent"  # Configurable trace header field name
 max_traces: 1000                 # Maximum traces to retain in memory
 cleanup_interval: 300            # Seconds between cleanup cycles
 
@@ -19,7 +19,7 @@ logging:
 message_processing:
   batch_size: 100              # Messages to process in batch
   processing_timeout: 30       # Seconds to wait for message processing
-  decode_errors: "ignore"      # ignore, raise, log
+  decode_errors: "log"      # ignore, raise, log
 
 # Mock data settings for development
 mock_data:
@@ -55,5 +55,5 @@ tabs:
 landing_page:
   enabled: true
   title: "Marauder's Map"
-  subtitle: "I solemnly swear I am up to no good"
+  subtitle: "Expecto Debuggius"
   description: "Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection."

@@ -251,7 +251,7 @@ async def health_check():
 async def get_settings():
     """Get application settings"""
     return {
-        "trace_header_field": settings.get("trace_header_field", "trace_id"),
+        "trace_header_field": settings.get("trace_header_field", "traceparent"),
         "max_traces": settings.get("max_traces", 1000),
         "cleanup_interval": settings.get("cleanup_interval", 300)
     }
@@ -1580,7 +1580,7 @@ from fastapi.responses import FileResponse, Response
 async def lifespan(app: FastAPI):
     """Application lifespan context manager"""
     # Startup
-    logger.info("🗺️ Marauder's Map awakening... 'I solemnly swear I am up to no good'")
+    logger.info("🗺️ Marauder's Map awakening... 'Expecto Debuggius'")
     
     # Always initialize Blueprint components first
     try:
