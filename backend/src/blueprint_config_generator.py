@@ -64,7 +64,7 @@ class BlueprintConfigurationGenerator:
             # Generate global configuration file
             if 'global' in file_groups:
                 global_file = await self._generate_global_config(
-                    file_groups['global'], environments, output_path
+                    file_groups['global'], schema.namespace, environments, output_path
                 )
                 if global_file:
                     generated_files.append(global_file)
