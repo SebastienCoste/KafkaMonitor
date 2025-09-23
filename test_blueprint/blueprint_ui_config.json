@@ -535,8 +535,13 @@
           "enabled": true
         }
       ]
+    },
+    {
+      "id": "0f0c1dbd-a4d4-4a32-8f57-8641b2e16db7",
+      "namespace": "test.schema.namespace",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T01:52:48.304458"
+  "lastModified": "2025-09-23T02:03:20.812649"
 }
