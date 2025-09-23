@@ -524,8 +524,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Blueprint Configuration Feature Implementation Completed"
-  stuck_tasks: []
+    - "Blueprint Configuration Parser"
+    - "Blueprint Configuration Manager"
+    - "Blueprint Configuration Generator"
+  stuck_tasks:
+    - "Blueprint Configuration Parser"
+    - "Blueprint Configuration Manager"
+    - "Blueprint Configuration Generator"
   test_all: false
   test_priority: "high_first"
 
