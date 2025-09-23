@@ -144,6 +144,16 @@ export default function ConfigurationManager() {
             <Button
               variant="outline"
               size="sm"
+              onClick={generateAllFiles}
+              disabled={loading}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Generate Files
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={loadConfiguration}
               disabled={loading}
             >
