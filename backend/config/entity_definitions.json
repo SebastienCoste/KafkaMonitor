@@ -104,6 +104,7 @@
           "title": "Inference Configs",
           "valueType": {
             "type": "object",
+            "title": "Inference Config",
             "fields": {
               "kserveConfig": {
                 "type": "object",
