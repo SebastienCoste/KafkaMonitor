@@ -412,7 +412,7 @@ export default function BlueprintCreator() {
                   </TabsContent>
 
                   <TabsContent value="configuration" className="h-full m-0">
-                    <ConfigurationTab />
+                    <ConfigurationManager />
                   </TabsContent>
 
                   <TabsContent value="build" className="h-full m-0">
