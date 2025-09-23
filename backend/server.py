@@ -71,7 +71,7 @@ GRPC_PROTOS_DIR = PROTO_DIR / "grpc"  # Updated to use subfolder under proto
 async def initialize_blueprint_components():
     """Initialize Blueprint Creator components (independent of Kafka)"""
     logger.info("🏗️ Initializing Blueprint Creator components...")
-    global blueprint_file_manager, blueprint_build_manager, redis_service, blueprint_manager, environment_manager
+    global blueprint_file_manager, blueprint_build_manager, redis_service, blueprint_manager, environment_manager, blueprint_config_manager
     
     try:
         blueprint_file_manager = BlueprintFileManager()
@@ -95,6 +95,15 @@ async def initialize_blueprint_components():
         redis_service = RedisService(environment_manager)
         blueprint_manager = BlueprintManager(blueprint_file_manager)
         logger.info("✅ Redis and Blueprint Manager components initialized")
+        
+        # Initialize Blueprint Configuration Manager
+        logger.info("🔧 Initializing Blueprint Configuration Manager...")
+        entity_definitions_path = CONFIG_DIR / "entity_definitions.json"
+        blueprint_config_manager = BlueprintConfigurationManager(
+            str(entity_definitions_path), 
+            blueprint_file_manager
+        )
+        logger.info("✅ Blueprint Configuration Manager initialized")
         
     except Exception as e:
         logger.error(f"❌ Failed to initialize Blueprint components: {str(e)}")
