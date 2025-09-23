@@ -562,8 +562,13 @@
       "id": "0f0c1dbd-a4d4-4a32-8f57-8641b2e16db7",
       "namespace": "test.schema.namespace",
       "configurations": []
+    },
+    {
+      "id": "4cd67025-ad25-415b-a6ac-789fb6d2707a",
+      "namespace": "test.schema.namespace",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:11:10.934437"
+  "lastModified": "2025-09-23T02:16:10.978578"
 }
