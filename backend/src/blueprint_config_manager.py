@@ -328,18 +328,31 @@ class BlueprintConfigurationManager:
             
             ui_config, warnings = await self.load_blueprint_config(blueprint_path)
             
-            # Find target schema
+            # Find target schema - handle both ID and namespace lookups
             target_schema = None
             if request.schemaId:
+                # First try to find by ID
                 for schema in ui_config.schemas:
                     if schema.id == request.schemaId:
                         target_schema = schema
                         break
+                
+                # If not found by ID, try by namespace
+                if not target_schema:
+                    for schema in ui_config.schemas:
+                        if schema.namespace == request.schemaId:
+                            target_schema = schema
+                            break
+            
+            # Use first schema if none specified or found
+            if not target_schema and ui_config.schemas:
+                target_schema = ui_config.schemas[0]
+                logger.info(f"Using first available schema: {target_schema.namespace}")
             
             if not target_schema:
                 return FileGenerationResult(
                     success=False,
-                    errors=["Schema not found"]
+                    errors=[f"Schema not found. Available schemas: {[s.namespace for s in ui_config.schemas]}"]
                 )
             
             # Generate files for the schema
