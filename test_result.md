@@ -167,15 +167,18 @@ backend:
         
   - task: "Blueprint Configuration Manager"
     implemented: true
-    working: "NA"
+    working: false
     file: "backend/src/blueprint_config_manager.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented main BlueprintConfigurationManager with full CRUD operations: create/update/delete schemas and entities, environment overrides, file generation, configuration validation, and UI state persistence to blueprint_ui_config.json."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL ISSUES FOUND: 1) Entity Creation failing with HTTP 500 errors, 2) Environment Overrides not working, 3) Entity Update/Delete operations failing with HTTP 500, 4) Error handling returning 500 instead of proper 400/404 for invalid requests. Core CRUD operations are not functional."
 
   - task: "Blueprint Configuration API Endpoints"
     implemented: true
