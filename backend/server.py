@@ -1144,10 +1144,16 @@ async def create_entity_configuration(request: CreateEntityRequest):
                 "warnings": warnings
             }
         else:
-            raise HTTPException(status_code=400, detail=f"Failed to create entity: {warnings}")
+            # Return 400 for validation errors rather than 500
+            error_messages = warnings if warnings else ["Failed to create entity"]
+            raise HTTPException(status_code=400, detail="; ".join(error_messages))
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         logger.error(f"❌ Failed to create entity configuration: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Only return 500 for unexpected server errors
+        raise HTTPException(status_code=500, detail="Internal server error occurred while creating entity")
 
 @api_router.put("/blueprint/config/entities/{entity_id}")
 async def update_entity_configuration(entity_id: str, request: UpdateEntityRequest):
