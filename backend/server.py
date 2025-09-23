@@ -54,6 +54,9 @@ blueprint_websocket_connections: List[WebSocket] = []
 redis_service: Optional[RedisService] = None
 blueprint_manager: Optional[BlueprintManager] = None
 
+# Global variables for Blueprint Configuration components
+blueprint_config_manager: Optional['BlueprintConfigurationManager'] = None
+
 # Global settings
 settings: Dict[str, Any] = {}
 
