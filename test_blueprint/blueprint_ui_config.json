@@ -555,6 +555,15 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "85f95b6b-52fb-4d25-a34d-ce174848f76e",
+          "entityType": "access",
+          "name": "test-access-entity",
+          "baseConfig": {},
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -567,8 +576,13 @@
       "id": "4cd67025-ad25-415b-a6ac-789fb6d2707a",
       "namespace": "test.schema.namespace",
       "configurations": []
+    },
+    {
+      "id": "105c564c-ac41-4822-812e-b05099ebb6dd",
+      "namespace": "com.test.example",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:16:10.978578"
+  "lastModified": "2025-09-23T02:16:19.434267"
 }
