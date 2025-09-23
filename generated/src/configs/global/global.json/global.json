@@ -1,0 +1,11 @@
+{
+  "environments": {
+    "DEV": {
+      "access": {
+        "enabled": true,
+        "debug_mode": true
+      }
+    }
+  },
+  "config": {}
+}
