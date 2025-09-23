@@ -1,0 +1,295 @@
+{
+  "environments": {
+    "dev": {
+      "configs": {
+        "imageModerationConfig": {
+          "binaryAssets": {
+            "ownedBinaryAssets": [
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.images",
+                    "moderatedContent.images"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+              },
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.mockcadie",
+                    "moderatedContent.mockcadie"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+              }
+            ]
+          },
+          "preProcessing": {
+            "imageModeration": {
+              "images": [
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.images"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                },
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.mockcadie"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "test": {
+      "configs": {
+        "imageModerationConfig": {
+          "binaryAssets": {
+            "ownedBinaryAssets": [
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.images",
+                    "moderatedContent.images"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+              },
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.mockcadie",
+                    "moderatedContent.mockcadie"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+              }
+            ]
+          },
+          "preProcessing": {
+            "imageModeration": {
+              "images": [
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.images"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                },
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.mockcadie"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "load": {
+      "configs": {
+        "imageModerationConfig": {
+          "binaryAssets": {
+            "ownedBinaryAssets": [
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.images",
+                    "moderatedContent.images"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+              },
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.mockcadie",
+                    "moderatedContent.mockcadie"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+              }
+            ]
+          },
+          "preProcessing": {
+            "imageModeration": {
+              "images": [
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.images"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                },
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.mockcadie"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "int": {
+      "configs": {
+        "imageModerationConfig": {
+          "binaryAssets": {
+            "ownedBinaryAssets": [
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.images",
+                    "moderatedContent.images"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+              },
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.mockcadie",
+                    "moderatedContent.mockcadie"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+              }
+            ]
+          },
+          "preProcessing": {
+            "imageModeration": {
+              "images": [
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.images"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                },
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.mockcadie"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "prod": {
+      "configs": {
+        "imageModerationConfig": {
+          "binaryAssets": {
+            "ownedBinaryAssets": [
+              {
+                "ids": {
+                  "fields": [
+                    "moderateMe.images",
+                    "moderatedContent.images"
+                  ]
+                },
+                "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+              }
+            ]
+          },
+          "preProcessing": {
+            "imageModeration": {
+              "images": [
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.images"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  },
+
+  "messageConfigs": {
+    "cadieInternalModeratedConfig": {
+      "inherit": ["storeMeConfig", "textModerationConfig", "imageModerationConfigBase", "imageModerationConfig"],
+      "discoveryFeatures": {
+        "access": {
+          "defaultAccessType": "CONTENT_ACCESS_TYPE_GAME"
+        }
+      }
+    },
+
+    "cadieInternalTextOnlyConfig": {
+      "inherit": ["storeMeConfig", "textModerationConfig"],
+      "discoveryFeatures": {
+        "access": {
+          "defaultAccessType": "CONTENT_ACCESS_TYPE_GAME"
+        }
+      }
+    },
+
+    "cadieInternalImageOnlyConfig": {
+      "inherit": ["storeMeConfig", "imageModerationConfigBase", "imageModerationConfig"],
+      "discoveryFeatures": {
+        "access": {
+          "defaultAccessType": "CONTENT_ACCESS_TYPE_GAME"
+        }
+      }
+    },
+
+    "imageModerationConfigBase": {
+      "preProcessing": {
+        "imageModeration": {
+          "ruleset": "MCR_IMAGE_E_BUNDLE",
+          "ttl_secs": 300
+        }
+      }
+    },
+
+    "textModerationConfig": {
+      "preProcessing": {
+        "textModeration": {
+          "ruleset" : "MCR_NAMES",
+          "ttl_secs": 299,
+          "texts": {
+            "fields": ["moderateMe.title", "moderateMe.content"]
+          }
+        }
+      }
+    },
+
+    "storeMeConfig": {
+      "discoverable": true,
+      "processingOnly": false
+    },
+
+    "imageModeration": {
+    }
+  }
+}
