@@ -169,13 +169,24 @@ export default function MessageConfigurationSection({ entityDefinitions, uiConfi
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-gray-900">Message Configuration Schemas</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowCreateSchemaForm(!showCreateSchemaForm)}
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
+            <div className="flex space-x-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={generateMessageFiles}
+                disabled={!selectedSchema || saving}
+                title="Generate message configuration files"
+              >
+                <FileText className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowCreateSchemaForm(!showCreateSchemaForm)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {showCreateSchemaForm && (
