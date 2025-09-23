@@ -1201,7 +1201,7 @@ async def delete_entity_configuration(entity_id: str):
         if not root_path:
             raise HTTPException(status_code=400, detail="Blueprint root path not set")
         
-        success, warnings = await blueprint_config_manager.delete_entity(root_path, entity_id)
+        success, warnings, status_code = await blueprint_config_manager.delete_entity(root_path, entity_id)
         
         if success:
             # Broadcast change to WebSocket clients
@@ -1214,10 +1214,15 @@ async def delete_entity_configuration(entity_id: str):
                 "warnings": warnings
             }
         else:
-            raise HTTPException(status_code=400, detail=f"Failed to delete entity: {warnings}")
+            # Use the status code returned by the manager
+            error_messages = warnings if warnings else ["Failed to delete entity"]
+            raise HTTPException(status_code=status_code, detail="; ".join(error_messages))
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
         logger.error(f"❌ Failed to delete entity configuration: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Internal server error occurred while deleting entity")
 
 @api_router.post("/blueprint/config/entities/{entity_id}/environment-overrides")
 async def set_environment_override(entity_id: str, request: EnvironmentOverrideRequest):
