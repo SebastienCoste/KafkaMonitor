@@ -3,15 +3,22 @@ import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
-import { Save, RotateCcw, Eye, Edit } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Save, RotateCcw } from 'lucide-react';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-yaml';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-markdown';
+import 'prismjs/themes/prism-tomorrow.css';
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
   const [currentContent, setCurrentContent] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  // Always in edit mode - removed isEditing state
 
   // Update content when file changes
   useEffect(() => {
@@ -19,8 +26,8 @@ export default function CodeEditor({ filePath }) {
     setHasChanges(false);
   }, [fileContent]);
 
-  const handleContentChange = (event) => {
-    const newContent = event.target.value;
+  const handleContentChange = (newContent) => {
+    // react-simple-code-editor passes the value directly, not an event object
     setCurrentContent(newContent);
     setHasChanges(newContent !== fileContent);
   };
@@ -54,34 +61,33 @@ export default function CodeEditor({ filePath }) {
     }
   };
 
-  const getSyntaxLanguage = (filePath) => {
+  const getPrismLanguage = (filePath) => {
     const ext = getFileExtension(filePath);
     switch (ext) {
       case 'json':
-        return 'json';
+        return languages.json;
       case 'jslt':
-        return 'javascript'; // JSLT is JavaScript-like
+      case 'js':
+        return languages.javascript;
       case 'yaml':
       case 'yml':
-        return 'yaml';
-      case 'proto':
-        return 'protobuf';
+        return languages.yaml;
       case 'sh':
-        return 'bash';
+        return languages.bash;
       case 'md':
-        return 'markdown';
-      case 'js':
-        return 'javascript';
+        return languages.markdown;
       case 'py':
-        return 'python';
-      case 'html':
-        return 'html';
-      case 'css':
-        return 'css';
-      case 'xml':
-        return 'xml';
+        return languages.python;
       default:
-        return 'text';
+        return languages.javascript; // Fallback
+    }
+  };
+  
+  const highlightWithPrism = (code) => {
+    try {
+      return highlight(code, getPrismLanguage(filePath), getFileExtension(filePath));
+    } catch (error) {
+      return code;
     }
   };
 
@@ -126,23 +132,7 @@ export default function CodeEditor({ filePath }) {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? (
-              <>
-                <Eye className="h-4 w-4 mr-1" />
-                Preview
-              </>
-            ) : (
-              <>
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </>
-            )}
-          </Button>
+          {/* Removed Edit/Preview toggle - always in edit mode now */}
           <Button
             variant="ghost"
             size="sm"
@@ -163,56 +153,28 @@ export default function CodeEditor({ filePath }) {
         </div>
       </div>
 
-      {/* Editor Area */}
+      {/* Editor Area - Always in edit mode with syntax highlighting */}
       <div className="flex-1 overflow-hidden relative">
-        {isEditing ? (
-          /* Edit Mode - Enhanced Textarea with Better Styling */
-          <div className="h-full overflow-auto" style={{ background: '#1e1e1e' }}>
-            <textarea
-              value={currentContent}
-              onChange={handleContentChange}
-              className="h-full w-full border-0 resize-none focus:outline-none font-mono text-sm"
-              style={{ 
-                minHeight: 'calc(100vh - 250px)',
-                fontSize: '14px',
-                fontFamily: 'Monaco, "Lucida Console", monospace',
-                background: '#1e1e1e',
-                color: '#d4d4d4',
-                padding: '16px',
-                lineHeight: '1.5',
-                tabSize: '2',
-                outline: 'none',
-                border: 'none',
-                caretColor: '#ffffff'
-              }}
-              placeholder="File content will appear here..."
-              spellCheck={false}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-            />
-          </div>
-        ) : (
-          /* Preview Mode - Syntax Highlighted */
-          <div className="h-full overflow-auto">
-            <SyntaxHighlighter
-              language={getSyntaxLanguage(filePath)}
-              style={vscDarkPlus}
-              showLineNumbers={true}
-              wrapLines={true}
-              customStyle={{
-                margin: 0,
-                padding: '16px',
-                fontSize: '14px',
-                fontFamily: 'Monaco, "Lucida Console", monospace',
-                minHeight: 'calc(100vh - 250px)',
-                background: '#1e1e1e'
-              }}
-            >
-              {currentContent || '// File content will appear here...'}
-            </SyntaxHighlighter>
-          </div>
-        )}
+        <div className="h-full overflow-auto" style={{ background: '#2d2d2d' }}>
+          <Editor
+            value={currentContent}
+            onValueChange={handleContentChange}
+            highlight={highlightWithPrism}
+            padding={16}
+            style={{
+              fontFamily: '"Fira Code", "Cascadia Code", Monaco, "Courier New", monospace',
+              fontSize: 14,
+              lineHeight: 1.6,
+              minHeight: 'calc(100vh - 250px)',
+              background: '#2d2d2d',
+              color: '#ccc',
+              caretColor: '#ffffff',
+            }}
+            textareaClassName="editor-textarea"
+            preClassName="editor-pre"
+            placeholder="File content will appear here..."
+          />
+        </div>
       </div>
     </div>
   );

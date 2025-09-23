@@ -71,7 +71,7 @@ test-processes:
 - Frontend was trying to connect to remote production URL instead of local backend
 
 **Root Cause**: 
-- `.env` file contained production URL: `REACT_APP_BACKEND_URL=https://protobuf-explorer.preview.emergentagent.com`
+- `.env` file contained production URL: `REACT_APP_BACKEND_URL=https://kafka-tracer-app.preview.emergentagent.com`
 - Local development was using production backend URL
 
 **Solution Implemented**:
@@ -86,7 +86,7 @@ test-processes:
   REACT_APP_BACKEND_URL=http://localhost:8001
   
   # .env.production (for production builds)
-  REACT_APP_BACKEND_URL=https://protobuf-explorer.preview.emergentagent.com
+  REACT_APP_BACKEND_URL=https://kafka-tracer-app.preview.emergentagent.com
   ```
 
 ## 🚀 Performance Improvements
@@ -171,7 +171,7 @@ test-processes:
 REACT_APP_BACKEND_URL=http://localhost:8001
 
 # .env.production (used by npm run build)
-REACT_APP_BACKEND_URL=https://protobuf-explorer.preview.emergentagent.com
+REACT_APP_BACKEND_URL=https://kafka-tracer-app.preview.emergentagent.com
 ```
 
 ## 🎯 Usage Instructions

@@ -10,7 +10,7 @@ from datetime import datetime
 
 def test_blueprint_creator_8_fixes():
     """Test all 8 Blueprint Creator fixes comprehensively"""
-    base_url = "https://protobuf-explorer.preview.emergentagent.com"
+    base_url = "https://kafka-tracer-app.preview.emergentagent.com"
     test_root_path = "/app"
     
     print("🏗️ FINAL BLUEPRINT CREATOR API TESTING - 8 FIXES VERIFICATION")

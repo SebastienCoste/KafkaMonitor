@@ -1,0 +1,17 @@
+{
+  "queries": {
+    "AutoDiscoveredQuery1": {
+      "lexical": {
+        "queryFile": "autodiscovered1.json"
+      }
+    },
+    "AutoDiscoveredQuery2": {
+      "vector": {
+        "queryFile": "autodiscovered2.json",
+        "embeddingGlobalConfigId": "testEmbed",
+        "inParams": ["test"],
+        "outParam": "out"
+      }
+    }
+  }
+}

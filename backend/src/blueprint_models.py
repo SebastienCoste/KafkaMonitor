@@ -88,6 +88,7 @@ class FileOperationRequest(BaseModel):
     path: str
     content: Optional[str] = None
     new_path: Optional[str] = None
+    overwrite: Optional[bool] = False
 
 
 class DirectoryListingRequest(BaseModel):

@@ -1,0 +1,445 @@
+{
+  "entityTypes": {
+    "access": {
+      "title": "Access Configuration",
+      "description": "Server access and authorization settings",
+      "fields": {
+        "serverAccessOnlyAccount": {
+          "type": "boolean",
+          "title": "Server Access Only Account",
+          "description": "Enable server-only access mode",
+          "default": true
+        },
+        "authorisation": {
+          "type": "object",
+          "title": "Authorization Settings",
+          "fields": {
+            "adminClientIds": {
+              "type": "array",
+              "title": "Admin Client IDs",
+              "items": {"type": "string"},
+              "default": []
+            },
+            "readClientIds": {
+              "type": "array", 
+              "title": "Read Client IDs",
+              "items": {"type": "string"},
+              "default": []
+            },
+            "writeClientIds": {
+              "type": "array",
+              "title": "Write Client IDs", 
+              "items": {"type": "string"},
+              "default": []
+            }
+          }
+        }
+      }
+    },
+    "storages": {
+      "title": "Storage Configuration",
+      "description": "Binary asset storage service configurations",
+      "fields": {
+        "defaultServiceIdentifier": {
+          "type": "string",
+          "title": "Default Service Identifier",
+          "description": "Default storage service to use",
+          "default": "EA.EADP.PDE.MCR"
+        },
+        "storages": {
+          "type": "map",
+          "title": "Storage Services",
+          "valueType": {
+            "type": "object",
+            "title": "Storage Service",
+            "fields": {
+              "serviceIdentifier": {
+                "type": "string",
+                "title": "Service Identifier",
+                "required": true
+              },
+              "defaultIntegrationId": {
+                "type": "string",
+                "title": "Default Integration ID",
+                "default": "0"
+              },
+              "hosts": {
+                "type": "array",
+                "title": "Host Configurations",
+                "items": {
+                  "type": "object",
+                  "fields": {
+                    "apis": {
+                      "type": "array",
+                      "title": "Supported APIs",
+                      "items": {"type": "string"},
+                      "options": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS",
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ]
+                    },
+                    "host": {
+                      "type": "string",
+                      "title": "Host URL",
+                      "required": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "inferenceServiceConfigs": {
+      "title": "Inference Service Configuration",
+      "description": "AI/ML inference service configurations",
+      "fields": {
+        "configs": {
+          "type": "map",
+          "title": "Inference Configs",
+          "valueType": {
+            "type": "object",
+            "title": "Inference Config",
+            "fields": {
+              "kserveConfig": {
+                "type": "object",
+                "title": "KServe Configuration",
+                "fields": {
+                  "url": {
+                    "type": "string",
+                    "title": "Service URL",
+                    "description": "URL for the inference service"
+                  },
+                  "modelName": {
+                    "type": "string",
+                    "title": "Model Name",
+                    "description": "Name of the ML model"
+                  },
+                  "modelVersion": {
+                    "type": "string",
+                    "title": "Model Version",
+                    "description": "Version of the ML model"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "messageStorage": {
+      "title": "Message Storage Configuration",
+      "description": "Message storage backend settings",
+      "fields": {
+        "serverType": {
+          "type": "select",
+          "title": "Server Type",
+          "options": [
+            "INTERNAL_STORAGE_TYPE_INTERNAL",
+            "INTERNAL_STORAGE_TYPE_EXTERNAL"
+          ],
+          "default": "INTERNAL_STORAGE_TYPE_INTERNAL"
+        }
+      }
+    },
+    "discoveryStorage": {
+      "title": "Discovery Storage Configuration", 
+      "description": "Discovery service storage settings",
+      "fields": {
+        "serverType": {
+          "type": "select",
+          "title": "Server Type",
+          "options": [
+            "DISCOVERY_SERVER_TYPE_INTERNAL",
+            "DISCOVERY_SERVER_TYPE_EXTERNAL"
+          ],
+          "default": "DISCOVERY_SERVER_TYPE_INTERNAL"
+        }
+      }
+    },
+    "binaryAssets": {
+      "title": "Binary Assets Configuration",
+      "description": "Binary asset management settings",
+      "fields": {
+        "ownedBinaryAssets": {
+          "type": "array",
+          "title": "Owned Binary Assets",
+          "items": {
+            "type": "object",
+            "fields": {
+              "ids": {
+                "type": "object",
+                "title": "Asset IDs",
+                "fields": {
+                  "fields": {
+                    "type": "array",
+                    "title": "Field Paths",
+                    "items": {"type": "string"},
+                    "description": "JSON paths to asset fields"
+                  }
+                }
+              },
+              "binaryStorageServiceIdentifier": {
+                "type": "string",
+                "title": "Storage Service Identifier",
+                "description": "Which storage service to use"
+              }
+            }
+          }
+        }
+      }
+    },
+    "imageModeration": {
+      "title": "Image Moderation Configuration",
+      "description": "Image content moderation settings",
+      "fields": {
+        "ruleset": {
+          "type": "string",
+          "title": "Moderation Ruleset",
+          "description": "Image moderation rule identifier",
+          "default": "MCR_IMAGE_E_BUNDLE"
+        },
+        "ttl_secs": {
+          "type": "integer",
+          "title": "TTL (seconds)",
+          "description": "Time to live for moderation results",
+          "default": 300
+        },
+        "images": {
+          "type": "array",
+          "title": "Image Sources",
+          "items": {
+            "type": "object",
+            "fields": {
+              "ids": {
+                "type": "object",
+                "title": "Image IDs",
+                "fields": {
+                  "fields": {
+                    "type": "array",
+                    "title": "Field Paths",
+                    "items": {"type": "string"}
+                  }
+                }
+              },
+              "binaryStorageServiceIdentifier": {
+                "type": "string",
+                "title": "Storage Service Identifier"
+              }
+            }
+          }
+        }
+      }
+    },
+    "textModeration": {
+      "title": "Text Moderation Configuration",
+      "description": "Text content moderation settings", 
+      "fields": {
+        "ruleset": {
+          "type": "string",
+          "title": "Moderation Ruleset",
+          "description": "Text moderation rule identifier",
+          "default": "MCR_NAMES"
+        },
+        "ttl_secs": {
+          "type": "integer", 
+          "title": "TTL (seconds)",
+          "description": "Time to live for moderation results",
+          "default": 299
+        },
+        "texts": {
+          "type": "object",
+          "title": "Text Sources",
+          "fields": {
+            "fields": {
+              "type": "array",
+              "title": "Field Paths",
+              "items": {"type": "string"},
+              "description": "JSON paths to text fields"
+            }
+          }
+        }
+      }
+    },
+    "transformation": {
+      "title": "Data Transformation Configuration",
+      "description": "Custom data transformation settings",
+      "fields": {
+        "customTransformation": {
+          "type": "object",
+          "title": "Custom Transformation",
+          "fields": {
+            "outputModel": {
+              "type": "string",
+              "title": "Output Model",
+              "description": "Fully qualified output model name",
+              "required": true
+            },
+            "inputSpec": {
+              "type": "string", 
+              "title": "Input Specification",
+              "description": "JSLT transformation file name",
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "discoveryFeatures": {
+      "title": "Discovery Features Configuration",
+      "description": "Content discovery and access settings",
+      "fields": {
+        "access": {
+          "type": "object",
+          "title": "Access Settings",
+          "fields": {
+            "defaultAccessType": {
+              "type": "select",
+              "title": "Default Access Type",
+              "options": [
+                "CONTENT_ACCESS_TYPE_GAME",
+                "CONTENT_ACCESS_TYPE_PUBLIC",
+                "CONTENT_ACCESS_TYPE_PRIVATE"
+              ],
+              "default": "CONTENT_ACCESS_TYPE_GAME"
+            }
+          }
+        }
+      }
+    },
+    "queries": {
+      "title": "Search Query Configuration",
+      "description": "Search experience query definitions",
+      "fields": {
+        "queries": {
+          "type": "map",
+          "title": "Query Definitions",
+          "valueType": {
+            "type": "object",
+            "title": "Query Definition",
+            "fields": {
+              "lexical": {
+                "type": "object",
+                "title": "Lexical Query",
+                "fields": {
+                  "queryFile": {
+                    "type": "string",
+                    "title": "Query File",
+                    "description": "JSON file containing query definition"
+                  }
+                }
+              },
+              "vector": {
+                "type": "object",
+                "title": "Vector Query",
+                "fields": {
+                  "queryFile": {
+                    "type": "string",
+                    "title": "Query File",
+                    "description": "JSON file containing query definition"
+                  },
+                  "embeddingGlobalConfigId": {
+                    "type": "string",
+                    "title": "Embedding Config ID",
+                    "description": "Global embedding configuration identifier"
+                  },
+                  "inParams": {
+                    "type": "array",
+                    "title": "Input Parameters",
+                    "items": {"type": "string"}
+                  },
+                  "outParam": {
+                    "type": "string",
+                    "title": "Output Parameter",
+                    "description": "Name of output parameter"
+                  }
+                }
+              },
+              "mixed": {
+                "type": "object",
+                "title": "Mixed Query (Hybrid)",
+                "fields": {
+                  "vectorWeight": {
+                    "type": "number",
+                    "title": "Vector Weight",
+                    "description": "Weight for vector component (0.0-1.0)",
+                    "min": 0.0,
+                    "max": 1.0
+                  },
+                  "lexicalWeight": {
+                    "type": "number",
+                    "title": "Lexical Weight", 
+                    "description": "Weight for lexical component (0.0-1.0)",
+                    "min": 0.0,
+                    "max": 1.0
+                  },
+                  "vectorId": {
+                    "type": "string",
+                    "title": "Vector Query ID",
+                    "description": "Reference to vector query"
+                  },
+                  "lexicalId": {
+                    "type": "string",
+                    "title": "Lexical Query ID",
+                    "description": "Reference to lexical query"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "environments": ["DEV", "TEST", "INT", "LOAD", "PROD"],
+  "fileMappings": {
+    "global": {
+      "filename": "global.json",
+      "path": "src/configs/global/",
+      "entities": ["access", "storages", "inferenceServiceConfigs", "messageStorage", "discoveryStorage"]
+    },
+    "messageConfigs": {
+      "filename": "config{EntityName}.json",
+      "path": "src/configs/messages/",
+      "entities": ["binaryAssets", "imageModeration", "textModeration", "transformation", "discoveryFeatures"]
+    },
+    "searchExperience": {
+      "filename": "searchExperience.json",
+      "path": "src/searchExperience/",
+      "entities": ["queries"]
+    }
+  },
+  "configStructure": {
+    "global": {
+      "environments": {
+        "type": "environmentMap",
+        "contains": ["storages", "inferenceServiceConfigs", "access"]
+      },
+      "config": {
+        "type": "globalConfig",
+        "contains": ["access", "messageStorage", "discoveryStorage", "inferenceServiceConfigs"]
+      }
+    },
+    "messageConfigs": {
+      "environments": {
+        "type": "environmentMap",
+        "contains": ["binaryAssets", "imageModeration", "textModeration"]
+      },
+      "messageConfigs": {
+        "type": "configMap",
+        "supports": ["inherit", "transformation", "discoveryFeatures", "binaryAssets", "imageModeration", "textModeration"]
+      }
+    },
+    "searchExperience": {
+      "queries": {
+        "type": "queryMap",
+        "contains": ["queries"]
+      }
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "namespace": "ea.cadie.fy26.veewan",
+  "version": "git_version",
+  "owner": "scoste@ea.com",
+  "description": "Usage example for development",
+  "schemas": [
+    {
+      "namespace": "ea.cadie.fy26.veewan.internal.v2",
+      "global": ["global.json"],
+      "messages": ["configModeration.json", "configTransformation.json"]
+    }
+    ],
+  "transformSpecs": [
+    "moderation_transform.jslt"
+  ],
+  "searchExperience": {
+    "configs": [
+      "searchExperience.json",
+      "searchExperience2.json"
+    ],
+    "templates": [
+      "knnteamsearchid.json",
+      "teambycityandratingid.json",
+      "teambycityonly.json"
+    ]
+  }
+}

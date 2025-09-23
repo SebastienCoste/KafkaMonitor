@@ -33,7 +33,8 @@ import {
   Eye,
   EyeOff,
   Save,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
@@ -49,6 +50,11 @@ function GrpcIntegration() {
     x_pop_token: ''
   });
   const [showCredentials, setShowCredentials] = useState(false);
+  
+  // File upload state
+  const [uploadUrl, setUploadUrl] = useState('');
+  const [selectedUploadFile, setSelectedUploadFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [availableServices, setAvailableServices] = useState({}); // Dynamic services and methods
@@ -414,13 +420,106 @@ function GrpcIntegration() {
     }
   };
 
+  // Handle file upload
+  const handleFileUpload = async () => {
+    if (!uploadUrl || !selectedUploadFile) {
+      toast.error('Please provide both URL and file');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      console.log('📤 Uploading file to:', uploadUrl);
+      console.log('📄 File:', selectedUploadFile.name, `(${(selectedUploadFile.size / 1024).toFixed(2)} KB)`);
+
+      // Determine the content type from file
+      const contentType = selectedUploadFile.type || 'application/octet-stream';
+      
+      // Try direct upload first (for S3 signed URLs, use PUT with the file as body)
+      try {
+        const response = await axios.put(uploadUrl, selectedUploadFile, {
+          headers: {
+            'Content-Type': contentType,
+            ...(credentials.authorization && { 'Authorization': credentials.authorization }),
+            ...(credentials.x_pop_token && { 'X-POP-TOKEN': credentials.x_pop_token })
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
+        });
+
+        console.log('✅ File uploaded successfully (direct):', response.status);
+        toast.success(`File uploaded successfully!`);
+        setSelectedUploadFile(null);
+        return;
+        
+      } catch (directError) {
+        // If direct upload fails due to CORS, try proxy
+        if (directError.message.includes('CORS') || directError.message.includes('Network Error') || 
+            (directError.response && directError.response.status === 0)) {
+          console.log('⚠️ Direct upload failed (CORS), trying proxy...');
+          
+          // Use backend proxy to upload
+          const formData = new FormData();
+          formData.append('url', uploadUrl);
+          formData.append('file', selectedUploadFile);
+          if (credentials.authorization) {
+            formData.append('authorization', credentials.authorization);
+          }
+          if (credentials.x_pop_token) {
+            formData.append('x_pop_token', credentials.x_pop_token);
+          }
+
+          const proxyResponse = await axios.post(`${API_BASE_URL}/api/grpc/upload-proxy`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          if (proxyResponse.data.success) {
+            console.log('✅ File uploaded successfully (via proxy)');
+            toast.success(`File uploaded successfully via proxy!`);
+            setSelectedUploadFile(null);
+          } else {
+            const errorMsg = proxyResponse.data.error || 'Proxy upload failed';
+            console.error('❌ Proxy upload failed:', errorMsg);
+            throw new Error(errorMsg);
+          }
+        } else {
+          // Re-throw if not a CORS error
+          throw directError;
+        }
+      }
+      
+    } catch (error) {
+      console.error('❌ File upload error:', error);
+      if (error.response) {
+        const errorMsg = error.response.status === 403 
+          ? 'Access denied - URL may be expired or invalid' 
+          : error.response.data?.message || error.response.statusText;
+        toast.error(`Upload failed: ${errorMsg}`);
+      } else {
+        toast.error(`Upload failed: ${error.message}`);
+      }
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const loadAssetStorageUrls = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/grpc/asset-storage/urls`);
       
       if (response.data.success) {
-        setAssetStorageUrls(response.data.urls);
-        setSelectedAssetUrlType(response.data.current_selection);
+        setAssetStorageUrls(response.data.urls || {});
+        // Set current selection if available, otherwise default to first key or 'reader'
+        if (response.data.current_selection) {
+          setSelectedAssetUrlType(response.data.current_selection);
+        } else if (response.data.urls) {
+          const firstKey = Object.keys(response.data.urls)[0];
+          setSelectedAssetUrlType(firstKey || 'reader');
+        }
       }
     } catch (error) {
       console.error('Error loading asset-storage URLs:', error);
@@ -693,7 +792,7 @@ function GrpcIntegration() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto">
+          <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto whitespace-pre-wrap break-words">
             {JSON.stringify(result, null, 2)}
           </pre>
         </CardContent>
@@ -718,8 +817,8 @@ function GrpcIntegration() {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Proto files must be placed in <code>/backend/config/protos/</code> directory before initialization.
-                See the README for detailed instructions.
+                Proto files must be placed in <code>/backend/config/proto/</code> directory before initialization.
+                Click "Initialize gRPC Client" below to load your proto files and start making service calls.
               </AlertDescription>
             </Alert>
             
@@ -731,7 +830,7 @@ function GrpcIntegration() {
             {grpcStatus && (
               <div className="mt-4">
                 <h4 className="font-medium mb-2">Current Status:</h4>
-                <pre className="bg-gray-50 p-3 rounded text-sm">
+                <pre className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap break-words">
                   {JSON.stringify(grpcStatus, null, 2)}
                 </pre>
               </div>
@@ -795,9 +894,9 @@ function GrpcIntegration() {
               </div>
               
               <div className="flex items-end">
-                <div className="text-sm">
+                <div className="text-sm w-full">
                   <div className="font-medium">Current URL:</div>
-                  <div className="text-gray-600 font-mono text-xs">
+                  <div className="text-gray-600 font-mono text-xs break-all">
                     {assetStorageUrls[selectedAssetUrlType] || 'Not selected'}
                   </div>
                 </div>
@@ -838,6 +937,53 @@ function GrpcIntegration() {
                 placeholder="X-POP-TOKEN value"
               />
             </div>
+          </div>
+
+          {/* File Upload Section */}
+          <div className="p-4 bg-green-50 rounded-lg space-y-4">
+            <div className="font-semibold text-lg">File Upload</div>
+            
+            <div>
+              <Label>Upload URL</Label>
+              <Input
+                type="text"
+                placeholder="https://example.com/upload"
+                value={uploadUrl}
+                onChange={(e) => setUploadUrl(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <Label>Select File</Label>
+              <Input
+                type="file"
+                onChange={(e) => setSelectedUploadFile(e.target.files[0])}
+                accept="*/*"
+              />
+              {selectedUploadFile && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Selected: {selectedUploadFile.name} ({(selectedUploadFile.size / 1024).toFixed(2)} KB)
+                </div>
+              )}
+            </div>
+            
+            <Button 
+              onClick={handleFileUpload} 
+              disabled={!uploadUrl || !selectedUploadFile || uploadingFile}
+              className="w-full"
+            >
+              {uploadingFile ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload File
+                </>
+              )}
+            </Button>
           </div>
 
           <div className="flex gap-2">
@@ -1104,7 +1250,7 @@ function GrpcIntegration() {
             <CardTitle>Client Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto">
+            <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto whitespace-pre-wrap break-words">
               {JSON.stringify(grpcStatus, null, 2)}
             </pre>
           </CardContent>

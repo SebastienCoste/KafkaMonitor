@@ -163,6 +163,22 @@ function App() {
     });
   }, []);
 
+  // Auto-refresh traces, topics, and statistics every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (activeTab === 'traces') {
+        loadTraces();
+        loadStatistics();
+      }
+      if (activeTab === 'topics') {
+        loadTopics();
+        loadTopicGraph();
+      }
+    }, 2000); // Refresh every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [activeTab]);
+
   const loadInitialData = async () => {
     try {
       await Promise.all([
@@ -267,8 +283,8 @@ function App() {
   const loadTopics = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/topics`);
-      setAvailableTopics(response.data.all_topics || []);
-      setMonitoredTopics(response.data.monitored_topics || []);
+      setAvailableTopics(response.data.topics || []);
+      setMonitoredTopics(response.data.monitored || []);
     } catch (error) {
       console.error('Error loading topics:', error);
     }
@@ -644,9 +660,9 @@ function App() {
                       {connected ? 'Connected' : 'Disconnected'}
                     </span>
                   </div>
-                  {statistics && (
+                  {statistics && statistics.traces && (
                     <Badge variant="secondary">
-                      {statistics.traces.total} traces
+                      {statistics.traces.total || 0} traces
                     </Badge>
                   )}
                   

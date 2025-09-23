@@ -236,23 +236,53 @@ export default function DeploymentPanel() {
                     </div>
                     <div className="text-sm">
                       {result.success ? (
-                        <span className="text-green-700">
+                        <span className="text-green-700 font-medium">
                           {result.action === 'validate' ? 'Validation' : 'Activation'} successful
                         </span>
                       ) : (
-                        <span className="text-red-700">
+                        <span className="text-red-700 font-medium">
                           {result.error_message || 'Operation failed'}
                         </span>
                       )}
+                      {result.status_code && (
+                        <span className="ml-2 text-xs text-gray-600">
+                          (HTTP {result.status_code})
+                        </span>
+                      )}
                     </div>
-                    {result.response && (
-                      <details className="mt-2">
-                        <summary className="text-xs text-gray-600 cursor-pointer">
-                          Show response
+                    
+                    {/* Show endpoint details */}
+                    {result.details?.endpoint && (
+                      <div className="mt-1 text-xs text-gray-600">
+                        <span className="font-medium">Endpoint:</span> {result.details.endpoint}
+                      </div>
+                    )}
+                    {result.details?.namespace && (
+                      <div className="text-xs text-gray-600">
+                        <span className="font-medium">Namespace:</span> {result.details.namespace}
+                      </div>
+                    )}
+                    
+                    {/* Always show response details if available */}
+                    {(result.response || result.error_message) && (
+                      <details className="mt-2" open={!result.success}>
+                        <summary className="text-xs text-blue-600 cursor-pointer hover:underline font-medium">
+                          {result.success ? 'Show server response ▼' : 'Show error details ▼'}
                         </summary>
-                        <pre className="text-xs bg-white p-2 rounded mt-1 overflow-x-auto">
-                          {result.response}
-                        </pre>
+                        <div className="mt-2 space-y-2">
+                          {result.error_message && (
+                            <div className="text-xs bg-red-50 border border-red-200 p-2 rounded">
+                              <div className="font-medium text-red-800 mb-1">Error:</div>
+                              <div className="text-red-700">{result.error_message}</div>
+                            </div>
+                          )}
+                          {result.response && (
+                            <div className="text-xs bg-gray-900 text-green-400 p-3 rounded font-mono overflow-x-auto">
+                              <div className="text-gray-400 mb-1">Server Response:</div>
+                              {result.response}
+                            </div>
+                          )}
+                        </div>
                       </details>
                     )}
                   </div>

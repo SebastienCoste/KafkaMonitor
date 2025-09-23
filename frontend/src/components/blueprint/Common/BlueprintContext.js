@@ -270,7 +270,7 @@ export function BlueprintProvider({ children }) {
       setLoading(true);
       
       const response = await fetch(`${API_BASE_URL}/api/blueprint/config`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -567,9 +567,14 @@ export function BlueprintProvider({ children }) {
     }
   }, [API_BASE_URL, rootPath]);
 
-  const validateBlueprint = async (filename) => {
+  const validateBlueprint = async (filepath) => {
     try {
       setLoading(true);
+      // Extract just the filename from the full path
+      const filename = filepath.split('/').pop().split('\\').pop();
+      
+      console.log('🔍 Validating blueprint:', { filepath, filename, environment: selectedEnvironment });
+      
       const response = await axios.post(`${API_BASE_URL}/api/blueprint/validate/${filename}`, {
         tgz_file: filename,
         environment: selectedEnvironment,
@@ -584,9 +589,14 @@ export function BlueprintProvider({ children }) {
     }
   };
 
-  const activateBlueprint = async (filename) => {
+  const activateBlueprint = async (filepath) => {
     try {
       setLoading(true);
+      // Extract just the filename from the full path
+      const filename = filepath.split('/').pop().split('\\').pop();
+      
+      console.log('🚀 Activating blueprint:', { filepath, filename, environment: selectedEnvironment });
+      
       const response = await axios.post(`${API_BASE_URL}/api/blueprint/activate/${filename}`, {
         tgz_file: filename,
         environment: selectedEnvironment,
