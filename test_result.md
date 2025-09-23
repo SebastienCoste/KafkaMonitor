@@ -105,23 +105,65 @@
 user_problem_statement: "Implement a complete Blueprint Configuration UI and backend, according to the attached technical design document, with full CRUD support for configuration entities and environment overrides. The new UI and backend must fit into the existing Blueprint Creation flow, adding a new Configuration section/tab between the Files and Build sections."
 
 backend:
-  - task: "P10/P50/P95 Message Age Metrics Backend"
+  - task: "Blueprint Configuration Entity Definitions Schema"
     implemented: true
-    working: true
-    file: "backend/src/graph_builder.py"
+    working: "NA"
+    file: "backend/config/entity_definitions.json"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
-        comment: "Starting implementation of P10/P50/P95 message age metrics in backend statistics endpoint"
-      - working: true
+        comment: "Created comprehensive entity definitions schema with 11 entity types: access, storages, inferenceServiceConfigs, messageStorage, discoveryStorage, binaryAssets, imageModeration, textModeration, transformation, discoveryFeatures, queries. Includes field definitions, validation rules, environment mappings, and file structure definitions."
+        
+  - task: "Blueprint Configuration Data Models"
+    implemented: true
+    working: "NA"
+    file: "backend/src/blueprint_config_models.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
         agent: "main"
-        comment: "Implemented P10/P50/P95 message age metrics in milliseconds. Updated get_statistics() method to include message_age_p10_ms, message_age_p50_ms, message_age_p95_ms for each topic using existing _calculate_topic_statistics method."
-      - working: true
-        agent: "testing"
-        comment: "✅ VERIFIED: P10/P50/P95 metrics working correctly. GET /api/statistics returns message_age_p10_ms, message_age_p50_ms, message_age_p95_ms fields for all 4 topics. Values are in milliseconds format with proper percentile ordering (P10 <= P50 <= P95). All existing statistics functionality preserved. Sample metrics: notifications (P10=0ms, P50=0ms, P95=0ms), user-events (P10=0ms, P50=0ms, P95=0ms)."
+        comment: "Implemented comprehensive Pydantic models for Blueprint Configuration: EntityDefinition, EntityConfiguration, ConfigurationSchema, BlueprintUIConfig, API request/response models, validation models, and file generation models. Full type safety and validation support."
+        
+  - task: "Blueprint Configuration Parser"
+    implemented: true
+    working: "NA"
+    file: "backend/src/blueprint_config_parser.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented BlueprintConfigurationParser to parse existing blueprint files (global.json, message configs, search experience) into UI-friendly format. Handles complex inheritance structures, environment-specific configurations, and entity type detection."
+        
+  - task: "Blueprint Configuration Generator"
+    implemented: true
+    working: "NA"
+    file: "backend/src/blueprint_config_generator.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented BlueprintConfigurationGenerator to generate blueprint files from UI configuration. Supports global.json, message config files, search experience files, and blueprint_cnf.json generation with proper file structure and environment handling."
+        
+  - task: "Blueprint Configuration Manager"
+    implemented: true
+    working: "NA"
+    file: "backend/src/blueprint_config_manager.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented main BlueprintConfigurationManager with full CRUD operations: create/update/delete schemas and entities, environment overrides, file generation, configuration validation, and UI state persistence to blueprint_ui_config.json."
 
   - task: "Blueprint Creator API Configuration Endpoints"
     implemented: true
