@@ -405,6 +405,7 @@ export default function MessageConfigurationSection({ entityDefinitions, uiConfi
               environments={entityDefinitions?.environments || []}
               onUpdateEntity={updateEntity}
               onDeleteEntity={deleteEntity}
+              availableEntities={selectedSchema ? getMessageEntities(selectedSchema) : []}
             />
           </div>
         ) : (
