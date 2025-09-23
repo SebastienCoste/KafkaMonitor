@@ -141,15 +141,24 @@ class BlueprintConfigurationManager:
         try:
             ui_config, warnings = await self.load_blueprint_config(blueprint_path)
             
-            # Find target schema
+            # Find target schema - handle both ID and namespace lookups
             target_schema = None
             if request.schemaId:
+                # First try to find by ID
                 for schema in ui_config.schemas:
                     if schema.id == request.schemaId:
                         target_schema = schema
                         break
-            else:
-                # Use first schema or create one
+                
+                # If not found by ID, try by namespace (for backward compatibility)
+                if not target_schema:
+                    for schema in ui_config.schemas:
+                        if schema.namespace == request.schemaId:
+                            target_schema = schema
+                            break
+            
+            # Use first schema or create one if none found
+            if not target_schema:
                 if ui_config.schemas:
                     target_schema = ui_config.schemas[0]
                 else:
@@ -157,7 +166,7 @@ class BlueprintConfigurationManager:
                     ui_config.schemas.append(target_schema)
             
             if not target_schema:
-                return "", warnings + ["Target schema not found"]
+                return "", warnings + ["Could not find or create target schema"]
             
             # Validate entity type
             if not self.entity_definitions:
