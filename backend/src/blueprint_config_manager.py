@@ -26,8 +26,8 @@ class BlueprintConfigurationManager:
         self.parser: Optional[BlueprintConfigurationParser] = None
         self.generator: Optional[BlueprintConfigurationGenerator] = None
         
-        # Load entity definitions
-        asyncio.create_task(self.load_entity_definitions())
+        # Load entity definitions synchronously to avoid race conditions
+        self._load_entity_definitions_sync()
     
     async def load_entity_definitions(self):
         """Load entity definitions from configuration file"""
