@@ -531,6 +531,9 @@ frontend:
       - working: true
         agent: "main"
         comment: "✅ VERIFIED: Complete Blueprint Configuration UI working perfectly. Successfully integrated between Files and Build tabs as requested. Dynamic form generation from entity definitions, schema management with namespace detection, entity creation/editing with proper validation, environment override management, file generation capabilities. UI shows parsed schema 'ea.cadie.fy26.veewan.internal.v2' with 18 entities, environment selection (DEV, TEST, INT, LOAD, PROD), and action buttons (Validate, Generate Files, Refresh)."
+      - working: true
+        agent: "main"
+        comment: "🎉 MAJOR UI REDESIGN COMPLETED - ALL 3 USER FIXES IMPLEMENTED: ✅ FIX 1 - Schema focus maintenance: Updated state management to preserve active schema when creating entities. ✅ FIX 2 - Schema-specific global files: Backend generates global_{namespace}.json files to prevent conflicts. ✅ FIX 3 - Complete UI restructure: Replaced single configuration view with organized 4-section interface: Message Configs (entities for schema files), Global Config (entities for global files with schema-specific naming), Search Experience (search query entities), Blueprint CNF Builder (final blueprint composition). New ConfigurationManager with beautiful tabbed interface shows multiple schemas (ea.cadie.fy26.veewan.internal.v2, test.schema.namespace, etc.) properly organized by purpose. All sections functional and ready for user testing."
 metadata:
   created_by: "main_agent"
   version: "1.0"
