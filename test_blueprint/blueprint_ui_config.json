@@ -1,0 +1,542 @@
+{
+  "schemas": [
+    {
+      "id": "114e7b21-0b0d-4587-b18d-91f46447391e",
+      "namespace": "ea.cadie.fy26.veewan.internal.v2",
+      "configurations": [
+        {
+          "id": "4db81d0e-2d76-45e9-9302-31a3179b342e",
+          "entityType": "access",
+          "name": "global_access",
+          "baseConfig": {
+            "serverAccessOnlyAccount": true,
+            "authorisation": {
+              "adminClientIds": [
+                "NEOTEK-OATH_BACKEND_BETA_SERVER",
+                "CADIE_BK_OL_SERVER"
+              ],
+              "readClientIds": [
+                "NEOTEK-OATH_BACKEND_BETA_SERVER",
+                "CADIE_BK_OL_SERVER"
+              ],
+              "writeClientIds": [
+                "NEOTEK-OATH_BACKEND_BETA_SERVER",
+                "CADIE_BK_OL_SERVER"
+              ]
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "f0a03622-3eab-461a-9576-5787ea3465e8",
+          "entityType": "messageStorage",
+          "name": "global_messageStorage",
+          "baseConfig": {
+            "serverType": "INTERNAL_STORAGE_TYPE_INTERNAL"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "a4272326-66cb-43f4-a796-28230c098f54",
+          "entityType": "discoveryStorage",
+          "name": "global_discoveryStorage",
+          "baseConfig": {
+            "serverType": "DISCOVERY_SERVER_TYPE_INTERNAL"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "39fb32c9-5c2b-4a85-8fe2-a24436f2d16d",
+          "entityType": "inferenceServiceConfigs",
+          "name": "global_inferenceServiceConfigs",
+          "baseConfig": {
+            "configs": {
+              "axsOutfitV1": {
+                "kserveConfig": {
+                  "modelName": "axsOutfit",
+                  "modelVersion": "v1"
+                }
+              },
+              "axsOutfitQueryV1": {
+                "kserveConfig": {
+                  "modelName": "axsOutfitQuery",
+                  "modelVersion": "v1"
+                }
+              }
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "4ff25d9c-1306-4894-a90d-16b65c754e4b",
+          "entityType": "storages",
+          "name": "global_storages",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "INT": {
+              "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+              "storages": {
+                "EA.EADP.CADIE": {
+                  "serviceIdentifier": "EA.EADP.CADIE",
+                  "defaultIntegrationId": "0",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "mockserver.int.preprod.cadie-internal.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "mockserver.int.preprod.cadie-internal.ea.com:443"
+                    }
+                  ]
+                },
+                "EA.EADP.PDE.MCR": {
+                  "serviceIdentifier": "EA.EADP.PDE.MCR",
+                  "defaultIntegrationId": "2",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "asset-int.mcr.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "api-int.mcr.ea.com:443"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "fe741c90-ca05-459f-8bff-194fc816e5fa",
+          "entityType": "inferenceServiceConfigs",
+          "name": "global_inference",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "INT": {
+              "configs": {
+                "axsOutfitV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "6e292476-8a54-4269-9f43-656c10bce768",
+          "entityType": "access",
+          "name": "global_access",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "INT": {
+              "serverAccessOnlyAccount": false
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "61d8b006-e58d-4f46-b221-5ffca4b43090",
+          "entityType": "storages",
+          "name": "global_storages",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "DEV": {
+              "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+              "storages": {
+                "EA.EADP.CADIE": {
+                  "serviceIdentifier": "EA.EADP.CADIE",
+                  "defaultIntegrationId": "0",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS",
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "mockserver.dev.preprod.cadie-internal.ea.com:443"
+                    }
+                  ]
+                },
+                "EA.EADP.PDE.MCR": {
+                  "serviceIdentifier": "EA.EADP.PDE.MCR",
+                  "defaultIntegrationId": "2",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "asset-test-internal.mcr.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "api-test-internal.mcr.ea.com:443"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "af686cfb-40b9-4a1d-af56-8830a644aea3",
+          "entityType": "inferenceServiceConfigs",
+          "name": "global_inference",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "DEV": {
+              "configs": {
+                "axsOutfitV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                },
+                "axsOutfitQueryV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "3bb0d38b-a8ff-4335-920e-22a6da261d97",
+          "entityType": "storages",
+          "name": "global_storages",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "TEST": {
+              "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+              "storages": {
+                "EA.EADP.CADIE": {
+                  "serviceIdentifier": "EA.EADP.CADIE",
+                  "defaultIntegrationId": "0",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS",
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "mockserver.dev.preprod.cadie-internal.ea.com:443"
+                    }
+                  ]
+                },
+                "EA.EADP.PDE.MCR": {
+                  "serviceIdentifier": "EA.EADP.PDE.MCR",
+                  "defaultIntegrationId": "2",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "asset-test-internal.mcr.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "api-test-internal.mcr.ea.com:443"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "ca374608-ae69-4063-8f33-35393591e87d",
+          "entityType": "inferenceServiceConfigs",
+          "name": "global_inference",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "TEST": {
+              "configs": {
+                "axsOutfitV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                },
+                "axsOutfitQueryV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "f625c094-0f79-4c24-83fc-8de49288a977",
+          "entityType": "storages",
+          "name": "global_storages",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "LOAD": {
+              "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+              "storages": {
+                "EA.EADP.CADIE": {
+                  "serviceIdentifier": "EA.EADP.CADIE",
+                  "defaultIntegrationId": "0",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "mockserver.load.preprod.cadie-internal.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "mockserver.load.preprod.cadie-internal.ea.com:443"
+                    }
+                  ]
+                },
+                "EA.EADP.PDE.MCR": {
+                  "serviceIdentifier": "EA.EADP.PDE.MCR",
+                  "defaultIntegrationId": "2",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "asset-load.mcr.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "api-load.mcr.ea.com:443"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "17e9fbfa-9872-45ba-9116-3c3800cfb34f",
+          "entityType": "inferenceServiceConfigs",
+          "name": "global_inference",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "LOAD": {
+              "configs": {
+                "axsOutfitV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                },
+                "axsOutfitQueryV1": {
+                  "kserveConfig": {
+                    "url": "axs.int.ea.com:443"
+                  }
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "e7fe8d65-c8f1-48b2-b182-44ee423a5e2c",
+          "entityType": "storages",
+          "name": "global_storages",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "PROD": {
+              "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+              "storages": {
+                "EA.EADP.PDE.MCR": {
+                  "serviceIdentifier": "EA.EADP.PDE.MCR",
+                  "defaultIntegrationId": "2",
+                  "hosts": [
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                        "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                      ],
+                      "host": "asset.mcr.ea.com:443"
+                    },
+                    {
+                      "apis": [
+                        "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                        "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                        "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                      ],
+                      "host": "api.mcr.ea.com:443"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "c67cf10a-e4c5-4193-b648-c78f0ceaac3e",
+          "entityType": "inferenceServiceConfigs",
+          "name": "global_inference",
+          "baseConfig": {},
+          "environmentOverrides": {
+            "PROD": {
+              "configs": {
+                "axsOutfitV1": {
+                  "kserveConfig": {
+                    "url": "axs.ea.com:443"
+                  }
+                },
+                "axsOutfitQueryV1": {
+                  "kserveConfig": {
+                    "url": "axs.ea.com:443"
+                  }
+                }
+              }
+            }
+          },
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "fc5da8cb-08e2-4b7b-9bf7-b0f457b447b4",
+          "entityType": "transformation",
+          "name": "cadieInternalModeratedTransformedConfigV2",
+          "baseConfig": {
+            "customTransformation": {
+              "outputModel": "ea.cadie.fy26.veewan.internal.v2.EventForModerationTransformed",
+              "inputSpec": "moderation_transform.jslt"
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": [
+            "cadieInternalModeratedConfig"
+          ],
+          "enabled": true
+        },
+        {
+          "id": "74ea744d-fbdf-4332-9695-b5f6ba723560",
+          "entityType": "queries",
+          "name": "search_queries",
+          "baseConfig": {
+            "queries": {
+              "TeamByCityAndRatingID": {
+                "lexical": {
+                  "queryFile": "teambycityandratingid.json"
+                }
+              },
+              "VectorQueryTeamSearch": {
+                "vector": {
+                  "queryFile": "knnteamsearchid.json",
+                  "embeddingGlobalConfigId": "axsOutfitQueryV1",
+                  "inParams": [
+                    "myQueryParam"
+                  ],
+                  "outParam": "vect"
+                }
+              },
+              "HybridLexicalSemanticTeamByCity": {
+                "mixed": {
+                  "vectorWeight": 0.25,
+                  "lexicalWeight": 0.75,
+                  "vectorId": "VectorQueryTeamSearch",
+                  "lexicalId": "TeamByCityAndRatingID"
+                }
+              }
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "48b5b6ee-f355-4f60-ab47-aa7a6bea0467",
+          "entityType": "queries",
+          "name": "search_queries",
+          "baseConfig": {
+            "queries": {
+              "TeamByCityOnly": {
+                "lexical": {
+                  "queryFile": "teambycityonly.json"
+                }
+              }
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    }
+  ],
+  "fileOutputs": {},
+  "lastModified": "2025-09-23T01:52:48.304458"
+}
