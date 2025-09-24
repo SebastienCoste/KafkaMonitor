@@ -237,7 +237,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   return (
     <div className="h-full flex">
       {/* Left Panel - Blueprint Configuration */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6" style={{ marginRight: showPreview ? previewWidth : 0 }}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Basic Information */}
         <Card>
           <CardHeader>
