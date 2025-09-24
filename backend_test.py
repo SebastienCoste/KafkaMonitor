@@ -1219,7 +1219,7 @@ class BlueprintConfigurationTester:
             
             response = requests.post(
                 f"{self.base_url}/api/blueprint/config/generate",
-                json=response_payload,
+                json=gen_payload,
                 headers={"Content-Type": "application/json"},
                 timeout=15
             )
