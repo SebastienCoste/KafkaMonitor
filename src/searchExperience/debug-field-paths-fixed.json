@@ -1,0 +1,5 @@
+{
+  "queries.searchQuery.lexicalQuery": "SELECT * FROM test",
+  "test.lexical.queryFile": "/path/to/file.sql",
+  "simple_field": "simple_value"
+}

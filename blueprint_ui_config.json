@@ -485,8 +485,62 @@
       "id": "9fc3733d-3b64-401f-ae22-5dc6c9dcc7ed",
       "namespace": "com.test.blueprint.config",
       "configurations": []
+    },
+    {
+      "id": "35e395a6-ff60-411c-a41d-685cb2cfed24",
+      "namespace": "com.test.bug1.blueprintcnf",
+      "configurations": [
+        {
+          "id": "75dcbc13-bebb-4809-ad4d-e62f7b646081",
+          "entityType": "access",
+          "name": "test-bug1-entity",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test entity for BUG1 blueprint_cnf.json location fix"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "3310e745-694b-4e99-9ae8-a2dacc12a3cc",
+      "namespace": "com.test.bug2.storage",
+      "configurations": [
+        {
+          "id": "39842f31-9925-4424-ab77-a7962a37ecd4",
+          "entityType": "storages",
+          "name": "test-storage-with-dots",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test storage entity with dotted service identifiers",
+            "storageConfigurations": {
+              "EA.EADP.PDE.MCR": {
+                "type": "redis",
+                "host": "redis-ea-eadp-pde-mcr.example.com",
+                "port": 6379,
+                "database": 0
+              },
+              "EA.EADP.TEST.SERVICE": {
+                "type": "mongodb",
+                "connectionString": "mongodb://mongo-ea-eadp-test.example.com:27017",
+                "database": "test_service_db"
+              },
+              "SIMPLE.SERVICE": {
+                "type": "memory",
+                "maxSize": "100MB"
+              }
+            },
+            "defaultServiceIdentifier": "EA.EADP.PDE.MCR"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T16:34:06.311031"
+  "lastModified": "2025-09-24T16:37:03.015023"
 }
