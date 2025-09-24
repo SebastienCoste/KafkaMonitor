@@ -59,6 +59,8 @@
 ## agent_communication:
 ##     -agent: "main"
 ##     -message: "User reported two critical blueprint configuration bugs (Chat Message 348): 1) blueprint_cnf.json not generated at root location, 2) Storage configuration map key issues with missing defaultServiceIdentifier and incorrect service identifier splitting. Backend fixes implemented: BlueprintCNFBuilder.js modified to use /api/blueprint/create-file endpoint, EntityEditor.js and EnvironmentOverrides.js map handling logic fixed. Backend tests passed 12/12. Now need to verify both fixes are working correctly through comprehensive testing of blueprint CNF generation and storage configuration structure."
+##     -agent: "main"
+##     -message: "User identified 3 additional issues after testing: FIX 1 - File overwrite error when saving blueprint_cnf.json (existing file override issue), FIX 2 - Generated blueprint_cnf.json file is empty but should contain preview content, FIX 3 - Preview section width/height issues (needs resizable and full height). These are concrete bug reports requiring systematic investigation and fixes in the Blueprint Configuration UI system."
 
 # Protocol Guidelines for Main agent
 #
