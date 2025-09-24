@@ -203,26 +203,33 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     try {
       const config = generateBlueprintCNF();
       
-      // Save to backend via API
-      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL}/api/blueprint/files`, {
+      // Save to backend via the create-file API
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL}/api/blueprint/create-file`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           path: 'blueprint_cnf.json',
-          content: JSON.stringify(config, null, 2)
+          content: JSON.stringify(config, null, 2),
+          overwrite: true
         })
       });
 
       if (response.ok) {
-        toast.success('Blueprint CNF saved to project successfully');
+        const result = await response.json();
+        if (result.success) {
+          toast.success('Blueprint CNF saved to project root successfully');
+        } else {
+          throw new Error(result.message || 'Failed to save file');
+        }
       } else {
-        throw new Error('Failed to save file');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || errorData.message || 'Failed to save file');
       }
     } catch (error) {
       console.error('Failed to save blueprint CNF:', error);
-      toast.error('Failed to save blueprint CNF to project');
+      toast.error(`Failed to save blueprint CNF to project: ${error.message}`);
     }
   };
 
