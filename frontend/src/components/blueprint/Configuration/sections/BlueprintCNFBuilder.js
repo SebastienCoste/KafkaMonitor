@@ -81,13 +81,32 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   };
 
   const getSearchExperienceFiles = (schemas) => {
-    const hasSearchEntities = schemas.some(schema =>
-      schema.configurations.some(entity => 
-        entityDefinitions?.fileMappings?.searchExperience?.entities?.includes(entity.entityType)
-      )
-    );
+    const searchFiles = [];
     
-    return hasSearchEntities ? ['searchExperience.json'] : [];
+    schemas.forEach(schema => {
+      schema.configurations.forEach(entity => {
+        if (entityDefinitions?.fileMappings?.searchExperience?.entities?.includes(entity.entityType)) {
+          // For each search experience entity, add a file based on its name/type
+          const fileName = `searchExperience_${entity.name || entity.entityType}.json`;
+          if (!searchFiles.includes(fileName)) {
+            searchFiles.push(fileName);
+          }
+        }
+      });
+    });
+    
+    // If no specific search experience entities found, check if there are any queries entities
+    if (searchFiles.length === 0) {
+      const hasQueriesEntities = schemas.some(schema =>
+        schema.configurations.some(entity => entity.entityType === 'queries')
+      );
+      
+      if (hasQueriesEntities) {
+        searchFiles.push('searchExperience.json');
+      }
+    }
+    
+    return searchFiles;
   };
 
   const updateBlueprintConfig = (field, value) => {
