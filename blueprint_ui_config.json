@@ -115,6 +115,15 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "d28dc936-4c98-4db9-90b9-0811c870e2d5",
+          "entityType": "queries",
+          "name": "debug-field-paths",
+          "baseConfig": {},
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -466,5 +475,5 @@
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T16:32:33.140477"
+  "lastModified": "2025-09-24T16:33:29.088143"
 }
