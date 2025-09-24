@@ -77,11 +77,16 @@ export default function EntityEditor({
   const handleSave = async () => {
     setSaving(true);
     try {
+      // Ensure inherit is properly handled - convert empty array to null
+      const inheritToSave = localEntity.inherit && localEntity.inherit.length > 0 
+        ? localEntity.inherit.filter(item => item && item.trim()) // Remove empty strings
+        : null;
+
       await onUpdateEntity(localEntity.id, {
         name: localEntity.name,
         baseConfig: localEntity.baseConfig,
         environmentOverrides: localEntity.environmentOverrides,
-        inherit: localEntity.inherit,
+        inherit: inheritToSave,
         enabled: localEntity.enabled
       });
       setHasChanges(false);
