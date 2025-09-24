@@ -198,6 +198,33 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     }
   };
 
+  const saveBlueprintCNF = async () => {
+    try {
+      const config = generateBlueprintCNF();
+      
+      // Save to backend via API
+      const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL}/api/blueprint/files`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: 'blueprint_cnf.json',
+          content: JSON.stringify(config, null, 2)
+        })
+      });
+
+      if (response.ok) {
+        toast.success('Blueprint CNF saved to project successfully');
+      } else {
+        throw new Error('Failed to save file');
+      }
+    } catch (error) {
+      console.error('Failed to save blueprint CNF:', error);
+      toast.error('Failed to save blueprint CNF to project');
+    }
+  };
+
   return (
     <div className="h-full flex">
       {/* Left Panel - Blueprint Configuration */}
