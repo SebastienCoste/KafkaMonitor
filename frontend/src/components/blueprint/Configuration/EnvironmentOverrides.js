@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '../../ui/alert';
 // Icons
 import { 
   Plus, 
+  Minus,
   Trash2, 
   Globe, 
   Settings,
