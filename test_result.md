@@ -565,12 +565,11 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Blueprint Configuration File Overwrite Fix"
+    - "Blueprint Configuration Empty File Content Fix"
     - "Blueprint Configuration Parser"
-    - "Blueprint Configuration Manager"
-    - "Blueprint Configuration Generator"
   stuck_tasks:
     - "Blueprint Configuration Parser"
-    - "Blueprint Configuration Manager"
   test_all: false
   test_priority: "high_first"
 
