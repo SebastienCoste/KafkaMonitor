@@ -228,7 +228,7 @@ class BlueprintConfigurationGenerator:
                 # Create file
                 mapping = self.file_mappings['messageConfigs']
                 filename = mapping.filename.replace('{EntityName}', entity_type.capitalize())
-                file_path = mapping.path + filename
+                file_path = mapping.path  # Just the path, not path + filename
                 
                 generated_files.append(GeneratedFile(
                     filename=filename,
