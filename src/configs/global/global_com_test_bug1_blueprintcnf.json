@@ -1,0 +1,9 @@
+{
+  "environments": {},
+  "config": {
+    "access": {
+      "enabled": true,
+      "description": "Test entity for BUG1 blueprint_cnf.json location fix"
+    }
+  }
+}
