@@ -1510,7 +1510,7 @@ class BlueprintConfigurationTester:
             payload = {
                 "name": "test-storage-entity",
                 "entityType": "storages",
-                "configuration": {
+                "baseConfig": {
                     "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
                     "storages": {
                         "EA.EADP.PDE.MCR": {
