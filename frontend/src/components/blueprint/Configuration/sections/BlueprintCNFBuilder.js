@@ -34,6 +34,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     }
   });
   const [showPreview, setShowPreview] = useState(false);
+  const [previewWidth, setPreviewWidth] = useState(400); // Default width for preview panel
 
   const schemas = uiConfig?.schemas || [];
 
