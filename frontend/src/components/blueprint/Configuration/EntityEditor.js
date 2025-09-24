@@ -517,7 +517,8 @@ export default function EntityEditor({
                           size="sm"
                           onClick={() => {
                             const newInherit = localEntity.inherit.filter((_, i) => i !== index);
-                            updateLocalEntity({ inherit: newInherit.length > 0 ? newInherit : null });
+                            const finalInherit = newInherit.length > 0 ? newInherit : null;
+                            updateLocalEntity({ inherit: finalInherit });
                           }}
                         >
                           <Minus className="h-4 w-4" />
