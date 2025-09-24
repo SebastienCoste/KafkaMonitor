@@ -52,6 +52,15 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "43499c50-fcbc-4c19-b640-e5046fb43cbc",
+          "entityType": "storages",
+          "name": "test-storage-entity",
+          "baseConfig": {},
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -110,8 +119,18 @@
           "enabled": true
         }
       ]
+    },
+    {
+      "id": "b2678e8c-7806-418b-b7e2-d81cf64a90a7",
+      "namespace": "com.test.blueprintcnf",
+      "configurations": []
+    },
+    {
+      "id": "62c0a1d3-c0d9-4baf-a80c-11fcf8849bc6",
+      "namespace": "com.test.storage",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T00:57:58.214193"
+  "lastModified": "2025-09-24T01:25:28.689059"
 }
