@@ -157,6 +157,35 @@ export default function GlobalConfigurationSection({ entityDefinitions, uiConfig
     }
   };
 
+  const createGlobalRootConfiguration = async () => {
+    if (!selectedSchema) {
+      toast.error('No schema selected');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await ConfigurationAPI.createEntity({
+        entityType: 'access', // Use access as default for global root config
+        name: 'Root Configuration',
+        baseConfig: {},
+        schemaId: selectedSchema.id
+      });
+
+      if (result.success) {
+        toast.success('Global Root Configuration created successfully');
+        await onConfigurationChange(); // Reload configuration
+      } else {
+        toast.error('Failed to create Global Root Configuration');
+      }
+    } catch (error) {
+      console.error('Failed to create Global Root Configuration:', error);
+      toast.error(`Failed to create Global Root Configuration: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="h-full flex">
       {/* Left Panel - Schema and Entity Management */}
