@@ -15,6 +15,7 @@ import {
   Plus, 
   Minus, 
   Download,
+  Save,
   Eye,
   Settings
 } from 'lucide-react';
