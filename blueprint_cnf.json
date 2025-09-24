@@ -1,12 +1,6 @@
 {
-  "root": {
-    "namespace": "com.test.example",
-    "version": "1.0.0",
-    "description": "Test Blueprint for Kafka Monitor"
-  },
-  "configuration": {
-    "build": {
-      "output_directory": "out"
-    }
-  }
+  "namespace": "com.test.blueprint.config.overwritten",
+  "version": "3.0.0",
+  "description": "Overwritten test blueprint configuration",
+  "overwrite_test": true
 }
