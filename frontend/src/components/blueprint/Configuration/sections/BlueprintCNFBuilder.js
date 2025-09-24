@@ -237,7 +237,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   return (
     <div className="h-full flex">
       {/* Left Panel - Blueprint Configuration */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div className="flex-1 overflow-y-auto p-4 space-y-6" style={{ marginRight: showPreview ? previewWidth : 0 }}>
         {/* Basic Information */}
         <Card>
           <CardHeader>
@@ -459,51 +459,112 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
       </div>
 
       {/* Right Panel - Actions and Preview */}
-      <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <h3 className="font-semibold text-gray-900 mb-3">Blueprint CNF Actions</h3>
+      {showPreview && (
+        <>
+          {/* Resize Handle */}
+          <div 
+            className="w-1 bg-gray-300 hover:bg-blue-500 cursor-col-resize flex-shrink-0"
+            onMouseDown={(e) => {
+              e.preventDefault();
+              const startX = e.clientX;
+              const startWidth = previewWidth;
+              
+              const handleMouseMove = (e) => {
+                const newWidth = Math.max(300, Math.min(800, startWidth + (startX - e.clientX)));
+                setPreviewWidth(newWidth);
+              };
+              
+              const handleMouseUp = () => {
+                document.removeEventListener('mousemove', handleMouseMove);
+                document.removeEventListener('mouseup', handleMouseUp);
+              };
+              
+              document.addEventListener('mousemove', handleMouseMove);
+              document.addEventListener('mouseup', handleMouseUp);
+            }}
+          />
           
-          <div className="space-y-2">
-            <Button
-              className="w-full"
-              onClick={() => setShowPreview(!showPreview)}
-              variant="outline"
-            >
-              <Eye className="h-4 w-4 mr-2" />
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
-            </Button>
-            
-            <Button
-              className="w-full"
-              onClick={saveBlueprintCNF}
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save blueprint_cnf.json
-            </Button>
-            
-            <Button
-              className="w-full"
-              onClick={downloadBlueprintCNF}
-              variant="outline"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download blueprint_cnf.json
-            </Button>
-          </div>
-        </div>
+          {/* Preview Panel - Now Resizable */}
+          <div className="bg-white border-l border-gray-200 flex flex-col" style={{ width: previewWidth }}>
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-3">Blueprint CNF Actions</h3>
+              
+              <div className="space-y-2">
+                <Button
+                  className="w-full"
+                  onClick={() => setShowPreview(!showPreview)}
+                  variant="outline"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  {showPreview ? 'Hide Preview' : 'Show Preview'}
+                </Button>
+                
+                <Button
+                  className="w-full"
+                  onClick={saveBlueprintCNF}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  Save blueprint_cnf.json
+                </Button>
+                
+                <Button
+                  className="w-full"
+                  onClick={downloadBlueprintCNF}
+                  variant="outline"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download blueprint_cnf.json
+                </Button>
+              </div>
+            </div>
 
-        {showPreview && (
-          <div className="flex-1 overflow-hidden">
-            <div className="p-4">
-              <h4 className="font-medium text-gray-900 mb-3">Preview</h4>
-              <div className="bg-gray-900 text-green-400 p-3 rounded text-xs font-mono overflow-auto h-96">
-                <pre>{JSON.stringify(generateBlueprintCNF(), null, 2)}</pre>
+            <div className="flex-1 overflow-hidden">
+              <div className="p-4 h-full">
+                <h4 className="font-medium text-gray-900 mb-3">Preview</h4>
+                <div className="bg-gray-900 text-green-400 p-3 rounded text-xs font-mono overflow-auto h-full">
+                  <pre>{JSON.stringify(generateBlueprintCNF(), null, 2)}</pre>
+                </div>
               </div>
             </div>
           </div>
-        )}
+        </>
+      )}
 
-        {!showPreview && (
+      {/* Fixed Action Panel when Preview is Hidden */}
+      {!showPreview && (
+        <div className="w-80 bg-white border-l border-gray-200 flex flex-col">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-3">Blueprint CNF Actions</h3>
+            
+            <div className="space-y-2">
+              <Button
+                className="w-full"
+                onClick={() => setShowPreview(!showPreview)}
+                variant="outline"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                {showPreview ? 'Hide Preview' : 'Show Preview'}
+              </Button>
+              
+              <Button
+                className="w-full"
+                onClick={saveBlueprintCNF}
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save blueprint_cnf.json
+              </Button>
+              
+              <Button
+                className="w-full"
+                onClick={downloadBlueprintCNF}
+                variant="outline"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download blueprint_cnf.json
+              </Button>
+            </div>
+          </div>
+
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <FileText className="h-12 w-12 mx-auto text-gray-300 mb-4" />
@@ -521,8 +582,8 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
