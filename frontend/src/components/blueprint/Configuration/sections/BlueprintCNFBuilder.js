@@ -466,7 +466,16 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
             
             <Button
               className="w-full"
+              onClick={saveBlueprintCNF}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              Save blueprint_cnf.json
+            </Button>
+            
+            <Button
+              className="w-full"
               onClick={downloadBlueprintCNF}
+              variant="outline"
             >
               <Download className="h-4 w-4 mr-2" />
               Download blueprint_cnf.json
