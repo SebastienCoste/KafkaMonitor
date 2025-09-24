@@ -564,6 +564,31 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "5ca1315b-ee47-45e0-8e15-2bb932a06955",
+          "entityType": "storages",
+          "name": "test_storage",
+          "baseConfig": {
+            "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+            "storages": {
+              "EA.EADP.PDE.MCR": {
+                "serviceIdentifier": "EA.EADP.PDE.MCR",
+                "defaultIntegrationId": "2",
+                "hosts": [
+                  {
+                    "host": "asset-int.mcr.ea.cm",
+                    "apis": [
+                      "*"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -584,5 +609,5 @@
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:16:19.434267"
+  "lastModified": "2025-09-24T01:21:48.563854"
 }
