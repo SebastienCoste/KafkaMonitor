@@ -158,6 +158,36 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     }));
   };
 
+  const addSearchConfig = () => {
+    setBlueprintConfig(prev => ({
+      ...prev,
+      searchExperience: {
+        ...prev.searchExperience,
+        configs: [...prev.searchExperience.configs, '']
+      }
+    }));
+  };
+
+  const updateSearchConfig = (index, value) => {
+    setBlueprintConfig(prev => ({
+      ...prev,
+      searchExperience: {
+        ...prev.searchExperience,
+        configs: prev.searchExperience.configs.map((config, i) => i === index ? value : config)
+      }
+    }));
+  };
+
+  const removeSearchConfig = (index) => {
+    setBlueprintConfig(prev => ({
+      ...prev,
+      searchExperience: {
+        ...prev.searchExperience,
+        configs: prev.searchExperience.configs.filter((_, i) => i !== index)
+      }
+    }));
+  };
+
   const updateSearchTemplate = (index, value) => {
     setBlueprintConfig(prev => ({
       ...prev,
