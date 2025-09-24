@@ -360,7 +360,12 @@ class BlueprintConfigurationGenerator:
                 file_path = base_path / file.path / file.filename
                 file_path.parent.mkdir(parents=True, exist_ok=True)
                 
-                # Write file
+                # Remove existing file if it exists to prevent conflicts
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info(f"Removed existing file: {file_path}")
+                
+                # Write file (will overwrite if exists)
                 with open(file_path, 'w') as f:
                     json.dump(file.content, f, indent=2)
                 
