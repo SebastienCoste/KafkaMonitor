@@ -203,6 +203,14 @@ class BlueprintFileManager:
                 os.unlink(temp_path)
             raise
     
+    async def file_exists(self, relative_path: str) -> bool:
+        """Check if a file exists"""
+        try:
+            full_path = self.validate_path(relative_path)
+            return os.path.exists(full_path)
+        except Exception:
+            return False
+    
     async def create_file(self, relative_path: str, template_name: Optional[str] = None):
         """Create a new file with optional template content"""
         full_path = self.validate_path(relative_path)
