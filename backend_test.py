@@ -623,6 +623,11 @@ class BlueprintConfigurationTester:
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
+        # PRIORITY: Test CRITICAL UI INPUT FIELD BUG FIXES
+        print("\n🚨 CRITICAL UI INPUT FIELD BUG FIXES TESTING")
+        print("=" * 70)
+        self.test_ui_input_field_bug_fixes()
+        
         # PRIORITY: Test URGENT USER-REPORTED FIXES First
         print("\n🚨 URGENT USER-REPORTED FIXES TESTING")
         print("=" * 70)
