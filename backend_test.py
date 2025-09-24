@@ -623,6 +623,11 @@ class BlueprintConfigurationTester:
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
+        # PRIORITY: Test URGENT USER-REPORTED FIXES First
+        print("\n🚨 URGENT USER-REPORTED FIXES TESTING")
+        print("=" * 70)
+        self.test_urgent_blueprint_fixes()
+        
         # PRIORITY: Test Critical User-Reported Bugs First
         print("\n🚨 CRITICAL USER-REPORTED BUGS TESTING (Chat Message 348)")
         print("=" * 70)
