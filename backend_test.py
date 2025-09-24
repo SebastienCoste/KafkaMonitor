@@ -1829,8 +1829,16 @@ def main():
     tester = BlueprintConfigurationTester(base_url)
     
     # Check if we should run specific tests
-    if len(sys.argv) > 2 and sys.argv[2] == "fixes":
-        tester.run_inheritance_and_file_generation_tests()
+    if len(sys.argv) > 2:
+        test_mode = sys.argv[2]
+        if test_mode == "fixes":
+            tester.run_inheritance_and_file_generation_tests()
+        elif test_mode == "blueprint_cnf_storage":
+            tester.run_blueprint_cnf_and_storage_fixes_tests()
+        else:
+            print(f"Unknown test mode: {test_mode}")
+            print("Available modes: fixes, blueprint_cnf_storage")
+            sys.exit(1)
     else:
         tester.run_blueprint_configuration_tests()
 
