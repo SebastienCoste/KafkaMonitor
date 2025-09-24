@@ -144,14 +144,25 @@ export default function GlobalConfigurationSection({ entityDefinitions, uiConfig
       });
 
       if (result.success) {
-        toast.success(`Generated ${result.files.length} global configuration files`);
-        console.log('Generated global files:', result.files);
+        const globalFiles = result.files.filter(file => 
+          file.path.includes('configs/global') || file.filename.startsWith('global_')
+        );
+        toast.success(`Generated ${globalFiles.length} global configuration files`);
+        console.log('Generated global files:', globalFiles);
       } else {
         toast.error(`Failed to generate files: ${result.errors.join(', ')}`);
       }
     } catch (error) {
       console.error('Failed to generate files:', error);
-      toast.error(`Failed to generate files: ${error.message}`);
+      
+      // Handle permission errors specifically
+      if (error.message.includes('403') || error.message.includes('permission')) {
+        toast.error('Permission denied: Please close any applications that have the global config files open and ensure you have write permissions.', {
+          duration: 8000
+        });
+      } else {
+        toast.error(`Failed to generate global files: ${error.message}`);
+      }
     } finally {
       setSaving(false);
     }
