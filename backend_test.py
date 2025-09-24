@@ -1266,14 +1266,566 @@ class BlueprintConfigurationTester:
         except Exception as e:
             self.log_test("Temp File Backup Approach", False, f"Exception: {str(e)}")
     
-    def cleanup_test_entity(self, entity_id):
-        """Clean up test entity"""
-        if entity_id:
-            try:
-                requests.delete(f"{self.base_url}/api/blueprint/config/entities/{entity_id}", timeout=10)
-                self.log_test("Cleanup Test Entity", True, f"Cleaned up entity {entity_id}")
-            except:
-                pass  # Ignore cleanup errors
+    def test_ui_input_field_bug_fixes(self):
+        """Test the critical UI input field bug fixes for complex field paths"""
+        print("🔧 Testing UI Input Field Bug Fixes - Complex Field Path Handling")
+        print("-" * 60)
+        
+        # Test 1: Entity creation with complex field paths containing dots
+        self.test_entity_creation_complex_field_paths()
+        
+        # Test 2: Entity updates with map fields that have nested properties
+        self.test_entity_updates_map_fields_nested()
+        
+        # Test 3: Field paths like "storages.myMapKey.nestedProperty" handling
+        self.test_storage_map_key_field_paths()
+        
+        # Test 4: Entity configuration retrieval with complex paths
+        self.test_entity_config_retrieval_complex_paths()
+        
+        # Test 5: Validate that map field updates don't create unwanted nested structures
+        self.test_map_field_updates_no_nested_structures()
+        
+        # Test 6: Mixed nested structures handling
+        self.test_mixed_nested_structures()
+    
+    def test_entity_creation_complex_field_paths(self):
+        """Test entity creation with complex field paths containing dots (e.g., 'test.lexical.queryFile')"""
+        try:
+            # Test Case 1: Create entity with "queries.searchQuery.lexicalQuery" field path
+            payload1 = {
+                "name": "lexical-query-entity",
+                "entityType": "queries",
+                "configuration": {
+                    "queries.searchQuery.lexicalQuery": "SELECT * FROM documents WHERE content MATCH ?",
+                    "queries.searchQuery.enabled": True,
+                    "description": "Entity with complex lexical query field path"
+                }
+            }
+            
+            response1 = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload1,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response1.status_code == 200:
+                data1 = response1.json()
+                if data1.get("success") and "entity_id" in data1:
+                    entity_id1 = data1["entity_id"]
+                    self.log_test("Complex Field Path - Lexical Query Creation", True, f"✅ Created entity {entity_id1} with 'queries.searchQuery.lexicalQuery' field path")
+                    
+                    # Verify the field was stored correctly by retrieving the entity
+                    self.verify_complex_field_storage(entity_id1, "queries.searchQuery.lexicalQuery", "SELECT * FROM documents WHERE content MATCH ?")
+                    
+                    # Clean up
+                    self.cleanup_test_entity(entity_id1)
+                else:
+                    self.log_test("Complex Field Path - Lexical Query Creation", False, f"❌ Creation failed: {data1}")
+            else:
+                self.log_test("Complex Field Path - Lexical Query Creation", False, f"❌ HTTP {response1.status_code}: {response1.text}")
+            
+            # Test Case 2: Create entity with "test.lexical.queryFile" field path (from bug report)
+            payload2 = {
+                "name": "test-lexical-queryfile-entity",
+                "entityType": "queries",
+                "configuration": {
+                    "test.lexical.queryFile": "/path/to/lexical/query.sql",
+                    "test.lexical.enabled": True,
+                    "test.lexical.timeout": 30000,
+                    "description": "Entity with test.lexical.queryFile field path from bug report"
+                }
+            }
+            
+            response2 = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload2,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response2.status_code == 200:
+                data2 = response2.json()
+                if data2.get("success") and "entity_id" in data2:
+                    entity_id2 = data2["entity_id"]
+                    self.log_test("Complex Field Path - Test Lexical QueryFile Creation", True, f"✅ Created entity {entity_id2} with 'test.lexical.queryFile' field path")
+                    
+                    # Verify the field was stored correctly
+                    self.verify_complex_field_storage(entity_id2, "test.lexical.queryFile", "/path/to/lexical/query.sql")
+                    
+                    # Clean up
+                    self.cleanup_test_entity(entity_id2)
+                else:
+                    self.log_test("Complex Field Path - Test Lexical QueryFile Creation", False, f"❌ Creation failed: {data2}")
+            else:
+                self.log_test("Complex Field Path - Test Lexical QueryFile Creation", False, f"❌ HTTP {response2.status_code}: {response2.text}")
+                
+        except Exception as e:
+            self.log_test("Complex Field Path Creation", False, f"❌ Exception: {str(e)}")
+    
+    def test_entity_updates_map_fields_nested(self):
+        """Test entity updates with map fields that have nested properties"""
+        try:
+            # First create an entity with map fields
+            create_payload = {
+                "name": "map-fields-entity",
+                "entityType": "storages",
+                "configuration": {
+                    "storages.primaryStorage.type": "s3",
+                    "storages.primaryStorage.bucket": "my-bucket",
+                    "storages.secondaryStorage.type": "local",
+                    "storages.secondaryStorage.path": "/data/storage"
+                }
+            }
+            
+            create_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=create_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if create_response.status_code != 200:
+                self.log_test("Map Fields Entity Creation", False, f"❌ HTTP {create_response.status_code}")
+                return
+            
+            create_data = create_response.json()
+            if not create_data.get("success"):
+                self.log_test("Map Fields Entity Creation", False, f"❌ Creation failed: {create_data}")
+                return
+            
+            entity_id = create_data["entity_id"]
+            self.log_test("Map Fields Entity Creation", True, f"✅ Created entity {entity_id} with map fields")
+            
+            # Now update the entity with nested map properties
+            update_payload = {
+                "configuration": {
+                    "storages.primaryStorage.credentials.accessKey": "AKIAIOSFODNN7EXAMPLE",
+                    "storages.primaryStorage.credentials.secretKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+                    "storages.primaryStorage.region": "us-west-2",
+                    "storages.secondaryStorage.permissions.read": True,
+                    "storages.secondaryStorage.permissions.write": True,
+                    "storages.secondaryStorage.permissions.delete": False
+                }
+            }
+            
+            update_response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                json=update_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if update_response.status_code == 200:
+                update_data = update_response.json()
+                if update_data.get("success"):
+                    self.log_test("Map Fields Nested Update", True, f"✅ Successfully updated entity {entity_id} with nested map properties")
+                    
+                    # Verify the nested properties were stored correctly
+                    self.verify_complex_field_storage(entity_id, "storages.primaryStorage.credentials.accessKey", "AKIAIOSFODNN7EXAMPLE")
+                    self.verify_complex_field_storage(entity_id, "storages.secondaryStorage.permissions.read", True)
+                else:
+                    self.log_test("Map Fields Nested Update", False, f"❌ Update failed: {update_data}")
+            else:
+                self.log_test("Map Fields Nested Update", False, f"❌ HTTP {update_response.status_code}")
+            
+            # Clean up
+            self.cleanup_test_entity(entity_id)
+                
+        except Exception as e:
+            self.log_test("Map Fields Nested Update", False, f"❌ Exception: {str(e)}")
+    
+    def test_storage_map_key_field_paths(self):
+        """Test field paths like 'storages.myMapKey.nestedProperty' are handled correctly"""
+        try:
+            # Test the specific example from the review request: "storages.EA.EADP.PDE.MCR.property"
+            payload = {
+                "name": "storage-map-key-entity",
+                "entityType": "storages",
+                "configuration": {
+                    "storages.EA.EADP.PDE.MCR.property": "complex-map-key-value",
+                    "storages.EA.EADP.PDE.MCR.enabled": True,
+                    "storages.EA.EADP.PDE.MCR.timeout": 5000,
+                    "storages.myMapKey.nestedProperty": "test-value",
+                    "storages.myMapKey.anotherNested.deepProperty": "deep-value",
+                    "description": "Entity testing complex storage map key field paths"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("Storage Map Key Field Paths Creation", True, f"✅ Created entity {entity_id} with complex storage map key field paths")
+                    
+                    # Verify specific field paths were stored correctly
+                    self.verify_complex_field_storage(entity_id, "storages.EA.EADP.PDE.MCR.property", "complex-map-key-value")
+                    self.verify_complex_field_storage(entity_id, "storages.myMapKey.nestedProperty", "test-value")
+                    self.verify_complex_field_storage(entity_id, "storages.myMapKey.anotherNested.deepProperty", "deep-value")
+                    
+                    # Test updating these complex field paths
+                    update_payload = {
+                        "configuration": {
+                            "storages.EA.EADP.PDE.MCR.property": "updated-complex-value",
+                            "storages.myMapKey.nestedProperty": "updated-test-value",
+                            "storages.newMapKey.newProperty": "new-value"
+                        }
+                    }
+                    
+                    update_response = requests.put(
+                        f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                        json=update_payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if update_response.status_code == 200:
+                        update_data = update_response.json()
+                        if update_data.get("success"):
+                            self.log_test("Storage Map Key Field Paths Update", True, f"✅ Successfully updated complex storage map key field paths")
+                            
+                            # Verify updates were applied correctly
+                            self.verify_complex_field_storage(entity_id, "storages.EA.EADP.PDE.MCR.property", "updated-complex-value")
+                            self.verify_complex_field_storage(entity_id, "storages.myMapKey.nestedProperty", "updated-test-value")
+                        else:
+                            self.log_test("Storage Map Key Field Paths Update", False, f"❌ Update failed: {update_data}")
+                    else:
+                        self.log_test("Storage Map Key Field Paths Update", False, f"❌ HTTP {update_response.status_code}")
+                    
+                    # Clean up
+                    self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("Storage Map Key Field Paths Creation", False, f"❌ Creation failed: {data}")
+            else:
+                self.log_test("Storage Map Key Field Paths Creation", False, f"❌ HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Storage Map Key Field Paths", False, f"❌ Exception: {str(e)}")
+    
+    def test_entity_config_retrieval_complex_paths(self):
+        """Test entity configuration retrieval to ensure values are stored/retrieved properly"""
+        try:
+            # Create entity with complex field paths
+            payload = {
+                "name": "config-retrieval-test-entity",
+                "entityType": "textModeration",
+                "configuration": {
+                    "textModeration.config.settings.enabled": True,
+                    "textModeration.config.settings.threshold": 0.8,
+                    "textModeration.config.filters.profanity.enabled": True,
+                    "textModeration.config.filters.profanity.severity": "high",
+                    "textModeration.config.filters.spam.enabled": False,
+                    "description": "Entity for testing configuration retrieval with complex paths"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("Config Retrieval Entity Creation", True, f"✅ Created entity {entity_id} for configuration retrieval testing")
+                    
+                    # Retrieve the UI configuration to verify the entity is stored correctly
+                    ui_config_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+                    
+                    if ui_config_response.status_code == 200:
+                        ui_config_data = ui_config_response.json()
+                        if "config" in ui_config_data:
+                            config = ui_config_data["config"]
+                            
+                            # Search for our entity in the configuration
+                            entity_found = False
+                            for schema in config.get("schemas", []):
+                                for entity in schema.get("configurations", []):
+                                    if entity.get("name") == "config-retrieval-test-entity":
+                                        entity_found = True
+                                        entity_config = entity.get("configuration", {})
+                                        
+                                        # Verify complex field paths are stored correctly
+                                        expected_fields = {
+                                            "textModeration.config.settings.enabled": True,
+                                            "textModeration.config.settings.threshold": 0.8,
+                                            "textModeration.config.filters.profanity.enabled": True,
+                                            "textModeration.config.filters.profanity.severity": "high",
+                                            "textModeration.config.filters.spam.enabled": False
+                                        }
+                                        
+                                        all_fields_correct = True
+                                        for field_path, expected_value in expected_fields.items():
+                                            if self.get_nested_value(entity_config, field_path) != expected_value:
+                                                all_fields_correct = False
+                                                self.log_test(f"Config Retrieval Field Check - {field_path}", False, f"❌ Expected {expected_value}, got {self.get_nested_value(entity_config, field_path)}")
+                                            else:
+                                                self.log_test(f"Config Retrieval Field Check - {field_path}", True, f"✅ Correctly stored and retrieved: {expected_value}")
+                                        
+                                        if all_fields_correct:
+                                            self.log_test("Config Retrieval Complex Paths", True, "✅ All complex field paths stored and retrieved correctly")
+                                        else:
+                                            self.log_test("Config Retrieval Complex Paths", False, "❌ Some complex field paths not stored/retrieved correctly")
+                                        break
+                            
+                            if not entity_found:
+                                self.log_test("Config Retrieval Complex Paths", False, "❌ Entity not found in UI configuration")
+                        else:
+                            self.log_test("Config Retrieval Complex Paths", False, "❌ Missing 'config' field in UI config response")
+                    else:
+                        self.log_test("Config Retrieval Complex Paths", False, f"❌ UI Config HTTP {ui_config_response.status_code}")
+                    
+                    # Clean up
+                    self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("Config Retrieval Entity Creation", False, f"❌ Creation failed: {data}")
+            else:
+                self.log_test("Config Retrieval Entity Creation", False, f"❌ HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Config Retrieval Complex Paths", False, f"❌ Exception: {str(e)}")
+    
+    def test_map_field_updates_no_nested_structures(self):
+        """Test that map field updates don't create unwanted nested structures"""
+        try:
+            # Create entity with simple map fields
+            payload = {
+                "name": "map-no-nested-entity",
+                "entityType": "storages",
+                "configuration": {
+                    "storages.cache.type": "redis",
+                    "storages.cache.host": "localhost",
+                    "storages.cache.port": 6379
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("Map No Nested Entity Creation", True, f"✅ Created entity {entity_id} with simple map fields")
+                    
+                    # Update the entity - this should NOT create nested structures like "cache.type.newProperty"
+                    update_payload = {
+                        "configuration": {
+                            "storages.cache.password": "secret123",
+                            "storages.cache.database": 0,
+                            "storages.cache.timeout": 5000
+                        }
+                    }
+                    
+                    update_response = requests.put(
+                        f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                        json=update_payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if update_response.status_code == 200:
+                        update_data = update_response.json()
+                        if update_data.get("success"):
+                            self.log_test("Map Field Update No Nested Structures", True, f"✅ Successfully updated map fields without creating nested structures")
+                            
+                            # Verify the structure is correct by retrieving the configuration
+                            ui_config_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+                            
+                            if ui_config_response.status_code == 200:
+                                ui_config_data = ui_config_response.json()
+                                config = ui_config_data.get("config", {})
+                                
+                                # Find our entity and check its structure
+                                for schema in config.get("schemas", []):
+                                    for entity in schema.get("configurations", []):
+                                        if entity.get("name") == "map-no-nested-entity":
+                                            entity_config = entity.get("configuration", {})
+                                            
+                                            # Check that we have the expected flat structure, not unwanted nesting
+                                            expected_fields = [
+                                                "storages.cache.type",
+                                                "storages.cache.host", 
+                                                "storages.cache.port",
+                                                "storages.cache.password",
+                                                "storages.cache.database",
+                                                "storages.cache.timeout"
+                                            ]
+                                            
+                                            # Verify no unwanted nested structures were created
+                                            unwanted_structures = []
+                                            for key in entity_config.keys():
+                                                if key not in expected_fields and "." in key:
+                                                    # Check if this looks like an unwanted nested structure
+                                                    if key.count(".") > 2:  # More than expected nesting
+                                                        unwanted_structures.append(key)
+                                            
+                                            if not unwanted_structures:
+                                                self.log_test("Map Field Structure Validation", True, "✅ No unwanted nested structures created")
+                                            else:
+                                                self.log_test("Map Field Structure Validation", False, f"❌ Unwanted nested structures found: {unwanted_structures}")
+                                            break
+                            else:
+                                self.log_test("Map Field Structure Validation", False, f"❌ UI Config HTTP {ui_config_response.status_code}")
+                        else:
+                            self.log_test("Map Field Update No Nested Structures", False, f"❌ Update failed: {update_data}")
+                    else:
+                        self.log_test("Map Field Update No Nested Structures", False, f"❌ HTTP {update_response.status_code}")
+                    
+                    # Clean up
+                    self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("Map No Nested Entity Creation", False, f"❌ Creation failed: {data}")
+            else:
+                self.log_test("Map No Nested Entity Creation", False, f"❌ HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Map Field Updates No Nested Structures", False, f"❌ Exception: {str(e)}")
+    
+    def test_mixed_nested_structures(self):
+        """Test mixed nested structures: 'textModeration.config.settings.enabled'"""
+        try:
+            # Test the specific example from the review request
+            payload = {
+                "name": "mixed-nested-entity",
+                "entityType": "textModeration",
+                "configuration": {
+                    "textModeration.config.settings.enabled": True,
+                    "textModeration.config.settings.strictMode": False,
+                    "textModeration.config.settings.threshold": 0.75,
+                    "textModeration.filters.profanity.enabled": True,
+                    "textModeration.filters.profanity.words": ["badword1", "badword2"],
+                    "textModeration.filters.spam.enabled": False,
+                    "description": "Entity testing mixed nested structures"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("Mixed Nested Structures Creation", True, f"✅ Created entity {entity_id} with mixed nested structures")
+                    
+                    # Test updating mixed nested structures
+                    update_payload = {
+                        "configuration": {
+                            "textModeration.config.settings.enabled": False,  # Update existing
+                            "textModeration.config.settings.newSetting": "new-value",  # Add new
+                            "textModeration.config.advanced.logging.enabled": True,  # Add deeper nesting
+                            "textModeration.config.advanced.logging.level": "debug",
+                            "textModeration.filters.profanity.severity": "medium"  # Update existing filter
+                        }
+                    }
+                    
+                    update_response = requests.put(
+                        f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                        json=update_payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if update_response.status_code == 200:
+                        update_data = update_response.json()
+                        if update_data.get("success"):
+                            self.log_test("Mixed Nested Structures Update", True, f"✅ Successfully updated mixed nested structures")
+                            
+                            # Verify the updates were applied correctly
+                            verification_fields = {
+                                "textModeration.config.settings.enabled": False,
+                                "textModeration.config.settings.newSetting": "new-value",
+                                "textModeration.config.advanced.logging.enabled": True,
+                                "textModeration.config.advanced.logging.level": "debug",
+                                "textModeration.filters.profanity.severity": "medium"
+                            }
+                            
+                            for field_path, expected_value in verification_fields.items():
+                                self.verify_complex_field_storage(entity_id, field_path, expected_value)
+                        else:
+                            self.log_test("Mixed Nested Structures Update", False, f"❌ Update failed: {update_data}")
+                    else:
+                        self.log_test("Mixed Nested Structures Update", False, f"❌ HTTP {update_response.status_code}")
+                    
+                    # Clean up
+                    self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("Mixed Nested Structures Creation", False, f"❌ Creation failed: {data}")
+            else:
+                self.log_test("Mixed Nested Structures Creation", False, f"❌ HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Mixed Nested Structures", False, f"❌ Exception: {str(e)}")
+    
+    def verify_complex_field_storage(self, entity_id, field_path, expected_value):
+        """Verify that a complex field path was stored correctly"""
+        try:
+            # Get the UI configuration to check the stored value
+            ui_config_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if ui_config_response.status_code == 200:
+                ui_config_data = ui_config_response.json()
+                config = ui_config_data.get("config", {})
+                
+                # Find the entity and check the field value
+                for schema in config.get("schemas", []):
+                    for entity in schema.get("configurations", []):
+                        if entity.get("id") == entity_id or entity.get("name").endswith(entity_id[-8:]):  # Match by ID or name suffix
+                            entity_config = entity.get("configuration", {})
+                            stored_value = self.get_nested_value(entity_config, field_path)
+                            
+                            if stored_value == expected_value:
+                                self.log_test(f"Field Storage Verification - {field_path}", True, f"✅ Correctly stored: {expected_value}")
+                                return True
+                            else:
+                                self.log_test(f"Field Storage Verification - {field_path}", False, f"❌ Expected {expected_value}, got {stored_value}")
+                                return False
+                
+                self.log_test(f"Field Storage Verification - {field_path}", False, f"❌ Entity {entity_id} not found in UI config")
+                return False
+            else:
+                self.log_test(f"Field Storage Verification - {field_path}", False, f"❌ UI Config HTTP {ui_config_response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test(f"Field Storage Verification - {field_path}", False, f"❌ Exception: {str(e)}")
+            return False
+    
+    def get_nested_value(self, obj, path):
+        """Get a nested value from an object using dot notation path"""
+        try:
+            keys = path.split('.')
+            current = obj
+            
+            for key in keys:
+                if isinstance(current, dict) and key in current:
+                    current = current[key]
+                else:
+                    return None
+            
+            return current
+        except:
+            return None
 
     def test_fix1_file_overwrite_error(self):
         """Test FIX 1 - File Overwrite Error: POST /api/blueprint/create-file with overwrite functionality"""
