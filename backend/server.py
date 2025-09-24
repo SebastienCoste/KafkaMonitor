@@ -1286,9 +1286,18 @@ async def generate_configuration_files(request: GenerateFilesRequest):
             })
         
         return result.dict()
+    except PermissionError as perm_error:
+        logger.error(f"❌ Permission error generating files: {perm_error}")
+        raise HTTPException(
+            status_code=403, 
+            detail=f"File permission error: {str(perm_error)}. Please check that files are not open in other applications and you have write permissions to the target directory."
+        )
+    except FileNotFoundError as fnf_error:
+        logger.error(f"❌ File not found error: {fnf_error}")
+        raise HTTPException(status_code=404, detail=f"File or directory not found: {str(fnf_error)}")
     except Exception as e:
         logger.error(f"❌ Failed to generate configuration files: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 @api_router.get("/blueprint/config/validate")
 async def validate_blueprint_configuration():
