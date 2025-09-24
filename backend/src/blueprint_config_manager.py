@@ -248,19 +248,20 @@ class BlueprintConfigurationManager:
                         if entity.id != entity_id and entity.name == request.name.strip():
                             return False, warnings + [f"Entity with name '{request.name}' already exists"], 400
             
-            # Update entity properties
-            update_data = request.dict(exclude_unset=False)  # Include fields that are explicitly set to None
+            # Update entity properties - use __fields_set__ to check explicitly provided fields
+            fields_set = request.__fields_set__ if hasattr(request, '__fields_set__') else set()
             
-            if 'name' in update_data and update_data['name'] is not None:
-                target_entity.name = update_data['name'].strip()
-            if 'baseConfig' in update_data and update_data['baseConfig'] is not None:
-                target_entity.baseConfig = update_data['baseConfig']
-            if 'environmentOverrides' in update_data and update_data['environmentOverrides'] is not None:
-                target_entity.environmentOverrides = update_data['environmentOverrides']
-            if 'inherit' in update_data:  # This will be True even if inherit is None
-                target_entity.inherit = update_data['inherit']
-            if 'enabled' in update_data and update_data['enabled'] is not None:
-                target_entity.enabled = update_data['enabled']
+            if request.name is not None:
+                target_entity.name = request.name.strip()
+            if request.baseConfig is not None:
+                target_entity.baseConfig = request.baseConfig
+            if request.environmentOverrides is not None:
+                target_entity.environmentOverrides = request.environmentOverrides
+            # For inherit, check if it was explicitly set (even to None) to allow clearing inheritance
+            if 'inherit' in fields_set or request.inherit is not None:
+                target_entity.inherit = request.inherit
+            if request.enabled is not None:
+                target_entity.enabled = request.enabled
             
             # Save configuration
             success = await self.save_blueprint_config(blueprint_path, ui_config)
