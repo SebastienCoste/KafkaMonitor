@@ -124,6 +124,19 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "eb2d55d3-3b2d-49ea-8a1d-85eeaff8c63d",
+          "entityType": "queries",
+          "name": "debug-field-paths-fixed",
+          "baseConfig": {
+            "queries.searchQuery.lexicalQuery": "SELECT * FROM test",
+            "test.lexical.queryFile": "/path/to/file.sql",
+            "simple_field": "simple_value"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -475,5 +488,5 @@
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T16:33:29.088143"
+  "lastModified": "2025-09-24T16:34:06.311031"
 }
