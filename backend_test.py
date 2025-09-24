@@ -623,6 +623,11 @@ class BlueprintConfigurationTester:
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
+        # PRIORITY: Test Critical User-Reported Bugs First
+        print("\n🚨 CRITICAL USER-REPORTED BUGS TESTING (Chat Message 348)")
+        print("=" * 70)
+        self.test_critical_blueprint_cnf_bugs()
+        
         # Test 1: Entity Definitions API
         print("\n1️⃣ Testing Entity Definitions API")
         print("-" * 40)
