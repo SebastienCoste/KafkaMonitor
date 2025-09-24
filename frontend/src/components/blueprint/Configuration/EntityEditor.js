@@ -61,6 +61,7 @@ export default function EntityEditor({
     const entityTypeFields = entityDefinition?.fields || {};
     let mapFieldFound = false;
     let mapFieldPath = '';
+    let mapKey = '';
     
     // Check if we're dealing with a map field
     for (let i = 0; i < keys.length - 1; i++) {
@@ -69,16 +70,17 @@ export default function EntityEditor({
       if (fieldDef?.type === 'map') {
         mapFieldFound = true;
         mapFieldPath = currentPath;
+        // The next key after the map field is the map key
+        if (i + 1 < keys.length) {
+          mapKey = keys[i + 1];
+        }
         break;
       }
     }
     
-    if (mapFieldFound) {
-      // For map fields, don't split the key part
-      const mapKeys = mapFieldPath.split('.');
-      const remainingPath = path.substring(mapFieldPath.length + 1);
-      
+    if (mapFieldFound && mapKey) {
       // Navigate to the map object
+      const mapKeys = mapFieldPath.split('.');
       for (let i = 0; i < mapKeys.length; i++) {
         const key = mapKeys[i];
         if (!(key in current) || typeof current[key] !== 'object') {
@@ -87,8 +89,32 @@ export default function EntityEditor({
         current = current[key];
       }
       
-      // Set the value using the full remaining path as the key (don't split it)
-      current[remainingPath] = value;
+      // Check if we have sub-fields after the map key
+      const mapFieldPathLength = mapFieldPath.split('.').length;
+      const mapKeyIndex = mapFieldPathLength; // Index of the map key in the path
+      const remainingKeys = keys.slice(mapKeyIndex + 1); // Keys after the map key
+      
+      if (remainingKeys.length > 0) {
+        // We have sub-fields, navigate into the map entry and set nested property
+        if (!(mapKey in current) || typeof current[mapKey] !== 'object') {
+          current[mapKey] = {};
+        }
+        
+        let mapValueCurrent = current[mapKey];
+        // Navigate through remaining path
+        for (let i = 0; i < remainingKeys.length - 1; i++) {
+          const key = remainingKeys[i];
+          if (!(key in mapValueCurrent) || typeof mapValueCurrent[key] !== 'object') {
+            mapValueCurrent[key] = {};
+          }
+          mapValueCurrent = mapValueCurrent[key];
+        }
+        // Set the final value
+        mapValueCurrent[remainingKeys[remainingKeys.length - 1]] = value;
+      } else {
+        // No sub-fields, set the map key directly
+        current[mapKey] = value;
+      }
     } else {
       // Normal nested property setting
       for (let i = 0; i < keys.length - 1; i++) {
