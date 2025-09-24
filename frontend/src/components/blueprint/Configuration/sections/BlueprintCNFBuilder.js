@@ -41,6 +41,8 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   useEffect(() => {
     // Initialize blueprint config from existing schemas
     if (schemas.length > 0) {
+      const searchExperienceConfigs = getSearchExperienceFiles(schemas);
+      
       setBlueprintConfig(prev => ({
         ...prev,
         namespace: prev.namespace || schemas[0]?.namespace || '',
@@ -53,11 +55,11 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
         })),
         searchExperience: {
           ...prev.searchExperience,
-          configs: getSearchExperienceFiles(schemas)
+          configs: searchExperienceConfigs
         }
       }));
     }
-  }, [uiConfig]);
+  }, [uiConfig, entityDefinitions]);
 
   const getGlobalFiles = (schema) => {
     const globalEntities = schema.configurations.filter(entity => 
