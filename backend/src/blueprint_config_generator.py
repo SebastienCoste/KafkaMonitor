@@ -269,7 +269,7 @@ class BlueprintConfigurationGenerator:
                 # Create file
                 mapping = self.file_mappings['searchExperience']
                 filename = f"{config.name}.json" if config.name != 'search_queries' else mapping.filename
-                file_path = mapping.path + filename
+                file_path = mapping.path  # Just the path, not path + filename
                 
                 generated_files.append(GeneratedFile(
                     filename=filename,
