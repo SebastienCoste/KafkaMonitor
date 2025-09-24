@@ -154,8 +154,18 @@
       "id": "62c0a1d3-c0d9-4baf-a80c-11fcf8849bc6",
       "namespace": "com.test.storage",
       "configurations": []
+    },
+    {
+      "id": "1d6d3f92-907e-43ba-8f5d-30e95df53690",
+      "namespace": "com.test.blueprintcnf",
+      "configurations": []
+    },
+    {
+      "id": "8a1b2270-2487-4bb0-8f4c-68b475484738",
+      "namespace": "com.test.storage",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T01:25:58.359046"
+  "lastModified": "2025-09-24T01:26:55.720647"
 }
