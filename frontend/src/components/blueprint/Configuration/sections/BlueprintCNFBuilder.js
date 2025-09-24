@@ -451,10 +451,16 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Search Experience</span>
-              <Button variant="outline" size="sm" onClick={addSearchTemplate}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Template
-              </Button>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={addSearchConfig}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Config
+                </Button>
+                <Button variant="outline" size="sm" onClick={addSearchTemplate}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Template
+                </Button>
+              </div>
             </CardTitle>
             <CardDescription>
               Search experience configurations and templates
@@ -462,23 +468,49 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label className="text-sm">Configuration Files</Label>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {blueprintConfig.searchExperience.configs.map((config, i) => (
-                  <Badge key={i} variant="outline" className="text-xs">
-                    {config}
-                  </Badge>
-                ))}
-                {blueprintConfig.searchExperience.configs.length === 0 && (
-                  <span className="text-xs text-gray-500">No search experience configs</span>
-                )}
-              </div>
+              <Label className="text-sm font-medium mb-2 flex items-center justify-between">
+                Configuration Files
+                <Button variant="ghost" size="sm" onClick={addSearchConfig}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </Label>
+              
+              {blueprintConfig.searchExperience.configs.length > 0 ? (
+                <div className="space-y-2 mt-2">
+                  {blueprintConfig.searchExperience.configs.map((config, index) => (
+                    <div key={index} className="flex items-center space-x-2">
+                      <Input
+                        value={config}
+                        onChange={(e) => updateSearchConfig(index, e.target.value)}
+                        placeholder="searchExperience_config.json"
+                        className="flex-1 text-xs"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeSearchConfig(index)}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-xs text-gray-500 mt-1">
+                  No search experience configuration files. Add files based on your Search Experience entities.
+                </div>
+              )}
             </div>
 
             <Separator />
 
             <div>
-              <Label className="text-sm">Templates</Label>
+              <Label className="text-sm font-medium mb-2 flex items-center justify-between">
+                Templates
+                <Button variant="ghost" size="sm" onClick={addSearchTemplate}>
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </Label>
               <div className="space-y-2 mt-2">
                 {blueprintConfig.searchExperience.templates.map((template, index) => (
                   <div key={index} className="flex items-center space-x-2">
