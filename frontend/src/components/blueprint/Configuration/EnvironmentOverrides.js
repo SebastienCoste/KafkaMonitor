@@ -90,15 +90,72 @@ export default function EnvironmentOverrides({
       const keys = path.split('.');
       let current = obj;
       
+      // Handle map keys specially - if the path contains a map, don't split the key after the map
+      const entityTypeFields = entityDefinition?.fields || {};
+      let mapFieldFound = false;
+      let mapFieldPath = '';
+      
+      // Check if we're dealing with a map field
       for (let i = 0; i < keys.length - 1; i++) {
-        const key = keys[i];
-        if (!(key in current) || typeof current[key] !== 'object') {
-          current[key] = {};
+        const currentPath = keys.slice(0, i + 1).join('.');
+        const fieldDef = getFieldDefinitionByPath(entityTypeFields, currentPath);
+        if (fieldDef?.type === 'map') {
+          mapFieldFound = true;
+          mapFieldPath = currentPath;
+          break;
         }
-        current = current[key];
       }
       
-      current[keys[keys.length - 1]] = value;
+      if (mapFieldFound) {
+        // For map fields, don't split the key part
+        const mapKeys = mapFieldPath.split('.');
+        const remainingPath = path.substring(mapFieldPath.length + 1);
+        
+        // Navigate to the map object
+        for (let i = 0; i < mapKeys.length; i++) {
+          const key = mapKeys[i];
+          if (!(key in current) || typeof current[key] !== 'object') {
+            current[key] = {};
+          }
+          current = current[key];
+        }
+        
+        // Set the value using the full remaining path as the key (don't split it)
+        current[remainingPath] = value;
+      } else {
+        // Normal nested property setting
+        for (let i = 0; i < keys.length - 1; i++) {
+          const key = keys[i];
+          if (!(key in current) || typeof current[key] !== 'object') {
+            current[key] = {};
+          }
+          current = current[key];
+        }
+        current[keys[keys.length - 1]] = value;
+      }
+    };
+
+    const getFieldDefinitionByPath = (fields, path) => {
+      const keys = path.split('.');
+      let currentFields = fields;
+      let currentDef = null;
+      
+      for (const key of keys) {
+        if (currentFields && currentFields[key]) {
+          currentDef = currentFields[key];
+          if (currentDef.type === 'object' && currentDef.fields) {
+            currentFields = currentDef.fields;
+          } else if (currentDef.type === 'map' && currentDef.valueType?.fields) {
+            currentFields = currentDef.valueType.fields;
+          } else {
+            break;
+          }
+        } else {
+          break;
+        }
+      }
+      
+      return currentDef;
     };
 
     const getNestedProperty = (obj, path, defaultValue = '') => {
