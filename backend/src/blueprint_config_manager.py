@@ -249,17 +249,18 @@ class BlueprintConfigurationManager:
                             return False, warnings + [f"Entity with name '{request.name}' already exists"], 400
             
             # Update entity properties
-            if request.name is not None:
-                target_entity.name = request.name.strip()
-            if request.baseConfig is not None:
-                target_entity.baseConfig = request.baseConfig
-            if request.environmentOverrides is not None:
-                target_entity.environmentOverrides = request.environmentOverrides
-            # Handle inheritance - need to check if the field was explicitly provided (even if None)
-            if hasattr(request, 'inherit'):
-                target_entity.inherit = request.inherit  # This allows setting to None to clear inheritance
-            if request.enabled is not None:
-                target_entity.enabled = request.enabled
+            update_data = request.dict(exclude_unset=False)  # Include fields that are explicitly set to None
+            
+            if 'name' in update_data and update_data['name'] is not None:
+                target_entity.name = update_data['name'].strip()
+            if 'baseConfig' in update_data and update_data['baseConfig'] is not None:
+                target_entity.baseConfig = update_data['baseConfig']
+            if 'environmentOverrides' in update_data and update_data['environmentOverrides'] is not None:
+                target_entity.environmentOverrides = update_data['environmentOverrides']
+            if 'inherit' in update_data:  # This will be True even if inherit is None
+                target_entity.inherit = update_data['inherit']
+            if 'enabled' in update_data and update_data['enabled'] is not None:
+                target_entity.enabled = update_data['enabled']
             
             # Save configuration
             success = await self.save_blueprint_config(blueprint_path, ui_config)
