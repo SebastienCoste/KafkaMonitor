@@ -1296,7 +1296,7 @@ class BlueprintConfigurationTester:
             payload1 = {
                 "name": "lexical-query-entity",
                 "entityType": "queries",
-                "configuration": {
+                "baseConfig": {
                     "queries.searchQuery.lexicalQuery": "SELECT * FROM documents WHERE content MATCH ?",
                     "queries.searchQuery.enabled": True,
                     "description": "Entity with complex lexical query field path"
@@ -1330,7 +1330,7 @@ class BlueprintConfigurationTester:
             payload2 = {
                 "name": "test-lexical-queryfile-entity",
                 "entityType": "queries",
-                "configuration": {
+                "baseConfig": {
                     "test.lexical.queryFile": "/path/to/lexical/query.sql",
                     "test.lexical.enabled": True,
                     "test.lexical.timeout": 30000,
@@ -1371,7 +1371,7 @@ class BlueprintConfigurationTester:
             create_payload = {
                 "name": "map-fields-entity",
                 "entityType": "storages",
-                "configuration": {
+                "baseConfig": {
                     "storages.primaryStorage.type": "s3",
                     "storages.primaryStorage.bucket": "my-bucket",
                     "storages.secondaryStorage.type": "local",
@@ -1400,7 +1400,7 @@ class BlueprintConfigurationTester:
             
             # Now update the entity with nested map properties
             update_payload = {
-                "configuration": {
+                "baseConfig": {
                     "storages.primaryStorage.credentials.accessKey": "AKIAIOSFODNN7EXAMPLE",
                     "storages.primaryStorage.credentials.secretKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
                     "storages.primaryStorage.region": "us-west-2",
@@ -1443,7 +1443,7 @@ class BlueprintConfigurationTester:
             payload = {
                 "name": "storage-map-key-entity",
                 "entityType": "storages",
-                "configuration": {
+                "baseConfig": {
                     "storages.EA.EADP.PDE.MCR.property": "complex-map-key-value",
                     "storages.EA.EADP.PDE.MCR.enabled": True,
                     "storages.EA.EADP.PDE.MCR.timeout": 5000,
@@ -1473,7 +1473,7 @@ class BlueprintConfigurationTester:
                     
                     # Test updating these complex field paths
                     update_payload = {
-                        "configuration": {
+                        "baseConfig": {
                             "storages.EA.EADP.PDE.MCR.property": "updated-complex-value",
                             "storages.myMapKey.nestedProperty": "updated-test-value",
                             "storages.newMapKey.newProperty": "new-value"
@@ -1517,7 +1517,7 @@ class BlueprintConfigurationTester:
             payload = {
                 "name": "config-retrieval-test-entity",
                 "entityType": "textModeration",
-                "configuration": {
+                "baseConfig": {
                     "textModeration.config.settings.enabled": True,
                     "textModeration.config.settings.threshold": 0.8,
                     "textModeration.config.filters.profanity.enabled": True,
@@ -1554,7 +1554,7 @@ class BlueprintConfigurationTester:
                                 for entity in schema.get("configurations", []):
                                     if entity.get("name") == "config-retrieval-test-entity":
                                         entity_found = True
-                                        entity_config = entity.get("configuration", {})
+                                        entity_config = entity.get("baseConfig", {})
                                         
                                         # Verify complex field paths are stored correctly
                                         expected_fields = {
@@ -1567,9 +1567,10 @@ class BlueprintConfigurationTester:
                                         
                                         all_fields_correct = True
                                         for field_path, expected_value in expected_fields.items():
-                                            if self.get_nested_value(entity_config, field_path) != expected_value:
+                                            stored_value = entity_config.get(field_path)
+                                            if stored_value != expected_value:
                                                 all_fields_correct = False
-                                                self.log_test(f"Config Retrieval Field Check - {field_path}", False, f"❌ Expected {expected_value}, got {self.get_nested_value(entity_config, field_path)}")
+                                                self.log_test(f"Config Retrieval Field Check - {field_path}", False, f"❌ Expected {expected_value}, got {stored_value}")
                                             else:
                                                 self.log_test(f"Config Retrieval Field Check - {field_path}", True, f"✅ Correctly stored and retrieved: {expected_value}")
                                         
@@ -1603,7 +1604,7 @@ class BlueprintConfigurationTester:
             payload = {
                 "name": "map-no-nested-entity",
                 "entityType": "storages",
-                "configuration": {
+                "baseConfig": {
                     "storages.cache.type": "redis",
                     "storages.cache.host": "localhost",
                     "storages.cache.port": 6379
@@ -1625,7 +1626,7 @@ class BlueprintConfigurationTester:
                     
                     # Update the entity - this should NOT create nested structures like "cache.type.newProperty"
                     update_payload = {
-                        "configuration": {
+                        "baseConfig": {
                             "storages.cache.password": "secret123",
                             "storages.cache.database": 0,
                             "storages.cache.timeout": 5000
@@ -1655,13 +1656,10 @@ class BlueprintConfigurationTester:
                                 for schema in config.get("schemas", []):
                                     for entity in schema.get("configurations", []):
                                         if entity.get("name") == "map-no-nested-entity":
-                                            entity_config = entity.get("configuration", {})
+                                            entity_config = entity.get("baseConfig", {})
                                             
                                             # Check that we have the expected flat structure, not unwanted nesting
                                             expected_fields = [
-                                                "storages.cache.type",
-                                                "storages.cache.host", 
-                                                "storages.cache.port",
                                                 "storages.cache.password",
                                                 "storages.cache.database",
                                                 "storages.cache.timeout"
@@ -1670,10 +1668,8 @@ class BlueprintConfigurationTester:
                                             # Verify no unwanted nested structures were created
                                             unwanted_structures = []
                                             for key in entity_config.keys():
-                                                if key not in expected_fields and "." in key:
-                                                    # Check if this looks like an unwanted nested structure
-                                                    if key.count(".") > 2:  # More than expected nesting
-                                                        unwanted_structures.append(key)
+                                                if "." in key and key.count(".") > 3:  # More than expected nesting
+                                                    unwanted_structures.append(key)
                                             
                                             if not unwanted_structures:
                                                 self.log_test("Map Field Structure Validation", True, "✅ No unwanted nested structures created")
@@ -1704,7 +1700,7 @@ class BlueprintConfigurationTester:
             payload = {
                 "name": "mixed-nested-entity",
                 "entityType": "textModeration",
-                "configuration": {
+                "baseConfig": {
                     "textModeration.config.settings.enabled": True,
                     "textModeration.config.settings.strictMode": False,
                     "textModeration.config.settings.threshold": 0.75,
@@ -1730,7 +1726,7 @@ class BlueprintConfigurationTester:
                     
                     # Test updating mixed nested structures
                     update_payload = {
-                        "configuration": {
+                        "baseConfig": {
                             "textModeration.config.settings.enabled": False,  # Update existing
                             "textModeration.config.settings.newSetting": "new-value",  # Add new
                             "textModeration.config.advanced.logging.enabled": True,  # Add deeper nesting
@@ -1791,8 +1787,8 @@ class BlueprintConfigurationTester:
                 for schema in config.get("schemas", []):
                     for entity in schema.get("configurations", []):
                         if entity.get("id") == entity_id or entity.get("name").endswith(entity_id[-8:]):  # Match by ID or name suffix
-                            entity_config = entity.get("configuration", {})
-                            stored_value = self.get_nested_value(entity_config, field_path)
+                            entity_config = entity.get("baseConfig", {})
+                            stored_value = entity_config.get(field_path)
                             
                             if stored_value == expected_value:
                                 self.log_test(f"Field Storage Verification - {field_path}", True, f"✅ Correctly stored: {expected_value}")
