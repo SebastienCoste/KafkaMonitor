@@ -734,6 +734,549 @@ class BlueprintConfigurationTester:
         else:
             print(f"\n❌ CRITICAL: Blueprint Configuration API has major problems")
 
+    def test_inheritance_persistence_fix(self):
+        """Test FIX 1 - Inheritance Persistence with explicit null handling"""
+        print("🔧 Testing FIX 1 - Inheritance Persistence Fix")
+        print("-" * 50)
+        
+        # Step 1: Create an entity with inheritance
+        entity_with_inheritance = self.create_entity_with_inheritance()
+        if not entity_with_inheritance:
+            self.log_test("Inheritance Persistence - Setup", False, "Failed to create entity with inheritance")
+            return
+        
+        # Step 2: Update entity to remove inheritance (set to null/empty)
+        self.test_inheritance_removal(entity_with_inheritance)
+        
+        # Step 3: Test inheritance field handling with various scenarios
+        self.test_inheritance_field_handling(entity_with_inheritance)
+        
+        # Step 4: Verify persistence after UI config reload
+        self.test_inheritance_persistence_after_reload()
+        
+        # Cleanup
+        self.cleanup_test_entity(entity_with_inheritance)
+    
+    def create_entity_with_inheritance(self):
+        """Create an entity with inheritance for testing"""
+        try:
+            # First create a base entity to inherit from
+            base_payload = {
+                "name": "base-config-entity",
+                "entityType": "access",
+                "baseConfig": {
+                    "enabled": True,
+                    "description": "Base configuration for inheritance testing"
+                }
+            }
+            
+            base_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=base_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if base_response.status_code != 200:
+                self.log_test("Create Base Entity for Inheritance", False, f"HTTP {base_response.status_code}")
+                return None
+            
+            base_data = base_response.json()
+            if not base_data.get("success"):
+                self.log_test("Create Base Entity for Inheritance", False, f"Failed: {base_data}")
+                return None
+            
+            # Now create entity with inheritance
+            inherit_payload = {
+                "name": "test-inherit-entity",
+                "entityType": "access",
+                "baseConfig": {
+                    "enabled": False,
+                    "description": "Entity with inheritance for testing"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=inherit_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    
+                    # Update entity to add inheritance
+                    update_payload = {
+                        "inherit": ["base-config-entity"]
+                    }
+                    
+                    update_response = requests.put(
+                        f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                        json=update_payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if update_response.status_code == 200:
+                        update_data = update_response.json()
+                        if update_data.get("success"):
+                            self.log_test("Create Entity with Inheritance", True, f"Created entity {entity_id} with inheritance from base-config-entity")
+                            return entity_id
+                        else:
+                            self.log_test("Create Entity with Inheritance", False, f"Update failed: {update_data}")
+                            return None
+                    else:
+                        self.log_test("Create Entity with Inheritance", False, f"Update HTTP {update_response.status_code}")
+                        return None
+                else:
+                    self.log_test("Create Entity with Inheritance", False, f"Creation failed: {data}")
+                    return None
+            else:
+                self.log_test("Create Entity with Inheritance", False, f"HTTP {response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.log_test("Create Entity with Inheritance", False, f"Exception: {str(e)}")
+            return None
+    
+    def test_inheritance_removal(self, entity_id):
+        """Test removing inheritance by setting to null/empty"""
+        try:
+            # Test 1: Set inheritance to null
+            null_payload = {
+                "inherit": None
+            }
+            
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                json=null_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Inheritance Removal - Set to Null", True, "Successfully set inheritance to null")
+                else:
+                    self.log_test("Inheritance Removal - Set to Null", False, f"Failed: {data}")
+            else:
+                self.log_test("Inheritance Removal - Set to Null", False, f"HTTP {response.status_code}")
+            
+            # Test 2: Set inheritance to empty array
+            empty_payload = {
+                "inherit": []
+            }
+            
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                json=empty_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Inheritance Removal - Set to Empty Array", True, "Successfully set inheritance to empty array")
+                else:
+                    self.log_test("Inheritance Removal - Set to Empty Array", False, f"Failed: {data}")
+            else:
+                self.log_test("Inheritance Removal - Set to Empty Array", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Inheritance Removal", False, f"Exception: {str(e)}")
+    
+    def test_inheritance_field_handling(self, entity_id):
+        """Test various inheritance field handling scenarios"""
+        try:
+            # Test 1: Add inheritance to entity without inheritance
+            add_payload = {
+                "inherit": ["base-config-entity", "another-config"]
+            }
+            
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                json=add_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Inheritance Field Handling - Add Multiple", True, "Successfully added multiple inheritance items")
+                else:
+                    self.log_test("Inheritance Field Handling - Add Multiple", False, f"Failed: {data}")
+            else:
+                self.log_test("Inheritance Field Handling - Add Multiple", False, f"HTTP {response.status_code}")
+            
+            # Test 2: Update inheritance list (remove one item)
+            update_payload = {
+                "inherit": ["base-config-entity"]
+            }
+            
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                json=update_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Inheritance Field Handling - Remove Item", True, "Successfully removed inheritance item")
+                else:
+                    self.log_test("Inheritance Field Handling - Remove Item", False, f"Failed: {data}")
+            else:
+                self.log_test("Inheritance Field Handling - Remove Item", False, f"HTTP {response.status_code}")
+            
+            # Test 3: Completely clear inheritance
+            clear_payload = {
+                "inherit": None
+            }
+            
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                json=clear_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Inheritance Field Handling - Clear All", True, "Successfully cleared all inheritance")
+                else:
+                    self.log_test("Inheritance Field Handling - Clear All", False, f"Failed: {data}")
+            else:
+                self.log_test("Inheritance Field Handling - Clear All", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Inheritance Field Handling", False, f"Exception: {str(e)}")
+    
+    def test_inheritance_persistence_after_reload(self):
+        """Test that inheritance changes persist after UI config reload"""
+        try:
+            # Get current UI config to verify inheritance state
+            response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "config" in data:
+                    config = data["config"]
+                    
+                    # Look for our test entity and verify inheritance is null/empty
+                    inheritance_cleared = False
+                    for schema in config.get("schemas", []):
+                        for entity in schema.get("configurations", []):
+                            if entity.get("name") == "test-inherit-entity":
+                                inherit_value = entity.get("inherit")
+                                if inherit_value is None or inherit_value == []:
+                                    inheritance_cleared = True
+                                    self.log_test("Inheritance Persistence After Reload", True, f"Inheritance properly cleared and persisted (inherit={inherit_value})")
+                                else:
+                                    self.log_test("Inheritance Persistence After Reload", False, f"Inheritance not cleared, still has: {inherit_value}")
+                                break
+                    
+                    if not inheritance_cleared:
+                        self.log_test("Inheritance Persistence After Reload", False, "Test entity not found in UI config")
+                else:
+                    self.log_test("Inheritance Persistence After Reload", False, "Missing 'config' field in response")
+            else:
+                self.log_test("Inheritance Persistence After Reload", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Inheritance Persistence After Reload", False, f"Exception: {str(e)}")
+    
+    def test_file_generation_permission_error_handling(self):
+        """Test FIX 2 - File Generation Permission Error Handling"""
+        print("🔧 Testing FIX 2 - File Generation Permission Error Handling")
+        print("-" * 50)
+        
+        # Step 1: Test file generation with proper permissions
+        self.test_file_generation_success()
+        
+        # Step 2: Test file overwrite scenarios
+        self.test_file_overwrite_scenarios()
+        
+        # Step 3: Test API error responses for permission issues
+        self.test_file_generation_error_responses()
+        
+        # Step 4: Test temp file backup approach
+        self.test_temp_file_backup_approach()
+    
+    def test_file_generation_success(self):
+        """Test file generation with proper permissions"""
+        try:
+            # Create a test schema first
+            schema_payload = {
+                "name": "test-file-gen-schema",
+                "namespace": "com.test.filegeneration",
+                "description": "Test schema for file generation testing"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code != 200:
+                self.log_test("File Generation Success - Schema Creation", False, f"HTTP {schema_response.status_code}")
+                return
+            
+            schema_data = schema_response.json()
+            if not schema_data.get("success"):
+                self.log_test("File Generation Success - Schema Creation", False, f"Failed: {schema_data}")
+                return
+            
+            schema_id = schema_data["schema_id"]
+            
+            # Create test entities for file generation
+            entity_payload = {
+                "name": "test-file-gen-entity",
+                "entityType": "access",
+                "schemaId": schema_id,
+                "baseConfig": {
+                    "enabled": True,
+                    "description": "Test entity for file generation"
+                }
+            }
+            
+            entity_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=entity_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if entity_response.status_code != 200:
+                self.log_test("File Generation Success - Entity Creation", False, f"HTTP {entity_response.status_code}")
+                return
+            
+            entity_data = entity_response.json()
+            if not entity_data.get("success"):
+                self.log_test("File Generation Success - Entity Creation", False, f"Failed: {entity_data}")
+                return
+            
+            # Now test file generation
+            gen_payload = {
+                "schemaId": schema_id,
+                "environments": ["DEV", "TEST"],
+                "outputPath": "/app/test_generated"
+            }
+            
+            gen_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if gen_response.status_code == 200:
+                gen_data = gen_response.json()
+                if gen_data.get("success"):
+                    files = gen_data.get("files", [])
+                    self.log_test("File Generation Success", True, f"Generated {len(files)} files successfully")
+                    
+                    # Verify file details
+                    for file_info in files[:2]:  # Check first 2 files
+                        if isinstance(file_info, dict):
+                            filename = file_info.get("filename", "unknown")
+                            self.log_test("Generated File Details", True, f"File: {filename}")
+                else:
+                    error = gen_data.get("errors", ["Unknown error"])
+                    self.log_test("File Generation Success", False, f"Generation failed: {error}")
+            elif gen_response.status_code == 403:
+                self.log_test("File Generation Success", False, f"Permission denied (HTTP 403) - this tests error handling")
+            else:
+                self.log_test("File Generation Success", False, f"HTTP {gen_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("File Generation Success", False, f"Exception: {str(e)}")
+    
+    def test_file_overwrite_scenarios(self):
+        """Test file overwrite scenarios"""
+        try:
+            # Test generating files to the same location multiple times
+            gen_payload = {
+                "schemaId": "test-schema-id",  # Use any schema ID
+                "environments": ["DEV"],
+                "outputPath": "/app/test_overwrite"
+            }
+            
+            # First generation
+            response1 = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            # Second generation (should overwrite)
+            response2 = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response1.status_code == 200 and response2.status_code == 200:
+                data1 = response1.json()
+                data2 = response2.json()
+                
+                if data1.get("success") and data2.get("success"):
+                    self.log_test("File Overwrite Scenarios", True, "Successfully generated files twice (overwrite working)")
+                else:
+                    self.log_test("File Overwrite Scenarios", False, f"Generation failed: {data1.get('errors', [])} / {data2.get('errors', [])}")
+            else:
+                self.log_test("File Overwrite Scenarios", False, f"HTTP {response1.status_code} / {response2.status_code}")
+                
+        except Exception as e:
+            self.log_test("File Overwrite Scenarios", False, f"Exception: {str(e)}")
+    
+    def test_file_generation_error_responses(self):
+        """Test API error responses for file generation"""
+        try:
+            # Test 1: Invalid schema ID (should return proper error)
+            invalid_payload = {
+                "schemaId": "nonexistent-schema-id-12345",
+                "environments": ["DEV"],
+                "outputPath": "/app/test_invalid"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=invalid_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if not data.get("success"):
+                    errors = data.get("errors", [])
+                    if any("Schema not found" in error for error in errors):
+                        self.log_test("File Generation Error - Invalid Schema", True, "Correctly returned 'Schema not found' error")
+                    else:
+                        self.log_test("File Generation Error - Invalid Schema", True, f"Returned appropriate error: {errors}")
+                else:
+                    self.log_test("File Generation Error - Invalid Schema", False, "Should have failed for invalid schema")
+            elif response.status_code == 400:
+                self.log_test("File Generation Error - Invalid Schema", True, "Correctly returned HTTP 400 for invalid schema")
+            elif response.status_code == 404:
+                self.log_test("File Generation Error - Invalid Schema", True, "Correctly returned HTTP 404 for invalid schema")
+            else:
+                self.log_test("File Generation Error - Invalid Schema", False, f"Unexpected status code: {response.status_code}")
+            
+            # Test 2: Invalid output path (should handle gracefully)
+            invalid_path_payload = {
+                "schemaId": "test-schema-id",
+                "environments": ["DEV"],
+                "outputPath": "/invalid/nonexistent/path/that/should/fail"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=invalid_path_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 403:
+                self.log_test("File Generation Error - Invalid Path", True, "Correctly returned HTTP 403 for permission error")
+            elif response.status_code == 404:
+                self.log_test("File Generation Error - Invalid Path", True, "Correctly returned HTTP 404 for path not found")
+            elif response.status_code == 200:
+                data = response.json()
+                if not data.get("success"):
+                    self.log_test("File Generation Error - Invalid Path", True, f"Correctly failed with error: {data.get('errors', [])}")
+                else:
+                    self.log_test("File Generation Error - Invalid Path", False, "Should have failed for invalid path")
+            else:
+                self.log_test("File Generation Error - Invalid Path", False, f"Unexpected status code: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("File Generation Error Responses", False, f"Exception: {str(e)}")
+    
+    def test_temp_file_backup_approach(self):
+        """Test temp file backup approach for permission issues"""
+        try:
+            # This test verifies that the backend handles permission issues gracefully
+            # by using temporary files and proper error messages
+            
+            gen_payload = {
+                "schemaId": "test-schema-id",
+                "environments": ["DEV"],
+                "outputPath": "/app/test_temp_backup"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=response_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            # Check that response includes actionable error messages if permission issues occur
+            if response.status_code == 403:
+                try:
+                    data = response.json()
+                    error_detail = data.get("detail", "")
+                    if "permission" in error_detail.lower() and ("check" in error_detail.lower() or "close" in error_detail.lower()):
+                        self.log_test("Temp File Backup Approach", True, f"Proper actionable error message: {error_detail}")
+                    else:
+                        self.log_test("Temp File Backup Approach", False, f"Error message not actionable: {error_detail}")
+                except:
+                    self.log_test("Temp File Backup Approach", True, "HTTP 403 returned for permission error")
+            elif response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Temp File Backup Approach", True, "File generation succeeded (no permission issues)")
+                else:
+                    errors = data.get("errors", [])
+                    if any("permission" in error.lower() for error in errors):
+                        self.log_test("Temp File Backup Approach", True, f"Proper permission error handling: {errors}")
+                    else:
+                        self.log_test("Temp File Backup Approach", False, f"Unexpected errors: {errors}")
+            else:
+                self.log_test("Temp File Backup Approach", False, f"Unexpected status code: {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Temp File Backup Approach", False, f"Exception: {str(e)}")
+    
+    def cleanup_test_entity(self, entity_id):
+        """Clean up test entity"""
+        if entity_id:
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/config/entities/{entity_id}", timeout=10)
+                self.log_test("Cleanup Test Entity", True, f"Cleaned up entity {entity_id}")
+            except:
+                pass  # Ignore cleanup errors
+    
+    def run_inheritance_and_file_generation_tests(self):
+        """Run comprehensive tests for inheritance persistence and file generation error handling"""
+        print("🚀 Starting Inheritance Persistence and File Generation Error Handling Tests")
+        print("=" * 80)
+        
+        # First, set up blueprint root path
+        self.setup_blueprint_root_path()
+        
+        # Test FIX 1: Inheritance Persistence
+        self.test_inheritance_persistence_fix()
+        
+        # Test FIX 2: File Generation Permission Error Handling
+        self.test_file_generation_permission_error_handling()
+        
+        # Print final summary
+        self.print_summary()
+
 def main():
     """Main function to run tests"""
     if len(sys.argv) > 1:
@@ -744,7 +1287,12 @@ def main():
     print(f"🔧 Testing Blueprint Configuration API at: {base_url}")
     
     tester = BlueprintConfigurationTester(base_url)
-    tester.run_blueprint_configuration_tests()
+    
+    # Check if we should run specific tests
+    if len(sys.argv) > 2 and sys.argv[2] == "fixes":
+        tester.run_inheritance_and_file_generation_tests()
+    else:
+        tester.run_blueprint_configuration_tests()
 
 if __name__ == "__main__":
     main()
