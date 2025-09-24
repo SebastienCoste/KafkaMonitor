@@ -152,9 +152,70 @@ export default function EntityEditor({
   };
 
   const getNestedProperty = (obj, path, defaultValue = '') => {
-    return path.split('.').reduce((current, key) => {
-      return current && current[key] !== undefined ? current[key] : defaultValue;
-    }, obj);
+    const keys = path.split('.');
+    
+    // Handle map keys specially - similar logic as setNestedProperty
+    const entityTypeFields = entityDefinition?.fields || {};
+    let mapFieldFound = false;
+    let mapFieldPath = '';
+    let mapKey = '';
+    
+    // Check if we're dealing with a map field
+    for (let i = 0; i < keys.length - 1; i++) {
+      const currentPath = keys.slice(0, i + 1).join('.');
+      const fieldDef = getFieldDefinitionByPath(entityTypeFields, currentPath);
+      if (fieldDef?.type === 'map') {
+        mapFieldFound = true;
+        mapFieldPath = currentPath;
+        // The next key after the map field is the map key
+        if (i + 1 < keys.length) {
+          mapKey = keys[i + 1];
+        }
+        break;
+      }
+    }
+    
+    if (mapFieldFound && mapKey) {
+      // Navigate to the map object
+      const mapKeys = mapFieldPath.split('.');
+      let current = obj;
+      for (const key of mapKeys) {
+        if (!current || current[key] === undefined) {
+          return defaultValue;
+        }
+        current = current[key];
+      }
+      
+      // Get the map entry
+      if (!current || current[mapKey] === undefined) {
+        return defaultValue;
+      }
+      
+      // Check if we have sub-fields after the map key
+      const mapFieldPathLength = mapFieldPath.split('.').length;
+      const mapKeyIndex = mapFieldPathLength;
+      const remainingKeys = keys.slice(mapKeyIndex + 1);
+      
+      if (remainingKeys.length > 0) {
+        // Navigate through remaining path
+        let mapValueCurrent = current[mapKey];
+        for (const key of remainingKeys) {
+          if (!mapValueCurrent || mapValueCurrent[key] === undefined) {
+            return defaultValue;
+          }
+          mapValueCurrent = mapValueCurrent[key];
+        }
+        return mapValueCurrent;
+      } else {
+        // Return the map key value directly
+        return current[mapKey];
+      }
+    } else {
+      // Normal nested property getting
+      return keys.reduce((current, key) => {
+        return current && current[key] !== undefined ? current[key] : defaultValue;
+      }, obj);
+    }
   };
 
   const handleSave = async () => {
