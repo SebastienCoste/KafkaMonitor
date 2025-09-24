@@ -1572,7 +1572,7 @@ class BlueprintConfigurationTester:
                             storage_entity_found = True
                             
                             # Check storage configuration structure
-                            entity_config = entity.get("configuration", {})
+                            entity_config = entity.get("baseConfig", {})
                             storages = entity_config.get("storages", {})
                             
                             # Verify that "EA.EADP.PDE.MCR" is used as a map key (not nested by dots)
