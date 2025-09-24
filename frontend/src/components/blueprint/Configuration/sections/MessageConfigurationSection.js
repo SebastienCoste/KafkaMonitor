@@ -169,7 +169,15 @@ export default function MessageConfigurationSection({ entityDefinitions, uiConfi
       }
     } catch (error) {
       console.error('Failed to generate files:', error);
-      toast.error(`Failed to generate files: ${error.message}`);
+      
+      // Handle permission errors specifically
+      if (error.message.includes('403') || error.message.includes('permission')) {
+        toast.error('Permission denied: Please close any applications that have the message config files open and ensure you have write permissions.', {
+          duration: 8000
+        });
+      } else {
+        toast.error(`Failed to generate message files: ${error.message}`);
+      }
     } finally {
       setSaving(false);
     }
