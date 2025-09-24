@@ -28,6 +28,30 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "a8434e31-6b12-402f-9a19-922b18370161",
+          "entityType": "access",
+          "name": "config1",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Base config 1"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        },
+        {
+          "id": "d5c6a91e-50d4-480c-ae68-79406811dbca",
+          "entityType": "access",
+          "name": "config2",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Base config 2"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -68,8 +92,26 @@
           "enabled": true
         }
       ]
+    },
+    {
+      "id": "42f2c8d9-a73d-4de5-ac89-84ff6743ecf8",
+      "namespace": "com.test.filegeneration.comprehensive",
+      "configurations": [
+        {
+          "id": "37b218b1-9219-4ea0-8d74-a0192805d457",
+          "entityType": "access",
+          "name": "test-file-entity",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test entity for file generation"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T00:56:26.757387"
+  "lastModified": "2025-09-24T00:57:58.214193"
 }

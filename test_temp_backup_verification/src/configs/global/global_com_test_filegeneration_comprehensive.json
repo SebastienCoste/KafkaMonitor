@@ -1,0 +1,9 @@
+{
+  "environments": {},
+  "config": {
+    "access": {
+      "enabled": true,
+      "description": "Test entity for file generation"
+    }
+  }
+}
