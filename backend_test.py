@@ -1269,6 +1269,619 @@ class BlueprintConfigurationTester:
                 self.log_test("Cleanup Test Entity", True, f"Cleaned up entity {entity_id}")
             except:
                 pass  # Ignore cleanup errors
+
+    def test_fix1_file_overwrite_error(self):
+        """Test FIX 1 - File Overwrite Error: POST /api/blueprint/create-file with overwrite functionality"""
+        print("🔧 Testing FIX 1 - File Overwrite Error Fix")
+        print("-" * 50)
+        
+        # Test Scenario 1: Create blueprint_cnf.json with content when file doesn't exist
+        self.test_create_file_new_with_content()
+        
+        # Test Scenario 2: Try to create blueprint_cnf.json when file exists WITHOUT overwrite=true (should get 409 error)
+        self.test_create_file_existing_without_overwrite()
+        
+        # Test Scenario 3: Create blueprint_cnf.json when file exists WITH overwrite=true (should succeed)
+        self.test_create_file_existing_with_overwrite()
+        
+        # Test Scenario 4: Verify the file content matches exactly what was sent in the request
+        self.test_verify_file_content_matches()
+        
+        # Test Scenario 5: Test the FileOperationRequest model now includes overwrite parameter
+        self.test_file_operation_request_overwrite_parameter()
+
+    def test_create_file_new_with_content(self):
+        """Test creating blueprint_cnf.json with content when file doesn't exist"""
+        try:
+            # First, ensure the file doesn't exist by trying to delete it
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/delete-file/blueprint_cnf.json", timeout=10)
+            except:
+                pass  # Ignore if file doesn't exist
+            
+            # Create blueprint_cnf.json with actual content
+            test_content = {
+                "namespace": "com.test.blueprint.config",
+                "version": "1.0.0",
+                "description": "Test blueprint configuration",
+                "entities": {
+                    "access": {
+                        "enabled": True,
+                        "type": "basic"
+                    }
+                }
+            }
+            
+            payload = {
+                "path": "blueprint_cnf.json",
+                "content": json.dumps(test_content, indent=2)
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("FIX1 - Create New File with Content", True, "✅ Successfully created blueprint_cnf.json with content")
+                else:
+                    self.log_test("FIX1 - Create New File with Content", False, f"❌ Creation failed: {data}")
+            else:
+                self.log_test("FIX1 - Create New File with Content", False, f"❌ HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("FIX1 - Create New File with Content", False, f"❌ Exception: {str(e)}")
+
+    def test_create_file_existing_without_overwrite(self):
+        """Test creating blueprint_cnf.json when file exists WITHOUT overwrite=true (should get 409 error)"""
+        try:
+            # Try to create the file again without overwrite flag
+            test_content = {
+                "namespace": "com.test.blueprint.config.updated",
+                "version": "2.0.0",
+                "description": "Updated test blueprint configuration"
+            }
+            
+            payload = {
+                "path": "blueprint_cnf.json",
+                "content": json.dumps(test_content, indent=2)
+                # Note: No overwrite parameter, should default to False
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 409:
+                self.log_test("FIX1 - Create Existing File Without Overwrite", True, "✅ Correctly returned HTTP 409 when file exists and overwrite=false")
+            elif response.status_code == 200:
+                self.log_test("FIX1 - Create Existing File Without Overwrite", False, "❌ Should have returned 409 error when file exists and overwrite not specified")
+            else:
+                self.log_test("FIX1 - Create Existing File Without Overwrite", False, f"❌ Unexpected HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("FIX1 - Create Existing File Without Overwrite", False, f"❌ Exception: {str(e)}")
+
+    def test_create_file_existing_with_overwrite(self):
+        """Test creating blueprint_cnf.json when file exists WITH overwrite=true (should succeed)"""
+        try:
+            # Try to create the file again WITH overwrite flag
+            test_content = {
+                "namespace": "com.test.blueprint.config.overwritten",
+                "version": "3.0.0",
+                "description": "Overwritten test blueprint configuration",
+                "overwrite_test": True
+            }
+            
+            payload = {
+                "path": "blueprint_cnf.json",
+                "content": json.dumps(test_content, indent=2),
+                "overwrite": True
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("FIX1 - Create Existing File With Overwrite", True, "✅ Successfully overwritten existing blueprint_cnf.json with overwrite=true")
+                else:
+                    self.log_test("FIX1 - Create Existing File With Overwrite", False, f"❌ Overwrite failed: {data}")
+            else:
+                self.log_test("FIX1 - Create Existing File With Overwrite", False, f"❌ HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("FIX1 - Create Existing File With Overwrite", False, f"❌ Exception: {str(e)}")
+
+    def test_verify_file_content_matches(self):
+        """Test that the file content matches exactly what was sent in the request"""
+        try:
+            # Read the file content back to verify it matches
+            response = requests.get(
+                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                content = data.get("content", "")
+                
+                if content:
+                    try:
+                        # Parse the content as JSON to verify structure
+                        parsed_content = json.loads(content)
+                        
+                        # Check for expected fields from our overwrite test
+                        if (parsed_content.get("namespace") == "com.test.blueprint.config.overwritten" and
+                            parsed_content.get("version") == "3.0.0" and
+                            parsed_content.get("overwrite_test") == True):
+                            self.log_test("FIX1 - Verify File Content Matches", True, "✅ File content matches exactly what was sent in overwrite request")
+                        else:
+                            self.log_test("FIX1 - Verify File Content Matches", False, f"❌ File content doesn't match expected values: {parsed_content}")
+                    except json.JSONDecodeError as e:
+                        self.log_test("FIX1 - Verify File Content Matches", False, f"❌ File content is not valid JSON: {str(e)}")
+                else:
+                    self.log_test("FIX1 - Verify File Content Matches", False, "❌ File content is empty")
+            elif response.status_code == 404:
+                self.log_test("FIX1 - Verify File Content Matches", False, "❌ File not found - creation may have failed")
+            else:
+                self.log_test("FIX1 - Verify File Content Matches", False, f"❌ HTTP {response.status_code}: {response.text}")
+                
+        except Exception as e:
+            self.log_test("FIX1 - Verify File Content Matches", False, f"❌ Exception: {str(e)}")
+
+    def test_file_operation_request_overwrite_parameter(self):
+        """Test that the FileOperationRequest model now includes overwrite parameter"""
+        try:
+            # Test with various combinations of parameters to verify the model accepts overwrite
+            test_cases = [
+                {"path": "test_overwrite_param1.json", "content": '{"test": 1}', "overwrite": True},
+                {"path": "test_overwrite_param2.json", "content": '{"test": 2}', "overwrite": False},
+                {"path": "test_overwrite_param3.json", "content": '{"test": 3}'}  # No overwrite param
+            ]
+            
+            for i, payload in enumerate(test_cases):
+                response = requests.post(
+                    f"{self.base_url}/api/blueprint/create-file",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                # All should succeed for new files
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        self.log_test(f"FIX1 - FileOperationRequest Model Test {i+1}", True, f"✅ Model accepts overwrite parameter: {payload.get('overwrite', 'not specified')}")
+                    else:
+                        self.log_test(f"FIX1 - FileOperationRequest Model Test {i+1}", False, f"❌ Request failed: {data}")
+                elif response.status_code == 422:
+                    # Validation error - check if it's related to overwrite parameter
+                    try:
+                        error_data = response.json()
+                        error_detail = str(error_data.get("detail", ""))
+                        if "overwrite" in error_detail.lower():
+                            self.log_test(f"FIX1 - FileOperationRequest Model Test {i+1}", False, f"❌ Model validation error with overwrite: {error_detail}")
+                        else:
+                            self.log_test(f"FIX1 - FileOperationRequest Model Test {i+1}", False, f"❌ Model validation error (not overwrite related): {error_detail}")
+                    except:
+                        self.log_test(f"FIX1 - FileOperationRequest Model Test {i+1}", False, f"❌ HTTP 422 validation error")
+                else:
+                    self.log_test(f"FIX1 - FileOperationRequest Model Test {i+1}", False, f"❌ HTTP {response.status_code}")
+                
+                # Clean up test files
+                try:
+                    requests.delete(f"{self.base_url}/api/blueprint/delete-file/{payload['path']}", timeout=5)
+                except:
+                    pass
+                    
+        except Exception as e:
+            self.log_test("FIX1 - FileOperationRequest Model Test", False, f"❌ Exception: {str(e)}")
+
+    def test_fix2_empty_file_content(self):
+        """Test FIX 2 - Empty File Content: Ensure blueprint_cnf.json files are created with actual content, not empty"""
+        print("🔧 Testing FIX 2 - Empty File Content Fix")
+        print("-" * 50)
+        
+        # Test Scenario 1: Create file with content parameter and verify it's not empty
+        self.test_create_file_with_content_not_empty()
+        
+        # Test Scenario 2: Test with actual blueprint configuration JSON structure
+        self.test_create_file_with_blueprint_structure()
+        
+        # Test Scenario 3: Verify generated file contains the JSON content passed in the request
+        self.test_verify_generated_file_contains_request_content()
+        
+        # Test Scenario 4: Test multiple file creations to ensure consistent content handling
+        self.test_multiple_file_creations_content_consistency()
+
+    def test_create_file_with_content_not_empty(self):
+        """Test creating file with content parameter and verify it's not empty"""
+        try:
+            # Clean up any existing test file
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/delete-file/test_content_not_empty.json", timeout=5)
+            except:
+                pass
+            
+            # Create file with specific content
+            test_content = {
+                "test_fix2": "empty_file_content_fix",
+                "content_verification": True,
+                "timestamp": datetime.now().isoformat(),
+                "data": {
+                    "field1": "value1",
+                    "field2": 42,
+                    "field3": ["item1", "item2", "item3"]
+                }
+            }
+            
+            payload = {
+                "path": "test_content_not_empty.json",
+                "content": json.dumps(test_content, indent=2)
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    # Now verify the file is not empty
+                    content_response = requests.get(
+                        f"{self.base_url}/api/blueprint/file-content/test_content_not_empty.json",
+                        timeout=10
+                    )
+                    
+                    if content_response.status_code == 200:
+                        content_data = content_response.json()
+                        file_content = content_data.get("content", "")
+                        
+                        if file_content and len(file_content.strip()) > 0:
+                            try:
+                                parsed = json.loads(file_content)
+                                if parsed.get("test_fix2") == "empty_file_content_fix":
+                                    self.log_test("FIX2 - Create File Content Not Empty", True, f"✅ File created with content ({len(file_content)} characters)")
+                                else:
+                                    self.log_test("FIX2 - Create File Content Not Empty", False, f"❌ File content doesn't match expected: {parsed}")
+                            except json.JSONDecodeError:
+                                self.log_test("FIX2 - Create File Content Not Empty", False, f"❌ File content is not valid JSON: {file_content[:100]}...")
+                        else:
+                            self.log_test("FIX2 - Create File Content Not Empty", False, "❌ File is empty or contains only whitespace")
+                    else:
+                        self.log_test("FIX2 - Create File Content Not Empty", False, f"❌ Could not read file content: HTTP {content_response.status_code}")
+                else:
+                    self.log_test("FIX2 - Create File Content Not Empty", False, f"❌ File creation failed: {data}")
+            else:
+                self.log_test("FIX2 - Create File Content Not Empty", False, f"❌ HTTP {response.status_code}: {response.text}")
+            
+            # Clean up
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/delete-file/test_content_not_empty.json", timeout=5)
+            except:
+                pass
+                
+        except Exception as e:
+            self.log_test("FIX2 - Create File Content Not Empty", False, f"❌ Exception: {str(e)}")
+
+    def test_create_file_with_blueprint_structure(self):
+        """Test creating file with actual blueprint configuration JSON structure"""
+        try:
+            # Clean up any existing test file
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/delete-file/test_blueprint_structure.json", timeout=5)
+            except:
+                pass
+            
+            # Create file with realistic blueprint configuration structure
+            blueprint_content = {
+                "namespace": "ea.cadie.fy26.test.blueprint.v1",
+                "version": "1.0.0",
+                "description": "Test blueprint configuration with realistic structure",
+                "metadata": {
+                    "created": datetime.now().isoformat(),
+                    "author": "blueprint-config-tester",
+                    "environment": "TEST"
+                },
+                "configurations": {
+                    "access": {
+                        "enabled": True,
+                        "type": "oauth2",
+                        "settings": {
+                            "client_id": "test-client-id",
+                            "scopes": ["read", "write", "admin"]
+                        }
+                    },
+                    "storage": {
+                        "type": "s3",
+                        "bucket": "test-blueprint-bucket",
+                        "region": "us-east-1",
+                        "encryption": True
+                    },
+                    "messageStorage": {
+                        "enabled": True,
+                        "retention_days": 30,
+                        "compression": "gzip"
+                    }
+                },
+                "environments": {
+                    "DEV": {
+                        "debug": True,
+                        "log_level": "DEBUG"
+                    },
+                    "PROD": {
+                        "debug": False,
+                        "log_level": "INFO"
+                    }
+                }
+            }
+            
+            payload = {
+                "path": "test_blueprint_structure.json",
+                "content": json.dumps(blueprint_content, indent=2)
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    # Verify the file contains the blueprint structure
+                    content_response = requests.get(
+                        f"{self.base_url}/api/blueprint/file-content/test_blueprint_structure.json",
+                        timeout=10
+                    )
+                    
+                    if content_response.status_code == 200:
+                        content_data = content_response.json()
+                        file_content = content_data.get("content", "")
+                        
+                        if file_content:
+                            try:
+                                parsed = json.loads(file_content)
+                                
+                                # Verify key blueprint structure elements
+                                if (parsed.get("namespace") == "ea.cadie.fy26.test.blueprint.v1" and
+                                    "configurations" in parsed and
+                                    "access" in parsed["configurations"] and
+                                    "environments" in parsed):
+                                    self.log_test("FIX2 - Blueprint Structure Content", True, f"✅ File created with complete blueprint structure ({len(file_content)} characters)")
+                                else:
+                                    self.log_test("FIX2 - Blueprint Structure Content", False, f"❌ Blueprint structure incomplete: {list(parsed.keys())}")
+                            except json.JSONDecodeError as e:
+                                self.log_test("FIX2 - Blueprint Structure Content", False, f"❌ Invalid JSON structure: {str(e)}")
+                        else:
+                            self.log_test("FIX2 - Blueprint Structure Content", False, "❌ File is empty")
+                    else:
+                        self.log_test("FIX2 - Blueprint Structure Content", False, f"❌ Could not read file: HTTP {content_response.status_code}")
+                else:
+                    self.log_test("FIX2 - Blueprint Structure Content", False, f"❌ File creation failed: {data}")
+            else:
+                self.log_test("FIX2 - Blueprint Structure Content", False, f"❌ HTTP {response.status_code}: {response.text}")
+            
+            # Clean up
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/delete-file/test_blueprint_structure.json", timeout=5)
+            except:
+                pass
+                
+        except Exception as e:
+            self.log_test("FIX2 - Blueprint Structure Content", False, f"❌ Exception: {str(e)}")
+
+    def test_verify_generated_file_contains_request_content(self):
+        """Test that generated file contains exactly the JSON content passed in the request"""
+        try:
+            # Test with various content types and structures
+            test_cases = [
+                {
+                    "name": "Simple JSON",
+                    "content": {"simple": "test", "number": 123}
+                },
+                {
+                    "name": "Complex Nested JSON",
+                    "content": {
+                        "level1": {
+                            "level2": {
+                                "level3": {
+                                    "data": ["a", "b", "c"],
+                                    "flags": {"flag1": True, "flag2": False}
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Array Content",
+                    "content": [
+                        {"id": 1, "name": "item1"},
+                        {"id": 2, "name": "item2"},
+                        {"id": 3, "name": "item3"}
+                    ]
+                }
+            ]
+            
+            for i, test_case in enumerate(test_cases):
+                filename = f"test_content_verification_{i+1}.json"
+                
+                # Clean up
+                try:
+                    requests.delete(f"{self.base_url}/api/blueprint/delete-file/{filename}", timeout=5)
+                except:
+                    pass
+                
+                # Create file
+                payload = {
+                    "path": filename,
+                    "content": json.dumps(test_case["content"], indent=2)
+                }
+                
+                response = requests.post(
+                    f"{self.base_url}/api/blueprint/create-file",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        # Read back and verify
+                        content_response = requests.get(
+                            f"{self.base_url}/api/blueprint/file-content/{filename}",
+                            timeout=10
+                        )
+                        
+                        if content_response.status_code == 200:
+                            content_data = content_response.json()
+                            file_content = content_data.get("content", "")
+                            
+                            if file_content:
+                                try:
+                                    parsed = json.loads(file_content)
+                                    
+                                    # Deep comparison
+                                    if parsed == test_case["content"]:
+                                        self.log_test(f"FIX2 - Content Verification {test_case['name']}", True, f"✅ File content matches request exactly")
+                                    else:
+                                        self.log_test(f"FIX2 - Content Verification {test_case['name']}", False, f"❌ Content mismatch: expected {test_case['content']}, got {parsed}")
+                                except json.JSONDecodeError as e:
+                                    self.log_test(f"FIX2 - Content Verification {test_case['name']}", False, f"❌ Invalid JSON: {str(e)}")
+                            else:
+                                self.log_test(f"FIX2 - Content Verification {test_case['name']}", False, "❌ File is empty")
+                        else:
+                            self.log_test(f"FIX2 - Content Verification {test_case['name']}", False, f"❌ Could not read file: HTTP {content_response.status_code}")
+                    else:
+                        self.log_test(f"FIX2 - Content Verification {test_case['name']}", False, f"❌ Creation failed: {data}")
+                else:
+                    self.log_test(f"FIX2 - Content Verification {test_case['name']}", False, f"❌ HTTP {response.status_code}")
+                
+                # Clean up
+                try:
+                    requests.delete(f"{self.base_url}/api/blueprint/delete-file/{filename}", timeout=5)
+                except:
+                    pass
+                    
+        except Exception as e:
+            self.log_test("FIX2 - Content Verification", False, f"❌ Exception: {str(e)}")
+
+    def test_multiple_file_creations_content_consistency(self):
+        """Test multiple file creations to ensure consistent content handling"""
+        try:
+            # Create multiple files with different content to test consistency
+            files_to_create = []
+            
+            for i in range(3):
+                filename = f"test_consistency_{i+1}.json"
+                content = {
+                    "file_number": i + 1,
+                    "test_name": "content_consistency",
+                    "timestamp": datetime.now().isoformat(),
+                    "data": {
+                        "items": [f"item_{j}" for j in range(i + 1, i + 4)],
+                        "count": i + 1,
+                        "enabled": i % 2 == 0
+                    }
+                }
+                
+                files_to_create.append({
+                    "filename": filename,
+                    "content": content,
+                    "expected_size": len(json.dumps(content, indent=2))
+                })
+            
+            # Create all files
+            created_files = []
+            for file_info in files_to_create:
+                # Clean up first
+                try:
+                    requests.delete(f"{self.base_url}/api/blueprint/delete-file/{file_info['filename']}", timeout=5)
+                except:
+                    pass
+                
+                payload = {
+                    "path": file_info["filename"],
+                    "content": json.dumps(file_info["content"], indent=2)
+                }
+                
+                response = requests.post(
+                    f"{self.base_url}/api/blueprint/create-file",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success"):
+                        created_files.append(file_info)
+                    else:
+                        self.log_test(f"FIX2 - Consistency Create {file_info['filename']}", False, f"❌ Creation failed: {data}")
+                else:
+                    self.log_test(f"FIX2 - Consistency Create {file_info['filename']}", False, f"❌ HTTP {response.status_code}")
+            
+            # Verify all created files have correct content
+            all_consistent = True
+            for file_info in created_files:
+                content_response = requests.get(
+                    f"{self.base_url}/api/blueprint/file-content/{file_info['filename']}",
+                    timeout=10
+                )
+                
+                if content_response.status_code == 200:
+                    content_data = content_response.json()
+                    file_content = content_data.get("content", "")
+                    
+                    if file_content:
+                        try:
+                            parsed = json.loads(file_content)
+                            if parsed != file_info["content"]:
+                                all_consistent = False
+                                self.log_test(f"FIX2 - Consistency Verify {file_info['filename']}", False, f"❌ Content mismatch")
+                        except json.JSONDecodeError:
+                            all_consistent = False
+                            self.log_test(f"FIX2 - Consistency Verify {file_info['filename']}", False, f"❌ Invalid JSON")
+                    else:
+                        all_consistent = False
+                        self.log_test(f"FIX2 - Consistency Verify {file_info['filename']}", False, f"❌ Empty file")
+                else:
+                    all_consistent = False
+                    self.log_test(f"FIX2 - Consistency Verify {file_info['filename']}", False, f"❌ Could not read file")
+            
+            if all_consistent and len(created_files) == 3:
+                self.log_test("FIX2 - Multiple File Content Consistency", True, f"✅ All {len(created_files)} files created with consistent content handling")
+            else:
+                self.log_test("FIX2 - Multiple File Content Consistency", False, f"❌ Content consistency issues found")
+            
+            # Clean up all test files
+            for file_info in files_to_create:
+                try:
+                    requests.delete(f"{self.base_url}/api/blueprint/delete-file/{file_info['filename']}", timeout=5)
+                except:
+                    pass
+                    
+        except Exception as e:
+            self.log_test("FIX2 - Multiple File Content Consistency", False, f"❌ Exception: {str(e)}")
     
     def test_urgent_blueprint_fixes(self):
         """Test URGENT USER-REPORTED FIXES: File Overwrite Error and Empty File Content"""
