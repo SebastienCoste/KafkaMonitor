@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 class BlueprintConfigurationTester:
-    def __init__(self, base_url: str = "https://blueprint-creator-2.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "https://blueprint-config-ui.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -1822,7 +1822,7 @@ def main():
     if len(sys.argv) > 1:
         base_url = sys.argv[1]
     else:
-        base_url = "https://blueprint-creator-2.preview.emergentagent.com"
+        base_url = "https://blueprint-config-ui.preview.emergentagent.com"
     
     print(f"🔧 Testing Blueprint Configuration API at: {base_url}")
     
