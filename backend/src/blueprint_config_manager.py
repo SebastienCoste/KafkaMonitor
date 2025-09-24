@@ -255,8 +255,9 @@ class BlueprintConfigurationManager:
                 target_entity.baseConfig = request.baseConfig
             if request.environmentOverrides is not None:
                 target_entity.environmentOverrides = request.environmentOverrides
-            if request.inherit is not None:
-                target_entity.inherit = request.inherit
+            # Handle inheritance - need to check if the field was explicitly provided (even if None)
+            if hasattr(request, 'inherit'):
+                target_entity.inherit = request.inherit  # This allows setting to None to clear inheritance
             if request.enabled is not None:
                 target_entity.enabled = request.enabled
             
