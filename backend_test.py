@@ -1270,6 +1270,25 @@ class BlueprintConfigurationTester:
             except:
                 pass  # Ignore cleanup errors
     
+    def test_urgent_blueprint_fixes(self):
+        """Test URGENT USER-REPORTED FIXES: File Overwrite Error and Empty File Content"""
+        print("🚨 Testing URGENT USER-REPORTED FIXES")
+        print("=" * 80)
+        
+        # FIX 1: File Overwrite Error (CRITICAL)
+        print("\n🔧 FIX 1: Testing File Overwrite Error Fix")
+        print("-" * 60)
+        self.test_fix1_file_overwrite_error()
+        
+        # FIX 2: Empty File Content (CRITICAL)
+        print("\n🔧 FIX 2: Testing Empty File Content Fix")
+        print("-" * 60)
+        self.test_fix2_empty_file_content()
+        
+        print("\n" + "=" * 80)
+        print("🚨 URGENT FIXES TESTING COMPLETED")
+        print("=" * 80)
+
     def test_critical_blueprint_cnf_bugs(self):
         """Test CRITICAL USER-REPORTED BUGS: Blueprint CNF Generation Location and Storage Configuration Map Key Structure"""
         print("🚨 Testing CRITICAL USER-REPORTED BUGS from Chat Message 348")
