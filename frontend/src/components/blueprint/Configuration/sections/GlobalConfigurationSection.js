@@ -269,6 +269,15 @@ export default function GlobalConfigurationSection({ entityDefinitions, uiConfig
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={createGlobalRootConfiguration}
+                        disabled={!selectedSchema || saving}
+                        className="h-7 text-xs"
+                      >
+                        Add Root Config
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => {
                           setShowCreateEntityForm(false);
                           setNewEntityType('');
