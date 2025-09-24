@@ -358,19 +358,50 @@ class BlueprintConfigurationGenerator:
             for file in files:
                 # Create directory if it doesn't exist
                 file_path = base_path / file.path / file.filename
-                file_path.parent.mkdir(parents=True, exist_ok=True)
                 
-                # Remove existing file if it exists to prevent conflicts
-                if file_path.exists():
-                    file_path.unlink()
-                    logger.info(f"Removed existing file: {file_path}")
-                
-                # Write file (will overwrite if exists)
-                with open(file_path, 'w') as f:
-                    json.dump(file.content, f, indent=2)
-                
-                written_files.append(str(file_path))
-                logger.info(f"Generated file: {file_path}")
+                try:
+                    # Ensure parent directories exist
+                    file_path.parent.mkdir(parents=True, exist_ok=True)
+                    
+                    # Handle existing file - try multiple approaches to remove permission issues
+                    if file_path.exists():
+                        try:
+                            # Try to make file writable first
+                            file_path.chmod(0o666)
+                            file_path.unlink()
+                            logger.info(f"Removed existing file: {file_path}")
+                        except PermissionError as e:
+                            logger.warning(f"Could not remove existing file {file_path}: {e}")
+                            # Try backup approach - write to temp file then replace
+                            import tempfile
+                            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as tmp_file:
+                                json.dump(file.content, tmp_file, indent=2)
+                                tmp_path = Path(tmp_file.name)
+                            
+                            # Try to replace the file
+                            try:
+                                tmp_path.replace(file_path)
+                                logger.info(f"Replaced existing file via temp: {file_path}")
+                            except Exception as replace_error:
+                                tmp_path.unlink()  # Clean up temp file
+                                raise PermissionError(f"Cannot write to {file_path}: {replace_error}")
+                    else:
+                        # File doesn't exist, write normally
+                        with open(file_path, 'w') as f:
+                            json.dump(file.content, f, indent=2)
+                        logger.info(f"Created new file: {file_path}")
+                    
+                    written_files.append(str(file_path))
+                    
+                except PermissionError as perm_error:
+                    logger.error(f"Permission denied writing to {file_path}: {perm_error}")
+                    # Try alternative location or suggest user action
+                    raise PermissionError(
+                        f"Cannot write to {file_path}. Please check file permissions or close any applications that might have the file open."
+                    )
+                except Exception as file_error:
+                    logger.error(f"Error writing file {file_path}: {file_error}")
+                    raise
         
         except Exception as e:
             logger.error(f"Error writing files to disk: {e}")
