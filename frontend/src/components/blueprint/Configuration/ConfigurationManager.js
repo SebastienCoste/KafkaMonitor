@@ -87,13 +87,30 @@ export default function ConfigurationManager() {
       const result = await ConfigurationAPI.generateAllFiles();
       
       if (result.success) {
-        toast.success(`Generated ${result.filesGenerated} files successfully`);
+        toast.success(`Generated ${result.filesGenerated} configuration files across all schemas`);
       } else {
-        toast.error(`Failed to generate files: ${result.error}`);
+        // Handle specific error types
+        if (result.error && result.error.includes('permission')) {
+          toast.error(`Permission Error: ${result.error}. Please close any applications that might have these files open and ensure you have write permissions.`, {
+            duration: 8000
+          });
+        } else {
+          toast.error(result.error || 'Failed to generate files');
+        }
       }
     } catch (error) {
-      console.error('Failed to generate files:', error);
-      toast.error(`Failed to generate files: ${error.message}`);
+      console.error('Failed to generate all files:', error);
+      
+      // Handle HTTP error responses
+      if (error.message.includes('403') || error.message.includes('permission')) {
+        toast.error('Permission denied: Please close any applications that have the blueprint files open and ensure you have write permissions to the directory.', {
+          duration: 8000
+        });
+      } else if (error.message.includes('404')) {
+        toast.error('Directory not found: Please check that the blueprint directory exists and is accessible.');
+      } else {
+        toast.error(`Failed to generate files: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
