@@ -1826,6 +1826,15 @@ class BlueprintConfigurationTester:
             return current
         except:
             return None
+    
+    def cleanup_test_entity(self, entity_id):
+        """Clean up test entity"""
+        if entity_id:
+            try:
+                requests.delete(f"{self.base_url}/api/blueprint/config/entities/{entity_id}", timeout=10)
+                self.log_test("Cleanup Test Entity", True, f"Cleaned up entity {entity_id}")
+            except:
+                pass  # Ignore cleanup errors
 
     def test_fix1_file_overwrite_error(self):
         """Test FIX 1 - File Overwrite Error: POST /api/blueprint/create-file with overwrite functionality"""
