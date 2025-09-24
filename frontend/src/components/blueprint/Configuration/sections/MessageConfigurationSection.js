@@ -175,6 +175,35 @@ export default function MessageConfigurationSection({ entityDefinitions, uiConfi
     }
   };
 
+  const createRootConfiguration = async () => {
+    if (!selectedSchema) {
+      toast.error('No schema selected');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await ConfigurationAPI.createEntity({
+        entityType: 'transformation', // Use transformation as default for message root config
+        name: 'Root Configuration',
+        baseConfig: {},
+        schemaId: selectedSchema.id
+      });
+
+      if (result.success) {
+        toast.success('Root Configuration created successfully');
+        await onConfigurationChange(); // Reload configuration
+      } else {
+        toast.error('Failed to create Root Configuration');
+      }
+    } catch (error) {
+      console.error('Failed to create Root Configuration:', error);
+      toast.error(`Failed to create Root Configuration: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const getEntityTypeColor = (entityType) => {
     switch (entityType) {
       case 'binaryAssets':
