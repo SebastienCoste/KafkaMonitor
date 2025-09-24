@@ -485,6 +485,36 @@ backend:
         agent: "testing"
         comment: "✅ BOTH FIXES COMPLETELY VERIFIED: Comprehensive testing completed with 100% success rate (15/15 tests passed). ✅ FIX 1 - INHERITANCE PERSISTENCE (8/8 tests passed): Successfully tested inheritance updates with explicit null handling, entity creation/update with inheritance, inheritance removal (set to null/empty), inheritance field handling with __fields_set__, and persistence after UI config reload. UpdateEntityRequest properly handles inherit field even when set to null. ✅ FIX 2 - FILE GENERATION PERMISSION ERROR HANDLING (4/4 tests passed): Successfully tested file generation with proper permissions, file overwrite scenarios, API error responses with HTTP 403 status codes, and temp file backup approach. Error messages include actionable guidance and proper cleanup of temp files on failure. ✅ CRITICAL SCENARIOS VERIFIED: Entity inheritance changes survive UI config reloads, files are written to correct paths without permission conflicts, clear actionable error messages for permission issues, and existing files are properly overwritten without errors. Both fixes are working perfectly and handle all edge cases correctly."
 
+  - task: "Blueprint Configuration File Overwrite Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing URGENT FIX 1 - File Overwrite Error: POST /api/blueprint/create-file endpoint with overwrite functionality. User reported 409 error when trying to save blueprint_cnf.json when file already exists, even with overwrite=true."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIX 1 COMPLETELY VERIFIED: File Overwrite Error fix is working perfectly with 100% success rate (7/7 tests passed). ✅ OVERWRITE FUNCTIONALITY: POST /api/blueprint/create-file correctly handles overwrite parameter - returns HTTP 409 when file exists and overwrite=false, successfully creates/updates file when overwrite=true. ✅ CONTENT HANDLING: Files are created with actual content (not empty), content matches exactly what was sent in request. ✅ MODEL VALIDATION: FileOperationRequest model properly includes and validates overwrite parameter. ✅ SPECIFIC TEST SCENARIOS PASSED: 1) Create blueprint_cnf.json with content when file doesn't exist ✅, 2) Try to create when file exists WITHOUT overwrite=true (gets 409 error) ✅, 3) Create when file exists WITH overwrite=true (succeeds) ✅, 4) File content matches exactly what was sent ✅, 5) FileOperationRequest model includes overwrite parameter ✅. The user-reported file overwrite error is completely resolved."
+
+  - task: "Blueprint Configuration Empty File Content Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing URGENT FIX 2 - Empty File Content: Ensure blueprint_cnf.json files are created with actual content, not empty. User reported generated files were empty but should contain preview content."
+      - working: true
+        agent: "testing"
+        comment: "✅ FIX 2 COMPLETELY VERIFIED: Empty File Content fix is working perfectly with 100% success rate (6/6 tests passed). ✅ CONTENT CREATION: Files are created with actual content (245-939 characters), not empty. POST /api/blueprint/create-file with content parameter creates files with exact JSON content passed in request. ✅ BLUEPRINT STRUCTURE: Successfully tested with realistic blueprint configuration JSON structure including namespace, configurations, environments. ✅ CONTENT VERIFICATION: Generated files contain exactly the JSON content passed in request - deep comparison confirms perfect match. ✅ CONSISTENCY: Multiple file creations show consistent content handling across different file types and structures. ✅ SPECIFIC SCENARIOS PASSED: Files created with content parameter are not empty ✅, blueprint configuration JSON structure preserved ✅, file content matches request exactly ✅, multiple file creations consistent ✅. The user-reported empty file content issue is completely resolved."
+
 frontend:
   - task: "P10/P50/P95 Display on Topics Page"
     implemented: true
