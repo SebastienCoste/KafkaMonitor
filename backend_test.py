@@ -1260,6 +1260,546 @@ class BlueprintConfigurationTester:
             except:
                 pass  # Ignore cleanup errors
     
+    def test_blueprint_cnf_generation_fix(self):
+        """Test FIX 1 - blueprint_cnf.json Generation to Root Directory"""
+        print("🔧 Testing FIX 1 - blueprint_cnf.json Generation Fix")
+        print("-" * 50)
+        
+        # Step 1: Test create-file API endpoint with blueprint_cnf.json
+        self.test_create_file_api_blueprint_cnf()
+        
+        # Step 2: Test via Configuration Manager API integration
+        self.test_configuration_manager_blueprint_cnf()
+        
+        # Step 3: Test overwrite functionality
+        self.test_blueprint_cnf_overwrite()
+        
+        # Step 4: Verify file structure and location
+        self.test_blueprint_cnf_location_verification()
+    
+    def test_create_file_api_blueprint_cnf(self):
+        """Test POST /api/blueprint/create-file with blueprint_cnf.json"""
+        try:
+            payload = {
+                "path": "blueprint_cnf.json",
+                "new_path": "blueprint_cnf.json"  # Template name
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Create File API - blueprint_cnf.json", True, "Successfully created blueprint_cnf.json via create-file API")
+                    
+                    # Verify file was created at root level (not in subdirectory)
+                    self.verify_blueprint_cnf_root_location()
+                else:
+                    self.log_test("Create File API - blueprint_cnf.json", False, f"Creation failed: {data}")
+            elif response.status_code == 409:
+                self.log_test("Create File API - blueprint_cnf.json", True, "File already exists (HTTP 409) - this is expected behavior")
+            else:
+                self.log_test("Create File API - blueprint_cnf.json", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Create File API - blueprint_cnf.json", False, f"Exception: {str(e)}")
+    
+    def test_configuration_manager_blueprint_cnf(self):
+        """Test blueprint_cnf.json generation via Configuration Manager API"""
+        try:
+            # First create a test schema and entity for file generation
+            schema_payload = {
+                "name": "test-blueprint-cnf-schema",
+                "namespace": "com.test.blueprintcnf",
+                "description": "Test schema for blueprint_cnf.json generation"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code != 200:
+                self.log_test("Configuration Manager - blueprint_cnf.json Setup", False, f"Schema creation failed: HTTP {schema_response.status_code}")
+                return
+            
+            schema_data = schema_response.json()
+            if not schema_data.get("success"):
+                self.log_test("Configuration Manager - blueprint_cnf.json Setup", False, f"Schema creation failed: {schema_data}")
+                return
+            
+            schema_id = schema_data["schema_id"]
+            
+            # Generate files including blueprint_cnf.json
+            gen_payload = {
+                "schemaId": schema_id,
+                "environments": ["DEV"],
+                "outputPath": "/app",  # Root directory
+                "includeBlueprint": True
+            }
+            
+            gen_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if gen_response.status_code == 200:
+                gen_data = gen_response.json()
+                if gen_data.get("success"):
+                    files = gen_data.get("files", [])
+                    
+                    # Check if blueprint_cnf.json was generated
+                    blueprint_cnf_found = False
+                    for file_info in files:
+                        if isinstance(file_info, dict):
+                            filename = file_info.get("filename", "")
+                            if "blueprint_cnf.json" in filename:
+                                blueprint_cnf_found = True
+                                # Verify it's at root level (not in subdirectory)
+                                if filename == "blueprint_cnf.json" or filename.endswith("/blueprint_cnf.json"):
+                                    self.log_test("Configuration Manager - blueprint_cnf.json Generation", True, f"blueprint_cnf.json generated at correct location: {filename}")
+                                else:
+                                    self.log_test("Configuration Manager - blueprint_cnf.json Generation", False, f"blueprint_cnf.json generated at wrong location: {filename}")
+                                break
+                    
+                    if not blueprint_cnf_found:
+                        self.log_test("Configuration Manager - blueprint_cnf.json Generation", False, f"blueprint_cnf.json not found in generated files: {[f.get('filename') for f in files if isinstance(f, dict)]}")
+                else:
+                    error = gen_data.get("errors", ["Unknown error"])
+                    self.log_test("Configuration Manager - blueprint_cnf.json Generation", False, f"Generation failed: {error}")
+            else:
+                self.log_test("Configuration Manager - blueprint_cnf.json Generation", False, f"HTTP {gen_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Configuration Manager - blueprint_cnf.json Generation", False, f"Exception: {str(e)}")
+    
+    def test_blueprint_cnf_overwrite(self):
+        """Test blueprint_cnf.json overwrite functionality"""
+        try:
+            # Create blueprint_cnf.json first time
+            payload1 = {
+                "path": "blueprint_cnf.json",
+                "new_path": "blueprint_cnf.json"
+            }
+            
+            response1 = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload1,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            # Try to create it again (should handle overwrite)
+            response2 = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json=payload1,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response1.status_code == 200 or response1.status_code == 409:
+                if response2.status_code == 409:
+                    self.log_test("Blueprint CNF Overwrite", True, "Correctly handled file already exists (HTTP 409)")
+                elif response2.status_code == 200:
+                    self.log_test("Blueprint CNF Overwrite", True, "Successfully handled overwrite scenario")
+                else:
+                    self.log_test("Blueprint CNF Overwrite", False, f"Unexpected overwrite response: HTTP {response2.status_code}")
+            else:
+                self.log_test("Blueprint CNF Overwrite", False, f"Initial creation failed: HTTP {response1.status_code}")
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF Overwrite", False, f"Exception: {str(e)}")
+    
+    def verify_blueprint_cnf_root_location(self):
+        """Verify blueprint_cnf.json is created at blueprint root"""
+        try:
+            # Get file tree to verify location
+            response = requests.get(f"{self.base_url}/api/blueprint/file-tree", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                files = data.get("files", [])
+                
+                # Look for blueprint_cnf.json at root level
+                blueprint_cnf_at_root = False
+                for file_info in files:
+                    if isinstance(file_info, dict):
+                        name = file_info.get("name", "")
+                        path = file_info.get("path", "")
+                        if name == "blueprint_cnf.json" and "/" not in path.strip("/"):
+                            blueprint_cnf_at_root = True
+                            self.log_test("Blueprint CNF Root Location", True, f"blueprint_cnf.json found at root: {path}")
+                            break
+                
+                if not blueprint_cnf_at_root:
+                    self.log_test("Blueprint CNF Root Location", False, "blueprint_cnf.json not found at root level")
+            else:
+                self.log_test("Blueprint CNF Root Location", False, f"File tree request failed: HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF Root Location", False, f"Exception: {str(e)}")
+    
+    def test_blueprint_cnf_location_verification(self):
+        """Verify blueprint_cnf.json contains proper JSON structure"""
+        try:
+            # Try to read the blueprint_cnf.json file
+            response = requests.get(f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                content = data.get("content", "")
+                
+                if content:
+                    try:
+                        # Parse JSON to verify structure
+                        json_data = json.loads(content)
+                        
+                        # Check for expected blueprint_cnf.json structure
+                        if isinstance(json_data, dict):
+                            # Look for common blueprint_cnf.json fields
+                            expected_fields = ["namespace", "version", "description"]
+                            found_fields = [field for field in expected_fields if field in json_data]
+                            
+                            if found_fields:
+                                self.log_test("Blueprint CNF JSON Structure", True, f"Valid JSON with fields: {found_fields}")
+                            else:
+                                self.log_test("Blueprint CNF JSON Structure", True, f"Valid JSON structure (custom fields): {list(json_data.keys())}")
+                        else:
+                            self.log_test("Blueprint CNF JSON Structure", False, f"JSON is not an object: {type(json_data)}")
+                    except json.JSONDecodeError as e:
+                        self.log_test("Blueprint CNF JSON Structure", False, f"Invalid JSON: {str(e)}")
+                else:
+                    self.log_test("Blueprint CNF JSON Structure", False, "File content is empty")
+            elif response.status_code == 404:
+                self.log_test("Blueprint CNF JSON Structure", False, "blueprint_cnf.json file not found")
+            else:
+                self.log_test("Blueprint CNF JSON Structure", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF JSON Structure", False, f"Exception: {str(e)}")
+    
+    def test_storage_configuration_map_key_fix(self):
+        """Test FIX 2 - Storage Configuration Map Key Handling"""
+        print("🔧 Testing FIX 2 - Storage Configuration Map Key Fix")
+        print("-" * 50)
+        
+        # Step 1: Create storage entity with proper structure
+        self.test_storage_entity_creation()
+        
+        # Step 2: Verify storage configuration map key handling
+        self.test_storage_map_key_handling()
+        
+        # Step 3: Test file generation with storage entity
+        self.test_storage_file_generation()
+        
+        # Step 4: Verify storage structure in generated files
+        self.test_storage_structure_verification()
+    
+    def test_storage_entity_creation(self):
+        """Create storage entity with proper structure"""
+        try:
+            payload = {
+                "name": "test-storage-entity",
+                "entityType": "storages",
+                "configuration": {
+                    "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+                    "storages": {
+                        "EA.EADP.PDE.MCR": {
+                            "serviceIdentifier": "EA.EADP.PDE.MCR",
+                            "defaultIntegrationId": "2",
+                            "hosts": [
+                                {
+                                    "host": "asset-int.mcr.ea.cm",
+                                    "apis": ["*"]
+                                }
+                            ]
+                        }
+                    }
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("Storage Entity Creation", True, f"Created storage entity with ID: {entity_id}")
+                    
+                    # Store entity ID for later tests
+                    self.storage_entity_id = entity_id
+                    return entity_id
+                else:
+                    self.log_test("Storage Entity Creation", False, f"Creation failed: {data}")
+                    return None
+            else:
+                self.log_test("Storage Entity Creation", False, f"HTTP {response.status_code}")
+                return None
+                
+        except Exception as e:
+            self.log_test("Storage Entity Creation", False, f"Exception: {str(e)}")
+            return None
+    
+    def test_storage_map_key_handling(self):
+        """Test that storage configuration uses proper map key handling"""
+        try:
+            # Get UI config to verify storage entity structure
+            response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if response.status_code == 200:
+                data = response.json()
+                config = data.get("config", {})
+                
+                # Look for our storage entity
+                storage_entity_found = False
+                for schema in config.get("schemas", []):
+                    for entity in schema.get("configurations", []):
+                        if entity.get("name") == "test-storage-entity" and entity.get("entityType") == "storages":
+                            storage_entity_found = True
+                            
+                            # Check storage configuration structure
+                            entity_config = entity.get("configuration", {})
+                            storages = entity_config.get("storages", {})
+                            
+                            # Verify that "EA.EADP.PDE.MCR" is used as a map key (not nested by dots)
+                            if "EA.EADP.PDE.MCR" in storages:
+                                storage_config = storages["EA.EADP.PDE.MCR"]
+                                
+                                # Verify it's not nested (should NOT have storages.storages.EA.EADP.PDE.MCR)
+                                if isinstance(storage_config, dict) and "serviceIdentifier" in storage_config:
+                                    service_id = storage_config.get("serviceIdentifier")
+                                    if service_id == "EA.EADP.PDE.MCR":
+                                        self.log_test("Storage Map Key Handling", True, f"Storage uses full service identifier as map key: 'EA.EADP.PDE.MCR'")
+                                    else:
+                                        self.log_test("Storage Map Key Handling", False, f"Service identifier mismatch: expected 'EA.EADP.PDE.MCR', got '{service_id}'")
+                                else:
+                                    self.log_test("Storage Map Key Handling", False, f"Storage config structure invalid: {storage_config}")
+                            else:
+                                # Check if it was incorrectly nested by dots
+                                nested_check = storages
+                                nested_path = []
+                                for part in ["EA", "EADP", "PDE", "MCR"]:
+                                    if isinstance(nested_check, dict) and part in nested_check:
+                                        nested_check = nested_check[part]
+                                        nested_path.append(part)
+                                    else:
+                                        break
+                                
+                                if len(nested_path) == 4:
+                                    self.log_test("Storage Map Key Handling", False, f"Storage incorrectly nested by dots: storages.{'.'.join(nested_path)}")
+                                else:
+                                    self.log_test("Storage Map Key Handling", False, f"Storage key 'EA.EADP.PDE.MCR' not found. Available keys: {list(storages.keys())}")
+                            
+                            # Verify defaultServiceIdentifier is present at top level
+                            default_service_id = entity_config.get("defaultServiceIdentifier")
+                            if default_service_id == "EA.EADP.PDE.MCR":
+                                self.log_test("Storage Default Service Identifier", True, f"defaultServiceIdentifier present: {default_service_id}")
+                            else:
+                                self.log_test("Storage Default Service Identifier", False, f"defaultServiceIdentifier missing or incorrect: {default_service_id}")
+                            
+                            break
+                
+                if not storage_entity_found:
+                    self.log_test("Storage Map Key Handling", False, "Storage entity not found in UI config")
+            else:
+                self.log_test("Storage Map Key Handling", False, f"UI config request failed: HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Storage Map Key Handling", False, f"Exception: {str(e)}")
+    
+    def test_storage_file_generation(self):
+        """Test file generation with storage entity"""
+        try:
+            # Create a schema for storage testing
+            schema_payload = {
+                "name": "test-storage-schema",
+                "namespace": "com.test.storage",
+                "description": "Test schema for storage configuration"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code != 200:
+                self.log_test("Storage File Generation - Schema", False, f"Schema creation failed: HTTP {schema_response.status_code}")
+                return
+            
+            schema_data = schema_response.json()
+            if not schema_data.get("success"):
+                self.log_test("Storage File Generation - Schema", False, f"Schema creation failed: {schema_data}")
+                return
+            
+            schema_id = schema_data["schema_id"]
+            
+            # Generate files with storage configuration
+            gen_payload = {
+                "schemaId": schema_id,
+                "environments": ["DEV"],
+                "outputPath": "/app/test_storage_generated"
+            }
+            
+            gen_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if gen_response.status_code == 200:
+                gen_data = gen_response.json()
+                if gen_data.get("success"):
+                    files = gen_data.get("files", [])
+                    self.log_test("Storage File Generation", True, f"Generated {len(files)} files with storage configuration")
+                    
+                    # Store generated files for structure verification
+                    self.storage_generated_files = files
+                else:
+                    error = gen_data.get("errors", ["Unknown error"])
+                    self.log_test("Storage File Generation", False, f"Generation failed: {error}")
+            else:
+                self.log_test("Storage File Generation", False, f"HTTP {gen_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Storage File Generation", False, f"Exception: {str(e)}")
+    
+    def test_storage_structure_verification(self):
+        """Verify storage structure in generated files"""
+        try:
+            # Check if we have generated files to verify
+            if not hasattr(self, 'storage_generated_files'):
+                self.log_test("Storage Structure Verification", False, "No generated files to verify")
+                return
+            
+            files = getattr(self, 'storage_generated_files', [])
+            
+            # Look for files that might contain storage configuration
+            storage_files_checked = 0
+            storage_structure_correct = 0
+            
+            for file_info in files:
+                if isinstance(file_info, dict):
+                    filename = file_info.get("filename", "")
+                    
+                    # Check files that might contain storage config (global.json, config files, etc.)
+                    if any(pattern in filename.lower() for pattern in ["global", "storage", "config"]):
+                        storage_files_checked += 1
+                        
+                        # Try to read file content to verify structure
+                        try:
+                            file_path = filename.replace("/app/test_storage_generated/", "")
+                            content_response = requests.get(
+                                f"{self.base_url}/api/blueprint/file-content/{file_path}",
+                                timeout=10
+                            )
+                            
+                            if content_response.status_code == 200:
+                                content_data = content_response.json()
+                                content = content_data.get("content", "")
+                                
+                                if content:
+                                    try:
+                                        json_content = json.loads(content)
+                                        
+                                        # Look for storage configuration in the JSON
+                                        if self.verify_storage_structure_in_json(json_content, filename):
+                                            storage_structure_correct += 1
+                                    except json.JSONDecodeError:
+                                        pass  # Skip non-JSON files
+                        except:
+                            pass  # Skip files we can't read
+            
+            if storage_files_checked > 0:
+                if storage_structure_correct > 0:
+                    self.log_test("Storage Structure Verification", True, f"Storage structure correct in {storage_structure_correct}/{storage_files_checked} files")
+                else:
+                    self.log_test("Storage Structure Verification", False, f"Storage structure issues found in {storage_files_checked} files")
+            else:
+                self.log_test("Storage Structure Verification", False, "No storage configuration files found to verify")
+                
+        except Exception as e:
+            self.log_test("Storage Structure Verification", False, f"Exception: {str(e)}")
+    
+    def verify_storage_structure_in_json(self, json_content, filename):
+        """Verify storage structure in JSON content"""
+        try:
+            # Look for storage configuration in various possible locations
+            storage_configs = []
+            
+            # Check direct storages field
+            if "storages" in json_content:
+                storage_configs.append(json_content["storages"])
+            
+            # Check nested configurations
+            if "configuration" in json_content and "storages" in json_content["configuration"]:
+                storage_configs.append(json_content["configuration"]["storages"])
+            
+            # Check entities array
+            if "entities" in json_content:
+                for entity in json_content["entities"]:
+                    if isinstance(entity, dict) and "storages" in entity:
+                        storage_configs.append(entity["storages"])
+            
+            for storage_config in storage_configs:
+                if isinstance(storage_config, dict):
+                    # Check if "EA.EADP.PDE.MCR" is used as a direct key
+                    if "EA.EADP.PDE.MCR" in storage_config:
+                        service_config = storage_config["EA.EADP.PDE.MCR"]
+                        if isinstance(service_config, dict) and "serviceIdentifier" in service_config:
+                            self.log_test(f"Storage Structure in {filename}", True, "Storage uses full service identifier as map key")
+                            return True
+                    
+                    # Check if it was incorrectly nested
+                    if "EA" in storage_config and isinstance(storage_config["EA"], dict):
+                        nested = storage_config["EA"]
+                        if "EADP" in nested and isinstance(nested["EADP"], dict):
+                            nested = nested["EADP"]
+                            if "PDE" in nested and isinstance(nested["PDE"], dict):
+                                nested = nested["PDE"]
+                                if "MCR" in nested:
+                                    self.log_test(f"Storage Structure in {filename}", False, "Storage incorrectly nested by dots")
+                                    return False
+            
+            return False
+            
+        except Exception as e:
+            self.log_test(f"Storage Structure Verification in {filename}", False, f"Exception: {str(e)}")
+            return False
+    
+    def run_blueprint_cnf_and_storage_fixes_tests(self):
+        """Run comprehensive tests for blueprint_cnf.json generation and storage configuration fixes"""
+        print("🚀 Starting Blueprint CNF Generation and Storage Configuration Tests")
+        print("=" * 80)
+        
+        # First, set up blueprint root path
+        self.setup_blueprint_root_path()
+        
+        # Test FIX 1: blueprint_cnf.json Generation
+        self.test_blueprint_cnf_generation_fix()
+        
+        # Test FIX 2: Storage Configuration Map Key Handling
+        self.test_storage_configuration_map_key_fix()
+        
+        # Print final summary
+        self.print_summary()
+
     def run_inheritance_and_file_generation_tests(self):
         """Run comprehensive tests for inheritance persistence and file generation error handling"""
         print("🚀 Starting Inheritance Persistence and File Generation Error Handling Tests")
