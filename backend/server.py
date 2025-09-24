@@ -642,22 +642,34 @@ async def save_blueprint_file_content(path: str, request: Dict[str, str]):
 
 @api_router.post("/blueprint/create-file")
 async def create_blueprint_file(request: FileOperationRequest):
-    """Create a new blueprint file"""
+    """Create a new blueprint file with content and overwrite support"""
     if not blueprint_file_manager:
         raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
     
     try:
-        template_name = request.new_path  # Using new_path as template name for simplicity
-        await blueprint_file_manager.create_file(request.path, template_name)
+        # Check if file exists
+        file_exists = await blueprint_file_manager.file_exists(request.path)
         
-        # Notify WebSocket clients about file creation
-        await broadcast_blueprint_change("file_created", {"path": request.path})
+        if file_exists and not request.overwrite:
+            raise HTTPException(status_code=409, detail="File already exists. Set overwrite=true to replace it.")
         
-        return {"success": True}
-    except FileExistsError:
-        raise HTTPException(status_code=409, detail="File already exists")
+        # If content is provided, write the content directly
+        if request.content is not None:
+            await blueprint_file_manager.write_file(request.path, request.content)
+        else:
+            # Use template creation if no content provided
+            template_name = request.new_path or "empty"
+            await blueprint_file_manager.create_file(request.path, template_name)
+        
+        # Notify WebSocket clients about file change
+        event_type = "file_updated" if file_exists else "file_created"
+        await broadcast_blueprint_change(event_type, {"path": request.path})
+        
+        return {"success": True, "message": f"File {'updated' if file_exists else 'created'} successfully"}
+    except HTTPException:
+        raise  # Re-raise HTTP exceptions as-is
     except Exception as e:
-        logger.error(f"Error creating file {request.path}: {e}")
+        logger.error(f"Error creating/updating file {request.path}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.delete("/blueprint/delete-file/{path:path}")
