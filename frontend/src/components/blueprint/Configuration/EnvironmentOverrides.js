@@ -186,6 +186,138 @@ export default function EnvironmentOverrides({
             </div>
           );
 
+        case 'array':
+          const arrayValue = currentValue || [];
+          return (
+            <div key={fullPath} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">{fieldDef.title}</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const newArray = [...arrayValue, fieldDef.items?.type === 'string' ? '' : {}];
+                    updateEnvironmentConfig(fullPath, newArray);
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+              <div className="space-y-2">
+                {arrayValue.map((item, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    {fieldDef.items?.type === 'string' ? (
+                      <Input
+                        value={item}
+                        onChange={(e) => {
+                          const newArray = [...arrayValue];
+                          newArray[index] = e.target.value;
+                          updateEnvironmentConfig(fullPath, newArray);
+                        }}
+                        className="flex-1"
+                      />
+                    ) : (
+                      <Textarea
+                        value={typeof item === 'object' ? JSON.stringify(item, null, 2) : item}
+                        onChange={(e) => {
+                          const newArray = [...arrayValue];
+                          try {
+                            newArray[index] = JSON.parse(e.target.value);
+                          } catch {
+                            newArray[index] = e.target.value;
+                          }
+                          updateEnvironmentConfig(fullPath, newArray);
+                        }}
+                        className="flex-1"
+                        rows={2}
+                      />
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const newArray = arrayValue.filter((_, i) => i !== index);
+                        updateEnvironmentConfig(fullPath, newArray);
+                      }}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+
+        case 'map':
+          const mapValue = currentValue || {};
+          return (
+            <div key={fullPath} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium">{fieldDef.title}</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const key = prompt('Enter key name:');
+                    if (key) {
+                      updateEnvironmentConfig(`${fullPath}.${key}`, fieldDef.valueType?.default || '');
+                    }
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              {fieldDef.description && (
+                <p className="text-xs text-gray-600">{fieldDef.description}</p>
+              )}
+              <div className="space-y-2">
+                {Object.entries(mapValue).map(([key, value]) => (
+                  <Card key={key}>
+                    <CardContent className="p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <Label className="text-sm font-semibold">{key}</Label>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newMap = { ...mapValue };
+                            delete newMap[key];
+                            updateEnvironmentConfig(fullPath, newMap);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      {fieldDef.valueType && fieldDef.valueType.fields ? (
+                        <div className="space-y-2">
+                          {Object.entries(fieldDef.valueType.fields).map(([subFieldName, subFieldDef]) =>
+                            renderField(subFieldName, subFieldDef, `${fullPath}.${key}`)
+                          )}
+                        </div>
+                      ) : (
+                        <Textarea
+                          value={typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+                          onChange={(e) => {
+                            try {
+                              updateEnvironmentConfig(`${fullPath}.${key}`, JSON.parse(e.target.value));
+                            } catch {
+                              updateEnvironmentConfig(`${fullPath}.${key}`, e.target.value);
+                            }
+                          }}
+                          rows={3}
+                          className="font-mono text-sm"
+                        />
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          );
+
         case 'object':
           if (fieldDef.fields) {
             return (
