@@ -151,7 +151,7 @@ class BlueprintConfigurationGenerator:
             # Convert namespace to safe filename (replace dots with underscores)
             safe_namespace = schema_namespace.replace('.', '_').replace('-', '_')
             schema_filename = f"global_{safe_namespace}.json"
-            file_path = mapping.path + schema_filename
+            file_path = mapping.path  # Just the path, not path + filename
             
             return GeneratedFile(
                 filename=schema_filename,
