@@ -16,6 +16,18 @@
           },
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "ac5e2484-0f80-4c99-b1ec-88bd69b84c0f",
+          "entityType": "access",
+          "name": "base-config-entity",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Base configuration for inheritance testing"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -38,8 +50,26 @@
           "enabled": true
         }
       ]
+    },
+    {
+      "id": "494ddcc8-4faf-4193-a73b-149500fa3537",
+      "namespace": "com.test.filegeneration",
+      "configurations": [
+        {
+          "id": "a95cd668-294a-4da3-91f4-fd252caa0c9d",
+          "entityType": "access",
+          "name": "test-file-gen-entity",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test entity for file generation"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-23T02:29:29.441842"
+  "lastModified": "2025-09-24T00:55:46.664942"
 }
