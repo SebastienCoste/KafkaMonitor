@@ -625,12 +625,27 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
               <div className="space-y-2 mt-2">
                 {blueprintConfig.searchExperience.templates.map((template, index) => (
                   <div key={index} className="flex items-center space-x-2">
-                    <Input
+                    <Select
                       value={template}
-                      onChange={(e) => updateSearchTemplate(index, e.target.value)}
-                      placeholder="template_file.json"
-                      className="flex-1"
-                    />
+                      onValueChange={(value) => updateSearchTemplate(index, value)}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select template file..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTemplateFiles.length > 0 ? (
+                          availableTemplateFiles.map((file) => (
+                            <SelectItem key={file} value={file}>
+                              {file}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="" disabled>
+                            No template files found in src/searchExperience/templates
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
                     <Button
                       variant="ghost"
                       size="sm"
