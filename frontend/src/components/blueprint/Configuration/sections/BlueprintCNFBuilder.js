@@ -518,12 +518,27 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
           <CardContent className="space-y-3">
             {blueprintConfig.transformSpecs.map((spec, index) => (
               <div key={index} className="flex items-center space-x-2">
-                <Input
+                <Select
                   value={spec}
-                  onChange={(e) => updateTransformSpec(index, e.target.value)}
-                  placeholder="transform_file.jslt"
-                  className="flex-1"
-                />
+                  onValueChange={(value) => updateTransformSpec(index, value)}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Select transform file..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableTransformFiles.length > 0 ? (
+                      availableTransformFiles.map((file) => (
+                        <SelectItem key={file} value={file}>
+                          {file}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="" disabled>
+                        No .jslt files found in src/transformSpecs
+                      </SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
                 <Button
                   variant="ghost"
                   size="sm"
