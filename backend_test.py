@@ -623,6 +623,11 @@ class BlueprintConfigurationTester:
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
+        # PRIORITY: Test BLUEPRINT CNF NAMESPACE AND SEARCH EXPERIENCE FIXES
+        print("\n🚨 BLUEPRINT CNF NAMESPACE AND SEARCH EXPERIENCE FIXES TESTING")
+        print("=" * 70)
+        self.test_blueprint_cnf_namespace_and_search_experience_fixes()
+        
         # PRIORITY: Test CRITICAL UI INPUT FIELD BUG FIXES
         print("\n🚨 CRITICAL UI INPUT FIELD BUG FIXES TESTING")
         print("=" * 70)
