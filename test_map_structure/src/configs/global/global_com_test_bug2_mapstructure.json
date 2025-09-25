@@ -1,0 +1,22 @@
+{
+  "environments": {},
+  "config": {
+    "storages": {
+      "enabled": true,
+      "storageConfigurations": {
+        "EA.EADP.PDE.MCR": {
+          "type": "redis",
+          "host": "redis-server.example.com"
+        },
+        "EA.EADP.TEST.ANOTHER.SERVICE": {
+          "type": "mongodb",
+          "host": "mongo-server.example.com"
+        },
+        "SIMPLE.SERVICE.NAME": {
+          "type": "memory"
+        }
+      },
+      "defaultServiceIdentifier": "EA.EADP.PDE.MCR"
+    }
+  }
+}
