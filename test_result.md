@@ -613,7 +613,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Blueprint CNF Namespace and Search Experience Fixes"
+    - "Blueprint CNF Loader and Dropdown Functionality"
     - "Blueprint Configuration File Generation"
     - "Blueprint Configuration Parser"
   stuck_tasks:
