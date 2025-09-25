@@ -78,6 +78,62 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     loadExistingBlueprintCnf();
   }, []); // Run once on component mount
 
+  // Effect to load available transform and template files for dropdowns
+  useEffect(() => {
+    const loadAvailableFiles = async () => {
+      try {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+        
+        // Load transform specs files
+        try {
+          const transformResponse = await fetch(`${backendUrl}/api/blueprint/file-tree`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'src/transformSpecs' })
+          });
+          
+          if (transformResponse.ok) {
+            const transformResult = await transformResponse.json();
+            if (transformResult.success && transformResult.files) {
+              const jsltFiles = transformResult.files
+                .filter(file => file.name.endsWith('.jslt') && file.type === 'file')
+                .map(file => file.name);
+              setAvailableTransformFiles(jsltFiles);
+            }
+          }
+        } catch (e) {
+          console.log('Could not load transform files');
+        }
+        
+        // Load search experience template files
+        try {
+          const templateResponse = await fetch(`${backendUrl}/api/blueprint/file-tree`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: 'src/searchExperience/templates' })
+          });
+          
+          if (templateResponse.ok) {
+            const templateResult = await templateResponse.json();
+            if (templateResult.success && templateResult.files) {
+              const templateFiles = templateResult.files
+                .filter(file => file.type === 'file' && (file.name.endsWith('.json') || file.name.endsWith('.js')))
+                .map(file => file.name);
+              setAvailableTemplateFiles(templateFiles);
+            }
+          }
+        } catch (e) {
+          console.log('Could not load template files');
+        }
+        
+      } catch (error) {
+        console.log('Error loading available files:', error);
+      }
+    };
+
+    loadAvailableFiles();
+  }, []); // Run once on component mount
+
   useEffect(() => {
     // Initialize blueprint config from existing schemas
     if (schemas.length > 0) {
