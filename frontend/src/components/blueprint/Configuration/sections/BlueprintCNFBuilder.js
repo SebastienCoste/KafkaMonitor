@@ -38,7 +38,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
 
   const schemas = uiConfig?.schemas || [];
 
-  // Effect to load existing blueprint_cnf.json and use its namespace as default
+  // Effect to load existing blueprint_cnf.json and use its data as default
   useEffect(() => {
     const loadExistingBlueprintCnf = async () => {
       try {
@@ -50,15 +50,19 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
           if (result.success && result.content) {
             try {
               const existingConfig = JSON.parse(result.content);
-              if (existingConfig.namespace) {
-                setBlueprintConfig(prev => ({
-                  ...prev,
-                  namespace: existingConfig.namespace,
-                  version: existingConfig.version || prev.version,
-                  owner: existingConfig.owner || prev.owner,
-                  description: existingConfig.description || prev.description
-                }));
-              }
+              setBlueprintConfig(prev => ({
+                ...prev,
+                namespace: existingConfig.namespace || prev.namespace,
+                version: existingConfig.version || prev.version,
+                owner: existingConfig.owner || prev.owner,
+                description: existingConfig.description || prev.description,
+                transformSpecs: existingConfig.transformSpecs || prev.transformSpecs,
+                searchExperience: {
+                  ...prev.searchExperience,
+                  templates: existingConfig.searchExperience?.templates || prev.searchExperience.templates,
+                  configs: existingConfig.searchExperience?.configs || prev.searchExperience.configs
+                }
+              }));
             } catch (parseError) {
               console.log('Could not parse existing blueprint_cnf.json, using defaults');
             }
