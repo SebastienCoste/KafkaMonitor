@@ -86,15 +86,11 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
         
         // Load transform specs files
         try {
-          const transformResponse = await fetch(`${backendUrl}/api/blueprint/file-tree`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'src/transformSpecs' })
-          });
+          const transformResponse = await fetch(`${backendUrl}/api/blueprint/file-tree?path=src/transformSpecs`);
           
           if (transformResponse.ok) {
             const transformResult = await transformResponse.json();
-            if (transformResult.success && transformResult.files) {
+            if (transformResult.files) {
               const jsltFiles = transformResult.files
                 .filter(file => file.name.endsWith('.jslt') && file.type === 'file')
                 .map(file => file.name);
@@ -107,15 +103,11 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
         
         // Load search experience template files
         try {
-          const templateResponse = await fetch(`${backendUrl}/api/blueprint/file-tree`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ path: 'src/searchExperience/templates' })
-          });
+          const templateResponse = await fetch(`${backendUrl}/api/blueprint/file-tree?path=src/searchExperience/templates`);
           
           if (templateResponse.ok) {
             const templateResult = await templateResponse.json();
-            if (templateResult.success && templateResult.files) {
+            if (templateResult.files) {
               const templateFiles = templateResult.files
                 .filter(file => file.type === 'file' && (file.name.endsWith('.json') || file.name.endsWith('.js')))
                 .map(file => file.name);
