@@ -610,8 +610,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Blueprint Configuration File Overwrite Fix"
-    - "Blueprint Configuration Empty File Content Fix"
+    - "Blueprint CNF Namespace and Search Experience Fixes"
+    - "Blueprint Configuration File Generation"
     - "Blueprint Configuration Parser"
   stuck_tasks:
     - "Blueprint Configuration Parser"
