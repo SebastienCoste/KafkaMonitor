@@ -1,6 +1,23 @@
 {
-  "namespace": "com.test.blueprint.config.overwritten",
-  "version": "3.0.0",
-  "description": "Overwritten test blueprint configuration",
-  "overwrite_test": true
+  "namespace": "ea.cadie.fy26.veewan.internal.v2",
+  "configurations": [
+    {
+      "name": "global_access",
+      "type": "access",
+      "file": "src/global/global_access.json"
+    }
+  ],
+  "environments": [
+    "DEV",
+    "TEST",
+    "INT",
+    "LOAD",
+    "PROD"
+  ],
+  "searchExperience": [
+    {
+      "name": "search_queries",
+      "file": "src/searchExperience/search_queries.json"
+    }
+  ]
 }

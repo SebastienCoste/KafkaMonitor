@@ -629,8 +629,23 @@
       "id": "f9b7f0af-3121-4767-8a6b-a00f900d013f",
       "namespace": "com.test.blueprint.config",
       "configurations": []
+    },
+    {
+      "id": "ff279f83-25a2-4e07-8d71-869d8cd6fb50",
+      "namespace": "com.test.searchexperience.filenaming",
+      "configurations": []
+    },
+    {
+      "id": "3705f8e2-1688-4ce4-8a56-cb3ef863fa13",
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "configurations": []
+    },
+    {
+      "id": "fff044e8-000f-4589-bc15-bf02ecea0aaa",
+      "namespace": "com.test.integration.allfix",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-24T16:37:15.313160"
+  "lastModified": "2025-09-25T01:00:52.426744"
 }
