@@ -38,6 +38,40 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
 
   const schemas = uiConfig?.schemas || [];
 
+  // Effect to load existing blueprint_cnf.json and use its namespace as default
+  useEffect(() => {
+    const loadExistingBlueprintCnf = async () => {
+      try {
+        const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+        const response = await fetch(`${backendUrl}/api/blueprint/file-content/blueprint_cnf.json`);
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.content) {
+            try {
+              const existingConfig = JSON.parse(result.content);
+              if (existingConfig.namespace) {
+                setBlueprintConfig(prev => ({
+                  ...prev,
+                  namespace: existingConfig.namespace,
+                  version: existingConfig.version || prev.version,
+                  owner: existingConfig.owner || prev.owner,
+                  description: existingConfig.description || prev.description
+                }));
+              }
+            } catch (parseError) {
+              console.log('Could not parse existing blueprint_cnf.json, using defaults');
+            }
+          }
+        }
+      } catch (error) {
+        console.log('No existing blueprint_cnf.json found, using defaults');
+      }
+    };
+
+    loadExistingBlueprintCnf();
+  }, []); // Run once on component mount
+
   useEffect(() => {
     // Initialize blueprint config from existing schemas
     if (schemas.length > 0) {
