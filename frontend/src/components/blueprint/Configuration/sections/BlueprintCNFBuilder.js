@@ -88,8 +88,8 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     schemas.forEach(schema => {
       schema.configurations.forEach(entity => {
         if (entityDefinitions?.fileMappings?.searchExperience?.entities?.includes(entity.entityType)) {
-          // For each search experience entity, add a file based on its name/type
-          const fileName = `searchExperience_${entity.name || entity.entityType}.json`;
+          // Use the entity name directly as the filename (without prefix)
+          const fileName = `${entity.name || entity.entityType}.json`;
           if (!searchFiles.includes(fileName)) {
             searchFiles.push(fileName);
           }
