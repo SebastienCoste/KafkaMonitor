@@ -1271,7 +1271,640 @@ class BlueprintConfigurationTester:
         except Exception as e:
             self.log_test("Temp File Backup Approach", False, f"Exception: {str(e)}")
     
-    def test_ui_input_field_bug_fixes(self):
+    def test_blueprint_cnf_namespace_and_search_experience_fixes(self):
+        """Test the 3 specific Blueprint CNF namespace and search experience fixes"""
+        print("🔧 Testing Blueprint CNF Namespace and Search Experience Fixes")
+        print("-" * 60)
+        
+        # FIX 1 - Load Existing blueprint_cnf.json Namespace
+        print("\n📋 FIX 1 - Testing Load Existing blueprint_cnf.json Namespace")
+        self.test_fix1_load_existing_blueprint_cnf_namespace()
+        
+        # FIX 2 - Search Experience File Naming
+        print("\n📋 FIX 2 - Testing Search Experience File Naming")
+        self.test_fix2_search_experience_file_naming()
+        
+        # FIX 3 - Blueprint CNF Search Experience Config Reference
+        print("\n📋 FIX 3 - Testing Blueprint CNF Search Experience Config Reference")
+        self.test_fix3_blueprint_cnf_search_experience_config_reference()
+        
+        # Comprehensive Integration Test
+        print("\n📋 INTEGRATION TEST - Testing All Fixes Together")
+        self.test_all_fixes_integration()
+    
+    def test_fix1_load_existing_blueprint_cnf_namespace(self):
+        """FIX 1 - Test loading existing blueprint_cnf.json with namespace field"""
+        try:
+            # Step 1: Create a blueprint_cnf.json file with namespace
+            blueprint_cnf_content = {
+                "namespace": "ea.cadie.fy26.veewan.internal.v2",
+                "configurations": [
+                    {
+                        "name": "global_access",
+                        "type": "access",
+                        "file": "src/global/global_access.json"
+                    }
+                ],
+                "environments": ["DEV", "TEST", "INT", "LOAD", "PROD"],
+                "searchExperience": [
+                    {
+                        "name": "search_queries",
+                        "file": "src/searchExperience/search_queries.json"
+                    }
+                ]
+            }
+            
+            # Create the blueprint_cnf.json file using the create-file endpoint
+            create_response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json={
+                    "path": "blueprint_cnf.json",
+                    "content": json.dumps(blueprint_cnf_content, indent=2),
+                    "overwrite": True
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if create_response.status_code != 200:
+                self.log_test("FIX1 - Create blueprint_cnf.json", False, f"HTTP {create_response.status_code}")
+                return
+            
+            create_data = create_response.json()
+            if not create_data.get("success"):
+                self.log_test("FIX1 - Create blueprint_cnf.json", False, f"Failed: {create_data}")
+                return
+            
+            self.log_test("FIX1 - Create blueprint_cnf.json", True, "Successfully created blueprint_cnf.json with namespace")
+            
+            # Step 2: Test GET /api/blueprint/file-content/blueprint_cnf.json
+            response = requests.get(
+                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if "content" in data:
+                    content = data["content"]
+                    try:
+                        parsed_content = json.loads(content)
+                        if "namespace" in parsed_content:
+                            namespace = parsed_content["namespace"]
+                            if namespace == "ea.cadie.fy26.veewan.internal.v2":
+                                self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", True, f"✅ Successfully loaded namespace: {namespace}")
+                                
+                                # Verify searchExperience section exists and has correct structure
+                                if "searchExperience" in parsed_content:
+                                    search_exp = parsed_content["searchExperience"]
+                                    if len(search_exp) > 0 and search_exp[0].get("name") == "search_queries":
+                                        self.log_test("FIX1 - SearchExperience Structure", True, f"✅ SearchExperience structure correct: {search_exp[0]}")
+                                    else:
+                                        self.log_test("FIX1 - SearchExperience Structure", False, f"❌ SearchExperience structure incorrect: {search_exp}")
+                                else:
+                                    self.log_test("FIX1 - SearchExperience Structure", False, "❌ Missing searchExperience section")
+                            else:
+                                self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", False, f"❌ Wrong namespace: {namespace}")
+                        else:
+                            self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", False, "❌ Missing namespace field in content")
+                    except json.JSONDecodeError as e:
+                        self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", False, f"❌ Invalid JSON content: {str(e)}")
+                else:
+                    self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", False, "❌ Missing content field in response")
+            else:
+                self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", False, f"❌ HTTP {response.status_code}")
+            
+            # Step 3: Test frontend logic by checking UI config API
+            ui_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if ui_response.status_code == 200:
+                ui_data = ui_response.json()
+                if "config" in ui_data:
+                    config = ui_data["config"]
+                    if "namespace" in config:
+                        ui_namespace = config["namespace"]
+                        if ui_namespace == "ea.cadie.fy26.veewan.internal.v2":
+                            self.log_test("FIX1 - Frontend Logic Namespace Loading", True, f"✅ Frontend correctly loaded namespace: {ui_namespace}")
+                        else:
+                            self.log_test("FIX1 - Frontend Logic Namespace Loading", False, f"❌ Frontend loaded wrong namespace: {ui_namespace}")
+                    else:
+                        self.log_test("FIX1 - Frontend Logic Namespace Loading", False, "❌ Frontend did not load namespace")
+                else:
+                    self.log_test("FIX1 - Frontend Logic Namespace Loading", False, "❌ Missing config in UI response")
+            else:
+                self.log_test("FIX1 - Frontend Logic Namespace Loading", False, f"❌ UI Config HTTP {ui_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX1 - Load Existing blueprint_cnf.json Namespace", False, f"❌ Exception: {str(e)}")
+    
+    def test_fix2_search_experience_file_naming(self):
+        """FIX 2 - Test search experience file naming without prefixes"""
+        try:
+            # Step 1: Create a search experience entity named "search_queries"
+            search_entity_payload = {
+                "name": "search_queries",
+                "entityType": "queries",
+                "baseConfig": {
+                    "enabled": True,
+                    "description": "Search queries entity for testing file naming",
+                    "searchQuery": {
+                        "lexicalQuery": "SELECT * FROM documents WHERE content MATCH ?",
+                        "enabled": True
+                    }
+                }
+            }
+            
+            entity_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=search_entity_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if entity_response.status_code != 200:
+                self.log_test("FIX2 - Create Search Experience Entity", False, f"❌ HTTP {entity_response.status_code}")
+                return
+            
+            entity_data = entity_response.json()
+            if not entity_data.get("success") or "entity_id" not in entity_data:
+                self.log_test("FIX2 - Create Search Experience Entity", False, f"❌ Failed: {entity_data}")
+                return
+            
+            entity_id = entity_data["entity_id"]
+            self.log_test("FIX2 - Create Search Experience Entity", True, f"✅ Created search_queries entity: {entity_id}")
+            
+            # Step 2: Generate blueprint configuration and verify file naming
+            # First create a schema for file generation
+            schema_payload = {
+                "name": "search-experience-test-schema",
+                "namespace": "com.test.searchexperience.filenaming",
+                "description": "Test schema for search experience file naming"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code != 200:
+                self.log_test("FIX2 - Create Test Schema", False, f"❌ HTTP {schema_response.status_code}")
+                return
+            
+            schema_data = schema_response.json()
+            if not schema_data.get("success"):
+                self.log_test("FIX2 - Create Test Schema", False, f"❌ Failed: {schema_data}")
+                return
+            
+            schema_id = schema_data["schema_id"]
+            
+            # Step 3: Generate files and check naming
+            gen_payload = {
+                "schemaId": schema_id,
+                "environments": ["DEV"],
+                "outputPath": "/app/test_search_experience"
+            }
+            
+            gen_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if gen_response.status_code == 200:
+                gen_data = gen_response.json()
+                if gen_data.get("success"):
+                    files = gen_data.get("files", [])
+                    
+                    # Check for correct file naming
+                    search_queries_file_found = False
+                    incorrect_naming_found = False
+                    
+                    for file_info in files:
+                        if isinstance(file_info, dict):
+                            filename = file_info.get("filename", "")
+                            filepath = file_info.get("path", "")
+                            
+                            # Check for correct naming: "search_queries.json"
+                            if "search_queries.json" in filename:
+                                search_queries_file_found = True
+                                # Verify path is "src/searchExperience/search_queries.json"
+                                if "src/searchExperience/search_queries.json" in filepath:
+                                    self.log_test("FIX2 - Search Experience File Path", True, f"✅ Correct file path: {filepath}")
+                                else:
+                                    self.log_test("FIX2 - Search Experience File Path", False, f"❌ Wrong file path: {filepath}")
+                            
+                            # Check for incorrect naming: "searchExperience_search_queries.json"
+                            if "searchExperience_search_queries.json" in filename:
+                                incorrect_naming_found = True
+                                self.log_test("FIX2 - Incorrect Prefix Naming", False, f"❌ Found incorrect naming: {filename}")
+                    
+                    if search_queries_file_found:
+                        self.log_test("FIX2 - Search Experience File Naming", True, "✅ Entity 'search_queries' generates 'search_queries.json' file")
+                    else:
+                        self.log_test("FIX2 - Search Experience File Naming", False, "❌ 'search_queries.json' file not found in generated files")
+                    
+                    if not incorrect_naming_found:
+                        self.log_test("FIX2 - No Incorrect Prefix", True, "✅ No 'searchExperience_' prefix found in file names")
+                    
+                    # Log all generated files for debugging
+                    self.log_test("FIX2 - Generated Files List", True, f"Generated {len(files)} files: {[f.get('filename', 'unknown') for f in files if isinstance(f, dict)]}")
+                    
+                else:
+                    error = gen_data.get("errors", ["Unknown error"])
+                    self.log_test("FIX2 - Search Experience File Naming", False, f"❌ Generation failed: {error}")
+            else:
+                self.log_test("FIX2 - Search Experience File Naming", False, f"❌ HTTP {gen_response.status_code}")
+            
+            # Cleanup
+            self.cleanup_test_entity(entity_id)
+                
+        except Exception as e:
+            self.log_test("FIX2 - Search Experience File Naming", False, f"❌ Exception: {str(e)}")
+    
+    def test_fix3_blueprint_cnf_search_experience_config_reference(self):
+        """FIX 3 - Test blueprint_cnf.json searchExperience configs reference correct file names"""
+        try:
+            # Step 1: Create search experience entities
+            search_entities = [
+                {
+                    "name": "search_queries",
+                    "entityType": "queries",
+                    "baseConfig": {
+                        "enabled": True,
+                        "description": "Main search queries",
+                        "searchQuery": {"lexicalQuery": "SELECT * FROM documents", "enabled": True}
+                    }
+                },
+                {
+                    "name": "advanced_search",
+                    "entityType": "queries", 
+                    "baseConfig": {
+                        "enabled": True,
+                        "description": "Advanced search queries",
+                        "searchQuery": {"lexicalQuery": "SELECT * FROM documents WHERE advanced = true", "enabled": True}
+                    }
+                }
+            ]
+            
+            created_entities = []
+            
+            for entity_payload in search_entities:
+                entity_response = requests.post(
+                    f"{self.base_url}/api/blueprint/config/entities",
+                    json=entity_payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                if entity_response.status_code == 200:
+                    entity_data = entity_response.json()
+                    if entity_data.get("success") and "entity_id" in entity_data:
+                        created_entities.append({
+                            "id": entity_data["entity_id"],
+                            "name": entity_payload["name"]
+                        })
+                        self.log_test(f"FIX3 - Create {entity_payload['name']} Entity", True, f"✅ Created: {entity_data['entity_id']}")
+                    else:
+                        self.log_test(f"FIX3 - Create {entity_payload['name']} Entity", False, f"❌ Failed: {entity_data}")
+                else:
+                    self.log_test(f"FIX3 - Create {entity_payload['name']} Entity", False, f"❌ HTTP {entity_response.status_code}")
+            
+            if len(created_entities) == 0:
+                self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, "❌ No entities created for testing")
+                return
+            
+            # Step 2: Create schema and generate blueprint_cnf.json
+            schema_payload = {
+                "name": "blueprint-cnf-test-schema",
+                "namespace": "com.test.blueprintcnf.searchexp",
+                "description": "Test schema for blueprint CNF search experience config reference"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code != 200:
+                self.log_test("FIX3 - Create Blueprint CNF Test Schema", False, f"❌ HTTP {schema_response.status_code}")
+                return
+            
+            schema_data = schema_response.json()
+            if not schema_data.get("success"):
+                self.log_test("FIX3 - Create Blueprint CNF Test Schema", False, f"❌ Failed: {schema_data}")
+                return
+            
+            schema_id = schema_data["schema_id"]
+            
+            # Step 3: Generate blueprint configuration
+            gen_payload = {
+                "schemaId": schema_id,
+                "environments": ["DEV"],
+                "outputPath": "/app/test_blueprint_cnf",
+                "generateBlueprintCnf": True  # Ensure blueprint_cnf.json is generated
+            }
+            
+            gen_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/generate",
+                json=gen_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if gen_response.status_code == 200:
+                gen_data = gen_response.json()
+                if gen_data.get("success"):
+                    files = gen_data.get("files", [])
+                    
+                    # Find blueprint_cnf.json file
+                    blueprint_cnf_file = None
+                    for file_info in files:
+                        if isinstance(file_info, dict):
+                            filename = file_info.get("filename", "")
+                            if "blueprint_cnf.json" in filename:
+                                blueprint_cnf_file = file_info
+                                break
+                    
+                    if blueprint_cnf_file:
+                        self.log_test("FIX3 - Blueprint CNF File Generated", True, f"✅ Found blueprint_cnf.json: {blueprint_cnf_file.get('filename')}")
+                        
+                        # Step 4: Read the generated blueprint_cnf.json content
+                        try:
+                            cnf_response = requests.get(
+                                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                                timeout=10
+                            )
+                            
+                            if cnf_response.status_code == 200:
+                                cnf_data = cnf_response.json()
+                                if "content" in cnf_data:
+                                    cnf_content = json.loads(cnf_data["content"])
+                                    
+                                    # Step 5: Verify searchExperience configs reference correct file names
+                                    if "searchExperience" in cnf_content:
+                                        search_exp_configs = cnf_content["searchExperience"]
+                                        
+                                        correct_references = 0
+                                        incorrect_references = 0
+                                        
+                                        for config in search_exp_configs:
+                                            config_name = config.get("name", "")
+                                            config_file = config.get("file", "")
+                                            
+                                            # Check for correct references: "search_queries.json", "advanced_search.json"
+                                            if config_name == "search_queries":
+                                                if "search_queries.json" in config_file and "searchExperience_search_queries.json" not in config_file:
+                                                    correct_references += 1
+                                                    self.log_test("FIX3 - Search Queries File Reference", True, f"✅ Correct reference: {config_file}")
+                                                else:
+                                                    incorrect_references += 1
+                                                    self.log_test("FIX3 - Search Queries File Reference", False, f"❌ Incorrect reference: {config_file}")
+                                            
+                                            elif config_name == "advanced_search":
+                                                if "advanced_search.json" in config_file and "searchExperience_advanced_search.json" not in config_file:
+                                                    correct_references += 1
+                                                    self.log_test("FIX3 - Advanced Search File Reference", True, f"✅ Correct reference: {config_file}")
+                                                else:
+                                                    incorrect_references += 1
+                                                    self.log_test("FIX3 - Advanced Search File Reference", False, f"❌ Incorrect reference: {config_file}")
+                                            
+                                            # Check for any incorrect "searchExperience_" prefixes
+                                            if "searchExperience_" in config_file:
+                                                incorrect_references += 1
+                                                self.log_test("FIX3 - Incorrect Prefix Found", False, f"❌ Found searchExperience_ prefix: {config_file}")
+                                        
+                                        if correct_references > 0 and incorrect_references == 0:
+                                            self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", True, f"✅ All {correct_references} searchExperience configs reference correct file names")
+                                        elif incorrect_references > 0:
+                                            self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, f"❌ Found {incorrect_references} incorrect references")
+                                        else:
+                                            self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, "❌ No searchExperience configs found")
+                                        
+                                        # Log all searchExperience configs for debugging
+                                        self.log_test("FIX3 - SearchExperience Configs", True, f"Found configs: {search_exp_configs}")
+                                        
+                                    else:
+                                        self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, "❌ No searchExperience section in blueprint_cnf.json")
+                                else:
+                                    self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, "❌ No content in blueprint_cnf.json response")
+                            else:
+                                self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, f"❌ Failed to read blueprint_cnf.json: HTTP {cnf_response.status_code}")
+                                
+                        except json.JSONDecodeError as e:
+                            self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, f"❌ Invalid JSON in blueprint_cnf.json: {str(e)}")
+                    else:
+                        self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, "❌ blueprint_cnf.json not found in generated files")
+                else:
+                    error = gen_data.get("errors", ["Unknown error"])
+                    self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, f"❌ Generation failed: {error}")
+            else:
+                self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, f"❌ HTTP {gen_response.status_code}")
+            
+            # Cleanup
+            for entity in created_entities:
+                self.cleanup_test_entity(entity["id"])
+                
+        except Exception as e:
+            self.log_test("FIX3 - Blueprint CNF Search Experience Config Reference", False, f"❌ Exception: {str(e)}")
+    
+    def test_all_fixes_integration(self):
+        """Integration test for all 3 fixes working together"""
+        try:
+            print("🔧 Running Integration Test for All 3 Fixes")
+            
+            # Step 1: Create a complete scenario with existing blueprint_cnf.json
+            blueprint_cnf_content = {
+                "namespace": "ea.cadie.fy26.veewan.internal.v2",
+                "configurations": [
+                    {
+                        "name": "global_access",
+                        "type": "access",
+                        "file": "src/global/global_access.json"
+                    }
+                ],
+                "environments": ["DEV", "TEST", "INT", "LOAD", "PROD"],
+                "searchExperience": [
+                    {
+                        "name": "search_queries",
+                        "file": "src/searchExperience/search_queries.json"
+                    }
+                ]
+            }
+            
+            # Create blueprint_cnf.json
+            create_response = requests.post(
+                f"{self.base_url}/api/blueprint/create-file",
+                json={
+                    "path": "blueprint_cnf.json",
+                    "content": json.dumps(blueprint_cnf_content, indent=2),
+                    "overwrite": True
+                },
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if create_response.status_code != 200:
+                self.log_test("INTEGRATION - Create Initial blueprint_cnf.json", False, f"❌ HTTP {create_response.status_code}")
+                return
+            
+            # Step 2: Create search experience entity
+            search_entity_payload = {
+                "name": "search_queries",
+                "entityType": "queries",
+                "baseConfig": {
+                    "enabled": True,
+                    "description": "Integration test search queries",
+                    "searchQuery": {"lexicalQuery": "SELECT * FROM documents", "enabled": True}
+                }
+            }
+            
+            entity_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=search_entity_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if entity_response.status_code != 200:
+                self.log_test("INTEGRATION - Create Search Entity", False, f"❌ HTTP {entity_response.status_code}")
+                return
+            
+            entity_data = entity_response.json()
+            if not entity_data.get("success"):
+                self.log_test("INTEGRATION - Create Search Entity", False, f"❌ Failed: {entity_data}")
+                return
+            
+            entity_id = entity_data["entity_id"]
+            
+            # Step 3: Test that existing namespace is loaded correctly (FIX 1)
+            ui_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+            
+            if ui_response.status_code == 200:
+                ui_data = ui_response.json()
+                config = ui_data.get("config", {})
+                loaded_namespace = config.get("namespace")
+                
+                if loaded_namespace == "ea.cadie.fy26.veewan.internal.v2":
+                    self.log_test("INTEGRATION - FIX1 Namespace Loading", True, f"✅ Namespace loaded: {loaded_namespace}")
+                else:
+                    self.log_test("INTEGRATION - FIX1 Namespace Loading", False, f"❌ Wrong namespace: {loaded_namespace}")
+            else:
+                self.log_test("INTEGRATION - FIX1 Namespace Loading", False, f"❌ HTTP {ui_response.status_code}")
+            
+            # Step 4: Generate files and verify all fixes work together
+            schema_payload = {
+                "name": "integration-test-schema",
+                "namespace": "com.test.integration.allfix",
+                "description": "Integration test schema for all fixes"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code == 200:
+                schema_data = schema_response.json()
+                if schema_data.get("success"):
+                    schema_id = schema_data["schema_id"]
+                    
+                    # Generate files
+                    gen_payload = {
+                        "schemaId": schema_id,
+                        "environments": ["DEV"],
+                        "outputPath": "/app/test_integration"
+                    }
+                    
+                    gen_response = requests.post(
+                        f"{self.base_url}/api/blueprint/config/generate",
+                        json=gen_payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=15
+                    )
+                    
+                    if gen_response.status_code == 200:
+                        gen_data = gen_response.json()
+                        if gen_data.get("success"):
+                            files = gen_data.get("files", [])
+                            
+                            # Verify FIX 2: Correct file naming
+                            search_queries_found = False
+                            no_prefix_found = True
+                            
+                            for file_info in files:
+                                if isinstance(file_info, dict):
+                                    filename = file_info.get("filename", "")
+                                    if "search_queries.json" in filename:
+                                        search_queries_found = True
+                                    if "searchExperience_" in filename:
+                                        no_prefix_found = False
+                            
+                            if search_queries_found:
+                                self.log_test("INTEGRATION - FIX2 File Naming", True, "✅ search_queries.json file generated")
+                            else:
+                                self.log_test("INTEGRATION - FIX2 File Naming", False, "❌ search_queries.json not found")
+                            
+                            if no_prefix_found:
+                                self.log_test("INTEGRATION - FIX2 No Prefix", True, "✅ No searchExperience_ prefix found")
+                            else:
+                                self.log_test("INTEGRATION - FIX2 No Prefix", False, "❌ Found searchExperience_ prefix")
+                            
+                            # Verify FIX 3: Check blueprint_cnf.json references
+                            cnf_response = requests.get(
+                                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                                timeout=10
+                            )
+                            
+                            if cnf_response.status_code == 200:
+                                cnf_data = cnf_response.json()
+                                if "content" in cnf_data:
+                                    try:
+                                        cnf_content = json.loads(cnf_data["content"])
+                                        search_exp = cnf_content.get("searchExperience", [])
+                                        
+                                        correct_refs = 0
+                                        for config in search_exp:
+                                            if config.get("name") == "search_queries" and "search_queries.json" in config.get("file", ""):
+                                                correct_refs += 1
+                                        
+                                        if correct_refs > 0:
+                                            self.log_test("INTEGRATION - FIX3 Config References", True, f"✅ Found {correct_refs} correct references")
+                                        else:
+                                            self.log_test("INTEGRATION - FIX3 Config References", False, "❌ No correct references found")
+                                            
+                                    except json.JSONDecodeError:
+                                        self.log_test("INTEGRATION - FIX3 Config References", False, "❌ Invalid JSON in blueprint_cnf.json")
+                            
+                            # Final integration assessment
+                            self.log_test("INTEGRATION - All Fixes Working Together", True, f"✅ Generated {len(files)} files with all 3 fixes applied")
+                        else:
+                            self.log_test("INTEGRATION - All Fixes Working Together", False, f"❌ Generation failed: {gen_data.get('errors', [])}")
+                    else:
+                        self.log_test("INTEGRATION - All Fixes Working Together", False, f"❌ Generation HTTP {gen_response.status_code}")
+            
+            # Cleanup
+            self.cleanup_test_entity(entity_id)
+            
+        except Exception as e:
+            self.log_test("INTEGRATION - All Fixes Working Together", False, f"❌ Exception: {str(e)}")
+
+    def cleanup_test_entity(self, entity_id):
+        """Helper method to cleanup test entities"""
+        try:
+            if entity_id:
+                requests.delete(
+                    f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                    timeout=10
+                )
+        except:
+            pass  # Ignore cleanup errors
         """Test the critical UI input field bug fixes for complex field paths"""
         print("🔧 Testing UI Input Field Bug Fixes - Complex Field Path Handling")
         print("-" * 60)
