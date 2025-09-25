@@ -1276,6 +1276,213 @@ class BlueprintConfigurationTester:
         except Exception as e:
             self.log_test("Temp File Backup Approach", False, f"Exception: {str(e)}")
     
+    def test_blueprint_cnf_loader_and_dropdown_functionality(self):
+        """Test the 3 new fixes for Blueprint Configuration UI from review request"""
+        print("🔧 Testing Blueprint CNF Loader and Dropdown Functionality")
+        print("-" * 60)
+        
+        # FIX 1 - Load Transform Specifications and Search Experience Templates from existing blueprint_cnf.json
+        print("\n📋 FIX 1 - Testing Load Transform Specifications and Search Experience Templates")
+        self.test_fix1_load_blueprint_cnf_with_arrays()
+        
+        # FIX 2 - Transform Files Dropdown from src/transformSpecs
+        print("\n📋 FIX 2 - Testing Transform Files Dropdown from src/transformSpecs")
+        self.test_fix2_transform_files_dropdown()
+        
+        # FIX 3 - Search Experience Templates Dropdown from src/searchExperience/templates
+        print("\n📋 FIX 3 - Testing Search Experience Templates Dropdown")
+        self.test_fix3_search_experience_templates_dropdown()
+    
+    def test_fix1_load_blueprint_cnf_with_arrays(self):
+        """Test FIX 1 - Load existing blueprint_cnf.json with transformSpecs and searchExperience.templates arrays"""
+        try:
+            # Test loading existing blueprint_cnf.json from example_config
+            response = requests.get(
+                f"{self.base_url}/api/blueprint/file-content/example_config/blueprint_cnf.json",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                content = data.get("content")
+                
+                if content:
+                    try:
+                        blueprint_config = json.loads(content)
+                        
+                        # Check for all required fields
+                        required_fields = ["namespace", "version", "owner", "description", "transformSpecs", "searchExperience"]
+                        missing_fields = []
+                        
+                        for field in required_fields:
+                            if field not in blueprint_config:
+                                missing_fields.append(field)
+                        
+                        if not missing_fields:
+                            # Verify transformSpecs array
+                            transform_specs = blueprint_config.get("transformSpecs", [])
+                            if isinstance(transform_specs, list) and len(transform_specs) > 0:
+                                self.log_test("FIX 1 - TransformSpecs Array Loading", True, f"Found {len(transform_specs)} transform specs: {transform_specs}")
+                            else:
+                                self.log_test("FIX 1 - TransformSpecs Array Loading", False, f"TransformSpecs not properly loaded: {transform_specs}")
+                            
+                            # Verify searchExperience.templates array
+                            search_experience = blueprint_config.get("searchExperience", {})
+                            if isinstance(search_experience, dict):
+                                templates = search_experience.get("templates", [])
+                                if isinstance(templates, list) and len(templates) > 0:
+                                    self.log_test("FIX 1 - SearchExperience Templates Array Loading", True, f"Found {len(templates)} templates: {templates}")
+                                else:
+                                    self.log_test("FIX 1 - SearchExperience Templates Array Loading", False, f"Templates not properly loaded: {templates}")
+                            else:
+                                self.log_test("FIX 1 - SearchExperience Structure Loading", False, f"SearchExperience not properly structured: {search_experience}")
+                            
+                            # Verify all fields are loaded
+                            self.log_test("FIX 1 - All Blueprint CNF Fields Loading", True, f"All required fields present: namespace={blueprint_config.get('namespace')}, version={blueprint_config.get('version')}, owner={blueprint_config.get('owner')}")
+                        else:
+                            self.log_test("FIX 1 - Blueprint CNF Complete Loading", False, f"Missing required fields: {missing_fields}")
+                            
+                    except json.JSONDecodeError as e:
+                        self.log_test("FIX 1 - Blueprint CNF JSON Parsing", False, f"JSON parsing error: {str(e)}")
+                else:
+                    self.log_test("FIX 1 - Blueprint CNF Content Loading", False, "No content returned from file")
+            else:
+                self.log_test("FIX 1 - Blueprint CNF File Access", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 1 - Blueprint CNF Loading", False, f"Exception: {str(e)}")
+    
+    def test_fix2_transform_files_dropdown(self):
+        """Test FIX 2 - Transform Files Dropdown from src/transformSpecs directory"""
+        try:
+            # Test GET /api/blueprint/file-tree?path=src/transformSpecs
+            response = requests.get(
+                f"{self.base_url}/api/blueprint/file-tree?path=src/transformSpecs",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                files = data.get("files", [])
+                
+                if files:
+                    # Filter for .jslt files
+                    jslt_files = []
+                    for file_item in files:
+                        if isinstance(file_item, dict):
+                            file_name = file_item.get("name", "")
+                            file_type = file_item.get("type", "")
+                            if file_name.endswith(".jslt") or ".jslt" in file_name:
+                                jslt_files.append(file_name)
+                        elif isinstance(file_item, str) and file_item.endswith(".jslt"):
+                            jslt_files.append(file_item)
+                    
+                    if jslt_files:
+                        self.log_test("FIX 2 - Transform Files Dropdown (.jslt filtering)", True, f"Found {len(jslt_files)} .jslt files: {jslt_files}")
+                    else:
+                        self.log_test("FIX 2 - Transform Files Dropdown (.jslt filtering)", False, f"No .jslt files found in response. Files: {files}")
+                    
+                    # Verify file tree structure
+                    self.log_test("FIX 2 - Transform Files File Tree API", True, f"File tree API returned {len(files)} items for src/transformSpecs")
+                else:
+                    self.log_test("FIX 2 - Transform Files File Tree API", False, "No files returned from src/transformSpecs directory")
+            else:
+                self.log_test("FIX 2 - Transform Files File Tree API", False, f"HTTP {response.status_code}")
+            
+            # Test with example_config path specifically
+            response2 = requests.get(
+                f"{self.base_url}/api/blueprint/file-tree?path=example_config/src/transformSpecs",
+                timeout=10
+            )
+            
+            if response2.status_code == 200:
+                data2 = response2.json()
+                files2 = data2.get("files", [])
+                
+                jslt_files2 = []
+                for file_item in files2:
+                    if isinstance(file_item, dict):
+                        file_name = file_item.get("name", "")
+                        if file_name.endswith(".jslt"):
+                            jslt_files2.append(file_name)
+                    elif isinstance(file_item, str) and file_item.endswith(".jslt"):
+                        jslt_files2.append(file_item)
+                
+                if jslt_files2:
+                    self.log_test("FIX 2 - Transform Files Dropdown (example_config)", True, f"Found {len(jslt_files2)} .jslt files in example_config: {jslt_files2}")
+                else:
+                    self.log_test("FIX 2 - Transform Files Dropdown (example_config)", False, f"No .jslt files found in example_config/src/transformSpecs")
+            else:
+                self.log_test("FIX 2 - Transform Files API (example_config)", False, f"HTTP {response2.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 2 - Transform Files Dropdown", False, f"Exception: {str(e)}")
+    
+    def test_fix3_search_experience_templates_dropdown(self):
+        """Test FIX 3 - Search Experience Templates Dropdown from src/searchExperience/templates directory"""
+        try:
+            # Test GET /api/blueprint/file-tree?path=src/searchExperience/templates
+            response = requests.get(
+                f"{self.base_url}/api/blueprint/file-tree?path=src/searchExperience/templates",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                files = data.get("files", [])
+                
+                if files:
+                    # Filter for .json and .js files
+                    template_files = []
+                    for file_item in files:
+                        if isinstance(file_item, dict):
+                            file_name = file_item.get("name", "")
+                            if file_name.endswith(".json") or file_name.endswith(".js"):
+                                template_files.append(file_name)
+                        elif isinstance(file_item, str) and (file_item.endswith(".json") or file_item.endswith(".js")):
+                            template_files.append(file_item)
+                    
+                    if template_files:
+                        self.log_test("FIX 3 - Search Experience Templates Dropdown (.json/.js filtering)", True, f"Found {len(template_files)} template files: {template_files}")
+                    else:
+                        self.log_test("FIX 3 - Search Experience Templates Dropdown (.json/.js filtering)", False, f"No .json/.js files found in response. Files: {files}")
+                    
+                    # Verify file tree structure
+                    self.log_test("FIX 3 - Search Experience Templates File Tree API", True, f"File tree API returned {len(files)} items for src/searchExperience/templates")
+                else:
+                    self.log_test("FIX 3 - Search Experience Templates File Tree API", False, "No files returned from src/searchExperience/templates directory")
+            else:
+                self.log_test("FIX 3 - Search Experience Templates File Tree API", False, f"HTTP {response.status_code}")
+            
+            # Test with example_config path specifically
+            response2 = requests.get(
+                f"{self.base_url}/api/blueprint/file-tree?path=example_config/src/searchExperience/templates",
+                timeout=10
+            )
+            
+            if response2.status_code == 200:
+                data2 = response2.json()
+                files2 = data2.get("files", [])
+                
+                template_files2 = []
+                for file_item in files2:
+                    if isinstance(file_item, dict):
+                        file_name = file_item.get("name", "")
+                        if file_name.endswith(".json") or file_name.endswith(".js"):
+                            template_files2.append(file_name)
+                    elif isinstance(file_item, str) and (file_item.endswith(".json") or file_item.endswith(".js")):
+                        template_files2.append(file_item)
+                
+                if template_files2:
+                    self.log_test("FIX 3 - Search Experience Templates Dropdown (example_config)", True, f"Found {len(template_files2)} template files in example_config: {template_files2}")
+                else:
+                    self.log_test("FIX 3 - Search Experience Templates Dropdown (example_config)", False, f"No template files found in example_config/src/searchExperience/templates")
+            else:
+                self.log_test("FIX 3 - Search Experience Templates API (example_config)", False, f"HTTP {response2.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 3 - Search Experience Templates Dropdown", False, f"Exception: {str(e)}")
+
     def test_ui_input_field_bug_fixes(self):
         """Test the critical UI input field bug fixes for complex field paths"""
         print("🔧 Testing UI Input Field Bug Fixes - Complex Field Path Handling")
