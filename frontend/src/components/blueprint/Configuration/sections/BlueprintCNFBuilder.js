@@ -526,7 +526,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
                         </SelectItem>
                       ))
                     ) : (
-                      <SelectItem value="" disabled>
+                      <SelectItem value="no-files" disabled>
                         No .jslt files found in src/transformSpecs
                       </SelectItem>
                     )}
