@@ -633,7 +633,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="" disabled>
+                          <SelectItem value="no-templates" disabled>
                             No template files found in src/searchExperience/templates
                           </SelectItem>
                         )}
