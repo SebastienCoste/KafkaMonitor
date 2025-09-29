@@ -952,15 +952,9 @@ class BackendSanityTester:
         if len(successes) > 10:
             print(f"   ... and {len(successes) - 10} more successful tests")
         
-        # Final assessment
-        if success_rate >= 90:
-            print(f"\n🎉 EXCELLENT: Blueprint Configuration API is working well!")
-        elif success_rate >= 75:
-            print(f"\n✅ GOOD: Blueprint Configuration API is mostly functional with minor issues")
-        elif success_rate >= 50:
-            print(f"\n⚠️ NEEDS ATTENTION: Blueprint Configuration API has significant issues")
-        else:
-            print(f"\n❌ CRITICAL: Blueprint Configuration API has major problems")
+if __name__ == "__main__":
+    tester = BackendSanityTester()
+    tester.run_backend_sanity_tests()
 
     def test_inheritance_persistence_fix(self):
         """Test FIX 1 - Inheritance Persistence with explicit null handling"""
