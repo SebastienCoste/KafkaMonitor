@@ -955,13 +955,6 @@ class BackendSanityTester:
 if __name__ == "__main__":
     tester = BackendSanityTester()
     tester.run_backend_sanity_tests()
-        """Test FIX 1 - Inheritance Persistence with explicit null handling"""
-        print("🔧 Testing FIX 1 - Inheritance Persistence Fix")
-        print("-" * 50)
-        
-        # Step 1: Create an entity with inheritance
-        entity_with_inheritance = self.create_entity_with_inheritance()
-        if not entity_with_inheritance:
             self.log_test("Inheritance Persistence - Setup", False, "Failed to create entity with inheritance")
             return
         
