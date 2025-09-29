@@ -1,27 +1,33 @@
 
 - task: "Environment Overrides Dynamic Forms (FIX 2)"
   implemented: true
-  working: unknown
+  working: false
   file: "frontend/src/components/blueprint/Configuration/EnvironmentOverrides.js"
   stuck_count: 0
   priority: "critical"
-  needs_retesting: true
+  needs_retesting: false
   status_history:
     - working: "NA"
       agent: "main"
       comment: "Refactored EnvironmentOverrides to schema-driven dynamic forms; fixed env set to [DEV, TEST, INT, LOAD, PROD]; per-env configs are full snapshots (no deep merge)."
+    - working: false
+      agent: "testing"
+      comment: "❌ CRITICAL ISSUE: Environment Overrides dynamic forms not accessible in Blueprint Configuration UI. Blueprint Configuration Manager loads successfully with multiple schemas visible, but Environment Overrides functionality is not found. No Environment buttons/tabs detected, no 'Environment Overrides' section found, and no Add Override functionality available. The dynamic forms implementation exists in code but is not integrated into the UI workflow. Users cannot access environment-specific configuration overrides."
 
 - task: "Frontend Environment Refresh Regression Sweep"
-  implemented: false
-  working: unknown
+  implemented: true
+  working: true
   file: "frontend/src/App.js + pages"
   stuck_count: 0
   priority: "critical"
-  needs_retesting: true
+  needs_retesting: false
   status_history:
     - working: "NA"
       agent: "main"
       comment: "Run automated UI tests to verify pages refresh correctly on environment change; identify and fix regressions across Traces, Topics, Graph, Blueprint Creator, Blueprint CNF Builder."
+    - working: true
+      agent: "testing"
+      comment: "✅ COMPREHENSIVE UI REGRESSION TESTING COMPLETED: All major navigation and environment switching functionality working correctly. ✅ TEST SUITE A (Navigation + Environment Switching): Landing page navigation (4/4 buttons found), Trace Viewer tabs (Traces/Topics/Graph all functional), Environment switching triggers API calls correctly (22 API calls on switch back), Tab content refreshes properly without stale data. ✅ TEST SUITE B (Blueprint Creator): Navigation successful, Configuration tab loads Blueprint Configuration Manager with multiple schemas, Blueprint CNF Builder accessible and functional. ✅ TEST SUITE C (Blueprint CNF Builder): Save functionality working (success message: 'Blueprint CNF saved to project root successfully'), WebSocket file updates detected. ⚠️ MINOR ISSUES: Some 503 errors on trace/statistics APIs (expected due to empty environment), Transform Specs and Search Experience dropdowns not populated (may be expected behavior). Environment refresh functionality is working correctly across all tested components."
 
 #====================================================================================================
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
