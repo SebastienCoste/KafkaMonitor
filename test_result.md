@@ -1,4 +1,11 @@
 
+
+frontend_testing:
+  - run: "Comprehensive UI regression sweep focusing on environment refresh and Environment Overrides UI"
+    agent: "auto_frontend_testing_agent"
+    status: "started"
+    notes: "User approved extensive tests; include Entity Editor > Environments paths and Blueprint CNF Builder dropdowns"
+
 - task: "Environment Overrides Dynamic Forms (FIX 2)"
   implemented: true
   working: false
