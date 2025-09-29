@@ -222,15 +222,18 @@ class BackendSanityTester:
                 data = response.json()
                 
                 # Check for current environment
-                if "current" in data:
-                    current_env = data["current"]
-                    self.log_test("Environments API - Current", True, f"✅ Current environment: {current_env}")
+                if "current_environment" in data:
+                    current_env = data["current_environment"]
+                    if current_env:
+                        self.log_test("Environments API - Current", True, f"✅ Current environment: {current_env}")
+                    else:
+                        self.log_test("Environments API - Current", True, f"ℹ️ No current environment set (null)")
                 else:
-                    self.log_test("Environments API - Current", False, "❌ Missing 'current' field in response")
+                    self.log_test("Environments API - Current", False, "❌ Missing 'current_environment' field in response")
                 
                 # Check for available environments
-                if "available" in data:
-                    available_envs = data["available"]
+                if "available_environments" in data:
+                    available_envs = data["available_environments"]
                     if isinstance(available_envs, list) and len(available_envs) > 0:
                         self.log_test("Environments API - Available", True, f"✅ Available environments: {available_envs}")
                         
