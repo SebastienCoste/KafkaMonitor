@@ -536,6 +536,21 @@ backend:
         agent: "main"
         comment: "✅ ADDITIONAL 3 BLUEPRINT CNF LOADER AND DROPDOWN FIXES IMPLEMENTED: FIX 1 - Enhanced blueprint_cnf.json loading to include transformSpecs and searchExperience.templates arrays (not just namespace). Added comprehensive data loading from existing configuration file. FIX 2 - Replaced Transform Specifications manual input with dropdown populated from src/transformSpecs directory .jslt files. Added Select component with file filtering. FIX 3 - Replaced Search Experience Templates manual input with dropdown populated from src/searchExperience/templates directory .json/.js files. All fixes verified via backend testing (90.2% success rate). File-tree API endpoints working correctly with proper file filtering. Blueprint configuration data loads completely from existing files. Dropdown functionality implemented with proper Select components and API integration."
 
+  - task: "Blueprint Configuration UI Fixes (5 Specific Fixes)"
+    implemented: true
+    working: false
+    file: "backend/server.py"
+    stuck_count: 1
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing 5 specific Blueprint Configuration UI fixes from review request: FIX 1 - Remove 'Add root Config' button from Message Configs, FIX 2 - Auto-reload entity list in Message Configs after add/remove/save, FIX 3 - Auto-reload entity list in Global Config after add/remove/save, FIX 4 - Generate Files button also creates blueprint_cnf.json, FIX 5 - Load blueprint_cnf.json values by default in Blueprint CNF section"
+      - working: false
+        agent: "testing"
+        comment: "❌ BLUEPRINT CONFIGURATION UI FIXES TESTING COMPLETED: Comprehensive testing of 5 specific fixes completed with 89.2% success rate (124/139 tests passed). ✅ WORKING FIXES: FIX 1 - Message Config entity management working (no root config button needed), FIX 2 - Auto-reload entity list in Message Configs working correctly, FIX 3 - Auto-reload entity list in Global Config working correctly. ❌ CRITICAL ISSUES: FIX 4 - Generate Files button NOT creating blueprint_cnf.json (0 files generated), FIX 5 - blueprint_cnf.json default values only partially loading (missing owner, transformSpecs, templates fields). ⚠️ MINOR ISSUES: File generation returning 0 files consistently, Entity Definitions API has string handling exception, some file tree APIs returning empty results for relative paths. The core CRUD operations and auto-reload functionality are working correctly, but file generation and blueprint_cnf.json handling need attention."
+
 frontend:
   - task: "P10/P50/P95 Display on Topics Page"
     implemented: true
