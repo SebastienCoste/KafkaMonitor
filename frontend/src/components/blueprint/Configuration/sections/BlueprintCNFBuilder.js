@@ -583,12 +583,27 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
                 <div className="space-y-2 mt-2">
                   {blueprintConfig.searchExperience.configs.map((config, index) => (
                     <div key={index} className="flex items-center space-x-2">
-                      <Input
+                      <Select
                         value={config}
-                        onChange={(e) => updateSearchConfig(index, e.target.value)}
-                        placeholder="searchExperience_config.json"
-                        className="flex-1 text-xs"
-                      />
+                        onValueChange={(value) => updateSearchConfig(index, value)}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue placeholder="Select search experience..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getAvailableSearchExperienceConfigs().length > 0 ? (
+                            getAvailableSearchExperienceConfigs().map((configFile) => (
+                              <SelectItem key={configFile} value={configFile}>
+                                {configFile}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="no-search-configs" disabled>
+                              No search experience entities found
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
                       <Button
                         variant="ghost"
                         size="sm"
