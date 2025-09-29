@@ -212,6 +212,229 @@ export default function EnvironmentOverrides({
     const newOverrides = { ...entity.environmentOverrides };
     delete newOverrides[env];
     onUpdateOverrides(newOverrides);
+  };
+
+  // Render field dynamically based on field definition (similar to EntityEditor)
+  const renderOverrideField = (env, fieldName, fieldDef, parentPath = '') => {
+    const fullPath = parentPath ? `${parentPath}.${fieldName}` : fieldName;
+    const overrideValue = getNestedProperty(entity.environmentOverrides[env] || {}, fullPath);
+
+    const updateOverrideValue = (value) => {
+      const newOverrides = { ...entity.environmentOverrides };
+      if (!newOverrides[env]) {
+        newOverrides[env] = {};
+      }
+      setNestedProperty(newOverrides[env], fullPath, value);
+      onUpdateOverrides(newOverrides);
+    };
+
+    if (!fieldDef) {
+      return null;
+    }
+
+    const commonProps = {
+      value: overrideValue || '',
+      onChange: (e) => updateOverrideValue(e.target.value),
+      className: "w-full"
+    };
+
+    switch (fieldDef.type) {
+      case 'string':
+        if (fieldDef.options) {
+          return (
+            <Select value={overrideValue || ''} onValueChange={updateOverrideValue}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={`Select ${fieldDef.displayName || fieldName}...`} />
+              </SelectTrigger>
+              <SelectContent>
+                {fieldDef.options.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          );
+        }
+        return fieldDef.multiline ? (
+          <Textarea {...commonProps} placeholder={fieldDef.description} rows={3} />
+        ) : (
+          <Input {...commonProps} placeholder={fieldDef.description} />
+        );
+
+      case 'number':
+        return (
+          <Input
+            {...commonProps}
+            type="number"
+            placeholder={fieldDef.description}
+            onChange={(e) => updateOverrideValue(parseFloat(e.target.value) || 0)}
+          />
+        );
+
+      case 'boolean':
+        return (
+          <Switch
+            checked={overrideValue === true}
+            onCheckedChange={updateOverrideValue}
+          />
+        );
+
+      case 'array':
+        const arrayValue = Array.isArray(overrideValue) ? overrideValue : [];
+        return (
+          <div className="space-y-2">
+            {arrayValue.map((item, index) => (
+              <div key={index} className="flex items-center space-x-2">
+                {fieldDef.items && fieldDef.items.type === 'object' && fieldDef.items.fields ? (
+                  <div className="flex-1 space-y-2 border rounded p-3">
+                    {Object.entries(fieldDef.items.fields).map(([subFieldName, subFieldDef]) => (
+                      <div key={subFieldName}>
+                        <Label className="text-sm font-medium">
+                          {subFieldDef.displayName || subFieldName}
+                        </Label>
+                        {renderOverrideField(env, subFieldName, subFieldDef, `${fullPath}.${index}`)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Input
+                    value={typeof item === 'object' ? JSON.stringify(item) : item}
+                    onChange={(e) => {
+                      const newArray = [...arrayValue];
+                      try {
+                        newArray[index] = fieldDef.items?.type === 'number' ? parseFloat(e.target.value) : e.target.value;
+                      } catch {
+                        newArray[index] = e.target.value;
+                      }
+                      updateOverrideValue(newArray);
+                    }}
+                    className="flex-1"
+                  />
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const newArray = arrayValue.filter((_, i) => i !== index);
+                    updateOverrideValue(newArray);
+                  }}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const newArray = [...arrayValue, fieldDef.items?.type === 'object' ? {} : ''];
+                updateOverrideValue(newArray);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add {fieldDef.displayName || fieldName}
+            </Button>
+          </div>
+        );
+
+      case 'map':
+        const mapValue = overrideValue && typeof overrideValue === 'object' ? overrideValue : {};
+        return (
+          <div className="space-y-2">
+            {Object.entries(mapValue).map(([key, value]) => (
+              <div key={key} className="border rounded p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="font-medium">{key}</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const newMap = { ...mapValue };
+                      delete newMap[key];
+                      updateOverrideValue(newMap);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                {fieldDef.valueType && fieldDef.valueType.fields ? (
+                  <div className="space-y-2">
+                    {Object.entries(fieldDef.valueType.fields).map(([subFieldName, subFieldDef]) => (
+                      <div key={subFieldName}>
+                        <Label className="text-sm font-medium">
+                          {subFieldDef.displayName || subFieldName}
+                        </Label>
+                        {renderOverrideField(env, subFieldName, subFieldDef, `${fullPath}.${key}`)}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <Input
+                    value={typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+                    onChange={(e) => {
+                      const newMap = { ...mapValue };
+                      try {
+                        newMap[key] = JSON.parse(e.target.value);
+                      } catch {
+                        newMap[key] = e.target.value;
+                      }
+                      updateOverrideValue(newMap);
+                    }}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'object':
+        if (!fieldDef.fields) {
+          return (
+            <Textarea
+              value={JSON.stringify(overrideValue || {}, null, 2)}
+              onChange={(e) => {
+                try {
+                  updateOverrideValue(JSON.parse(e.target.value));
+                } catch {
+                  // Keep raw value for invalid JSON
+                }
+              }}
+              placeholder="Enter JSON object"
+              rows={4}
+            />
+          );
+        }
+        return (
+          <div className="space-y-3 border rounded p-3">
+            {Object.entries(fieldDef.fields).map(([subFieldName, subFieldDef]) => (
+              <div key={subFieldName}>
+                <Label className="text-sm font-medium">
+                  {subFieldDef.displayName || subFieldName}
+                </Label>
+                {renderOverrideField(env, subFieldName, subFieldDef, fullPath)}
+              </div>
+            ))}
+          </div>
+        );
+
+      default:
+        return (
+          <Textarea
+            value={JSON.stringify(overrideValue || '', null, 2)}
+            onChange={(e) => {
+              try {
+                updateOverrideValue(JSON.parse(e.target.value));
+              } catch {
+                updateOverrideValue(e.target.value);
+              }
+            }}
+            placeholder={fieldDef.description}
+            rows={3}
+          />
+        );
+    }
+  };
     
     if (editingEnv === env) {
       setEditingEnv(null);
