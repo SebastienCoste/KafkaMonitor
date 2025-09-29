@@ -1,15 +1,376 @@
 {
-  "namespace": "com.test.blueprint.sanity.check",
-  "version": "1.0.0",
-  "description": "Sample blueprint configuration for sanity testing",
-  "owner": "sanity-test",
-  "transformSpecs": [
-    "test_transform.jslt"
+  "namespace": "com.test.blueprint.config",
+  "version": "git_version",
+  "owner": "",
+  "description": "",
+  "schemas": [
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [
+        "global_com_test_blueprint_config.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.fix",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.final.test",
+      "global": [
+        "global_com_final_test.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.filegeneration",
+      "global": [
+        "global_com_test_filegeneration.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.filegeneration.comprehensive",
+      "global": [
+        "global_com_test_filegeneration_comprehensive.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.storage",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.storage",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.searchexperience.filenaming",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.integration.allfix",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.searchexperience.filenaming",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.integration.allfix",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.searchexperience.filenaming",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.integration.allfix",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.searchexperience.filenaming",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.integration.allfix",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.searchexperience.filenaming",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.integration.allfix",
+      "global": [],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug1.blueprintcnf",
+      "global": [
+        "global_com_test_bug1_blueprintcnf.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.storage",
+      "global": [
+        "global_com_test_bug2_storage.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.bug2.mapstructure",
+      "global": [
+        "global_com_test_bug2_mapstructure.json"
+      ],
+      "messages": []
+    },
+    {
+      "namespace": "com.test.blueprint.config",
+      "global": [],
+      "messages": []
+    }
   ],
+  "transformSpecs": [],
   "searchExperience": {
-    "name": "test_search",
-    "templates": [
-      "test_template.json"
-    ]
+    "configs": [
+      "debug-field-paths.json",
+      "debug-field-paths-fixed.json"
+    ],
+    "templates": []
   }
 }
