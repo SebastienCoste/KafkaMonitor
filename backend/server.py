@@ -184,7 +184,7 @@ async def get_topics():
     """Get available topics"""
     try:
         if graph_builder:
-            topics = list(graph_builder.topic_graph.nodes())
+            topics = graph_builder.topic_graph.get_all_topics()
             return {
                 "topics": topics,
                 "monitored": topics  # All topics are monitored by default
@@ -204,11 +204,11 @@ async def get_topic_graph():
     try:
         if graph_builder:
             # Return simplified graph structure
-            nodes = list(graph_builder.topic_graph.nodes())
-            edges = list(graph_builder.topic_graph.edges())
+            topics = graph_builder.topic_graph.get_all_topics()
+            edges = graph_builder.topic_graph.edges
             return {
-                "nodes": [{"id": node, "label": node} for node in nodes],
-                "edges": [{"source": edge[0], "target": edge[1]} for edge in edges]
+                "nodes": [{"id": topic, "label": topic} for topic in topics],
+                "edges": [{"source": edge.source, "target": edge.destination} for edge in edges]
             }
         else:
             return {
