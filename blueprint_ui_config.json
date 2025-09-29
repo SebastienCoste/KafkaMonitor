@@ -973,8 +973,118 @@
       "id": "805a69e0-f5ca-4aca-879f-bc55b3b20c4a",
       "namespace": "com.test.blueprint.config",
       "configurations": []
+    },
+    {
+      "id": "d059db9a-cdc1-47b7-abd2-7d457d03e2a0",
+      "namespace": "com.test.blueprintcnf",
+      "configurations": []
+    },
+    {
+      "id": "f9c42352-01f5-41a8-97a1-f24fe4040d36",
+      "namespace": "com.test.searchexperience.filenaming",
+      "configurations": []
+    },
+    {
+      "id": "4ed35c16-f56c-4d11-8100-f3fb0a31a25a",
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "configurations": []
+    },
+    {
+      "id": "439a20c1-ec13-4c69-bdaa-77b0d8a1f1d1",
+      "namespace": "com.test.integration.allfix",
+      "configurations": []
+    },
+    {
+      "id": "f8da8b8f-40ca-4b7a-a23b-fbf6b5343ad3",
+      "namespace": "com.test.bug1.blueprintcnf",
+      "configurations": [
+        {
+          "id": "b52e0416-7851-4b44-b986-e0fb09a5fc8f",
+          "entityType": "access",
+          "name": "test-bug1-entity",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test entity for BUG1 blueprint_cnf.json location fix"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "85cc8a51-bfe8-40f2-bb30-fa6a71404fb3",
+      "namespace": "com.test.bug2.storage",
+      "configurations": [
+        {
+          "id": "b983e2bb-1fe4-4285-96bb-0121f902de05",
+          "entityType": "storages",
+          "name": "test-storage-with-dots",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test storage entity with dotted service identifiers",
+            "storageConfigurations": {
+              "EA.EADP.PDE.MCR": {
+                "type": "redis",
+                "host": "redis-ea-eadp-pde-mcr.example.com",
+                "port": 6379,
+                "database": 0
+              },
+              "EA.EADP.TEST.SERVICE": {
+                "type": "mongodb",
+                "connectionString": "mongodb://mongo-ea-eadp-test.example.com:27017",
+                "database": "test_service_db"
+              },
+              "SIMPLE.SERVICE": {
+                "type": "memory",
+                "maxSize": "100MB"
+              }
+            },
+            "defaultServiceIdentifier": "EA.EADP.PDE.MCR"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "031fcbc2-db3f-46e8-a5d5-9e860dd1d9b2",
+      "namespace": "com.test.bug2.mapstructure",
+      "configurations": [
+        {
+          "id": "abbc60ee-b92e-4df9-94f9-9d40412902f9",
+          "entityType": "storages",
+          "name": "test-map-structure-storage",
+          "baseConfig": {
+            "enabled": true,
+            "storageConfigurations": {
+              "EA.EADP.PDE.MCR": {
+                "type": "redis",
+                "host": "redis-server.example.com"
+              },
+              "EA.EADP.TEST.ANOTHER.SERVICE": {
+                "type": "mongodb",
+                "host": "mongo-server.example.com"
+              },
+              "SIMPLE.SERVICE.NAME": {
+                "type": "memory"
+              }
+            },
+            "defaultServiceIdentifier": "EA.EADP.PDE.MCR"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "c7afe9e1-e795-4e0d-9589-69496f65a2c7",
+      "namespace": "com.test.blueprint.config",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-29T19:14:00.847330"
+  "lastModified": "2025-09-29T19:32:21.211137"
 }
