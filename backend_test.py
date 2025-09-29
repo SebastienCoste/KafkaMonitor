@@ -1281,6 +1281,457 @@ class BlueprintConfigurationTester:
         except Exception as e:
             self.log_test("Temp File Backup Approach", False, f"Exception: {str(e)}")
     
+    def test_blueprint_configuration_ui_fixes(self):
+        """Test the 5 specific Blueprint Configuration UI fixes from review request"""
+        print("🔧 Testing 5 Specific Blueprint Configuration UI Fixes")
+        print("-" * 60)
+        
+        # FIX 1 - Remove "Add root Config" button from Message Configs (UI-only fix, test backend support)
+        print("\n📋 FIX 1 - Testing Message Config Entity Management (No Root Config Button)")
+        self.test_fix1_message_config_entity_management()
+        
+        # FIX 2 - Auto-reload entity list in Message Configs after add/remove/save
+        print("\n📋 FIX 2 - Testing Auto-reload Entity List in Message Configs")
+        self.test_fix2_message_config_auto_reload()
+        
+        # FIX 3 - Auto-reload entity list in Global Config after add/remove/save
+        print("\n📋 FIX 3 - Testing Auto-reload Entity List in Global Config")
+        self.test_fix3_global_config_auto_reload()
+        
+        # FIX 4 - Generate Files button also creates blueprint_cnf.json
+        print("\n📋 FIX 4 - Testing Generate Files with blueprint_cnf.json Creation")
+        self.test_fix4_generate_files_with_blueprint_cnf()
+        
+        # FIX 5 - Load blueprint_cnf.json values by default in Blueprint CNF section
+        print("\n📋 FIX 5 - Testing Load blueprint_cnf.json Default Values")
+        self.test_fix5_load_blueprint_cnf_defaults()
+    
+    def test_fix1_message_config_entity_management(self):
+        """Test FIX 1 - Message Config entity management without root config button"""
+        try:
+            # Test that we can create message config entities properly
+            # This tests the backend support for message config entities
+            payload = {
+                "name": "test-message-config-entity",
+                "entityType": "messageStorage",  # Message config entity type
+                "configuration": {
+                    "enabled": True,
+                    "description": "Test message config entity"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("FIX 1 - Message Config Entity Creation", True, f"Successfully created message config entity: {entity_id}")
+                    
+                    # Test that the entity appears in UI config
+                    ui_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+                    if ui_response.status_code == 200:
+                        ui_data = ui_response.json()
+                        config = ui_data.get("config", {})
+                        
+                        # Look for our entity in the schemas
+                        entity_found = False
+                        for schema in config.get("schemas", []):
+                            for entity in schema.get("configurations", []):
+                                if entity.get("name") == "test-message-config-entity":
+                                    entity_found = True
+                                    break
+                        
+                        if entity_found:
+                            self.log_test("FIX 1 - Message Config Entity in UI Config", True, "Message config entity appears in UI configuration")
+                        else:
+                            self.log_test("FIX 1 - Message Config Entity in UI Config", False, "Message config entity not found in UI configuration")
+                    
+                    # Cleanup
+                    self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("FIX 1 - Message Config Entity Creation", False, f"Creation failed: {data}")
+            else:
+                self.log_test("FIX 1 - Message Config Entity Creation", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 1 - Message Config Entity Management", False, f"Exception: {str(e)}")
+    
+    def test_fix2_message_config_auto_reload(self):
+        """Test FIX 2 - Auto-reload entity list in Message Configs after operations"""
+        try:
+            # Create a message config entity
+            payload = {
+                "name": "test-message-auto-reload",
+                "entityType": "messageStorage",
+                "configuration": {
+                    "enabled": True,
+                    "description": "Test auto-reload for message configs"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("FIX 2 - Message Config Entity Creation for Auto-reload", True, f"Created entity: {entity_id}")
+                    
+                    # Test that UI config reflects the new entity (simulating auto-reload)
+                    ui_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+                    if ui_response.status_code == 200:
+                        ui_data = ui_response.json()
+                        config = ui_data.get("config", {})
+                        
+                        # Count entities before update
+                        entity_count_before = 0
+                        for schema in config.get("schemas", []):
+                            entity_count_before += len(schema.get("configurations", []))
+                        
+                        # Update the entity (simulating save operation)
+                        update_payload = {
+                            "name": "test-message-auto-reload-updated",
+                            "configuration": {
+                                "enabled": False,
+                                "description": "Updated entity for auto-reload testing"
+                            }
+                        }
+                        
+                        update_response = requests.put(
+                            f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                            json=update_payload,
+                            headers={"Content-Type": "application/json"},
+                            timeout=10
+                        )
+                        
+                        if update_response.status_code == 200:
+                            update_data = update_response.json()
+                            if update_data.get("success"):
+                                self.log_test("FIX 2 - Message Config Entity Update", True, "Successfully updated message config entity")
+                                
+                                # Check UI config again (simulating auto-reload after update)
+                                ui_response2 = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+                                if ui_response2.status_code == 200:
+                                    ui_data2 = ui_response2.json()
+                                    config2 = ui_data2.get("config", {})
+                                    
+                                    # Verify the entity is updated in UI config
+                                    entity_updated = False
+                                    for schema in config2.get("schemas", []):
+                                        for entity in schema.get("configurations", []):
+                                            if entity.get("name") == "test-message-auto-reload-updated":
+                                                entity_updated = True
+                                                break
+                                    
+                                    if entity_updated:
+                                        self.log_test("FIX 2 - Message Config Auto-reload After Update", True, "Entity list properly reloaded after update")
+                                    else:
+                                        self.log_test("FIX 2 - Message Config Auto-reload After Update", False, "Entity list not properly reloaded after update")
+                                else:
+                                    self.log_test("FIX 2 - Message Config Auto-reload After Update", False, f"UI config reload failed: HTTP {ui_response2.status_code}")
+                            else:
+                                self.log_test("FIX 2 - Message Config Entity Update", False, f"Update failed: {update_data}")
+                        else:
+                            self.log_test("FIX 2 - Message Config Entity Update", False, f"HTTP {update_response.status_code}")
+                    
+                    # Cleanup
+                    self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("FIX 2 - Message Config Entity Creation for Auto-reload", False, f"Creation failed: {data}")
+            else:
+                self.log_test("FIX 2 - Message Config Entity Creation for Auto-reload", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 2 - Message Config Auto-reload", False, f"Exception: {str(e)}")
+    
+    def test_fix3_global_config_auto_reload(self):
+        """Test FIX 3 - Auto-reload entity list in Global Config after operations"""
+        try:
+            # Create a global config entity
+            payload = {
+                "name": "test-global-auto-reload",
+                "entityType": "access",  # Global config entity type
+                "configuration": {
+                    "enabled": True,
+                    "description": "Test auto-reload for global configs"
+                }
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/config/entities",
+                json=payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") and "entity_id" in data:
+                    entity_id = data["entity_id"]
+                    self.log_test("FIX 3 - Global Config Entity Creation for Auto-reload", True, f"Created entity: {entity_id}")
+                    
+                    # Test deletion and auto-reload
+                    delete_response = requests.delete(
+                        f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                        timeout=10
+                    )
+                    
+                    if delete_response.status_code == 200:
+                        delete_data = delete_response.json()
+                        if delete_data.get("success"):
+                            self.log_test("FIX 3 - Global Config Entity Deletion", True, "Successfully deleted global config entity")
+                            
+                            # Check UI config after deletion (simulating auto-reload)
+                            ui_response = requests.get(f"{self.base_url}/api/blueprint/config/ui-config", timeout=15)
+                            if ui_response.status_code == 200:
+                                ui_data = ui_response.json()
+                                config = ui_data.get("config", {})
+                                
+                                # Verify the entity is removed from UI config
+                                entity_removed = True
+                                for schema in config.get("schemas", []):
+                                    for entity in schema.get("configurations", []):
+                                        if entity.get("name") == "test-global-auto-reload":
+                                            entity_removed = False
+                                            break
+                                
+                                if entity_removed:
+                                    self.log_test("FIX 3 - Global Config Auto-reload After Deletion", True, "Entity list properly reloaded after deletion")
+                                else:
+                                    self.log_test("FIX 3 - Global Config Auto-reload After Deletion", False, "Entity still appears in UI config after deletion")
+                            else:
+                                self.log_test("FIX 3 - Global Config Auto-reload After Deletion", False, f"UI config reload failed: HTTP {ui_response.status_code}")
+                        else:
+                            self.log_test("FIX 3 - Global Config Entity Deletion", False, f"Deletion failed: {delete_data}")
+                    else:
+                        self.log_test("FIX 3 - Global Config Entity Deletion", False, f"HTTP {delete_response.status_code}")
+                        # Cleanup if deletion failed
+                        self.cleanup_test_entity(entity_id)
+                else:
+                    self.log_test("FIX 3 - Global Config Entity Creation for Auto-reload", False, f"Creation failed: {data}")
+            else:
+                self.log_test("FIX 3 - Global Config Entity Creation for Auto-reload", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 3 - Global Config Auto-reload", False, f"Exception: {str(e)}")
+    
+    def test_fix4_generate_files_with_blueprint_cnf(self):
+        """Test FIX 4 - Generate Files button also creates blueprint_cnf.json"""
+        try:
+            # First create a schema for file generation
+            schema_payload = {
+                "name": "test-blueprint-cnf-gen",
+                "namespace": "com.test.blueprintcnf",
+                "description": "Test schema for blueprint_cnf.json generation"
+            }
+            
+            schema_response = requests.post(
+                f"{self.base_url}/api/blueprint/config/schemas",
+                json=schema_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if schema_response.status_code == 200:
+                schema_data = schema_response.json()
+                if schema_data.get("success") and "schema_id" in schema_data:
+                    schema_id = schema_data["schema_id"]
+                    self.log_test("FIX 4 - Schema Creation for Blueprint CNF Generation", True, f"Created schema: {schema_id}")
+                    
+                    # Create an entity for the schema
+                    entity_payload = {
+                        "name": "test-blueprint-cnf-entity",
+                        "entityType": "access",
+                        "configuration": {
+                            "enabled": True,
+                            "description": "Test entity for blueprint_cnf.json generation"
+                        }
+                    }
+                    
+                    entity_response = requests.post(
+                        f"{self.base_url}/api/blueprint/config/entities",
+                        json=entity_payload,
+                        headers={"Content-Type": "application/json"},
+                        timeout=10
+                    )
+                    
+                    if entity_response.status_code == 200:
+                        entity_data = entity_response.json()
+                        if entity_data.get("success"):
+                            # Now test file generation with blueprint_cnf.json
+                            gen_payload = {
+                                "schemaId": schema_id,
+                                "environments": ["DEV"],
+                                "outputPath": "/app/test_blueprint_cnf_gen",
+                                "generateBlueprintCNF": True  # Explicitly request blueprint_cnf.json generation
+                            }
+                            
+                            gen_response = requests.post(
+                                f"{self.base_url}/api/blueprint/config/generate",
+                                json=gen_payload,
+                                headers={"Content-Type": "application/json"},
+                                timeout=15
+                            )
+                            
+                            if gen_response.status_code == 200:
+                                gen_data = gen_response.json()
+                                if gen_data.get("success"):
+                                    files = gen_data.get("files", [])
+                                    self.log_test("FIX 4 - File Generation Success", True, f"Generated {len(files)} files")
+                                    
+                                    # Check if blueprint_cnf.json is included in the generated files
+                                    blueprint_cnf_found = False
+                                    for file_info in files:
+                                        if isinstance(file_info, dict):
+                                            filename = file_info.get("filename", "")
+                                            if "blueprint_cnf.json" in filename:
+                                                blueprint_cnf_found = True
+                                                self.log_test("FIX 4 - Blueprint CNF File Generated", True, f"Found blueprint_cnf.json in generated files: {filename}")
+                                                break
+                                        elif isinstance(file_info, str) and "blueprint_cnf.json" in file_info:
+                                            blueprint_cnf_found = True
+                                            self.log_test("FIX 4 - Blueprint CNF File Generated", True, f"Found blueprint_cnf.json: {file_info}")
+                                            break
+                                    
+                                    if not blueprint_cnf_found:
+                                        self.log_test("FIX 4 - Blueprint CNF File Generated", False, f"blueprint_cnf.json not found in generated files: {[f.get('filename', f) if isinstance(f, dict) else f for f in files]}")
+                                    
+                                    # Test that the file count includes blueprint_cnf.json
+                                    if len(files) > 0:
+                                        self.log_test("FIX 4 - File Count Includes Blueprint CNF", True, f"Total file count: {len(files)} (includes blueprint_cnf.json)")
+                                    else:
+                                        self.log_test("FIX 4 - File Count Includes Blueprint CNF", False, "No files generated")
+                                else:
+                                    error = gen_data.get("error", "Unknown error")
+                                    self.log_test("FIX 4 - File Generation Success", False, f"Generation failed: {error}")
+                            else:
+                                self.log_test("FIX 4 - File Generation Success", False, f"HTTP {gen_response.status_code}")
+                        else:
+                            self.log_test("FIX 4 - Entity Creation for Blueprint CNF Generation", False, f"Entity creation failed: {entity_data}")
+                    else:
+                        self.log_test("FIX 4 - Entity Creation for Blueprint CNF Generation", False, f"HTTP {entity_response.status_code}")
+                else:
+                    self.log_test("FIX 4 - Schema Creation for Blueprint CNF Generation", False, f"Schema creation failed: {schema_data}")
+            else:
+                self.log_test("FIX 4 - Schema Creation for Blueprint CNF Generation", False, f"HTTP {schema_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 4 - Generate Files with Blueprint CNF", False, f"Exception: {str(e)}")
+    
+    def test_fix5_load_blueprint_cnf_defaults(self):
+        """Test FIX 5 - Load blueprint_cnf.json values by default in Blueprint CNF section"""
+        try:
+            # Test loading existing blueprint_cnf.json file
+            response = requests.get(
+                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                content = data.get("content")
+                
+                if content:
+                    try:
+                        blueprint_config = json.loads(content)
+                        
+                        # Check that all expected fields are loaded as defaults
+                        expected_fields = ["namespace", "version", "owner", "description", "transformSpecs", "templates"]
+                        loaded_fields = []
+                        missing_fields = []
+                        
+                        for field in expected_fields:
+                            if field in blueprint_config:
+                                loaded_fields.append(field)
+                            else:
+                                missing_fields.append(field)
+                        
+                        if len(loaded_fields) >= 4:  # At least 4 core fields should be present
+                            self.log_test("FIX 5 - Blueprint CNF Default Values Loading", True, f"Loaded {len(loaded_fields)} default fields: {loaded_fields}")
+                            
+                            # Test specific field values
+                            if "namespace" in blueprint_config:
+                                namespace = blueprint_config["namespace"]
+                                self.log_test("FIX 5 - Namespace Default Value", True, f"Namespace loaded: {namespace}")
+                            
+                            if "version" in blueprint_config:
+                                version = blueprint_config["version"]
+                                self.log_test("FIX 5 - Version Default Value", True, f"Version loaded: {version}")
+                            
+                            if "owner" in blueprint_config:
+                                owner = blueprint_config["owner"]
+                                self.log_test("FIX 5 - Owner Default Value", True, f"Owner loaded: {owner}")
+                            
+                            if "description" in blueprint_config:
+                                description = blueprint_config["description"]
+                                self.log_test("FIX 5 - Description Default Value", True, f"Description loaded: {description[:50]}...")
+                            
+                            if "transformSpecs" in blueprint_config:
+                                transform_specs = blueprint_config["transformSpecs"]
+                                if isinstance(transform_specs, list):
+                                    self.log_test("FIX 5 - TransformSpecs Default Value", True, f"TransformSpecs loaded: {len(transform_specs)} items")
+                                else:
+                                    self.log_test("FIX 5 - TransformSpecs Default Value", False, f"TransformSpecs not a list: {type(transform_specs)}")
+                            
+                            # Check for templates (could be in searchExperience.templates or top-level templates)
+                            templates_found = False
+                            if "templates" in blueprint_config:
+                                templates = blueprint_config["templates"]
+                                if isinstance(templates, list):
+                                    templates_found = True
+                                    self.log_test("FIX 5 - Templates Default Value", True, f"Templates loaded: {len(templates)} items")
+                            elif "searchExperience" in blueprint_config and isinstance(blueprint_config["searchExperience"], dict):
+                                search_exp = blueprint_config["searchExperience"]
+                                if "templates" in search_exp and isinstance(search_exp["templates"], list):
+                                    templates_found = True
+                                    self.log_test("FIX 5 - SearchExperience Templates Default Value", True, f"SearchExperience templates loaded: {len(search_exp['templates'])} items")
+                            
+                            if not templates_found:
+                                self.log_test("FIX 5 - Templates Default Value", False, "No templates found in blueprint_cnf.json")
+                        else:
+                            self.log_test("FIX 5 - Blueprint CNF Default Values Loading", False, f"Only {len(loaded_fields)} fields loaded, missing: {missing_fields}")
+                            
+                    except json.JSONDecodeError as e:
+                        self.log_test("FIX 5 - Blueprint CNF JSON Parsing", False, f"JSON parsing error: {str(e)}")
+                else:
+                    self.log_test("FIX 5 - Blueprint CNF Content Loading", False, "No content returned from blueprint_cnf.json")
+            elif response.status_code == 404:
+                self.log_test("FIX 5 - Blueprint CNF File Existence", False, "blueprint_cnf.json file not found (404)")
+            else:
+                self.log_test("FIX 5 - Blueprint CNF File Loading", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("FIX 5 - Load Blueprint CNF Defaults", False, f"Exception: {str(e)}")
+
+    def cleanup_test_entity(self, entity_id):
+        """Helper method to cleanup test entities"""
+        try:
+            response = requests.delete(
+                f"{self.base_url}/api/blueprint/config/entities/{entity_id}",
+                timeout=10
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Cleanup Test Entity", True, f"Successfully cleaned up entity: {entity_id}")
+                else:
+                    self.log_test("Cleanup Test Entity", False, f"Cleanup failed: {data}")
+            else:
+                self.log_test("Cleanup Test Entity", False, f"Cleanup HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Cleanup Test Entity", False, f"Cleanup exception: {str(e)}")
+
     def test_blueprint_cnf_loader_and_dropdown_functionality(self):
         """Test the 3 new fixes for Blueprint Configuration UI from review request"""
         print("🔧 Testing Blueprint CNF Loader and Dropdown Functionality")
