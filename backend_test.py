@@ -615,102 +615,38 @@ class BackendSanityTester:
         except Exception as e:
             self.log_test("Malformed Request", False, f"Exception: {str(e)}")
 
-    def run_blueprint_configuration_tests(self):
-        """Run comprehensive Blueprint Configuration API tests"""
-        print("🚀 Starting Blueprint Configuration API Comprehensive Testing")
+    def run_backend_sanity_tests(self):
+        """Run backend sanity check tests as per review request"""
+        print("🚀 Starting Backend Sanity Check Testing")
         print("=" * 70)
         
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
-        # CRITICAL PRIORITY: Test BLUEPRINT CNF FILE CONTENT LOADING ISSUE (Review Request)
-        print("\n🚨 CRITICAL: BLUEPRINT CNF FILE CONTENT LOADING INVESTIGATION")
-        print("=" * 70)
-        self.test_blueprint_cnf_file_content_loading_issue()
-        
-        # PRIORITY: Test 5 SPECIFIC BLUEPRINT CONFIGURATION UI FIXES (Review Request)
-        print("\n🚨 BLUEPRINT CONFIGURATION UI FIXES TESTING (5 SPECIFIC FIXES)")
-        print("=" * 70)
-        self.test_blueprint_configuration_ui_fixes()
-        
-        # PRIORITY: Test BLUEPRINT CNF LOADER AND DROPDOWN FUNCTIONALITY (Review Request)
-        print("\n🚨 BLUEPRINT CNF LOADER AND DROPDOWN FUNCTIONALITY TESTING")
-        print("=" * 70)
-        self.test_blueprint_cnf_loader_and_dropdown_functionality()
-        
-        # PRIORITY: Test BLUEPRINT CNF NAMESPACE AND SEARCH EXPERIENCE FIXES
-        print("\n🚨 BLUEPRINT CNF NAMESPACE AND SEARCH EXPERIENCE FIXES TESTING")
-        print("=" * 70)
-        self.test_blueprint_cnf_namespace_and_search_experience_fixes()
-        
-        # PRIORITY: Test CRITICAL UI INPUT FIELD BUG FIXES
-        print("\n🚨 CRITICAL UI INPUT FIELD BUG FIXES TESTING")
-        print("=" * 70)
-        self.test_ui_input_field_bug_fixes()
-        
-        # PRIORITY: Test URGENT USER-REPORTED FIXES First
-        print("\n🚨 URGENT USER-REPORTED FIXES TESTING")
-        print("=" * 70)
-        self.test_urgent_blueprint_fixes()
-        
-        # PRIORITY: Test Critical User-Reported Bugs First
-        print("\n🚨 CRITICAL USER-REPORTED BUGS TESTING (Chat Message 348)")
-        print("=" * 70)
-        self.test_critical_blueprint_cnf_bugs()
-        
-        # Test 1: Entity Definitions API
+        # Test 1: Entity Definitions API - Check environments and entityTypes
         print("\n1️⃣ Testing Entity Definitions API")
         print("-" * 40)
-        entity_definitions = self.test_entity_definitions_api()
+        self.test_entity_definitions_environments()
         
-        # Test 2: UI Configuration API  
-        print("\n2️⃣ Testing UI Configuration API")
+        # Test 2: Blueprint CNF File Content API
+        print("\n2️⃣ Testing Blueprint CNF File Content API")
         print("-" * 40)
-        ui_config = self.test_ui_configuration_api()
+        self.test_blueprint_cnf_file_content()
         
-        # Test 3: Schema Creation API
-        print("\n3️⃣ Testing Schema Creation API")
+        # Test 3: File Tree API for Transform Specs and Search Experience Templates
+        print("\n3️⃣ Testing File Tree API")
         print("-" * 40)
-        schema_id = self.test_schema_creation_api()
+        self.test_file_tree_apis()
         
-        # Test 4: Entity Creation API (Success and Error Cases)
-        print("\n4️⃣ Testing Entity Creation API")
+        # Test 4: Environments API
+        print("\n4️⃣ Testing Environments API")
         print("-" * 40)
-        entity_id = self.test_entity_creation_api()
+        self.test_environments_api()
         
-        # Test 5: Entity Update API (Success and Error Cases)
-        print("\n5️⃣ Testing Entity Update API")
+        # Test 5: Blueprint Create File API with Overwrite
+        print("\n5️⃣ Testing Blueprint Create File API")
         print("-" * 40)
-        if entity_id:
-            self.test_entity_update_api(entity_id)
-        
-        # Test 6: Environment Overrides API (Success and Error Cases)
-        print("\n6️⃣ Testing Environment Overrides API")
-        print("-" * 40)
-        if entity_id:
-            self.test_environment_overrides_api(entity_id)
-        
-        # Test 7: File Generation API
-        print("\n7️⃣ Testing File Generation API")
-        print("-" * 40)
-        if schema_id:
-            self.test_file_generation_api(schema_id)
-        
-        # Test 8: Configuration Validation API
-        print("\n8️⃣ Testing Configuration Validation API")
-        print("-" * 40)
-        self.test_configuration_validation_api()
-        
-        # Test 9: Entity Deletion API (Success and Error Cases)
-        print("\n9️⃣ Testing Entity Deletion API")
-        print("-" * 40)
-        if entity_id:
-            self.test_entity_deletion_api(entity_id)
-        
-        # Test 10: Error Handling Verification
-        print("\n🔟 Testing Error Handling Verification")
-        print("-" * 40)
-        self.test_error_handling_verification()
+        self.test_blueprint_create_file_overwrite()
         
         # Print final summary
         self.print_summary()
