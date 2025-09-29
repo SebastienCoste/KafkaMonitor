@@ -32,6 +32,12 @@ class ConfigurationAPI {
     return this.request('/api/blueprint/config/ui-config');
   }
 
+  static async resetUIConfig() {
+    return this.request('/api/blueprint/config/reset', {
+      method: 'POST'
+    });
+  }
+
   // Schema Management
   static async createSchema(data) {
     return this.request('/api/blueprint/config/schemas', {
@@ -166,8 +172,8 @@ class ConfigurationAPI {
           id: schema.id,
           namespace: schema.namespace,
           enabled: true,
-          global: [], // Global files would be populated based on entity configurations
-          messages: [] // Message files would be populated based on entity configurations
+          global: [],
+          messages: []
         })),
         transformSpecs: [],
         searchExperience: {

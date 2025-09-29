@@ -24,7 +24,9 @@ import {
   RefreshCw,
   Save,
   Eye,
-  Cog
+  Cog,
+  RotateCcw,
+  FlaskConical
 } from 'lucide-react';
 
 export default function ConfigurationTab() {
@@ -61,6 +63,9 @@ export default function ConfigurationTab() {
       // Set active schema to first one if available
       if (uiConfigData.config.schemas && uiConfigData.config.schemas.length > 0) {
         setActiveSchema(uiConfigData.config.schemas[0]);
+      } else {
+        setActiveSchema(null);
+        setSelectedEntity(null);
       }
 
       if (uiConfigData.warnings && uiConfigData.warnings.length > 0) {
@@ -125,7 +130,6 @@ export default function ConfigurationTab() {
       if (result.success) {
         toast.success(`Entity "${name}" created successfully`);
         await loadConfiguration(); // Reload to get updated config
-        
         // Restore focus to the same schema after reload
         setTimeout(() => {
           if (uiConfig?.schemas) {
@@ -235,6 +239,86 @@ export default function ConfigurationTab() {
     }
   };
 
+  const resetFromDisk = async () => {
+    if (!confirm('This will discard unsaved UI changes and reload from files on disk. Continue?')) return;
+    setLoading(true);
+    try {
+      const result = await ConfigurationAPI.resetUIConfig();
+      if (result.success) {
+        toast.success('UI configuration reset from disk');
+        await loadConfiguration();
+      } else {
+        toast.error('Failed to reset from disk');
+      }
+    } catch (error) {
+      console.error('Failed to reset from disk:', error);
+      toast.error(`Failed to reset from disk: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addSampleEntities = async () => {
+    if (!activeSchema || !entityDefinitions) {
+      toast.error('Please create/select a schema first');
+      return;
+    }
+    try {
+      // Create sample textModeration entity
+      const textName = 'sampleTextModeration';
+      const textBase = {
+        provider: 'moderationServiceX',
+        threshold: 0.8,
+        languages: ['en', 'fr']
+      };
+      const textRes = await ConfigurationAPI.createEntity({
+        entityType: 'textModeration',
+        name: textName,
+        baseConfig: textBase,
+        schemaId: activeSchema.id
+      });
+
+      // Create sample discoveryFeatures entity
+      const discName = 'sampleDiscoveryFeatures';
+      const discBase = {
+        access: {
+          defaultAccessType: 'PUBLIC',
+          roles: ['reader', 'editor']
+        }
+      };
+      const discRes = await ConfigurationAPI.createEntity({
+        entityType: 'discoveryFeatures',
+        name: discName,
+        baseConfig: discBase,
+        schemaId: activeSchema.id
+      });
+
+      // Attach environment overrides if created successfully
+      if (textRes.success && textRes.entity_id) {
+        await ConfigurationAPI.updateEntity(textRes.entity_id, {
+          environmentOverrides: {
+            DEV: { provider: 'moderationServiceDev', threshold: 0.5 },
+            PROD: { provider: 'moderationServiceProd', threshold: 0.9 }
+          }
+        });
+      }
+      if (discRes.success && discRes.entity_id) {
+        await ConfigurationAPI.updateEntity(discRes.entity_id, {
+          environmentOverrides: {
+            TEST: { access: { defaultAccessType: 'RESTRICTED' } },
+            INT: { access: { defaultAccessType: 'PRIVATE' } }
+          }
+        });
+      }
+
+      toast.success('Sample entities created');
+      await loadConfiguration();
+    } catch (error) {
+      console.error('Failed to create sample entities:', error);
+      toast.error(`Failed to create sample entities: ${error.message}`);
+    }
+  };
+
   if (loading && !entityDefinitions) {
     return (
       <div className="flex-1 flex items-center justify-center">
@@ -288,6 +372,28 @@ export default function ConfigurationTab() {
             >
               <FileText className="h-4 w-4 mr-2" />
               {saving ? 'Generating...' : 'Generate Files'}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetFromDisk}
+              disabled={loading}
+              title="Reset UI config to match files on disk"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset from Disk
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addSampleEntities}
+              disabled={!activeSchema}
+              title="Create sample entities to exercise full workflow"
+            >
+              <FlaskConical className="h-4 w-4 mr-2" />
+              Add Sample Entities
             </Button>
 
             <Button
