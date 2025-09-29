@@ -32,7 +32,7 @@ try:
     ENTITY_DEFINITIONS_PATH = os.path.join(BASE_DIR, "backend", "config", "entity_definitions.json")
     blueprint_file_manager = BlueprintFileManager()
     blueprint_config_manager = BlueprintConfigurationManager(ENTITY_DEFINITIONS_PATH, blueprint_file_manager)
-    graph_builder = GraphBuilder()
+    graph_builder = TraceGraphBuilder()
 except Exception as init_err:
     logger.error(f"Initialization error: {init_err}")
     blueprint_file_manager = None
