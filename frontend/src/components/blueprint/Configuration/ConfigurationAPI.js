@@ -142,6 +142,74 @@ class ConfigurationAPI {
       };
     }
   }
+
+  // Generate blueprint_cnf.json file
+  static async generateBlueprintCNF() {
+    try {
+      // Get UI config to generate blueprint CNF
+      const uiConfig = await this.getUIConfig();
+      
+      if (!uiConfig.config.schemas || uiConfig.config.schemas.length === 0) {
+        return {
+          success: false,
+          error: 'No schemas found to generate blueprint CNF'
+        };
+      }
+
+      // Build blueprint CNF configuration
+      const blueprintConfig = {
+        namespace: uiConfig.config.schemas[0]?.namespace || 'com.example.blueprint',
+        version: 'git_version',
+        owner: 'Blueprint Creator',
+        description: 'Generated blueprint configuration',
+        schemas: uiConfig.config.schemas.map(schema => ({
+          id: schema.id,
+          namespace: schema.namespace,
+          enabled: true,
+          global: [], // Global files would be populated based on entity configurations
+          messages: [] // Message files would be populated based on entity configurations
+        })),
+        transformSpecs: [],
+        searchExperience: {
+          configs: [],
+          templates: []
+        }
+      };
+
+      // Save the blueprint CNF via create-file API
+      const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
+      const response = await fetch(`${backendUrl}/api/blueprint/create-file`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: 'blueprint_cnf.json',
+          content: JSON.stringify(blueprintConfig, null, 2),
+          overwrite: true
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        return {
+          success: result.success,
+          error: result.success ? null : (result.message || 'Failed to save blueprint_cnf.json')
+        };
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        return {
+          success: false,
+          error: errorData.detail || errorData.message || 'Failed to save blueprint_cnf.json'
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
 
 export default ConfigurationAPI;
