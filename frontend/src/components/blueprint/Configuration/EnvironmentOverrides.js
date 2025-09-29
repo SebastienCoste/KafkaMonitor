@@ -224,7 +224,7 @@ export default function EnvironmentOverrides({
           return (
             <div key={fullPath} className="space-y-2">
               <Label className="text-sm font-medium">{title}</Label>
-              {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+              {description && <p className="text-xs text-gray-600">{description}</p>}
               <Select
                 value={(currentValue ?? '')}
                 onValueChange={(value) => updateEnvironmentConfig(env, fullPath, value)}
@@ -244,7 +244,7 @@ export default function EnvironmentOverrides({
         return (
           <div key={fullPath} className="space-y-2">
             <Label className="text-sm font-medium">{title}</Label>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
             <Input
               value={(currentValue ?? '')}
               onChange={(e) => updateEnvironmentConfig(env, fullPath, e.target.value)}
@@ -258,7 +258,7 @@ export default function EnvironmentOverrides({
         return (
           <div key={fullPath} className="space-y-2">
             <Label className="text-sm font-medium">{title}</Label>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
             <Select
               value={(currentValue ?? fieldDef.default ?? '')}
               onValueChange={(value) => updateEnvironmentConfig(env, fullPath, value)}
@@ -281,7 +281,7 @@ export default function EnvironmentOverrides({
         return (
           <div key={fullPath} className="space-y-2">
             <Label className="text-sm font-medium">{title}</Label>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
             <Input
               type="number"
               value={(currentValue ?? '')}
@@ -304,7 +304,7 @@ export default function EnvironmentOverrides({
               />
               <Label className="text-sm font-medium">{title}</Label>
             </div>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
           </div>
         );
       }
@@ -326,7 +326,7 @@ export default function EnvironmentOverrides({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
             <div className="space-y-2">
               {arrayValue.map((item, index) => (
                 <div key={index} className="flex items-center space-x-2">
@@ -340,7 +340,7 @@ export default function EnvironmentOverrides({
                       }}
                       className="flex-1"
                     />
-                  ) : fieldDef.items?.type === 'object' &amp;&amp; fieldDef.items?.fields ? (
+                  ) : fieldDef.items?.type === 'object' && fieldDef.items?.fields ? (
                     <Card className="flex-1">
                       <CardContent className="p-3 space-y-2">
                         {Object.entries(fieldDef.items.fields).map(([subFieldName, subFieldDef]) =>
@@ -382,7 +382,7 @@ export default function EnvironmentOverrides({
       }
 
       case 'map': {
-        const mapValue = (currentValue &amp;&amp; typeof currentValue === 'object') ? currentValue : {};
+        const mapValue = (currentValue && typeof currentValue === 'object') ? currentValue : {};
         return (
           <div key={fullPath} className="space-y-2">
             <div className="flex items-center justify-between">
@@ -400,7 +400,7 @@ export default function EnvironmentOverrides({
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
             <div className="space-y-2">
               {Object.entries(mapValue).map(([key, value]) => (
                 <Card key={key}>
@@ -419,7 +419,7 @@ export default function EnvironmentOverrides({
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                    {fieldDef.valueType &amp;&amp; fieldDef.valueType.fields ? (
+                    {fieldDef.valueType && fieldDef.valueType.fields ? (
                       <div className="space-y-2">
                         {Object.entries(fieldDef.valueType.fields).map(([subFieldName, subFieldDef]) =>
                           renderField(env, subFieldName, subFieldDef, `${fullPath}.${key}`)
@@ -452,7 +452,7 @@ export default function EnvironmentOverrides({
           return (
             <div key={fullPath} className="space-y-4">
               <Label className="text-sm font-medium">{title}</Label>
-              {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+              {description && <p className="text-xs text-gray-600">{description}</p>}
               <Card>
                 <CardContent className="p-4 space-y-4">
                   {Object.entries(fieldDef.fields).map(([subFieldName, subFieldDef]) =>
@@ -466,7 +466,7 @@ export default function EnvironmentOverrides({
         return (
           <div key={fullPath} className="space-y-2">
             <Label className="text-sm font-medium">{title}</Label>
-            {description &amp;&amp; <p className="text-xs text-gray-600">{description}</p>}
+            {description && <p className="text-xs text-gray-600">{description}</p>}
             <Textarea
               value={typeof currentValue === 'object' ? JSON.stringify(currentValue, null, 2) : (currentValue ?? '')}
               onChange={(e) => {
