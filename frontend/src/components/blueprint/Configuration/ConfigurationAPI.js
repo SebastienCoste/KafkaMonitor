@@ -116,6 +116,18 @@ class ConfigurationAPI {
         }
       }
 
+      // Also generate blueprint_cnf.json
+      try {
+        const blueprintCnfResult = await this.generateBlueprintCNF();
+        if (blueprintCnfResult.success) {
+          totalFilesGenerated += 1; // Count blueprint_cnf.json as one file
+        } else {
+          errors.push('Failed to generate blueprint_cnf.json: ' + (blueprintCnfResult.error || 'Unknown error'));
+        }
+      } catch (error) {
+        errors.push('Error generating blueprint_cnf.json: ' + error.message);
+      }
+
       return {
         success: errors.length === 0,
         filesGenerated: totalFilesGenerated,
