@@ -84,7 +84,14 @@ class BackendSanityTester:
                         self.log_test("Entity Definitions - EntityTypes", True, f"✅ Found {len(entity_types)} entity types")
                         
                         # Show some entity type names for verification
-                        type_names = [et.get("name", "unknown") for et in entity_types[:5]]
+                        type_names = []
+                        for i, et in enumerate(entity_types):
+                            if i >= 5:  # Only show first 5
+                                break
+                            if isinstance(et, dict):
+                                type_names.append(et.get("name", "unknown"))
+                            else:
+                                type_names.append(str(et))
                         self.log_test("Entity Definitions - Sample Types", True, f"Sample types: {type_names}")
                         
                         return True
