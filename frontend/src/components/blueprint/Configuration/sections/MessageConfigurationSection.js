@@ -369,15 +369,6 @@ export default function MessageConfigurationSection({ entityDefinitions, uiConfi
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={createRootConfiguration}
-                        disabled={!selectedSchema || saving}
-                        className="h-7 text-xs"
-                      >
-                        Add Root Config
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
                         onClick={() => {
                           setShowCreateEntityForm(false);
                           setNewEntityType('');
