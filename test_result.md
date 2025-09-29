@@ -1,3 +1,28 @@
+
+- task: "Environment Overrides Dynamic Forms (FIX 2)"
+  implemented: true
+  working: unknown
+  file: "frontend/src/components/blueprint/Configuration/EnvironmentOverrides.js"
+  stuck_count: 0
+  priority: "critical"
+  needs_retesting: true
+  status_history:
+    - working: "NA"
+      agent: "main"
+      comment: "Refactored EnvironmentOverrides to schema-driven dynamic forms; fixed env set to [DEV, TEST, INT, LOAD, PROD]; per-env configs are full snapshots (no deep merge)."
+
+- task: "Frontend Environment Refresh Regression Sweep"
+  implemented: false
+  working: unknown
+  file: "frontend/src/App.js + pages"
+  stuck_count: 0
+  priority: "critical"
+  needs_retesting: true
+  status_history:
+    - working: "NA"
+      agent: "main"
+      comment: "Run automated UI tests to verify pages refresh correctly on environment change; identify and fix regressions across Traces, Topics, Graph, Blueprint Creator, Blueprint CNF Builder."
+
 #====================================================================================================
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
