@@ -84,41 +84,41 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     const loadAvailableFiles = async () => {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
-        
-        // Load transform specs files
+
+        const fetchFilesAt = async (path) => {
+          const res = await fetch(`${backendUrl}/api/blueprint/file-tree?path=${encodeURIComponent(path)}`);
+          if (!res.ok) return [];
+          const data = await res.json();
+          return Array.isArray(data.files) ? data.files : [];
+        };
+
+        // Load transform specs files, try relative first then fallback to example_config
         try {
-          const transformResponse = await fetch(`${backendUrl}/api/blueprint/file-tree?path=src/transformSpecs`);
-          
-          if (transformResponse.ok) {
-            const transformResult = await transformResponse.json();
-            if (transformResult.files) {
-              const jsltFiles = transformResult.files
-                .filter(file => file.name.endsWith('.jslt') && file.type === 'file')
-                .map(file => file.name);
-              setAvailableTransformFiles(jsltFiles);
-            }
+          let files = await fetchFilesAt('src/transformSpecs');
+          if (!files || files.length === 0) {
+            files = await fetchFilesAt('example_config/src/transformSpecs');
           }
+          const jsltFiles = files
+            .filter((file) => file.type === 'file' && file.name.endsWith('.jslt'))
+            .map((file) => file.name);
+          setAvailableTransformFiles(jsltFiles);
         } catch (e) {
           console.log('Could not load transform files');
         }
-        
-        // Load search experience template files
+
+        // Load search experience template files, try relative first then fallback to example_config
         try {
-          const templateResponse = await fetch(`${backendUrl}/api/blueprint/file-tree?path=src/searchExperience/templates`);
-          
-          if (templateResponse.ok) {
-            const templateResult = await templateResponse.json();
-            if (templateResult.files) {
-              const templateFiles = templateResult.files
-                .filter(file => file.type === 'file' && (file.name.endsWith('.json') || file.name.endsWith('.js')))
-                .map(file => file.name);
-              setAvailableTemplateFiles(templateFiles);
-            }
+          let files = await fetchFilesAt('src/searchExperience/templates');
+          if (!files || files.length === 0) {
+            files = await fetchFilesAt('example_config/src/searchExperience/templates');
           }
+          const templateFiles = files
+            .filter((file) => file.type === 'file' && (file.name.endsWith('.json') || file.name.endsWith('.js')))
+            .map((file) => file.name);
+          setAvailableTemplateFiles(templateFiles);
         } catch (e) {
           console.log('Could not load template files');
         }
-        
       } catch (error) {
         console.log('Error loading available files:', error);
       }
