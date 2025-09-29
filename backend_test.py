@@ -955,8 +955,6 @@ class BackendSanityTester:
 if __name__ == "__main__":
     tester = BackendSanityTester()
     tester.run_backend_sanity_tests()
-
-    def test_inheritance_persistence_fix(self):
         """Test FIX 1 - Inheritance Persistence with explicit null handling"""
         print("🔧 Testing FIX 1 - Inheritance Persistence Fix")
         print("-" * 50)
