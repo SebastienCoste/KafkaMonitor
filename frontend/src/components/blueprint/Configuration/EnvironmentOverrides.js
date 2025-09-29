@@ -466,6 +466,37 @@ export default function EnvironmentOverrides({
   };
 
   const renderConfigurationBuilder = (env, data) => {
+    if (!entityDefinition?.fields) {
+      return (
+        <div className="text-center py-8">
+          <AlertTriangle className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+          <p className="text-gray-600">No entity definition available</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 gap-6">
+          {Object.entries(entityDefinition.fields).map(([fieldName, fieldDef]) => (
+            <div key={fieldName} className="space-y-3">
+              <div className="flex items-center space-between">
+                <div>
+                  <Label className="text-sm font-medium text-gray-900">
+                    {fieldDef.displayName || fieldName}
+                  </Label>
+                  {fieldDef.description && (
+                    <p className="text-xs text-gray-600 mt-1">{fieldDef.description}</p>
+                  )}
+                </div>
+              </div>
+              {renderOverrideField(env, fieldName, fieldDef)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
     // Helper functions from EntityEditor
     const updateEnvironmentConfig = (path, value) => {
       const newOverrides = { ...data };
