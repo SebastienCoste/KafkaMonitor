@@ -333,10 +333,13 @@ class BlueprintConfigurationGenerator:
                 
                 blueprint_cnf["schemas"].append(schema_config)
                 
-                # Add search experience files
+                # Add search experience files with actual names
                 search_entities = set(self.file_mappings['searchExperience'].entities)
-                if entity_types.intersection(search_entities):
-                    blueprint_cnf["searchExperience"]["configs"].append("searchExperience.json")
+                for config in schema.configurations:
+                    if config.entityType in search_entities:
+                        filename = f"{config.name}.json"
+                        if filename not in blueprint_cnf["searchExperience"]["configs"]:
+                            blueprint_cnf["searchExperience"]["configs"].append(filename)
             
             return GeneratedFile(
                 filename="blueprint_cnf.json",
