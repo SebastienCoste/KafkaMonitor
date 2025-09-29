@@ -57,13 +57,13 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
                 ...prev,
                 namespace: existingConfig.namespace || prev.namespace,
                 version: existingConfig.version || prev.version,
-                owner: existingConfig.owner || prev.owner,
+                owner: existingConfig.owner || prev.owner || '',
                 description: existingConfig.description || prev.description,
-                transformSpecs: existingConfig.transformSpecs || prev.transformSpecs,
+                transformSpecs: Array.isArray(existingConfig.transformSpecs) ? existingConfig.transformSpecs : prev.transformSpecs,
                 searchExperience: {
                   ...prev.searchExperience,
-                  templates: existingConfig.searchExperience?.templates || prev.searchExperience.templates,
-                  configs: existingConfig.searchExperience?.configs || prev.searchExperience.configs
+                  templates: Array.isArray(existingConfig.searchExperience?.templates) ? existingConfig.searchExperience.templates : prev.searchExperience.templates,
+                  configs: Array.isArray(existingConfig.searchExperience?.configs) ? existingConfig.searchExperience.configs : prev.searchExperience.configs
                 }
               }));
             } catch (parseError) {
