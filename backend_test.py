@@ -623,6 +623,11 @@ class BlueprintConfigurationTester:
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
+        # CRITICAL PRIORITY: Test BLUEPRINT CNF FILE CONTENT LOADING ISSUE (Review Request)
+        print("\n🚨 CRITICAL: BLUEPRINT CNF FILE CONTENT LOADING INVESTIGATION")
+        print("=" * 70)
+        self.test_blueprint_cnf_file_content_loading_issue()
+        
         # PRIORITY: Test 5 SPECIFIC BLUEPRINT CONFIGURATION UI FIXES (Review Request)
         print("\n🚨 BLUEPRINT CONFIGURATION UI FIXES TESTING (5 SPECIFIC FIXES)")
         print("=" * 70)
