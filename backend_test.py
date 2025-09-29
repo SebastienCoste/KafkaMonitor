@@ -623,6 +623,11 @@ class BlueprintConfigurationTester:
         # First, set up blueprint root path
         self.setup_blueprint_root_path()
         
+        # PRIORITY: Test 5 SPECIFIC BLUEPRINT CONFIGURATION UI FIXES (Review Request)
+        print("\n🚨 BLUEPRINT CONFIGURATION UI FIXES TESTING (5 SPECIFIC FIXES)")
+        print("=" * 70)
+        self.test_blueprint_configuration_ui_fixes()
+        
         # PRIORITY: Test BLUEPRINT CNF LOADER AND DROPDOWN FUNCTIONALITY (Review Request)
         print("\n🚨 BLUEPRINT CNF LOADER AND DROPDOWN FUNCTIONALITY TESTING")
         print("=" * 70)
