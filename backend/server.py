@@ -19,7 +19,7 @@ from src.blueprint_config_models import (
     GenerateFilesRequest,
     EnvironmentOverrideRequest,
 )
-from src.graph_builder import GraphBuilder
+from src.graph_builder import TraceGraphBuilder
 
 logger = logging.getLogger(__name__)
 
