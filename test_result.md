@@ -1,5 +1,13 @@
 
 
+
+- task: "Add Reset to Disk feature for UI Config"
+  implemented: false
+  working: unknown
+  file: "backend/server.py + frontend ConfigurationTab.js/ConfigurationAPI.js"
+  priority: "major"
+  notes: "Add endpoint to reload ui-config from blueprint_cnf.json and rescan filesystem, and frontend button 'Reset from Disk'"
+
 frontend_testing:
   - run: "Comprehensive UI regression sweep focusing on environment refresh and Environment Overrides UI"
     agent: "auto_frontend_testing_agent"
