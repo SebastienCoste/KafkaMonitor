@@ -1719,6 +1719,393 @@ class BlueprintConfigurationTester:
         except Exception as e:
             self.log_test("FIX 5 - Load Blueprint CNF Defaults", False, f"Exception: {str(e)}")
 
+    def test_blueprint_cnf_file_content_loading_issue(self):
+        """
+        CRITICAL INVESTIGATION: Test the specific issue where blueprint_cnf.json data 
+        is not loading from the actual file but from cache.
+        
+        This test will:
+        1. Check if blueprint_cnf.json file exists in project root
+        2. Test GET /api/blueprint/file-content/blueprint_cnf.json endpoint directly
+        3. Verify that the API returns the actual file content, not cached data
+        4. Test that file modifications are reflected in API responses
+        5. Verify the JSON parsing and content structure
+        """
+        print("🔍 CRITICAL INVESTIGATION: Blueprint CNF File Content Loading Issue")
+        print("-" * 70)
+        
+        # Step 1: Verify blueprint_cnf.json file exists at expected location
+        self.test_blueprint_cnf_file_exists()
+        
+        # Step 2: Test direct file content retrieval via API
+        original_content = self.test_blueprint_cnf_direct_api_access()
+        
+        # Step 3: Verify file content matches expected structure
+        self.test_blueprint_cnf_content_structure(original_content)
+        
+        # Step 4: Test file modification detection (critical for cache issue)
+        self.test_blueprint_cnf_file_modification_detection(original_content)
+        
+        # Step 5: Test JSON parsing and field extraction
+        self.test_blueprint_cnf_json_parsing(original_content)
+        
+        # Step 6: Test caching behavior by making multiple requests
+        self.test_blueprint_cnf_caching_behavior()
+        
+        # Step 7: Restore original content
+        self.restore_blueprint_cnf_original_content(original_content)
+    
+    def test_blueprint_cnf_file_exists(self):
+        """Test if blueprint_cnf.json file exists in project root (/app)"""
+        try:
+            # Use file tree API to check if file exists
+            response = requests.get(f"{self.base_url}/api/blueprint/file-tree", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                files = data.get("files", [])
+                
+                # Look for blueprint_cnf.json in the file list
+                blueprint_cnf_found = False
+                for file_item in files:
+                    if isinstance(file_item, dict):
+                        if file_item.get("name") == "blueprint_cnf.json" and file_item.get("type") == "file":
+                            blueprint_cnf_found = True
+                            file_size = file_item.get("size", 0)
+                            self.log_test("Blueprint CNF File Exists", True, f"Found blueprint_cnf.json ({file_size} bytes)")
+                            break
+                    elif isinstance(file_item, str) and file_item == "blueprint_cnf.json":
+                        blueprint_cnf_found = True
+                        self.log_test("Blueprint CNF File Exists", True, "Found blueprint_cnf.json in file tree")
+                        break
+                
+                if not blueprint_cnf_found:
+                    self.log_test("Blueprint CNF File Exists", False, f"blueprint_cnf.json not found in file tree. Files: {[f.get('name', f) if isinstance(f, dict) else f for f in files[:10]]}")
+                    return False
+                
+                return True
+            else:
+                self.log_test("Blueprint CNF File Exists", False, f"File tree API failed: HTTP {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF File Exists", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_blueprint_cnf_direct_api_access(self):
+        """Test GET /api/blueprint/file-content/blueprint_cnf.json endpoint directly"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "content" in data:
+                    content = data["content"]
+                    content_length = len(content)
+                    
+                    # Try to parse as JSON to verify it's valid
+                    try:
+                        parsed_json = json.loads(content)
+                        self.log_test("Blueprint CNF Direct API Access", True, f"Successfully retrieved content ({content_length} chars, valid JSON)")
+                        
+                        # Log some key fields if they exist
+                        key_fields = []
+                        for field in ["namespace", "version", "owner", "description"]:
+                            if field in parsed_json:
+                                key_fields.append(f"{field}={parsed_json[field]}")
+                        
+                        if key_fields:
+                            self.log_test("Blueprint CNF Key Fields", True, f"Found fields: {', '.join(key_fields)}")
+                        
+                        return content
+                    except json.JSONDecodeError as je:
+                        self.log_test("Blueprint CNF Direct API Access", False, f"Invalid JSON content: {str(je)}")
+                        self.log_test("Blueprint CNF Raw Content", False, f"Raw content: {content[:200]}...")
+                        return content
+                else:
+                    self.log_test("Blueprint CNF Direct API Access", False, "Missing 'content' field in API response")
+                    return None
+            elif response.status_code == 404:
+                self.log_test("Blueprint CNF Direct API Access", False, "File not found (HTTP 404) - blueprint_cnf.json missing")
+                return None
+            else:
+                self.log_test("Blueprint CNF Direct API Access", False, f"HTTP {response.status_code}: {response.text[:200]}")
+                return None
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF Direct API Access", False, f"Exception: {str(e)}")
+            return None
+    
+    def test_blueprint_cnf_content_structure(self, content):
+        """Verify blueprint_cnf.json content has expected structure"""
+        if not content:
+            self.log_test("Blueprint CNF Content Structure", False, "No content to verify")
+            return
+        
+        try:
+            parsed_json = json.loads(content)
+            
+            # Check for expected fields
+            expected_fields = ["namespace", "version", "description"]
+            optional_fields = ["owner", "transformSpecs", "searchExperience"]
+            
+            found_expected = []
+            found_optional = []
+            
+            for field in expected_fields:
+                if field in parsed_json:
+                    found_expected.append(field)
+            
+            for field in optional_fields:
+                if field in parsed_json:
+                    found_optional.append(field)
+            
+            if len(found_expected) >= 2:  # At least 2 expected fields
+                self.log_test("Blueprint CNF Content Structure", True, f"Valid structure - Expected: {found_expected}, Optional: {found_optional}")
+                
+                # Check specific field values
+                if "namespace" in parsed_json:
+                    namespace = parsed_json["namespace"]
+                    if namespace and len(namespace) > 0:
+                        self.log_test("Blueprint CNF Namespace Field", True, f"Namespace: '{namespace}'")
+                    else:
+                        self.log_test("Blueprint CNF Namespace Field", False, "Namespace field is empty")
+                
+                if "transformSpecs" in parsed_json:
+                    transform_specs = parsed_json["transformSpecs"]
+                    if isinstance(transform_specs, list):
+                        self.log_test("Blueprint CNF TransformSpecs Field", True, f"TransformSpecs array with {len(transform_specs)} items")
+                    else:
+                        self.log_test("Blueprint CNF TransformSpecs Field", False, f"TransformSpecs is not an array: {type(transform_specs)}")
+                
+                if "searchExperience" in parsed_json:
+                    search_exp = parsed_json["searchExperience"]
+                    if isinstance(search_exp, dict):
+                        templates = search_exp.get("templates", [])
+                        if isinstance(templates, list):
+                            self.log_test("Blueprint CNF SearchExperience Field", True, f"SearchExperience with {len(templates)} templates")
+                        else:
+                            self.log_test("Blueprint CNF SearchExperience Field", False, "SearchExperience templates is not an array")
+                    else:
+                        self.log_test("Blueprint CNF SearchExperience Field", False, f"SearchExperience is not an object: {type(search_exp)}")
+            else:
+                self.log_test("Blueprint CNF Content Structure", False, f"Missing expected fields. Found: {found_expected}, Expected: {expected_fields}")
+                
+        except json.JSONDecodeError as je:
+            self.log_test("Blueprint CNF Content Structure", False, f"Invalid JSON: {str(je)}")
+        except Exception as e:
+            self.log_test("Blueprint CNF Content Structure", False, f"Exception: {str(e)}")
+    
+    def test_blueprint_cnf_file_modification_detection(self, original_content):
+        """Test that file modifications are reflected in API responses (critical for cache issue)"""
+        if not original_content:
+            self.log_test("Blueprint CNF File Modification Detection", False, "No original content to test with")
+            return
+        
+        try:
+            # Parse original content
+            original_json = json.loads(original_content)
+            
+            # Create modified content with a test marker
+            modified_json = original_json.copy()
+            modified_json["test_modification_marker"] = f"modified_at_{int(time.time())}"
+            modified_json["cache_test"] = True
+            
+            # If version exists, increment it
+            if "version" in modified_json:
+                try:
+                    version_parts = modified_json["version"].split(".")
+                    if len(version_parts) >= 3:
+                        patch_version = int(version_parts[2]) + 1
+                        modified_json["version"] = f"{version_parts[0]}.{version_parts[1]}.{patch_version}"
+                except:
+                    modified_json["version"] = "1.0.1"
+            else:
+                modified_json["version"] = "1.0.1"
+            
+            modified_content = json.dumps(modified_json, indent=2)
+            
+            # Step 1: Write modified content to file
+            write_response = requests.put(
+                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                json={"content": modified_content},
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if write_response.status_code == 200:
+                write_data = write_response.json()
+                if write_data.get("success"):
+                    self.log_test("Blueprint CNF File Write", True, "Successfully wrote modified content to file")
+                    
+                    # Step 2: Wait a moment to ensure file system changes are reflected
+                    time.sleep(1)
+                    
+                    # Step 3: Read content back via API
+                    read_response = requests.get(f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json", timeout=10)
+                    
+                    if read_response.status_code == 200:
+                        read_data = read_response.json()
+                        read_content = read_data.get("content", "")
+                        
+                        try:
+                            read_json = json.loads(read_content)
+                            
+                            # Check if our modification marker is present
+                            if "test_modification_marker" in read_json and "cache_test" in read_json:
+                                marker_value = read_json["test_modification_marker"]
+                                self.log_test("Blueprint CNF File Modification Detection", True, f"✅ CACHE ISSUE RESOLVED: File modifications are reflected in API (marker: {marker_value})")
+                                
+                                # Verify version was also updated
+                                if "version" in read_json:
+                                    new_version = read_json["version"]
+                                    self.log_test("Blueprint CNF Version Update Detection", True, f"Version updated to: {new_version}")
+                            else:
+                                self.log_test("Blueprint CNF File Modification Detection", False, "❌ CACHE ISSUE CONFIRMED: File modifications NOT reflected in API response")
+                                self.log_test("Blueprint CNF Cache Issue Details", False, f"Expected markers not found. Content: {read_content[:200]}...")
+                                
+                        except json.JSONDecodeError:
+                            self.log_test("Blueprint CNF File Modification Detection", False, "Modified content is not valid JSON")
+                    else:
+                        self.log_test("Blueprint CNF File Modification Detection", False, f"Failed to read modified content: HTTP {read_response.status_code}")
+                else:
+                    self.log_test("Blueprint CNF File Write", False, f"Failed to write modified content: {write_data}")
+            else:
+                self.log_test("Blueprint CNF File Write", False, f"HTTP {write_response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF File Modification Detection", False, f"Exception: {str(e)}")
+    
+    def test_blueprint_cnf_json_parsing(self, content):
+        """Test JSON parsing and field extraction from blueprint_cnf.json"""
+        if not content:
+            self.log_test("Blueprint CNF JSON Parsing", False, "No content to parse")
+            return
+        
+        try:
+            parsed_json = json.loads(content)
+            
+            # Test field extraction
+            extraction_tests = [
+                ("namespace", str),
+                ("version", str),
+                ("description", str),
+                ("owner", str),
+                ("transformSpecs", list),
+                ("searchExperience", dict)
+            ]
+            
+            successful_extractions = 0
+            total_extractions = 0
+            
+            for field_name, expected_type in extraction_tests:
+                total_extractions += 1
+                if field_name in parsed_json:
+                    field_value = parsed_json[field_name]
+                    if isinstance(field_value, expected_type):
+                        successful_extractions += 1
+                        if expected_type == list:
+                            self.log_test(f"Blueprint CNF Field - {field_name}", True, f"Array with {len(field_value)} items")
+                        elif expected_type == dict:
+                            self.log_test(f"Blueprint CNF Field - {field_name}", True, f"Object with {len(field_value)} keys")
+                        else:
+                            self.log_test(f"Blueprint CNF Field - {field_name}", True, f"Value: '{field_value}'")
+                    else:
+                        self.log_test(f"Blueprint CNF Field - {field_name}", False, f"Wrong type: expected {expected_type.__name__}, got {type(field_value).__name__}")
+                else:
+                    self.log_test(f"Blueprint CNF Field - {field_name}", False, "Field not present")
+            
+            success_rate = (successful_extractions / total_extractions) * 100
+            self.log_test("Blueprint CNF JSON Parsing", True, f"Parsed successfully - {successful_extractions}/{total_extractions} fields extracted ({success_rate:.1f}%)")
+            
+        except json.JSONDecodeError as je:
+            self.log_test("Blueprint CNF JSON Parsing", False, f"JSON parsing failed: {str(je)}")
+        except Exception as e:
+            self.log_test("Blueprint CNF JSON Parsing", False, f"Exception: {str(e)}")
+    
+    def test_blueprint_cnf_caching_behavior(self):
+        """Test caching behavior by making multiple requests"""
+        try:
+            # Make multiple rapid requests to test for caching issues
+            request_results = []
+            
+            for i in range(3):
+                start_time = time.time()
+                response = requests.get(f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json", timeout=10)
+                end_time = time.time()
+                
+                response_time = end_time - start_time
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    content = data.get("content", "")
+                    content_hash = hash(content)  # Simple hash to detect content changes
+                    
+                    request_results.append({
+                        "request": i + 1,
+                        "response_time": response_time,
+                        "content_hash": content_hash,
+                        "content_length": len(content)
+                    })
+                else:
+                    request_results.append({
+                        "request": i + 1,
+                        "response_time": response_time,
+                        "error": f"HTTP {response.status_code}"
+                    })
+                
+                # Small delay between requests
+                time.sleep(0.5)
+            
+            # Analyze results
+            successful_requests = [r for r in request_results if "error" not in r]
+            
+            if len(successful_requests) >= 2:
+                # Check if all requests returned the same content (expected)
+                content_hashes = [r["content_hash"] for r in successful_requests]
+                avg_response_time = sum(r["response_time"] for r in successful_requests) / len(successful_requests)
+                
+                if len(set(content_hashes)) == 1:
+                    self.log_test("Blueprint CNF Caching Behavior", True, f"Consistent content across {len(successful_requests)} requests (avg: {avg_response_time:.3f}s)")
+                else:
+                    self.log_test("Blueprint CNF Caching Behavior", False, f"Inconsistent content across requests: {len(set(content_hashes))} different versions")
+                
+                # Log response times
+                for result in successful_requests:
+                    self.log_test(f"Blueprint CNF Request {result['request']}", True, f"Response time: {result['response_time']:.3f}s, Content: {result['content_length']} chars")
+            else:
+                self.log_test("Blueprint CNF Caching Behavior", False, f"Only {len(successful_requests)} successful requests out of 3")
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF Caching Behavior", False, f"Exception: {str(e)}")
+    
+    def restore_blueprint_cnf_original_content(self, original_content):
+        """Restore original blueprint_cnf.json content"""
+        if not original_content:
+            self.log_test("Blueprint CNF Content Restoration", False, "No original content to restore")
+            return
+        
+        try:
+            response = requests.put(
+                f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json",
+                json={"content": original_content},
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success"):
+                    self.log_test("Blueprint CNF Content Restoration", True, "Successfully restored original content")
+                else:
+                    self.log_test("Blueprint CNF Content Restoration", False, f"Restoration failed: {data}")
+            else:
+                self.log_test("Blueprint CNF Content Restoration", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test("Blueprint CNF Content Restoration", False, f"Exception: {str(e)}")
+
     def cleanup_test_entity(self, entity_id):
         """Helper method to cleanup test entities"""
         try:
