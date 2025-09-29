@@ -250,7 +250,7 @@ class BackendSanityTester:
                         self.log_test("Environments API - Available", False, f"❌ Available environments is not a valid list: {available_envs}")
                         return False
                 else:
-                    self.log_test("Environments API - Available", False, "❌ Missing 'available' field in response")
+                    self.log_test("Environments API - Available", False, "❌ Missing 'available_environments' field in response")
                     return False
             else:
                 self.log_test("Environments API", False, f"❌ HTTP {response.status_code}")
