@@ -64,13 +64,13 @@ export default function EnvironmentOverrides({
     let mapFieldPath = '';
     let mapKey = '';
 
-    for (let i = 0; i &lt; keys.length - 1; i++) {
+    for (let i = 0; i < keys.length - 1; i++) {
       const currentPath = keys.slice(0, i + 1).join('.');
       const fieldDef = getFieldDefinitionByPath(entityTypeFields, currentPath);
       if (fieldDef?.type === 'map') {
         mapFieldFound = true;
         mapFieldPath = currentPath;
-        if (i + 1 &lt; keys.length) {
+        if (i + 1 < keys.length) {
           mapKey = keys[i + 1];
         }
         break;
@@ -80,7 +80,7 @@ export default function EnvironmentOverrides({
     if (mapFieldFound && mapKey) {
       // Navigate to the map object
       const mapKeys = mapFieldPath.split('.');
-      for (let i = 0; i &lt; mapKeys.length; i++) {
+      for (let i = 0; i < mapKeys.length; i++) {
         const key = mapKeys[i];
         if (!(key in current) || typeof current[key] !== 'object') {
           current[key] = {};
@@ -97,7 +97,7 @@ export default function EnvironmentOverrides({
           current[mapKey] = {};
         }
         let mapValueCurrent = current[mapKey];
-        for (let i = 0; i &lt; remainingKeys.length - 1; i++) {
+        for (let i = 0; i < remainingKeys.length - 1; i++) {
           const key = remainingKeys[i];
           if (!(key in mapValueCurrent) || typeof mapValueCurrent[key] !== 'object') {
             mapValueCurrent[key] = {};
@@ -109,7 +109,7 @@ export default function EnvironmentOverrides({
         current[mapKey] = value;
       }
     } else {
-      for (let i = 0; i &lt; keys.length - 1; i++) {
+      for (let i = 0; i < keys.length - 1; i++) {
         const key = keys[i];
         if (!(key in current) || typeof current[key] !== 'object') {
           current[key] = {};
@@ -128,13 +128,13 @@ export default function EnvironmentOverrides({
     let mapFieldPath = '';
     let mapKey = '';
 
-    for (let i = 0; i &lt; keys.length - 1; i++) {
+    for (let i = 0; i < keys.length - 1; i++) {
       const currentPath = keys.slice(0, i + 1).join('.');
       const fieldDef = getFieldDefinitionByPath(entityTypeFields, currentPath);
       if (fieldDef?.type === 'map') {
         mapFieldFound = true;
         mapFieldPath = currentPath;
-        if (i + 1 &lt; keys.length) {
+        if (i + 1 < keys.length) {
           mapKey = keys[i + 1];
         }
         break;
@@ -222,67 +222,67 @@ export default function EnvironmentOverrides({
       case 'string': {
         if (fieldDef.options) {
           return (
-            &lt;div key={fullPath} className="space-y-2"&gt;
-              &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-              {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-              &lt;Select
+            <div key={fullPath} className="space-y-2"&gt;
+              <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+              {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+              <Select
                 value={(currentValue ?? '')}
                 onValueChange={(value) =&gt; updateEnvironmentConfig(env, fullPath, value)}
               &gt;
-                &lt;SelectTrigger&gt;
-                  &lt;SelectValue placeholder={`Select ${title.toLowerCase()}`} /&gt;
-                &lt;/SelectTrigger&gt;
-                &lt;SelectContent&gt;
+                <SelectTrigger&gt;
+                  <SelectValue placeholder={`Select ${title.toLowerCase()}`} /&gt;
+                </SelectTrigger&gt;
+                <SelectContent&gt;
                   {fieldDef.options.map((opt) =&gt; (
-                    &lt;SelectItem key={opt} value={opt}&gt;{opt}&lt;/SelectItem&gt;
+                    <SelectItem key={opt} value={opt}&gt;{opt}</SelectItem&gt;
                   ))}
-                &lt;/SelectContent&gt;
-              &lt;/Select&gt;
-            &lt;/div&gt;
+                </SelectContent&gt;
+              </Select&gt;
+            </div&gt;
           );
         }
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-            &lt;Input
+          <div key={fullPath} className="space-y-2"&gt;
+            <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+            <Input
               value={(currentValue ?? '')}
               onChange={(e) =&gt; updateEnvironmentConfig(env, fullPath, e.target.value)}
               placeholder={fieldDef.default?.toString() || ''}
             /&gt;
-          &lt;/div&gt;
+          </div&gt;
         );
       }
 
       case 'select': {
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-            &lt;Select
+          <div key={fullPath} className="space-y-2"&gt;
+            <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+            <Select
               value={(currentValue ?? fieldDef.default ?? '')}
               onValueChange={(value) =&gt; updateEnvironmentConfig(env, fullPath, value)}
             &gt;
-              &lt;SelectTrigger&gt;
-                &lt;SelectValue placeholder={`Select ${title.toLowerCase()}`} /&gt;
-              &lt;/SelectTrigger&gt;
-              &lt;SelectContent&gt;
+              <SelectTrigger&gt;
+                <SelectValue placeholder={`Select ${title.toLowerCase()}`} /&gt;
+              </SelectTrigger&gt;
+              <SelectContent&gt;
                 {fieldDef.options?.map((opt) =&gt; (
-                  &lt;SelectItem key={opt} value={opt}&gt;{opt}&lt;/SelectItem&gt;
+                  <SelectItem key={opt} value={opt}&gt;{opt}</SelectItem&gt;
                 ))}
-              &lt;/SelectContent&gt;
-            &lt;/Select&gt;
-          &lt;/div&gt;
+              </SelectContent&gt;
+            </Select&gt;
+          </div&gt;
         );
       }
 
       case 'integer':
       case 'number': {
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-            &lt;Input
+          <div key={fullPath} className="space-y-2"&gt;
+            <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+            <Input
               type="number"
               value={(currentValue ?? '')}
               onChange={(e) =&gt; updateEnvironmentConfig(env, fullPath, fieldDef.type === 'integer' ? parseInt(e.target.value) || 0 : parseFloat(e.target.value) || 0)}
@@ -290,32 +290,32 @@ export default function EnvironmentOverrides({
               max={fieldDef.max}
               placeholder={fieldDef.default?.toString() || ''}
             /&gt;
-          &lt;/div&gt;
+          </div&gt;
         );
       }
 
       case 'boolean': {
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;div className="flex items-center space-x-2"&gt;
-              &lt;Switch
+          <div key={fullPath} className="space-y-2"&gt;
+            <div className="flex items-center space-x-2"&gt;
+              <Switch
                 checked={!!currentValue}
                 onCheckedChange={(checked) =&gt; updateEnvironmentConfig(env, fullPath, checked)}
               /&gt;
-              &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-            &lt;/div&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-          &lt;/div&gt;
+              <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+            </div&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+          </div&gt;
         );
       }
 
       case 'array': {
         const arrayValue = Array.isArray(currentValue) ? currentValue : [];
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;div className="flex items-center justify-between"&gt;
-              &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-              &lt;Button
+          <div key={fullPath} className="space-y-2"&gt;
+            <div className="flex items-center justify-between"&gt;
+              <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() =&gt; {
@@ -323,15 +323,15 @@ export default function EnvironmentOverrides({
                   updateEnvironmentConfig(env, fullPath, newArray);
                 }}
               &gt;
-                &lt;Plus className="h-4 w-4" /&gt;
-              &lt;/Button&gt;
-            &lt;/div&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-            &lt;div className="space-y-2"&gt;
+                <Plus className="h-4 w-4" /&gt;
+              </Button&gt;
+            </div&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+            <div className="space-y-2"&gt;
               {arrayValue.map((item, index) =&gt; (
-                &lt;div key={index} className="flex items-center space-x-2"&gt;
+                <div key={index} className="flex items-center space-x-2"&gt;
                   {fieldDef.items?.type === 'string' ? (
-                    &lt;Input
+                    <Input
                       value={item}
                       onChange={(e) =&gt; {
                         const newArray = [...arrayValue];
@@ -341,15 +341,15 @@ export default function EnvironmentOverrides({
                       className="flex-1"
                     /&gt;
                   ) : fieldDef.items?.type === 'object' &amp;&amp; fieldDef.items?.fields ? (
-                    &lt;Card className="flex-1"&gt;
-                      &lt;CardContent className="p-3 space-y-2"&gt;
+                    <Card className="flex-1"&gt;
+                      <CardContent className="p-3 space-y-2"&gt;
                         {Object.entries(fieldDef.items.fields).map(([subFieldName, subFieldDef]) =&gt;
                           renderField(env, subFieldName, subFieldDef, `${fullPath}.${index}`)
                         )}
-                      &lt;/CardContent&gt;
-                    &lt;/Card&gt;
+                      </CardContent&gt;
+                    </Card&gt;
                   ) : (
-                    &lt;Textarea
+                    <Textarea
                       value={typeof item === 'object' ? JSON.stringify(item, null, 2) : item}
                       onChange={(e) =&gt; {
                         const newArray = [...arrayValue];
@@ -364,7 +364,7 @@ export default function EnvironmentOverrides({
                       rows={2}
                     /&gt;
                   )}
-                  &lt;Button
+                  <Button
                     variant="ghost"
                     size="sm"
                     onClick={() =&gt; {
@@ -372,22 +372,22 @@ export default function EnvironmentOverrides({
                       updateEnvironmentConfig(env, fullPath, newArray);
                     }}
                   &gt;
-                    &lt;Minus className="h-4 w-4" /&gt;
-                  &lt;/Button&gt;
-                &lt;/div&gt;
+                    <Minus className="h-4 w-4" /&gt;
+                  </Button&gt;
+                </div&gt;
               ))}
-            &lt;/div&gt;
-          &lt;/div&gt;
+            </div&gt;
+          </div&gt;
         );
       }
 
       case 'map': {
         const mapValue = (currentValue &amp;&amp; typeof currentValue === 'object') ? currentValue : {};
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;div className="flex items-center justify-between"&gt;
-              &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-              &lt;Button
+          <div key={fullPath} className="space-y-2"&gt;
+            <div className="flex items-center justify-between"&gt;
+              <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={() =&gt; {
@@ -397,17 +397,17 @@ export default function EnvironmentOverrides({
                   }
                 }}
               &gt;
-                &lt;Plus className="h-4 w-4" /&gt;
-              &lt;/Button&gt;
-            &lt;/div&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-            &lt;div className="space-y-2"&gt;
+                <Plus className="h-4 w-4" /&gt;
+              </Button&gt;
+            </div&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+            <div className="space-y-2"&gt;
               {Object.entries(mapValue).map(([key, value]) =&gt; (
-                &lt;Card key={key}&gt;
-                  &lt;CardContent className="p-3"&gt;
-                    &lt;div className="flex items-center justify-between mb-2"&gt;
-                      &lt;Label className="text-sm font-semibold"&gt;{key}&lt;/Label&gt;
-                      &lt;Button
+                <Card key={key}&gt;
+                  <CardContent className="p-3"&gt;
+                    <div className="flex items-center justify-between mb-2"&gt;
+                      <Label className="text-sm font-semibold"&gt;{key}</Label&gt;
+                      <Button
                         variant="ghost"
                         size="sm"
                         onClick={() =&gt; {
@@ -416,17 +416,17 @@ export default function EnvironmentOverrides({
                           updateEnvironmentConfig(env, fullPath, newMap);
                         }}
                       &gt;
-                        &lt;Trash2 className="h-3 w-3" /&gt;
-                      &lt;/Button&gt;
-                    &lt;/div&gt;
+                        <Trash2 className="h-3 w-3" /&gt;
+                      </Button&gt;
+                    </div&gt;
                     {fieldDef.valueType &amp;&amp; fieldDef.valueType.fields ? (
-                      &lt;div className="space-y-2"&gt;
+                      <div className="space-y-2"&gt;
                         {Object.entries(fieldDef.valueType.fields).map(([subFieldName, subFieldDef]) =&gt;
                           renderField(env, subFieldName, subFieldDef, `${fullPath}.${key}`)
                         )}
-                      &lt;/div&gt;
+                      </div&gt;
                     ) : (
-                      &lt;Textarea
+                      <Textarea
                         value={typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
                         onChange={(e) =&gt; {
                           try {
@@ -439,35 +439,35 @@ export default function EnvironmentOverrides({
                         className="font-mono text-sm"
                       /&gt;
                     )}
-                  &lt;/CardContent&gt;
-                &lt;/Card&gt;
+                  </CardContent&gt;
+                </Card&gt;
               ))}
-            &lt;/div&gt;
-          &lt;/div&gt;
+            </div&gt;
+          </div&gt;
         );
       }
 
       case 'object': {
         if (fieldDef.fields) {
           return (
-            &lt;div key={fullPath} className="space-y-4"&gt;
-              &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-              {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-              &lt;Card&gt;
-                &lt;CardContent className="p-4 space-y-4"&gt;
+            <div key={fullPath} className="space-y-4"&gt;
+              <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+              {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+              <Card&gt;
+                <CardContent className="p-4 space-y-4"&gt;
                   {Object.entries(fieldDef.fields).map(([subFieldName, subFieldDef]) =&gt;
                     renderField(env, subFieldName, subFieldDef, fullPath)
                   )}
-                &lt;/CardContent&gt;
-              &lt;/Card&gt;
-            &lt;/div&gt;
+                </CardContent&gt;
+              </Card&gt;
+            </div&gt;
           );
         }
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-            {description &amp;&amp; &lt;p className="text-xs text-gray-600"&gt;{description}&lt;/p&gt;}
-            &lt;Textarea
+          <div key={fullPath} className="space-y-2"&gt;
+            <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+            {description &amp;&amp; <p className="text-xs text-gray-600"&gt;{description}</p&gt;}
+            <Textarea
               value={typeof currentValue === 'object' ? JSON.stringify(currentValue, null, 2) : (currentValue ?? '')}
               onChange={(e) =&gt; {
                 try {
@@ -479,19 +479,19 @@ export default function EnvironmentOverrides({
               rows={4}
               className="font-mono text-sm"
             /&gt;
-          &lt;/div&gt;
+          </div&gt;
         );
       }
 
       default: {
         return (
-          &lt;div key={fullPath} className="space-y-2"&gt;
-            &lt;Label className="text-sm font-medium"&gt;{title}&lt;/Label&gt;
-            &lt;Alert&gt;
-              &lt;AlertTriangle className="h-4 w-4" /&gt;
-              &lt;AlertDescription&gt;Unsupported field type: {fieldDef.type}&lt;/AlertDescription&gt;
-            &lt;/Alert&gt;
-          &lt;/div&gt;
+          <div key={fullPath} className="space-y-2"&gt;
+            <Label className="text-sm font-medium"&gt;{title}</Label&gt;
+            <Alert&gt;
+              <AlertTriangle className="h-4 w-4" /&gt;
+              <AlertDescription&gt;Unsupported field type: {fieldDef.type}</AlertDescription&gt;
+            </Alert&gt;
+          </div&gt;
         );
       }
     }
@@ -501,83 +501,83 @@ export default function EnvironmentOverrides({
     if (!env) return null;
     if (!fields || Object.keys(fields).length === 0) {
       return (
-        &lt;div className="text-center py-8"&gt;
-          &lt;AlertTriangle className="h-8 w-8 mx-auto text-gray-400 mb-2" /&gt;
-          &lt;p className="text-gray-600"&gt;No entity definition available&lt;/p&gt;
-        &lt;/div&gt;
+        <div className="text-center py-8"&gt;
+          <AlertTriangle className="h-8 w-8 mx-auto text-gray-400 mb-2" /&gt;
+          <p className="text-gray-600"&gt;No entity definition available</p&gt;
+        </div&gt;
       );
     }
 
     return (
-      &lt;div className="space-y-6"&gt;
-        &lt;div className="flex items-center justify-between"&gt;
-          &lt;h4 className="font-medium"&gt;{env} Configuration&lt;/h4&gt;
-          &lt;div className="flex space-x-2"&gt;
-            &lt;Button variant="outline" size="sm" onClick={() =&gt; copyFromBaseConfig(env)}&gt;
-              &lt;Copy className="h-4 w-4 mr-2" /&gt;Copy Base Config
-            &lt;/Button&gt;
-            &lt;Select onValueChange={(sourceEnv) =&gt; copyFromAnotherEnvironment(sourceEnv, env)}&gt;
-              &lt;SelectTrigger className="w-48"&gt;
-                &lt;SelectValue placeholder="Copy from environment" /&gt;
-              &lt;/SelectTrigger&gt;
-              &lt;SelectContent&gt;
+      <div className="space-y-6"&gt;
+        <div className="flex items-center justify-between"&gt;
+          <h4 className="font-medium"&gt;{env} Configuration</h4&gt;
+          <div className="flex space-x-2"&gt;
+            <Button variant="outline" size="sm" onClick={() =&gt; copyFromBaseConfig(env)}&gt;
+              <Copy className="h-4 w-4 mr-2" /&gt;Copy Base Config
+            </Button&gt;
+            <Select onValueChange={(sourceEnv) =&gt; copyFromAnotherEnvironment(sourceEnv, env)}&gt;
+              <SelectTrigger className="w-48"&gt;
+                <SelectValue placeholder="Copy from environment" /&gt;
+              </SelectTrigger&gt;
+              <SelectContent&gt;
                 {Object.keys(overrides)
                   .filter((e) =&gt; e !== env)
                   .map((envName) =&gt; (
-                    &lt;SelectItem key={envName} value={envName}&gt;Copy from {envName}&lt;/SelectItem&gt;
+                    <SelectItem key={envName} value={envName}&gt;Copy from {envName}</SelectItem&gt;
                   ))}
-              &lt;/SelectContent&gt;
-            &lt;/Select&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+              </SelectContent&gt;
+            </Select&gt;
+          </div&gt;
+        </div&gt;
 
-        &lt;div className="space-y-4"&gt;
+        <div className="space-y-4"&gt;
           {Object.entries(fields).map(([fieldName, fieldDef]) =&gt; renderField(env, fieldName, fieldDef))}
-        &lt;/div&gt;
-      &lt;/div&gt;
+        </div&gt;
+      </div&gt;
     );
   };
 
   return (
-    &lt;div className="h-full flex"&gt;
+    <div className="h-full flex"&gt;
       {/* Environment List */}
-      &lt;div className="w-64 border-r border-gray-200 bg-gray-50"&gt;
-        &lt;div className="p-4 border-b border-gray-200"&gt;
-          &lt;h3 className="font-semibold text-gray-900 mb-3"&gt;Environment Overrides&lt;/h3&gt;
+      <div className="w-64 border-r border-gray-200 bg-gray-50"&gt;
+        <div className="p-4 border-b border-gray-200"&gt;
+          <h3 className="font-semibold text-gray-900 mb-3"&gt;Environment Overrides</h3&gt;
 
           {availableEnvironments.length &gt; 0 ? (
-            &lt;div className="space-y-2"&gt;
-              &lt;Select value={selectedEnv} onValueChange={setSelectedEnv}&gt;
-                &lt;SelectTrigger&gt;
-                  &lt;SelectValue placeholder="Select environment" /&gt;
-                &lt;/SelectTrigger&gt;
-                &lt;SelectContent&gt;
+            <div className="space-y-2"&gt;
+              <Select value={selectedEnv} onValueChange={setSelectedEnv}&gt;
+                <SelectTrigger&gt;
+                  <SelectValue placeholder="Select environment" /&gt;
+                </SelectTrigger&gt;
+                <SelectContent&gt;
                   {availableEnvironments.map((env) =&gt; (
-                    &lt;SelectItem key={env} value={env}&gt;{env}&lt;/SelectItem&gt;
+                    <SelectItem key={env} value={env}&gt;{env}</SelectItem&gt;
                   ))}
-                &lt;/SelectContent&gt;
-              &lt;/Select&gt;
+                </SelectContent&gt;
+              </Select&gt;
 
-              &lt;Button size="sm" onClick={addEnvironmentOverride} disabled={!selectedEnv} className="w-full"&gt;
-                &lt;Plus className="h-4 w-4 mr-2" /&gt;Add Override
-              &lt;/Button&gt;
-            &lt;/div&gt;
+              <Button size="sm" onClick={addEnvironmentOverride} disabled={!selectedEnv} className="w-full"&gt;
+                <Plus className="h-4 w-4 mr-2" /&gt;Add Override
+              </Button&gt;
+            </div&gt;
           ) : (
-            &lt;div className="text-xs text-gray-500"&gt;All environments added&lt;/div&gt;
+            <div className="text-xs text-gray-500"&gt;All environments added</div&gt;
           )}
-        &lt;/div&gt;
+        </div&gt;
 
-        &lt;div className="p-2"&gt;
+        <div className="p-2"&gt;
           {Object.keys(overrides).length === 0 ? (
-            &lt;div className="text-center py-8"&gt;
-              &lt;Globe className="h-8 w-8 mx-auto text-gray-300 mb-2" /&gt;
-              &lt;div className="text-sm text-gray-500 mb-1"&gt;No environment overrides&lt;/div&gt;
-              &lt;div className="text-xs text-gray-400"&gt;Add overrides for specific environments&lt;/div&gt;
-            &lt;/div&gt;
+            <div className="text-center py-8"&gt;
+              <Globe className="h-8 w-8 mx-auto text-gray-300 mb-2" /&gt;
+              <div className="text-sm text-gray-500 mb-1"&gt;No environment overrides</div&gt;
+              <div className="text-xs text-gray-400"&gt;Add overrides for specific environments</div&gt;
+            </div&gt;
           ) : (
-            &lt;div className="space-y-1"&gt;
+            <div className="space-y-1"&gt;
               {Object.keys(overrides).map((env) =&gt; (
-                &lt;div
+                <div
                   key={env}
                   className={`p-3 rounded cursor-pointer transition-colors ${
                     editingEnv === env
@@ -586,14 +586,14 @@ export default function EnvironmentOverrides({
                   }`}
                   onClick={() =&gt; setEditingEnv(env)}
                 &gt;
-                  &lt;div className="flex items-center justify-between"&gt;
-                    &lt;div&gt;
-                      &lt;div className="font-medium text-sm"&gt;{env}&lt;/div&gt;
-                      &lt;div className="text-xs text-gray-600"&gt;
+                  <div className="flex items-center justify-between"&gt;
+                    <div&gt;
+                      <div className="font-medium text-sm"&gt;{env}</div&gt;
+                      <div className="text-xs text-gray-600"&gt;
                         {Object.keys(overrides[env] || {}).length} fields
-                      &lt;/div&gt;
-                    &lt;/div&gt;
-                    &lt;Button
+                      </div&gt;
+                    </div&gt;
+                    <Button
                       variant="ghost"
                       size="sm"
                       onClick={(e) =&gt; {
@@ -602,39 +602,39 @@ export default function EnvironmentOverrides({
                       }}
                       className="h-6 w-6 p-0 text-gray-400 hover:text-red-600"
                     &gt;
-                      &lt;Trash2 className="h-3 w-3" /&gt;
-                    &lt;/Button&gt;
-                  &lt;/div&gt;
-                &lt;/div&gt;
+                      <Trash2 className="h-3 w-3" /&gt;
+                    </Button&gt;
+                  </div&gt;
+                </div&gt;
               ))}
-            &lt;/div&gt;
+            </div&gt;
           )}
-        &lt;/div&gt;
-      &lt;/div&gt;
+        </div&gt;
+      </div&gt;
 
       {/* Editor */}
-      &lt;div className="flex-1 p-4 overflow-y-auto"&gt;
+      <div className="flex-1 p-4 overflow-y-auto"&gt;
         {!editingEnv ? (
-          &lt;div className="h-full flex items-center justify-center"&gt;
-            &lt;div className="text-center max-w-md"&gt;
-              &lt;Globe className="h-10 w-10 mx-auto text-gray-300 mb-3" /&gt;
-              &lt;div className="text-sm text-gray-700 mb-1"&gt;Select an environment to edit overrides&lt;/div&gt;
-              &lt;div className="text-xs text-gray-500"&gt;You can add overrides for any of: DEV, TEST, INT, LOAD, PROD&lt;/div&gt;
-            &lt;/div&gt;
-          &lt;/div&gt;
+          <div className="h-full flex items-center justify-center"&gt;
+            <div className="text-center max-w-md"&gt;
+              <Globe className="h-10 w-10 mx-auto text-gray-300 mb-3" /&gt;
+              <div className="text-sm text-gray-700 mb-1"&gt;Select an environment to edit overrides</div&gt;
+              <div className="text-xs text-gray-500"&gt;You can add overrides for any of: DEV, TEST, INT, LOAD, PROD</div&gt;
+            </div&gt;
+          </div&gt;
         ) : (
           renderEditor(editingEnv)
         )}
 
         {/* Explicit note: full per-environment config snapshots */}
-        &lt;div className="mt-6"&gt;
-          &lt;Alert&gt;
-            &lt;AlertDescription&gt;
+        <div className="mt-6"&gt;
+          <Alert&gt;
+            <AlertDescription&gt;
               Each environment section contains the full configuration for that environment. The service will interpret it directly.
-            &lt;/AlertDescription&gt;
-          &lt;/Alert&gt;
-        &lt;/div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+            </AlertDescription&gt;
+          </Alert&gt;
+        </div&gt;
+      </div&gt;
+    </div&gt;
   );
 }
