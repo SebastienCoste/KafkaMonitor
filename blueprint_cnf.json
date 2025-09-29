@@ -1,6 +1,15 @@
 {
-  "namespace": "com.test.blueprint.config.overwritten",
-  "version": "3.0.0",
-  "description": "Overwritten test blueprint configuration",
-  "overwrite_test": true
+  "namespace": "com.test.blueprint.sanity.check",
+  "version": "1.0.0",
+  "description": "Sample blueprint configuration for sanity testing",
+  "owner": "sanity-test",
+  "transformSpecs": [
+    "test_transform.jslt"
+  ],
+  "searchExperience": {
+    "name": "test_search",
+    "templates": [
+      "test_template.json"
+    ]
+  }
 }
