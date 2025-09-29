@@ -635,7 +635,6 @@ test_plan:
     - "Blueprint Configuration File Generation"
     - "Blueprint Configuration Parser"
   stuck_tasks:
-    - "Blueprint Configuration UI Fixes (5 Specific Fixes)"
     - "Blueprint Configuration Parser"
   test_all: false
   test_priority: "high_first"
