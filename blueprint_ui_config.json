@@ -137,6 +137,15 @@
           "environmentOverrides": {},
           "inherit": null,
           "enabled": true
+        },
+        {
+          "id": "dcc0af59-dfa5-4129-b8ce-4ddf96420b7f",
+          "entityType": "access",
+          "name": "test-blueprint-cnf-entity",
+          "baseConfig": {},
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     },
@@ -854,8 +863,118 @@
       "id": "f262ee46-ddf4-4b7e-86b1-c36e0c915163",
       "namespace": "com.test.blueprint.config",
       "configurations": []
+    },
+    {
+      "id": "edd6fe47-57e3-40b6-8c2e-fca6ce8f8103",
+      "namespace": "com.test.blueprintcnf",
+      "configurations": []
+    },
+    {
+      "id": "91e55fee-1eba-4a0a-8ed2-a005525d8da4",
+      "namespace": "com.test.searchexperience.filenaming",
+      "configurations": []
+    },
+    {
+      "id": "0bd837e1-6047-4468-8d33-ca50fed0bfe1",
+      "namespace": "com.test.blueprintcnf.searchexp",
+      "configurations": []
+    },
+    {
+      "id": "defd47fa-91a7-41aa-a47c-40d401e4c033",
+      "namespace": "com.test.integration.allfix",
+      "configurations": []
+    },
+    {
+      "id": "467e91ad-391f-4b07-a002-b093a7184e17",
+      "namespace": "com.test.bug1.blueprintcnf",
+      "configurations": [
+        {
+          "id": "cc8c69b4-0f3b-4f7b-b67b-b305334b35e8",
+          "entityType": "access",
+          "name": "test-bug1-entity",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test entity for BUG1 blueprint_cnf.json location fix"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "5fb74367-aac6-4639-b6ff-a450b7e546b1",
+      "namespace": "com.test.bug2.storage",
+      "configurations": [
+        {
+          "id": "adbd2fcb-0d28-4db1-9911-04e85b1a6153",
+          "entityType": "storages",
+          "name": "test-storage-with-dots",
+          "baseConfig": {
+            "enabled": true,
+            "description": "Test storage entity with dotted service identifiers",
+            "storageConfigurations": {
+              "EA.EADP.PDE.MCR": {
+                "type": "redis",
+                "host": "redis-ea-eadp-pde-mcr.example.com",
+                "port": 6379,
+                "database": 0
+              },
+              "EA.EADP.TEST.SERVICE": {
+                "type": "mongodb",
+                "connectionString": "mongodb://mongo-ea-eadp-test.example.com:27017",
+                "database": "test_service_db"
+              },
+              "SIMPLE.SERVICE": {
+                "type": "memory",
+                "maxSize": "100MB"
+              }
+            },
+            "defaultServiceIdentifier": "EA.EADP.PDE.MCR"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "5d9521d3-b15c-48ed-a212-521775c3e96f",
+      "namespace": "com.test.bug2.mapstructure",
+      "configurations": [
+        {
+          "id": "24dcb47a-ba6a-4e25-aef4-99cb28b88f81",
+          "entityType": "storages",
+          "name": "test-map-structure-storage",
+          "baseConfig": {
+            "enabled": true,
+            "storageConfigurations": {
+              "EA.EADP.PDE.MCR": {
+                "type": "redis",
+                "host": "redis-server.example.com"
+              },
+              "EA.EADP.TEST.ANOTHER.SERVICE": {
+                "type": "mongodb",
+                "host": "mongo-server.example.com"
+              },
+              "SIMPLE.SERVICE.NAME": {
+                "type": "memory"
+              }
+            },
+            "defaultServiceIdentifier": "EA.EADP.PDE.MCR"
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "id": "805a69e0-f5ca-4aca-879f-bc55b3b20c4a",
+      "namespace": "com.test.blueprint.config",
+      "configurations": []
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-09-25T01:22:16.908280"
+  "lastModified": "2025-09-29T19:14:00.847330"
 }
