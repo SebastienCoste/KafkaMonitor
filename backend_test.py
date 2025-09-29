@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing for Blueprint Configuration API
-Tests all Blueprint Configuration API endpoints with focus on error handling and HTTP status codes
+Backend Sanity Check Testing for Blueprint Configuration API
+Focused testing for specific review request requirements
 """
 
 import requests
@@ -11,7 +11,7 @@ import time
 from datetime import datetime
 from typing import Dict, Any, List
 
-class BlueprintConfigurationTester:
+class BackendSanityTester:
     def __init__(self, base_url: str = "https://config-manager-3.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
