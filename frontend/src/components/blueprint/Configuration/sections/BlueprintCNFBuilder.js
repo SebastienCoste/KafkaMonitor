@@ -200,6 +200,24 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
     return searchFiles;
   };
 
+  const getAvailableSearchExperienceConfigs = () => {
+    const searchConfigs = [];
+    
+    schemas.forEach(schema => {
+      schema.configurations.forEach(entity => {
+        if (entityDefinitions?.fileMappings?.searchExperience?.entities?.includes(entity.entityType)) {
+          // FIX 4: Use the same name as what should be in blueprint_cnf.json 
+          const configName = `${entity.name || entity.entityType}.json`;
+          if (!searchConfigs.includes(configName)) {
+            searchConfigs.push(configName);
+          }
+        }
+      });
+    });
+    
+    return searchConfigs;
+  };
+
   const updateBlueprintConfig = (field, value) => {
     setBlueprintConfig(prev => ({
       ...prev,
