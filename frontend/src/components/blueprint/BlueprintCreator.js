@@ -279,8 +279,8 @@ export default function BlueprintCreator() {
             {/* Main Content Area - Full Width */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                <div className="border-b border-gray-200 px-4">
-                  <TabsList className="h-12">
+                <div className="border-b border-gray-200 px-4 overflow-x-auto">
+                  <TabsList className="h-12 w-full flex">
                     <TabsTrigger value="files" className="flex items-center space-x-2">
                       <FileText className="h-4 w-4" />
                       <span>Files</span>
