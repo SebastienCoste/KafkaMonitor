@@ -101,30 +101,7 @@ try:
 except Exception as init_err:
     logger.error(f"Initialization error: {init_err}")
 
-# -----------------------------------------------------------------------------
-# Serve static assets and frontend build
-# -----------------------------------------------------------------------------
-static_dir = ROOT_DIR.parent / "frontend" / "build" / "static"
-if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
-@app.get("/")
-async def serve_frontend_root():
-    index_path = ROOT_DIR.parent / "frontend" / "build" / "index.html"
-    if index_path.exists():
-        return FileResponse(str(index_path))
-    # Fallback to a friendly message if build not present
-    return JSONResponse({"detail": "Frontend build not found. Please run 'yarn build' in frontend/."}, status_code=404)
-
-# Catch-all for SPA routes (non-API)
-@app.get("/{full_path:path}")
-async def serve_frontend_catchall(full_path: str):
-    if full_path.startswith("api/") or full_path.startswith("static/"):
-        raise HTTPException(status_code=404, detail="Not Found")
-    index_path = ROOT_DIR.parent / "frontend" / "build" / "index.html"
-    if index_path.exists():
-        return FileResponse(str(index_path))
-    raise HTTPException(status_code=404, detail="Frontend build not found")
+# Defer frontend serving definitions to the very end (after API routes) to avoid intercepting /api/** paths
 
 # -----------------------------------------------------------------------------
 # Basic & App Config Endpoints
