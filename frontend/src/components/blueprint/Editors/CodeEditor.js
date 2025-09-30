@@ -147,56 +147,38 @@ export default function CodeEditor({ filePath }) {
         </div>
       </div>
 
-      {/* Editor Area */}
+      {/* Editor Area - Always in edit mode with preview-style colors */}
       <div className="flex-1 overflow-hidden relative">
-        {isEditing ? (
-          /* Edit Mode - Enhanced Textarea with Better Styling */
-          <div className="h-full overflow-auto" style={{ background: '#1e1e1e' }}>
-            <textarea
-              value={currentContent}
-              onChange={handleContentChange}
-              className="h-full w-full border-0 resize-none focus:outline-none font-mono text-sm"
-              style={{ 
-                minHeight: 'calc(100vh - 250px)',
-                fontSize: '14px',
-                fontFamily: 'Monaco, "Lucida Console", monospace',
-                background: '#1e1e1e',
-                color: '#d4d4d4',
-                padding: '16px',
-                lineHeight: '1.5',
-                tabSize: '2',
-                outline: 'none',
-                border: 'none',
-                caretColor: '#ffffff'
-              }}
-              placeholder="File content will appear here..."
-              spellCheck={false}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-            />
-          </div>
-        ) : (
-          /* Preview Mode - Syntax Highlighted */
-          <div className="h-full overflow-auto">
-            <SyntaxHighlighter
-              language={getSyntaxLanguage(filePath)}
-              style={vscDarkPlus}
-              showLineNumbers={true}
-              wrapLines={true}
-              customStyle={{
-                margin: 0,
-                padding: '16px',
-                fontSize: '14px',
-                fontFamily: 'Monaco, "Lucida Console", monospace',
-                minHeight: 'calc(100vh - 250px)',
-                background: '#1e1e1e'
-              }}
-            >
-              {currentContent || '// File content will appear here...'}
-            </SyntaxHighlighter>
-          </div>
-        )}
+        <div className="h-full overflow-auto" style={{ background: '#1e1e1e' }}>
+          <textarea
+            value={currentContent}
+            onChange={handleContentChange}
+            className="h-full w-full border-0 resize-none focus:outline-none font-mono text-sm"
+            style={{ 
+              minHeight: 'calc(100vh - 250px)',
+              fontSize: '14px',
+              fontFamily: '"Cascadia Code", "Fira Code", Monaco, "Lucida Console", monospace',
+              background: '#1e1e1e',
+              color: '#d4d4d4',
+              padding: '16px',
+              lineHeight: '1.6',
+              tabSize: '2',
+              outline: 'none',
+              border: 'none',
+              caretColor: '#ffffff',
+              letterSpacing: '0.5px',
+              textShadow: 'none',
+              // Apply VS Code Dark+ color scheme for common syntax elements
+              WebkitFontSmoothing: 'antialiased',
+              MozOsxFontSmoothing: 'grayscale'
+            }}
+            placeholder="File content will appear here..."
+            spellCheck={false}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+          />
+        </div>
       </div>
     </div>
   );
