@@ -114,6 +114,11 @@ async def health():
     return {"status": "ok"}
 
 # -----------------------------------------------------------------------------
+# Serve static assets from frontend build if present
+static_dir = ROOT_DIR.parent / "frontend" / "build" / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
 # App-config and environments (for frontend header navigation)
 # -----------------------------------------------------------------------------
 @api_router.get("/app-config")
