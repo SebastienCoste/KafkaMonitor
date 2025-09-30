@@ -2,13 +2,13 @@ import os
 import json
 import asyncio
 import logging
+from pathlib import Path
 from typing import Dict, List, Any, Optional
 
 from fastapi import FastAPI, APIRouter, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse, RedirectResponse
-
-from pathlib import Path
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import yaml
 
 from src.blueprint_file_manager import BlueprintFileManager
@@ -36,17 +36,17 @@ api_router = APIRouter(prefix="/api")
 # -----------------------------------------------------------------------------
 # Initialization (portable for local and server)
 # -----------------------------------------------------------------------------
-try:
-    ROOT_DIR = Path(__file__).parent.resolve()
-    ENTITY_DEFINITIONS_PATH = str((ROOT_DIR / "config" / "entity_definitions.json").resolve())
+ROOT_DIR = Path(__file__).parent.resolve()
+ENTITY_DEFINITIONS_PATH = str((ROOT_DIR / "config" / "entity_definitions.json").resolve())
 
+blueprint_file_manager: Optional[BlueprintFileManager] = None
+blueprint_config_manager: Optional[BlueprintConfigurationManager] = None
+graph_builder: Optional[TraceGraphBuilder] = None
+
+try:
     blueprint_file_manager = BlueprintFileManager()
     blueprint_config_manager = BlueprintConfigurationManager(ENTITY_DEFINITIONS_PATH, blueprint_file_manager)
-from fastapi.staticfiles import StaticFiles
 
-
-    # Trace graph initialization
-    graph_builder: Optional[TraceGraphBuilder] = None
     topics_yaml = ROOT_DIR / "config" / "topics.yaml"
     settings_yaml = ROOT_DIR / "config" / "settings.yaml"
     kafka_yaml = ROOT_DIR / "config" / "kafka.yaml"
@@ -100,44 +100,14 @@ from fastapi.staticfiles import StaticFiles
             logger.warning(f"Optional Kafka/protobuf init skipped: {init_warn}")
 except Exception as init_err:
     logger.error(f"Initialization error: {init_err}")
-    blueprint_file_manager = None
-    blueprint_config_manager = None
-    graph_builder = None
 
 # -----------------------------------------------------------------------------
-# Basic routes (health, root)
+# Serve static assets and frontend build
 # -----------------------------------------------------------------------------
-# Keep root reserved for serving frontend build (if present)
-
-@api_router.get("/health")
-async def health():
-    return {"status": "ok"}
-
-# -----------------------------------------------------------------------------
-# Serve static assets from frontend build if present
 static_dir = ROOT_DIR.parent / "frontend" / "build" / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-# App-config and environments (for frontend header navigation)
-# -----------------------------------------------------------------------------
-@api_router.get("/app-config")
-async def get_app_config():
-    return {
-        "app_name": "Blueprint Configuration Manager",
-        "version": "1.0.0",
-        "environment": "development",
-        "tabs": {
-            "trace_viewer": {"enabled": True, "title": "Trace Viewer"},
-            "grpc_integration": {"enabled": True, "title": "gRPC Integration"},
-            "blueprint_creator": {"enabled": True, "title": "Blueprint Creator"}
-        },
-        "landing_page": {"enabled": True}
-    }
-
-# -----------------------------------------------------------------------------
-# Frontend serving - serve the built React app (production/local build)
-# -----------------------------------------------------------------------------
 @app.get("/")
 async def serve_frontend_root():
     index_path = ROOT_DIR.parent / "frontend" / "build" / "index.html"
@@ -156,6 +126,14 @@ async def serve_frontend_catchall(full_path: str):
         return FileResponse(str(index_path))
     raise HTTPException(status_code=404, detail="Frontend build not found")
 
+# -----------------------------------------------------------------------------
+# Basic & App Config Endpoints
+# -----------------------------------------------------------------------------
+@api_router.get("/health")
+async def health():
+    return {"status": "ok"}
+
+@api_router.get("/app-config")
 async def get_app_config():
     return {
         "app_name": "Blueprint Configuration Manager",
@@ -182,7 +160,7 @@ async def get_environments():
     }
 
 # -----------------------------------------------------------------------------
-# Blueprint File APIs (file-tree, content, create-file)
+# Blueprint File APIs (file-tree, content, create-file, namespace)
 # -----------------------------------------------------------------------------
 @api_router.get("/blueprint/file-tree")
 async def get_blueprint_file_tree(path: str = ""):
@@ -190,7 +168,8 @@ async def get_blueprint_file_tree(path: str = ""):
         raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
     try:
         files = await blueprint_file_manager.get_file_tree(path)
-        return {"files": [f.dict() for f in files]}
+        # Convert Pydantic models to dicts if needed
+        return {"files": [f.dict() if hasattr(f, 'dict') else f for f in files]}
     except Exception as e:
         logger.error(f"Error getting file tree: {e}")
         raise HTTPException(status_code=500, detail=str(e))
