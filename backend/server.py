@@ -26,13 +26,21 @@ logger = logging.getLogger(__name__)
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# Initialize managers (existing init code assumed above in original file)
+# Initialize managers (portable path resolution for local and server environments)
 try:
-    BASE_DIR = "/app"
-    ENTITY_DEFINITIONS_PATH = os.path.join(BASE_DIR, "backend", "config", "entity_definitions.json")
+    from pathlib import Path
+    ROOT_DIR = Path(__file__).parent.resolve()
+    ENTITY_DEFINITIONS_PATH = str((ROOT_DIR / "config" / "entity_definitions.json").resolve())
+
     blueprint_file_manager = BlueprintFileManager()
     blueprint_config_manager = BlueprintConfigurationManager(ENTITY_DEFINITIONS_PATH, blueprint_file_manager)
-    graph_builder = TraceGraphBuilder("config/topics.yaml")
+
+    # Initialize graph builder only if topics.yaml exists; otherwise, leave None and endpoints will fallback
+    topics_cfg = ROOT_DIR / "config" / "topics.yaml"
+    if topics_cfg.exists():
+        graph_builder = TraceGraphBuilder(str(topics_cfg))
+    else:
+        graph_builder = None
 except Exception as init_err:
     logger.error(f"Initialization error: {init_err}")
     blueprint_file_manager = None
