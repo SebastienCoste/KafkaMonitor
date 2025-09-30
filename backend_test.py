@@ -348,6 +348,60 @@ class BackendRoutingTester:
         except Exception as e:
             self.log_test("Setup Blueprint Root Path", False, f"Exception: {str(e)}")
             return False
+
+    def run_critical_routing_tests(self):
+        """Run critical Blueprint Configuration API tests to verify routing fix"""
+        print("🚀 Starting Critical Blueprint Configuration API Routing Tests")
+        print("=" * 80)
+        print("Testing critical APIs to verify backend routing fix is working")
+        print("Context: API routes were returning 404, server.py restructured to register API router BEFORE SPA catch-all routes")
+        print("=" * 80)
+        
+        # Test Suite A - Core APIs
+        print("\n🔧 TEST SUITE A - CORE APIs")
+        print("-" * 50)
+        
+        print("\n1️⃣ Testing Health Check")
+        self.test_health_endpoint()
+        
+        print("\n2️⃣ Testing App Configuration")
+        self.test_app_config_endpoint()
+        
+        print("\n3️⃣ Testing Environments")
+        self.test_environments_endpoint()
+        
+        print("\n4️⃣ Testing File Tree")
+        self.test_file_tree_endpoint()
+        
+        # Test Suite B - Blueprint Configuration
+        print("\n🎯 TEST SUITE B - BLUEPRINT CONFIGURATION")
+        print("-" * 50)
+        
+        print("\n5️⃣ Testing Entity Definitions")
+        self.test_entity_definitions_endpoint()
+        
+        print("\n6️⃣ Testing Namespace Detection")
+        self.test_namespace_endpoint()
+        
+        print("\n7️⃣ Testing Blueprint CNF File Content")
+        self.test_blueprint_cnf_file_content()
+        
+        # Test Suite C - WebSocket
+        print("\n🌐 TEST SUITE C - WEBSOCKET")
+        print("-" * 50)
+        
+        print("\n8️⃣ Testing WebSocket Main Connection")
+        self.test_websocket_main()
+        
+        print("\n9️⃣ Testing WebSocket Blueprint Connection")
+        self.test_websocket_blueprint()
+        
+        # Print final summary
+        self.print_summary()
+
+    def run_backend_sanity_tests(self):
+        """Legacy method - redirect to new critical routing tests"""
+        self.run_critical_routing_tests()
     
     def test_entity_definitions_environments(self):
         """Test 1: Verify /api/blueprint/config/entity-definitions returns environments [DEV, TEST, INT, LOAD, PROD] and entityTypes presence"""
