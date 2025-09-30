@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 
 class KafkaTopicTester:
-    def __init__(self, base_url: str = "https://config-manager-3.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "https://portable-config-ui.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
