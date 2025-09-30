@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-Backend Sanity Check Testing for Blueprint Configuration API
-Focused testing for specific review request requirements
+Backend Testing for Blueprint Configuration APIs - Critical Routing Fix Verification
+Testing the critical Blueprint Configuration APIs to verify the backend routing fix is working
 """
 
 import requests
 import json
 import sys
 import time
+import asyncio
+import websockets
 from datetime import datetime
 from typing import Dict, Any, List
 
