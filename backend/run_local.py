@@ -108,6 +108,81 @@ def check_port_available(port):
     except OSError:
         return False
 
+
+def kill_process_on_port(port):
+    """Attempt to kill any process using the given TCP port (best-effort, cross-platform)."""
+    import platform
+    import time
+    import signal
+    system = platform.system().lower()
+    print(f"🧹 Attempting to free port {port} (detected OS: {system})...")
+
+    killed_any = False
+
+    try:
+        if 'windows' in system:
+            # netstat -ano | findstr :port
+            try:
+                result = subprocess.run(
+                    ['cmd', '/c', f'netstat -ano | findstr :{port}'],
+                    capture_output=True, text=True
+                )
+                lines = [l for l in result.stdout.splitlines() if l.strip()]
+                pids = set()
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 5:
+                        pids.add(parts[-1])
+                for pid in pids:
+                    print(f"🔪 taskkill PID {pid}")
+                    subprocess.run(['taskkill', '/PID', pid, '/F'], capture_output=True)
+                    killed_any = True
+            except Exception as e:
+                print(f"⚠️ Windows kill attempt failed: {e}")
+        else:
+            # Try lsof first
+            try:
+                result = subprocess.run(['lsof', '-ti', f':{port}'], capture_output=True, text=True)
+                if result.returncode == 0:
+                    pids = [p for p in result.stdout.splitlines() if p.strip()]
+                    for pid in pids:
+                        try:
+                            print(f"🔪 Killing PID {pid} (SIGTERM)")
+                            os.kill(int(pid), signal.SIGTERM)
+                            killed_any = True
+                        except Exception as e:
+                            print(f"⚠️ Failed to SIGTERM PID {pid}: {e}")
+                    time.sleep(1)
+                    # Force kill remaining
+                    for pid in pids:
+                        try:
+                            print(f"🪓 Forcing kill PID {pid} (SIGKILL)")
+                            os.kill(int(pid), signal.SIGKILL)
+                        except Exception:
+                            pass
+                else:
+                    # Fallback to fuser
+                    print("ℹ️ lsof not available or no PID found, trying fuser")
+                    subprocess.run(['fuser', '-k', f'{port}/tcp'], capture_output=True)
+                    killed_any = True
+            except FileNotFoundError:
+                # lsof not found, try fuser directly
+                try:
+                    subprocess.run(['fuser', '-k', f'{port}/tcp'], capture_output=True)
+                    killed_any = True
+                except Exception as e:
+                    print(f"⚠️ fuser failed: {e}")
+            except Exception as e:
+                print(f"⚠️ Unix kill attempt failed: {e}")
+    finally:
+        time.sleep(0.8)
+        if not check_port_available(port):
+            print(f"❌ Port {port} is still in use after kill attempts.")
+        elif killed_any:
+            print(f"✅ Freed port {port} successfully.")
+        else:
+            print(f"ℹ️ No process found on port {port}.")
+
 def main():
     """Main function to run all checks and start the server"""
     # Parse command line arguments
