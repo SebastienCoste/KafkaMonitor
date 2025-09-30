@@ -193,13 +193,15 @@ def main():
     print("🚀 Kafka Trace Viewer - Local Development Setup")
     print("=" * 50)
     
-    # Check if port is available
+    # Check if port is available; if not, try to free it automatically
     if not check_port_available(args.port):
         print(f"⚠️  Port {args.port} is already in use!")
-        print(f"💡 Try a different port: python run_local.py --port 8002")
-        if args.port == 8001:
-            print(f"💡 Or stop the existing service: sudo supervisorctl stop backend")
-        sys.exit(1)
+        kill_process_on_port(args.port)
+        if not check_port_available(args.port):
+            print(f"❌ Unable to free port {args.port}. You can try a different port: python run_local.py --port 8002")
+            sys.exit(1)
+        else:
+            print(f"✅ Proceeding to start server on freed port {args.port}")
     
     # Run all checks
     if not check_system_requirements():
