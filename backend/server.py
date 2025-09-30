@@ -105,10 +105,7 @@ except Exception as init_err:
 # -----------------------------------------------------------------------------
 # Basic routes (health, root)
 # -----------------------------------------------------------------------------
-@app.get("/")
-async def root():
-    # Provide a friendly redirect to docs for local runs
-    return RedirectResponse(url="/docs")
+# Keep root reserved for serving frontend build (if present)
 
 @api_router.get("/health")
 async def health():
