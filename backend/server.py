@@ -358,6 +358,58 @@ async def update_entity_configuration(entity_id: str, request: UpdateEntityReque
         raise
     except Exception as e:
         logger.error(f"Failed to update entity configuration: {e}")
+# -----------------------------------------------------------------------------
+# Build & Output files APIs (minimal placeholders for local)
+# -----------------------------------------------------------------------------
+@api_router.post("/blueprint/build")
+async def build_blueprint(request: Dict[str, Any]):
+    # Placeholder: emit success and rely on WebSocket for async updates in full impl
+    root_path = request.get("root_path")
+    if not root_path:
+        raise HTTPException(status_code=400, detail="root_path is required")
+    return {"status": "started", "root_path": root_path, "script": request.get("script_name", "buildBlueprint.sh")}
+
+@api_router.post("/blueprint/cancel-build")
+async def cancel_build():
+    return {"status": "canceled"}
+
+@api_router.get("/blueprint/output-files")
+async def get_output_files(root_path: str):
+    try:
+        # List files under root_path/dist if present
+        dist_dir = Path(root_path) / "dist"
+        files = []
+        if dist_dir.exists() and dist_dir.is_dir():
+            for name in sorted(os.listdir(dist_dir)):
+                p = dist_dir / name
+                if p.is_file():
+                    files.append({"name": name, "path": str(p), "size": p.stat().st_size})
+        return {"files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/blueprint/validate-config")
+async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
+    try:
+        # Basic check: file exists and is valid JSON
+        full = Path(blueprint_file_manager.root_path or ".") / path if not os.path.isabs(path) else Path(path)
+        if not full.exists():
+            raise HTTPException(status_code=404, detail=f"Config not found: {path}")
+        data = json.loads(full.read_text())
+        return {"valid": True, "errors": [], "warnings": [], "path": str(full), "keys": list(data.keys())}
+    except HTTPException:
+        raise
+    except Exception as e:
+        return {"valid": False, "errors": [str(e)], "warnings": []}
+
+@api_router.post("/blueprint/validate/{filename}")
+async def validate_blueprint_tgz(filename: str, payload: Dict[str, Any]):
+    return {"status": "validated", "file": filename, "environment": payload.get("environment")}
+
+@api_router.post("/blueprint/activate/{filename}")
+async def activate_blueprint_tgz(filename: str, payload: Dict[str, Any]):
+    return {"status": "activated", "file": filename, "environment": payload.get("environment")}
+
         raise HTTPException(status_code=500, detail="Internal server error occurred while updating entity")
 
 @api_router.delete("/blueprint/config/entities/{entity_id}")
