@@ -38,37 +38,39 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   const [previewWidth, setPreviewWidth] = useState(400); // Default width for preview panel
   const [availableTransformFiles, setAvailableTransformFiles] = useState([]);
   const [availableTemplateFiles, setAvailableTemplateFiles] = useState([]);
+  const [cnfLoaded, setCnfLoaded] = useState(false);
+  const [cnfSchemaNamespaces, setCnfSchemaNamespaces] = useState([]);
 
   const schemas = uiConfig?.schemas || [];
 
-  // Effect to load existing blueprint_cnf.json and use its data as default
+  // Effect to load existing blueprint_cnf.json and use its data as default (ignore UI cache)
   useEffect(() => {
     const loadExistingBlueprintCnf = async () => {
       try {
         const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
         const response = await fetch(`${backendUrl}/api/blueprint/file-content/blueprint_cnf.json`);
-        
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.content) {
-            try {
-              const existingConfig = JSON.parse(result.content);
-              setBlueprintConfig(prev => ({
-                ...prev,
-                namespace: existingConfig.namespace || prev.namespace,
-                version: existingConfig.version || prev.version,
-                owner: existingConfig.owner || prev.owner || '',
-                description: existingConfig.description || prev.description,
-                transformSpecs: Array.isArray(existingConfig.transformSpecs) ? existingConfig.transformSpecs : prev.transformSpecs,
-                searchExperience: {
-                  ...prev.searchExperience,
-                  templates: Array.isArray(existingConfig.searchExperience?.templates) ? existingConfig.searchExperience.templates : prev.searchExperience.templates,
-                  configs: Array.isArray(existingConfig.searchExperience?.configs) ? existingConfig.searchExperience.configs : prev.searchExperience.configs
-                }
-              }));
-            } catch (parseError) {
-              console.log('Could not parse existing blueprint_cnf.json, using defaults');
-            }
+        if (!response.ok) return; // No file on disk
+        const result = await response.json();
+        if (result && result.content) {
+          try {
+            const existingConfig = JSON.parse(result.content);
+            setBlueprintConfig(prev => ({
+              ...prev,
+              namespace: existingConfig.namespace ?? prev.namespace,
+              version: existingConfig.version ?? prev.version,
+              owner: existingConfig.owner ?? prev.owner ?? '',
+              description: existingConfig.description ?? prev.description,
+              transformSpecs: Array.isArray(existingConfig.transformSpecs) ? existingConfig.transformSpecs : prev.transformSpecs,
+              searchExperience: {
+                configs: Array.isArray(existingConfig.searchExperience?.configs) ? existingConfig.searchExperience.configs : prev.searchExperience.configs,
+                templates: Array.isArray(existingConfig.searchExperience?.templates) ? existingConfig.searchExperience.templates : prev.searchExperience.templates
+              }
+            }));
+            const ns = Array.isArray(existingConfig.schemas) ? existingConfig.schemas.map(s => s.namespace).filter(Boolean) : [];
+            setCnfSchemaNamespaces(ns);
+            setCnfLoaded(true);
+          } catch (parseError) {
+            console.log('Could not parse existing blueprint_cnf.json, using defaults');
           }
         }
       } catch (error) {
