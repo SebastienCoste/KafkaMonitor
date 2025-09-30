@@ -23,7 +23,7 @@ from src.blueprint_config_models import (
 )
 
 # Include API router early to ensure /api routes are registered before SPA catch-all
-app.include_router(api_router)
+# app.include_router(api_router)  # moved earlier to avoid SPA catch-all issues
 
 from src.graph_builder import TraceGraphBuilder
 from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
