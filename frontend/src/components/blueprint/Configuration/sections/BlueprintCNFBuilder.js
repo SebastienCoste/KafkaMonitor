@@ -220,21 +220,21 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   };
 
   const getAvailableSearchExperienceConfigs = () => {
-    const searchConfigs = [];
-    
-    schemas.forEach(schema => {
-      schema.configurations.forEach(entity => {
-        if (entityDefinitions?.fileMappings?.searchExperience?.entities?.includes(entity.entityType)) {
-          // FIX 4: Use the same name as what should be in blueprint_cnf.json 
-          const configName = `${entity.name || entity.entityType}.json`;
-          if (!searchConfigs.includes(configName)) {
-            searchConfigs.push(configName);
+    const set = new Set();
+    // Priority 1: files found under src/searchExperience (e.g., searchExperience.json)
+    availableSearchConfigFiles.forEach((f) => set.add(f));
+
+    // Priority 2: infer from entities if none found
+    if (set.size === 0) {
+      schemas.forEach(schema => {
+        schema.configurations.forEach(entity => {
+          if (entityDefinitions?.fileMappings?.searchExperience?.entities?.includes(entity.entityType)) {
+            set.add(`${entity.name || entity.entityType}.json`);
           }
-        }
+        });
       });
-    });
-    
-    return searchConfigs;
+    }
+    return Array.from(set);
   };
 
   const updateBlueprintConfig = (field, value) => {
