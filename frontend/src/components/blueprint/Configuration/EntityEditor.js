@@ -404,6 +404,106 @@ export default function EntityEditor({
           </div>
         );
 
+
+      case 'map': {
+        const mapValue = (currentValue && typeof currentValue === 'object') ? currentValue : {};
+        return (
+          <div key={fullPath} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium">{fieldDef.title}</Label>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const key = prompt('Enter key name:');
+                  if (key) {
+                    updateBaseConfig(`${fullPath}.${key}`, fieldDef.valueType?.default || (fieldDef.valueType?.type === 'object' ? {} : ''));
+                  }
+                }}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {fieldDef.description && <p className="text-xs text-gray-600">{fieldDef.description}</p>}
+            <div className="space-y-2">
+              {Object.entries(mapValue).map(([key, value]) => (
+                <Card key={key}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between mb-2">
+                      <Label className="text-sm font-semibold">{key}</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newMap = { ...mapValue };
+                          delete newMap[key];
+                          updateBaseConfig(fullPath, newMap);
+                        }}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                    {fieldDef.valueType && fieldDef.valueType.fields ? (
+                      <div className="space-y-2">
+                        {Object.entries(fieldDef.valueType.fields).map(([subFieldName, subFieldDef]) =>
+                          renderField(subFieldName, subFieldDef, `${fullPath}.${key}`)
+                        )}
+                      </div>
+                    ) : Array.isArray(value) ? (
+                      <div className="space-y-2">
+                        {value.map((item, idx) => (
+                          <div key={idx} className="flex items-center space-x-2">
+                            <Input
+                              value={item}
+                              onChange={(e) => {
+                                const arr = [...value];
+                                arr[idx] = e.target.value;
+                                updateBaseConfig(`${fullPath}.${key}`, arr);
+                              }}
+                              className="flex-1"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const arr = value.filter((_, i) => i !== idx);
+                                updateBaseConfig(`${fullPath}.${key}`, arr);
+                              }}
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => updateBaseConfig(`${fullPath}.${key}`, [...value, ''])}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Textarea
+                        value={typeof value === 'object' ? JSON.stringify(value, null, 2) : value}
+                        onChange={(e) => {
+                          try {
+                            updateBaseConfig(`${fullPath}.${key}`, JSON.parse(e.target.value));
+                          } catch {
+                            updateBaseConfig(`${fullPath}.${key}`, e.target.value);
+                          }
+                        }}
+                        rows={3}
+                        className="font-mono text-sm"
+                      />
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
       case 'object':
         if (fieldDef.fields) {
           return (
