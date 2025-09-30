@@ -42,6 +42,57 @@ try:
     if topics_cfg.exists():
         graph_builder = TraceGraphBuilder(str(topics_cfg))
     else:
+
+# Initialize optional Kafka/protobuf components (for local run_local parity)
+try:
+    # Attempt to load settings and topics to mimic run_local logging and setup
+    settings_path = ROOT_DIR / "config" / "settings.yaml"
+    topics_path = ROOT_DIR / "config" / "topics.yaml"
+    kafka_path = ROOT_DIR / "config" / "kafka.yaml"
+
+    if settings_path.exists() and topics_path.exists():
+        with open(settings_path, 'r') as sf:
+            settings = yaml.safe_load(sf)
+        with open(topics_path, 'r') as tf:
+            topics_cfg_yaml = yaml.safe_load(tf)
+        logger.info("Configuration loaded successfully (server.py)")
+
+        # Initialize Protobuf decoder similar to app.py
+        proto_dir = ROOT_DIR / "config" / "proto"
+        use_mock = True
+        if kafka_path.exists():
+            with open(kafka_path, 'r') as kf:
+                kafka_cfg = yaml.safe_load(kf)
+                use_mock = kafka_cfg.get('mock_mode', True)
+        if use_mock:
+            decoder = MockProtobufDecoder()
+            logger.info("Using mock protobuf decoder (server.py)")
+        else:
+            if not proto_dir.exists():
+                logger.warning(f"Proto directory not found: {proto_dir}")
+                decoder = MockProtobufDecoder()
+            else:
+                decoder = ProtobufDecoder(str(proto_dir))
+                logger.info("Using real protobuf decoder (server.py)")
+
+        # Load protobuf definitions
+        for topic_name, topic_config in topics_cfg_yaml.get('topics', {}).items():
+            try:
+                decoder.load_topic_protobuf(
+                    topic_name,
+                    topic_config.get('proto_file', ''),
+                    topic_config.get('message_type', '')
+                )
+            except Exception as e:
+                logger.warning(f"Failed to load proto for topic {topic_name}: {e}")
+
+        # If graph_builder not set yet, initialize it now
+        if graph_builder is None:
+            graph_builder = TraceGraphBuilder(str(topics_path), max_traces=settings.get('max_traces', 1000))
+            logger.info("TraceGraphBuilder initialized (server.py)")
+except Exception as e:
+    logger.warning(f"Optional Kafka/protobuf initialization skipped: {e}")
+
         graph_builder = None
 except Exception as init_err:
     logger.error(f"Initialization error: {init_err}")
