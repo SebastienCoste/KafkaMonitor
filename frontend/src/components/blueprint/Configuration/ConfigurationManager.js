@@ -255,6 +255,28 @@ export default function ConfigurationManager() {
             <Button
               variant="outline"
               size="sm"
+              onClick={resetFromDisk}
+              disabled={loading}
+              title="Reset UI config to match files on disk"
+            >
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Reset from Disk
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={addSampleEntities}
+              disabled={!uiConfig?.schemas || uiConfig.schemas.length === 0}
+              title="Create sample entities to exercise full workflow"
+            >
+              <FlaskConical className="h-4 w-4 mr-2" />
+              Add Sample Entities
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
               onClick={loadConfiguration}
               disabled={loading}
             >
