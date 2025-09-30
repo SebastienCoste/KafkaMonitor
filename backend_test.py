@@ -743,9 +743,9 @@ class BackendRoutingTester:
     
     def print_summary(self):
         """Print test summary"""
-        print("\n" + "=" * 70)
-        print("📊 BACKEND SANITY CHECK TEST SUMMARY")
-        print("=" * 70)
+        print("\n" + "=" * 80)
+        print("📊 CRITICAL BLUEPRINT CONFIGURATION API ROUTING TEST SUMMARY")
+        print("=" * 80)
         
         success_rate = (self.tests_passed / self.tests_run * 100) if self.tests_run > 0 else 0
         
@@ -754,44 +754,69 @@ class BackendRoutingTester:
         print(f"Failed: {self.tests_run - self.tests_passed}")
         print(f"Success Rate: {success_rate:.1f}%")
         
-        # Categorize results
-        critical_failures = []
-        minor_issues = []
-        successes = []
+        # Categorize results by test suite
+        suite_a_results = []
+        suite_b_results = []
+        suite_c_results = []
+        other_results = []
         
         for result in self.test_results:
-            if not result["success"]:
-                if any(keyword in result["name"].lower() for keyword in ["api", "environments", "entity", "file", "content"]):
-                    critical_failures.append(result)
-                else:
-                    minor_issues.append(result)
+            name = result["name"].lower()
+            if any(keyword in name for keyword in ["health", "app config", "environments", "file tree"]):
+                suite_a_results.append(result)
+            elif any(keyword in name for keyword in ["entity", "namespace", "blueprint cnf"]):
+                suite_b_results.append(result)
+            elif "websocket" in name:
+                suite_c_results.append(result)
             else:
-                successes.append(result)
+                other_results.append(result)
         
-        if critical_failures:
-            print(f"\n❌ CRITICAL FAILURES ({len(critical_failures)}):")
-            for failure in critical_failures:
+        # Print results by suite
+        print(f"\n🔧 TEST SUITE A - CORE APIs ({len([r for r in suite_a_results if r['success']])}/{len(suite_a_results)} passed):")
+        for result in suite_a_results:
+            status = "✅" if result["success"] else "❌"
+            print(f"   {status} {result['name']}")
+        
+        print(f"\n🎯 TEST SUITE B - BLUEPRINT CONFIGURATION ({len([r for r in suite_b_results if r['success']])}/{len(suite_b_results)} passed):")
+        for result in suite_b_results:
+            status = "✅" if result["success"] else "❌"
+            print(f"   {status} {result['name']}")
+        
+        print(f"\n🌐 TEST SUITE C - WEBSOCKET ({len([r for r in suite_c_results if r['success']])}/{len(suite_c_results)} passed):")
+        for result in suite_c_results:
+            status = "✅" if result["success"] else "❌"
+            print(f"   {status} {result['name']}")
+        
+        if other_results:
+            print(f"\n🔧 OTHER TESTS ({len([r for r in other_results if r['success']])}/{len(other_results)} passed):")
+            for result in other_results:
+                status = "✅" if result["success"] else "❌"
+                print(f"   {status} {result['name']}")
+        
+        # Show failures in detail
+        failures = [r for r in self.test_results if not r["success"]]
+        if failures:
+            print(f"\n❌ DETAILED FAILURE ANALYSIS ({len(failures)} failures):")
+            for failure in failures:
                 print(f"   • {failure['name']}: {failure['details']}")
         
-        if minor_issues:
-            print(f"\n⚠️ MINOR ISSUES ({len(minor_issues)}):")
-            for issue in minor_issues:
-                print(f"   • {issue['name']}: {issue['details']}")
-        
-        print(f"\n✅ SUCCESSFUL TESTS ({len(successes)}):")
-        for success in successes:
-            print(f"   • {success['name']}")
-        
         # Final assessment
+        print(f"\n{'='*80}")
         if success_rate >= 90:
-            print(f"\n🎉 EXCELLENT: Backend APIs are working well!")
+            print(f"🎉 EXCELLENT: Backend routing fix is working perfectly!")
+            print(f"   All critical APIs are accessible and returning proper responses.")
         elif success_rate >= 75:
-            print(f"\n✅ GOOD: Backend APIs are mostly functional with minor issues")
+            print(f"✅ GOOD: Backend routing fix is mostly working with minor issues")
+            print(f"   Most critical APIs are accessible, some minor issues detected.")
         elif success_rate >= 50:
-            print(f"\n⚠️ NEEDS ATTENTION: Backend APIs have significant issues")
+            print(f"⚠️ NEEDS ATTENTION: Backend routing has significant issues")
+            print(f"   Some APIs are still returning 404 or have other problems.")
         else:
-            print(f"\n❌ CRITICAL: Backend APIs have major problems")
+            print(f"❌ CRITICAL: Backend routing fix failed")
+            print(f"   Major APIs are still inaccessible or returning errors.")
+        
+        print(f"{'='*80}")
 
 if __name__ == "__main__":
-    tester = BackendSanityTester()
-    tester.run_backend_sanity_tests()
+    tester = BackendRoutingTester()
+    tester.run_critical_routing_tests()
