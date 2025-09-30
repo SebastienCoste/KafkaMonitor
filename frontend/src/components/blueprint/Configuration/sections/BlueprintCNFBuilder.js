@@ -38,6 +38,7 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   const [previewWidth, setPreviewWidth] = useState(400); // Default width for preview panel
   const [availableTransformFiles, setAvailableTransformFiles] = useState([]);
   const [availableTemplateFiles, setAvailableTemplateFiles] = useState([]);
+  const [availableSearchConfigFiles, setAvailableSearchConfigFiles] = useState([]);
   const [cnfLoaded, setCnfLoaded] = useState(false);
   const [cnfSchemaNamespaces, setCnfSchemaNamespaces] = useState([]);
 
