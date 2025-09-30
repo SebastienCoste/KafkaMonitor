@@ -42,6 +42,8 @@ try:
 
     blueprint_file_manager = BlueprintFileManager()
     blueprint_config_manager = BlueprintConfigurationManager(ENTITY_DEFINITIONS_PATH, blueprint_file_manager)
+from fastapi.staticfiles import StaticFiles
+
 
     # Trace graph initialization
     graph_builder: Optional[TraceGraphBuilder] = None
