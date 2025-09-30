@@ -358,6 +358,7 @@ async def update_entity_configuration(entity_id: str, request: UpdateEntityReque
         raise
     except Exception as e:
         logger.error(f"Failed to update entity configuration: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error occurred while updating entity")
 # -----------------------------------------------------------------------------
 # Build & Output files APIs (minimal placeholders for local)
 # -----------------------------------------------------------------------------
