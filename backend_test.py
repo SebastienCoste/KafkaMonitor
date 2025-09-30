@@ -278,7 +278,7 @@ class BackendRoutingTester:
             ws_url = f"{self.ws_base_url}{path}"
             
             # Try to connect with a timeout
-            async with websockets.connect(ws_url, timeout=10) as websocket:
+            async with websockets.connect(ws_url, open_timeout=10, close_timeout=5) as websocket:
                 # Send a ping and wait for response
                 await websocket.send(json.dumps({"type": "test_ping"}))
                 
