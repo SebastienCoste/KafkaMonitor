@@ -327,7 +327,7 @@ class BackendRoutingTester:
     def setup_blueprint_root_path(self):
         """Set up blueprint root path for testing"""
         try:
-            response = requests.put(
+            response = requests.post(
                 f"{self.base_url}/api/blueprint/config",
                 json={"root_path": "/app"},
                 headers={"Content-Type": "application/json"},
