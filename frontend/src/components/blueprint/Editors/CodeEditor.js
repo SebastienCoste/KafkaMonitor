@@ -3,9 +3,8 @@ import { useBlueprintContext } from '../Common/BlueprintContext';
 import { Button } from '../../ui/button';
 import { Badge } from '../../ui/badge';
 import { toast } from 'sonner';
-import { Save, RotateCcw, Eye, Edit } from 'lucide-react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Save, RotateCcw } from 'lucide-react';
+// Removed Eye, Edit icons and syntax highlighter - always in edit mode now
 
 export default function CodeEditor({ filePath }) {
   const { fileContent, saveFileContent, loading } = useBlueprintContext();
