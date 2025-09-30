@@ -122,6 +122,18 @@ if static_dir.exists():
 # App-config and environments (for frontend header navigation)
 # -----------------------------------------------------------------------------
 @api_router.get("/app-config")
+async def get_app_config():
+    return {
+        "app_name": "Blueprint Configuration Manager",
+        "version": "1.0.0",
+        "environment": "development",
+        "tabs": {
+            "trace_viewer": {"enabled": True, "title": "Trace Viewer"},
+            "grpc_integration": {"enabled": True, "title": "gRPC Integration"},
+            "blueprint_creator": {"enabled": True, "title": "Blueprint Creator"}
+        },
+        "landing_page": {"enabled": True}
+    }
 
 # -----------------------------------------------------------------------------
 # Frontend serving - serve the built React app (production/local build)
