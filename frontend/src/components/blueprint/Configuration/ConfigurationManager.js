@@ -118,6 +118,88 @@ export default function ConfigurationManager() {
     }
   };
 
+  const resetFromDisk = async () => {
+    if (!confirm('This will discard unsaved UI changes and reload from files on disk. Continue?')) return;
+    setLoading(true);
+    try {
+      const result = await ConfigurationAPI.resetUIConfig();
+      if (result.success) {
+        toast.success('UI configuration reset from disk');
+        await loadConfiguration();
+      } else {
+        toast.error('Failed to reset from disk');
+      }
+    } catch (error) {
+      console.error('Failed to reset from disk:', error);
+      toast.error(`Failed to reset from disk: ${error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addSampleEntities = async () => {
+    if (!uiConfig?.schemas || uiConfig.schemas.length === 0) {
+      toast.error('Please create/select a schema first');
+      return;
+    }
+    
+    const activeSchema = uiConfig.schemas[0]; // Use first schema
+    try {
+      // Create sample textModeration entity
+      const textName = 'sampleTextModeration';
+      const textBase = {
+        provider: 'moderationServiceX',
+        threshold: 0.8,
+        languages: ['en', 'fr']
+      };
+      const textRes = await ConfigurationAPI.createEntity({
+        entityType: 'textModeration',
+        name: textName,
+        baseConfig: textBase,
+        schemaId: activeSchema.id
+      });
+
+      // Create sample discoveryFeatures entity
+      const discName = 'sampleDiscoveryFeatures';
+      const discBase = {
+        access: {
+          defaultAccessType: 'PUBLIC',
+          roles: ['reader', 'editor']
+        }
+      };
+      const discRes = await ConfigurationAPI.createEntity({
+        entityType: 'discoveryFeatures',
+        name: discName,
+        baseConfig: discBase,
+        schemaId: activeSchema.id
+      });
+
+      // Attach environment overrides if created successfully
+      if (textRes.success && textRes.entity_id) {
+        await ConfigurationAPI.updateEntity(textRes.entity_id, {
+          environmentOverrides: {
+            DEV: { provider: 'moderationServiceDev', threshold: 0.5 },
+            PROD: { provider: 'moderationServiceProd', threshold: 0.9 }
+          }
+        });
+      }
+      if (discRes.success && discRes.entity_id) {
+        await ConfigurationAPI.updateEntity(discRes.entity_id, {
+          environmentOverrides: {
+            TEST: { access: { defaultAccessType: 'RESTRICTED' } },
+            INT: { access: { defaultAccessType: 'PRIVATE' } }
+          }
+        });
+      }
+
+      toast.success('Sample entities created');
+      await loadConfiguration();
+    } catch (error) {
+      console.error('Failed to create sample entities:', error);
+      toast.error(`Failed to create sample entities: ${error.message}`);
+    }
+  };
+
   if (loading && !entityDefinitions) {
     return (
       <div className="flex-1 flex items-center justify-center">
