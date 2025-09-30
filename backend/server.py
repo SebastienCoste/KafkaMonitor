@@ -21,6 +21,10 @@ from src.blueprint_config_models import (
     GenerateFilesRequest,
     EnvironmentOverrideRequest,
 )
+
+# Include API router early to ensure /api routes are registered before SPA catch-all
+app.include_router(api_router)
+
 from src.graph_builder import TraceGraphBuilder
 from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 
