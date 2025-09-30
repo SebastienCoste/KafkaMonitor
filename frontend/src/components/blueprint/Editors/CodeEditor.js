@@ -61,34 +61,33 @@ export default function CodeEditor({ filePath }) {
     }
   };
 
-  const getSyntaxLanguage = (filePath) => {
+  const getPrismLanguage = (filePath) => {
     const ext = getFileExtension(filePath);
     switch (ext) {
       case 'json':
-        return 'json';
+        return languages.json;
       case 'jslt':
-        return 'javascript'; // JSLT is JavaScript-like
+      case 'js':
+        return languages.javascript;
       case 'yaml':
       case 'yml':
-        return 'yaml';
-      case 'proto':
-        return 'protobuf';
+        return languages.yaml;
       case 'sh':
-        return 'bash';
+        return languages.bash;
       case 'md':
-        return 'markdown';
-      case 'js':
-        return 'javascript';
+        return languages.markdown;
       case 'py':
-        return 'python';
-      case 'html':
-        return 'html';
-      case 'css':
-        return 'css';
-      case 'xml':
-        return 'xml';
+        return languages.python;
       default:
-        return 'text';
+        return languages.javascript; // Fallback
+    }
+  };
+  
+  const highlightWithPrism = (code) => {
+    try {
+      return highlight(code, getPrismLanguage(filePath), getFileExtension(filePath));
+    } catch (error) {
+      return code;
     }
   };
 
