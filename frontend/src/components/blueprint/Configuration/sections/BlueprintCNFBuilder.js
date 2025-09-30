@@ -122,6 +122,20 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
         } catch (e) {
           console.log('Could not load template files');
         }
+
+        // Load search experience config files under src/searchExperience root (e.g., searchExperience.json)
+        try {
+          let files = await fetchFilesAt('src/searchExperience');
+          if (!files || files.length === 0) {
+            files = await fetchFilesAt('example_config/src/searchExperience');
+          }
+          const searchConfigFiles = files
+            .filter((file) => file.type === 'file' && (file.name.endsWith('.json') || file.name.endsWith('.js')))
+            .map((file) => file.name);
+          setAvailableSearchConfigFiles(searchConfigFiles);
+        } catch (e) {
+          console.log('Could not load search experience config files');
+        }
       } catch (error) {
         console.log('Error loading available files:', error);
       }
