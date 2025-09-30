@@ -296,7 +296,8 @@ async def create_configuration_schema(request: CreateSchemaRequest):
             raise HTTPException(status_code=400, detail="Blueprint root path not set")
         schema_id, warnings = await blueprint_config_manager.create_schema(root_path, request)
         if not schema_id:
-            raise HTTPException(status_code=400, detail="Failed to create schema: "; warnings)
+            detail = "; ".join(warnings) if warnings else "Failed to create schema"
+            raise HTTPException(status_code=400, detail=detail)
         return {"success": True, "schema_id": schema_id, "warnings": warnings}
     except HTTPException:
         raise
