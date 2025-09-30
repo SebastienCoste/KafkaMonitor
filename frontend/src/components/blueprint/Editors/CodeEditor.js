@@ -126,23 +126,7 @@ export default function CodeEditor({ filePath }) {
         </div>
         
         <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing ? (
-              <>
-                <Eye className="h-4 w-4 mr-1" />
-                Preview
-              </>
-            ) : (
-              <>
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </>
-            )}
-          </Button>
+          {/* Removed Edit/Preview toggle - always in edit mode now */}
           <Button
             variant="ghost"
             size="sm"
