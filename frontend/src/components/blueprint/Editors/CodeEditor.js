@@ -153,36 +153,26 @@ export default function CodeEditor({ filePath }) {
         </div>
       </div>
 
-      {/* Editor Area - Always in edit mode with preview-style colors */}
+      {/* Editor Area - Always in edit mode with syntax highlighting */}
       <div className="flex-1 overflow-hidden relative">
-        <div className="h-full overflow-auto" style={{ background: '#1e1e1e' }}>
-          <textarea
+        <div className="h-full overflow-auto" style={{ background: '#2d2d2d' }}>
+          <Editor
             value={currentContent}
-            onChange={handleContentChange}
-            className="h-full w-full border-0 resize-none focus:outline-none font-mono text-sm"
-            style={{ 
+            onValueChange={handleContentChange}
+            highlight={highlightWithPrism}
+            padding={16}
+            style={{
+              fontFamily: '"Fira Code", "Cascadia Code", Monaco, "Courier New", monospace',
+              fontSize: 14,
+              lineHeight: 1.6,
               minHeight: 'calc(100vh - 250px)',
-              fontSize: '14px',
-              fontFamily: '"Cascadia Code", "Fira Code", Monaco, "Lucida Console", monospace',
-              background: '#1e1e1e',
-              color: '#d4d4d4',
-              padding: '16px',
-              lineHeight: '1.6',
-              tabSize: '2',
-              outline: 'none',
-              border: 'none',
+              background: '#2d2d2d',
+              color: '#ccc',
               caretColor: '#ffffff',
-              letterSpacing: '0.5px',
-              textShadow: 'none',
-              // Apply VS Code Dark+ color scheme for common syntax elements
-              WebkitFontSmoothing: 'antialiased',
-              MozOsxFontSmoothing: 'grayscale'
             }}
+            textareaClassName="editor-textarea"
+            preClassName="editor-pre"
             placeholder="File content will appear here..."
-            spellCheck={false}
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
           />
         </div>
       </div>
