@@ -270,7 +270,7 @@ export function BlueprintProvider({ children }) {
       setLoading(true);
       
       const response = await fetch(`${API_BASE_URL}/api/blueprint/config`, {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
