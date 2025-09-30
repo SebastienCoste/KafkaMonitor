@@ -21,7 +21,9 @@ import {
   FileText,
   RefreshCw,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  RotateCcw,
+  FlaskConical
 } from 'lucide-react';
 
 export default function ConfigurationManager() {
