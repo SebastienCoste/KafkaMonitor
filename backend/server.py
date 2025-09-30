@@ -549,3 +549,27 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+# -----------------------------------------------------------------------------
+# Serve static assets and frontend build (declare AFTER API routes)
+# -----------------------------------------------------------------------------
+static_dir = ROOT_DIR.parent / "frontend" / "build" / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+@app.get("/")
+async def serve_frontend_root():
+    index_path = ROOT_DIR.parent / "frontend" / "build" / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    return JSONResponse({"detail": "Frontend build not found. Please run 'yarn build' in frontend/."}, status_code=404)
+
+@app.get("/{full_path:path}")
+async def serve_frontend_catchall(full_path: str):
+    # Let API routes be handled by APIRouter first; block only obvious static collisions
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    index_path = ROOT_DIR.parent / "frontend" / "build" / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    raise HTTPException(status_code=404, detail="Frontend build not found")
