@@ -130,27 +130,29 @@ export default function BlueprintCNFBuilder({ entityDefinitions, uiConfig, onCon
   }, []); // Run once on component mount
 
   useEffect(() => {
-    // Initialize blueprint config from existing schemas
+    // Initialize blueprint config from disk CNF first (cnfLoaded). Then merge available schemas for UI purposes
     if (schemas.length > 0) {
       const searchExperienceConfigs = getSearchExperienceFiles(schemas);
-      
+
       setBlueprintConfig(prev => ({
         ...prev,
+        // Namespace should come from disk CNF root, do not overwrite if we already loaded it
         namespace: prev.namespace || schemas[0]?.namespace || '',
         schemas: schemas.map(schema => ({
           id: schema.id,
           namespace: schema.namespace,
-          enabled: true,
+          enabled: cnfSchemaNamespaces.length > 0 ? cnfSchemaNamespaces.includes(schema.namespace) : true,
           global: getGlobalFiles(schema),
           messages: getMessageFiles(schema)
         })),
         searchExperience: {
           ...prev.searchExperience,
-          configs: searchExperienceConfigs
+          // If CNF provided configs, keep them. If not, propose from entities.
+          configs: prev.searchExperience.configs && prev.searchExperience.configs.length > 0 ? prev.searchExperience.configs : searchExperienceConfigs
         }
       }));
     }
-  }, [uiConfig, entityDefinitions]);
+  }, [uiConfig, entityDefinitions, cnfLoaded]);
 
   const getGlobalFiles = (schema) => {
     const globalEntities = schema.configurations.filter(entity => 
