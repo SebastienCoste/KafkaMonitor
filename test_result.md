@@ -618,6 +618,21 @@ backend:
         agent: "testing"
         comment: "✅ BACKEND SANITY CHECK COMPLETED: All 5 critical API endpoints verified working correctly (100% success rate, 15/15 tests passed). ✅ TEST 1 - Entity Definitions API: Returns all expected environments [DEV, TEST, INT, LOAD, PROD] and 11 entityTypes with proper structure. ✅ TEST 2 - Blueprint CNF File Content: blueprint_cnf.json parses correctly with valid JSON structure containing namespace, version, and other expected fields. ✅ TEST 3 - File Tree APIs: Both transformSpecs path returns 2 .jslt files and searchExperience/templates path returns 3 template files as expected. ✅ TEST 4 - Environments API: Returns current_environment (null) and available_environments array with all expected values. ✅ TEST 5 - Blueprint Create File API: Successfully overwrites blueprint_cnf.json with sample content and verifies content matches. All backend APIs are functioning correctly and ready for full frontend testing."
 
+  - task: "Critical Blueprint Configuration API Routing Fix Verification"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "testing"
+        comment: "Testing critical Blueprint Configuration APIs to verify backend routing fix is working. Context: API routes were returning 404, server.py was restructured to register API router BEFORE SPA catch-all routes. Testing 9 critical endpoints across 3 test suites."
+      - working: true
+        agent: "testing"
+        comment: "✅ CRITICAL BLUEPRINT CONFIGURATION API ROUTING FIX COMPLETELY VERIFIED: Comprehensive testing completed with 100% success rate (13/13 tests passed). ✅ TEST SUITE A - CORE APIs (6/6 passed): Health Check (/api/health) returns status 'ok', App Configuration (/api/app-config) returns proper structure with 3 tabs, Environments (/api/environments) returns all 5 expected environments [DEV, TEST, INT, LOAD, PROD], File Tree (/api/blueprint/file-tree) returns 77 files/directories after root path setup. ✅ TEST SUITE B - BLUEPRINT CONFIGURATION (4/4 passed): Entity Definitions (/api/blueprint/config/entity-definitions) returns 11 entity types in dict format, Namespace Detection (/api/blueprint/namespace) successfully detects namespace 'com.test.blueprint.config' from blueprint_cnf.json, Blueprint CNF File Content (/api/blueprint/file-content/blueprint_cnf.json) returns valid JSON with all expected fields. ✅ TEST SUITE C - WEBSOCKET (2/2 passed): WebSocket Main (/api/ws) connects successfully, WebSocket Blueprint (/api/ws/blueprint) connects successfully. ✅ ROUTING FIX VERIFICATION: All API endpoints return 200 status codes (not 404), WebSocket connections establish successfully (not 403), Response data has correct structure. The backend routing fix is working perfectly - API router registration BEFORE SPA catch-all routes has resolved the 404 issues."
+
 frontend:
   - task: "P10/P50/P95 Display on Topics Page"
     implemented: true
