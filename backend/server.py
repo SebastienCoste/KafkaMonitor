@@ -176,13 +176,17 @@ async def get_app_config():
 
 @api_router.get("/environments")
 async def get_environments():
-    """Get available environments"""
+    """Get available environments (include legacy keys expected by frontend)"""
     try:
-        # Return standard environments
         environments = ["DEV", "TEST", "INT", "LOAD", "PROD"]
+        current = "DEV"
         return {
+            # New shape
             "environments": environments,
-            "default": "DEV"
+            "default": current,
+            # Legacy/expected by some FE code
+            "available_environments": environments,
+            "current_environment": current
         }
     except Exception as e:
         logger.error(f"❌ Failed to get environments: {e}")
