@@ -390,8 +390,6 @@ async def validate_blueprint_tgz(filename: str, payload: Dict[str, Any]):
 async def activate_blueprint_tgz(filename: str, payload: Dict[str, Any]):
     return {"status": "activated", "file": filename, "environment": payload.get("environment")}
 
-        raise HTTPException(status_code=500, detail="Internal server error occurred while updating entity")
-
 @api_router.delete("/blueprint/config/entities/{entity_id}")
 async def delete_entity_configuration(entity_id: str):
     if not blueprint_config_manager or not blueprint_file_manager:
