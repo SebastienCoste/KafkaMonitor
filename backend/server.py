@@ -161,16 +161,17 @@ async def set_blueprint_root_path(request: dict):
 
 @api_router.get("/app-config")
 async def get_app_config():
-    """Get application configuration"""
+    """Get application configuration (frontend expects tabs + landing_page structure)"""
     return {
         "app_name": "Blueprint Configuration Manager",
         "version": "1.0.0",
         "environment": "production",
-        "features": {
-            "blueprint_creator": True,
-            "trace_viewer": True,
-            "environment_management": True
-        }
+        "tabs": {
+            "trace_viewer": {"enabled": True, "title": "Trace Viewer"},
+            "grpc_integration": {"enabled": True, "title": "gRPC Integration"},
+            "blueprint_creator": {"enabled": True, "title": "Blueprint Creator"}
+        },
+        "landing_page": {"enabled": True}
     }
 
 @api_router.get("/environments")
