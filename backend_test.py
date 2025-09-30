@@ -13,9 +13,10 @@ import websockets
 from datetime import datetime
 from typing import Dict, Any, List
 
-class BackendSanityTester:
+class BackendRoutingTester:
     def __init__(self, base_url: str = "https://portable-config-ui.preview.emergentagent.com"):
         self.base_url = base_url
+        self.ws_base_url = base_url.replace("https://", "wss://").replace("http://", "ws://")
         self.tests_run = 0
         self.tests_passed = 0
         self.test_results = []
@@ -35,6 +36,293 @@ class BackendSanityTester:
             "details": details,
             "timestamp": datetime.now().isoformat()
         })
+    
+    # Test Suite A - Core APIs
+    def test_health_endpoint(self):
+        """Test Suite A.1: GET /api/health - Health check"""
+        try:
+            response = requests.get(f"{self.base_url}/api/health", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("status") == "ok":
+                    self.log_test("Health Check", True, f"Status: {data.get('status')}")
+                    return True
+                else:
+                    self.log_test("Health Check", False, f"Unexpected status: {data}")
+                    return False
+            else:
+                self.log_test("Health Check", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Health Check", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_app_config_endpoint(self):
+        """Test Suite A.2: GET /api/app-config - Application configuration"""
+        try:
+            response = requests.get(f"{self.base_url}/api/app-config", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for expected fields
+                expected_fields = ["app_name", "version", "environment", "tabs"]
+                found_fields = [field for field in expected_fields if field in data]
+                
+                if len(found_fields) >= 3:  # At least 3 of 4 expected fields
+                    self.log_test("App Config", True, f"Found fields: {found_fields}")
+                    
+                    # Check tabs structure
+                    if "tabs" in data and isinstance(data["tabs"], dict):
+                        tab_count = len(data["tabs"])
+                        self.log_test("App Config - Tabs", True, f"Found {tab_count} tabs: {list(data['tabs'].keys())}")
+                    
+                    return True
+                else:
+                    self.log_test("App Config", False, f"Missing expected fields. Found: {list(data.keys())}")
+                    return False
+            else:
+                self.log_test("App Config", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("App Config", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_environments_endpoint(self):
+        """Test Suite A.3: GET /api/environments - Environment list"""
+        try:
+            response = requests.get(f"{self.base_url}/api/environments", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for environments list
+                environments = data.get("environments", []) or data.get("available_environments", [])
+                expected_envs = ["DEV", "TEST", "INT", "LOAD", "PROD"]
+                
+                if environments and isinstance(environments, list):
+                    found_expected = [env for env in expected_envs if env in environments]
+                    if len(found_expected) >= 3:  # At least 3 of 5 expected environments
+                        self.log_test("Environments", True, f"Found environments: {environments}")
+                        return True
+                    else:
+                        self.log_test("Environments", False, f"Missing expected environments. Found: {environments}")
+                        return False
+                else:
+                    self.log_test("Environments", False, f"No valid environments list found: {data}")
+                    return False
+            else:
+                self.log_test("Environments", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Environments", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_file_tree_endpoint(self):
+        """Test Suite A.4: GET /api/blueprint/file-tree - File tree browsing"""
+        try:
+            # First set up root path
+            self.setup_blueprint_root_path()
+            
+            response = requests.get(f"{self.base_url}/api/blueprint/file-tree", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "files" in data and isinstance(data["files"], list):
+                    file_count = len(data["files"])
+                    self.log_test("File Tree", True, f"Found {file_count} files/directories")
+                    
+                    # Show sample files
+                    if file_count > 0:
+                        sample_files = []
+                        for i, f in enumerate(data["files"][:3]):  # First 3 files
+                            if isinstance(f, dict):
+                                sample_files.append(f.get("name", "unknown"))
+                            else:
+                                sample_files.append(str(f))
+                        self.log_test("File Tree - Sample", True, f"Sample files: {sample_files}")
+                    
+                    return True
+                else:
+                    self.log_test("File Tree", False, f"Invalid response structure: {data}")
+                    return False
+            else:
+                self.log_test("File Tree", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("File Tree", False, f"Exception: {str(e)}")
+            return False
+    
+    # Test Suite B - Blueprint Configuration
+    def test_entity_definitions_endpoint(self):
+        """Test Suite B.5: GET /api/blueprint/config/entity-definitions - Entity definitions schema"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/config/entity-definitions", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for entity types
+                if "entityTypes" in data:
+                    entity_types = data["entityTypes"]
+                    if isinstance(entity_types, list) and len(entity_types) >= 5:  # Expect at least 5 entity types
+                        self.log_test("Entity Definitions", True, f"Found {len(entity_types)} entity types")
+                        
+                        # Check for environments
+                        environments = data.get("environments", [])
+                        if environments:
+                            self.log_test("Entity Definitions - Environments", True, f"Environments: {environments}")
+                        
+                        return True
+                    else:
+                        self.log_test("Entity Definitions", False, f"Invalid entity types: {entity_types}")
+                        return False
+                else:
+                    self.log_test("Entity Definitions", False, f"Missing entityTypes field: {list(data.keys())}")
+                    return False
+            else:
+                self.log_test("Entity Definitions", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Entity Definitions", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_namespace_endpoint(self):
+        """Test Suite B.6: GET /api/blueprint/namespace - Namespace detection"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/namespace", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check for namespace field
+                if "namespace" in data and "source" in data:
+                    namespace = data.get("namespace", "")
+                    source = data.get("source", "")
+                    
+                    if source == "blueprint_cnf.json" and namespace:
+                        self.log_test("Namespace Detection", True, f"Found namespace: {namespace} from {source}")
+                    elif source == "not_found":
+                        self.log_test("Namespace Detection", True, f"No blueprint_cnf.json found (expected for new projects)")
+                    else:
+                        self.log_test("Namespace Detection", True, f"Namespace: '{namespace}' from {source}")
+                    
+                    return True
+                else:
+                    self.log_test("Namespace Detection", False, f"Missing expected fields: {data}")
+                    return False
+            else:
+                self.log_test("Namespace Detection", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Namespace Detection", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_blueprint_cnf_file_content(self):
+        """Test Suite B.7: GET /api/blueprint/file-content/blueprint_cnf.json - File content reading"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/file-content/blueprint_cnf.json", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if "content" in data:
+                    content = data["content"]
+                    
+                    # Try to parse JSON content
+                    try:
+                        parsed_content = json.loads(content)
+                        
+                        # Check for expected blueprint structure
+                        expected_fields = ["namespace", "version"]
+                        found_fields = [field for field in expected_fields if field in parsed_content]
+                        
+                        if found_fields:
+                            self.log_test("Blueprint CNF Content", True, f"Valid JSON with fields: {list(parsed_content.keys())}")
+                            
+                            # Show key details
+                            namespace = parsed_content.get("namespace", "N/A")
+                            version = parsed_content.get("version", "N/A")
+                            self.log_test("Blueprint CNF Details", True, f"Namespace: {namespace}, Version: {version}")
+                        else:
+                            self.log_test("Blueprint CNF Content", True, f"Valid JSON but missing expected fields: {list(parsed_content.keys())}")
+                        
+                        return True
+                    except json.JSONDecodeError:
+                        self.log_test("Blueprint CNF Content", False, f"Invalid JSON content")
+                        return False
+                else:
+                    self.log_test("Blueprint CNF Content", False, f"Missing content field: {data}")
+                    return False
+            elif response.status_code == 404:
+                self.log_test("Blueprint CNF Content", True, "File not found (404) - acceptable for new projects")
+                return True
+            else:
+                self.log_test("Blueprint CNF Content", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Blueprint CNF Content", False, f"Exception: {str(e)}")
+            return False
+    
+    # Test Suite C - WebSocket
+    async def test_websocket_connection(self, path: str, test_name: str):
+        """Test WebSocket connection to a specific path"""
+        try:
+            ws_url = f"{self.ws_base_url}{path}"
+            
+            # Try to connect with a timeout
+            async with websockets.connect(ws_url, timeout=10) as websocket:
+                # Send a ping and wait for response
+                await websocket.send(json.dumps({"type": "test_ping"}))
+                
+                # Wait for any response (with timeout)
+                try:
+                    response = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+                    self.log_test(test_name, True, f"Connected successfully, received: {response[:100]}")
+                    return True
+                except asyncio.TimeoutError:
+                    # Connection established but no immediate response - still success
+                    self.log_test(test_name, True, f"Connected successfully (no immediate response)")
+                    return True
+                    
+        except websockets.exceptions.ConnectionClosed:
+            self.log_test(test_name, False, "WebSocket connection closed unexpectedly")
+            return False
+        except websockets.exceptions.InvalidStatusCode as e:
+            if e.status_code == 403:
+                self.log_test(test_name, False, f"WebSocket connection forbidden (403)")
+            else:
+                self.log_test(test_name, False, f"WebSocket invalid status: {e.status_code}")
+            return False
+        except Exception as e:
+            self.log_test(test_name, False, f"WebSocket error: {str(e)}")
+            return False
+    
+    def test_websocket_main(self):
+        """Test Suite C.8: Test WebSocket connection to /api/ws"""
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(self.test_websocket_connection("/api/ws", "WebSocket Main"))
+            loop.close()
+            return result
+        except Exception as e:
+            self.log_test("WebSocket Main", False, f"Async error: {str(e)}")
+            return False
+    
+    def test_websocket_blueprint(self):
+        """Test Suite C.9: Test WebSocket connection to /api/ws/blueprint"""
+        try:
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            result = loop.run_until_complete(self.test_websocket_connection("/api/ws/blueprint", "WebSocket Blueprint"))
+            loop.close()
+            return result
+        except Exception as e:
+            self.log_test("WebSocket Blueprint", False, f"Async error: {str(e)}")
+            return False
     
     def setup_blueprint_root_path(self):
         """Set up blueprint root path for testing"""
