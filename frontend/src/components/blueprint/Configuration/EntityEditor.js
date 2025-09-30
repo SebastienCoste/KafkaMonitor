@@ -331,23 +331,85 @@ export default function EntityEditor({
           </div>
         );
 
-      case 'array':
-        const arrayValue = currentValue || [];
+      case 'array': {
+        const arrayValue = Array.isArray(currentValue) ? currentValue : [];
+
+        // Helper to create default object for array item when items.type === 'object'
+        const createDefaultFromFields = (fieldsDef = {}) => {
+          const obj = {};
+          Object.entries(fieldsDef).forEach(([k, def]) => {
+            if (def.type === 'object' && def.fields) {
+              obj[k] = createDefaultFromFields(def.fields);
+            } else if (def.type === 'array') {
+              obj[k] = Array.isArray(def.default) ? def.default : [];
+            } else if (def.type === 'boolean') {
+              obj[k] = typeof def.default === 'boolean' ? def.default : false;
+            } else if (def.type === 'integer' || def.type === 'number') {
+              obj[k] = typeof def.default === 'number' ? def.default : 0;
+            } else if (def.type === 'map') {
+              obj[k] = {};
+            } else {
+              obj[k] = def.default ?? '';
+            }
+          });
+          return obj;
+        };
+
+        const renderArrayControls = () => (
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">{fieldDef.title}</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                let newItem;
+                if (fieldDef.items?.type === 'string') {
+                  newItem = '';
+                } else if (fieldDef.items?.type === 'object' && fieldDef.items?.fields) {
+                  newItem = createDefaultFromFields(fieldDef.items.fields);
+                } else {
+                  newItem = {};
+                }
+                const newArray = [...arrayValue, newItem];
+                updateBaseConfig(fullPath, newArray);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+
+        // Special rendering: array of strings with options ➜ checkbox list
+        if (fieldDef.items?.type === 'string' && Array.isArray(fieldDef.options) && fieldDef.options.length > 0) {
+          return (
+            <div key={fullPath} className="space-y-2">
+              {renderArrayControls()}
+              {fieldDef.description && <p className="text-xs text-gray-600">{fieldDef.description}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {fieldDef.options.map((opt) => (
+                  <label key={opt} className="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={arrayValue.includes(opt)}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        let next = [...arrayValue];
+                        if (checked && !next.includes(opt)) next.push(opt);
+                        if (!checked) next = next.filter((v) => v !== opt);
+                        updateBaseConfig(fullPath, next);
+                      }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div key={fullPath} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">{fieldDef.title}</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const newArray = [...arrayValue, fieldDef.items?.type === 'string' ? '' : {}];
-                  updateBaseConfig(fullPath, newArray);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            {renderArrayControls()}
             {fieldDef.description && (
               <p className="text-xs text-gray-600">{fieldDef.description}</p>
             )}
@@ -356,7 +418,7 @@ export default function EntityEditor({
                 <div key={index} className="flex items-center space-x-2">
                   {fieldDef.items?.type === 'string' ? (
                     <Input
-                      value={item}
+                      value={item ?? ''}
                       onChange={(e) => {
                         const newArray = [...arrayValue];
                         newArray[index] = e.target.value;
@@ -374,7 +436,7 @@ export default function EntityEditor({
                     </Card>
                   ) : (
                     <Textarea
-                      value={typeof item === 'object' ? JSON.stringify(item, null, 2) : item}
+                      value={typeof item === 'object' ? JSON.stringify(item, null, 2) : (item ?? '')}
                       onChange={(e) => {
                         const newArray = [...arrayValue];
                         try {
@@ -403,6 +465,7 @@ export default function EntityEditor({
             </div>
           </div>
         );
+      }
 
 
       case 'map': {
