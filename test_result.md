@@ -20,9 +20,9 @@ frontend_testing:
 
 - task: "Environment Overrides Dynamic Forms (FIX 2)"
   implemented: true
-  working: false
+  working: true
   file: "frontend/src/components/blueprint/Configuration/EnvironmentOverrides.js"
-  stuck_count: 1
+  stuck_count: 0
   priority: "critical"
   needs_retesting: false
   status_history:
