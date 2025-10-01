@@ -469,6 +469,26 @@ async def get_topics():
         logger.error(f"Failed to get topics: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/topics/monitor")
+async def update_monitored_topics(topics: List[str]):
+    """Update the list of monitored topics"""
+    try:
+        # Store monitored topics in app state
+        if not hasattr(app.state, 'monitored_topics'):
+            app.state.monitored_topics = []
+        
+        app.state.monitored_topics = topics
+        logger.info(f"Updated monitored topics: {topics}")
+        
+        return {
+            "success": True,
+            "monitored_topics": topics,
+            "count": len(topics)
+        }
+    except Exception as e:
+        logger.error(f"Failed to update monitored topics: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/topics/graph")
 async def get_topic_graph():
     try:
