@@ -529,6 +529,74 @@ async def get_topic_graph():
         logger.error(f"Failed to get topic graph: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/graph/disconnected")
+async def get_disconnected_components():
+    """Get disconnected components in the topic graph"""
+    try:
+        if graph_builder and hasattr(graph_builder, 'get_disconnected_components'):
+            components = graph_builder.get_disconnected_components()
+            return {"components": components, "count": len(components)}
+        
+        # Return empty if no graph builder or method not available
+        return {"components": [], "count": 0}
+    except Exception as e:
+        logger.error(f"Failed to get disconnected components: {e}")
+        return {"components": [], "count": 0}
+
+@api_router.get("/graph/filtered")
+async def get_filtered_graph(topic: str = None, depth: int = 2):
+    """Get filtered graph centered around a topic"""
+    try:
+        if not topic:
+            # Return full graph if no topic specified
+            if graph_builder:
+                topics = graph_builder.topic_graph.get_all_topics()
+                edges = graph_builder.topic_graph.edges
+                return {
+                    "nodes": [{"id": t, "label": t} for t in topics],
+                    "edges": [{"source": e.source, "target": e.destination} for e in edges]
+                }
+        
+        if graph_builder and hasattr(graph_builder, 'get_subgraph'):
+            subgraph = graph_builder.get_subgraph(topic, depth)
+            return subgraph
+        
+        # Return empty graph
+        return {"nodes": [], "edges": []}
+    except Exception as e:
+        logger.error(f"Failed to get filtered graph: {e}")
+        return {"nodes": [], "edges": []}
+
+@api_router.post("/graph/apply-mock")
+async def apply_mock_data():
+    """Apply mock data to the graph for testing"""
+    try:
+        # Create mock graph data
+        mock_nodes = [
+            {"id": "user-events", "label": "user-events"},
+            {"id": "analytics", "label": "analytics"},
+            {"id": "notifications", "label": "notifications"},
+            {"id": "processed-events", "label": "processed-events"},
+            {"id": "test-events", "label": "test-events"},
+            {"id": "test-processes", "label": "test-processes"}
+        ]
+        mock_edges = [
+            {"source": "user-events", "target": "analytics"},
+            {"source": "user-events", "target": "notifications"},
+            {"source": "analytics", "target": "processed-events"},
+            {"source": "test-events", "target": "test-processes"}
+        ]
+        
+        return {
+            "success": True,
+            "message": "Mock data applied",
+            "nodes": mock_nodes,
+            "edges": mock_edges
+        }
+    except Exception as e:
+        logger.error(f"Failed to apply mock data: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/statistics")
 async def get_statistics():
     try:
