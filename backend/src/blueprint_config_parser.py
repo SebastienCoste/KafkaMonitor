@@ -310,12 +310,22 @@ class BlueprintConfigurationParser:
             
             configurations = []
             
-            # Parse queries
+            # Parse queries - create individual entities for each query
             queries = config_data.get('queries', {})
             if queries:
+                # Create individual entity for each query definition
+                for query_name, query_config in queries.items():
+                    configurations.append(ParsedConfiguration(
+                        entityType='queries',
+                        name=query_name,  # Use the actual query name like "SearchByCity"
+                        config=query_config,  # Store just this query's config
+                        environments={}
+                    ))
+                
+                # Also keep the full queries object as one entity for backward compatibility
                 configurations.append(ParsedConfiguration(
                     entityType='queries',
-                    name='search_queries',
+                    name='_all_queries',
                     config={'queries': queries},
                     environments={}
                 ))
