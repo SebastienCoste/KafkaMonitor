@@ -267,8 +267,8 @@ function App() {
   const loadTopics = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/topics`);
-      setAvailableTopics(response.data.all_topics || []);
-      setMonitoredTopics(response.data.monitored_topics || []);
+      setAvailableTopics(response.data.topics || []);
+      setMonitoredTopics(response.data.monitored || []);
     } catch (error) {
       console.error('Error loading topics:', error);
     }
