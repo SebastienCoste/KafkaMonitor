@@ -1,0 +1,25 @@
+{
+  "queries": {
+    "SearchByCity": {
+      "lexical": {
+        "queryFile": "searchwhatever.json"
+      }
+    },
+    "TestQuery1": {
+      "vector": {
+        "queryFile": "test.json",
+        "embeddingGlobalConfigId": "testEmbedding",
+        "inParams": ["param1"],
+        "outParam": "result"
+      }
+    },
+    "TestQuery2": {
+      "mixed": {
+        "vectorWeight": 0.5,
+        "lexicalWeight": 0.5,
+        "vectorId": "TestQuery1",
+        "lexicalId": "SearchByCity"
+      }
+    }
+  }
+}
