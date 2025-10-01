@@ -129,7 +129,23 @@ async def get_app_config():
 @api_router.get("/environments")
 async def get_environments():
     envs = ["DEV", "TEST", "INT", "LOAD", "PROD"]
-    current = "DEV"
+    
+    # Read default environment from settings.yaml
+    current = "DEV"  # Fallback default
+    try:
+        settings_path = ROOT_DIR / "config" / "settings.yaml"
+        if settings_path.exists():
+            with open(settings_path, 'r') as f:
+                settings = yaml.safe_load(f)
+                start_env = settings.get('application', {}).get('start_env', 'DEV')
+                if start_env in envs:
+                    current = start_env
+                    logger.info(f"Using start_env from settings.yaml: {current}")
+                else:
+                    logger.warning(f"Invalid start_env '{start_env}' in settings.yaml, using DEV")
+    except Exception as e:
+        logger.warning(f"Could not read start_env from settings.yaml: {e}")
+    
     return {
         "environments": envs,
         "default": current,
