@@ -26,8 +26,8 @@ export default function CodeEditor({ filePath }) {
     setHasChanges(false);
   }, [fileContent]);
 
-  const handleContentChange = (event) => {
-    const newContent = event.target.value;
+  const handleContentChange = (newContent) => {
+    // react-simple-code-editor passes the value directly, not an event object
     setCurrentContent(newContent);
     setHasChanges(newContent !== fileContent);
   };
