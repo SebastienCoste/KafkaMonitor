@@ -206,15 +206,24 @@ export default function ConfigurationTab() {
         environments: selectedEnvironments
       });
 
+      // Add null check for result
+      if (!result) {
+        toast.error('Failed to generate files: No response from server');
+        return;
+      }
+
       if (result.success) {
         toast.success(`Generated ${result.files.length} configuration files`);
         console.log('Generated files:', result.files);
       } else {
-        toast.error(`Failed to generate files: ${result.errors.join(', ')}`);
+        const errorMsg = result.errors && result.errors.length > 0 
+          ? result.errors.join(', ') 
+          : 'Unknown error occurred';
+        toast.error(`Failed to generate files: ${errorMsg}`);
       }
     } catch (error) {
       console.error('Failed to generate files:', error);
-      toast.error(`Failed to generate files: ${error.message}`);
+      toast.error(`Failed to generate files: ${error.message || 'Unknown error'}`);
     } finally {
       setSaving(false);
     }
