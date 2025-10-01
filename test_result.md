@@ -173,6 +173,78 @@ frontend_testing:
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
+# BUG4 AND BUG5 VERIFICATION TESTING RESULTS
+# Testing conducted on: 2025-01-01
+
+backend:
+  - task: "BUG4: Search Experience Entity Detection Fix"
+    implemented: true
+    working: false
+    file: "backend/src/blueprint_config_parser.py"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ BUG4 FAILED: Search Experience Entity Detection not working. Blueprint Creator requires proper setup with root path '/app' before Configuration tab becomes available. After attempting setup, Configuration tab was not accessible, and Search Experience section was not found. Expected individual query entities like 'TeamByCityOnly', 'TeamByCityAndRatingID', 'VectorQueryTeamSearch' from searchExperience.json files were not displayed. The backend parser should extract individual queries as separate entities instead of showing 'No search entities yet' message."
+
+  - task: "BUG5: Monitor All Topics on Startup Fix"
+    implemented: true
+    working: false
+    file: "backend/config/settings.yaml"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ BUG5 FAILED: Monitor All Topics on Startup not working. Despite settings.yaml having 'topic_monitoring.activate_all_on_startup: true', the Topics tab in Trace Viewer does not show all 6 expected topics (user-events, processed-events, notifications, analytics, test-events, test-processes) as monitored by default. Topic Monitoring section was not found in the UI, and no checkboxes were detected for topic selection. The /api/topics endpoint should return all topics in the 'monitored' array when activate_all_on_startup is true."
+
+frontend:
+  - task: "BUG4: Search Experience Entity Detection UI Integration"
+    implemented: false
+    working: false
+    file: "frontend/src/components/blueprint/Configuration/"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ BUG4 UI INTEGRATION FAILED: Blueprint Creator setup process incomplete. 'Enter Path Manually' button found but path input field was not accessible after clicking. Configuration tab was not available after attempted setup, preventing access to Search Experience section. The UI workflow requires proper root path configuration before Configuration features become available."
+
+  - task: "BUG5: Topics Monitoring UI Display"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ BUG5 UI DISPLAY FAILED: Topics tab accessible but Topic Monitoring section not found in sidebar. Expected UI elements missing: Select All/Select None buttons, topic checkboxes for 6 expected topics, monitored topics display. The frontend loadTopics() function may have field mapping issues between API response and UI display."
+
+metadata:
+  created_by: "testing_agent"
+  version: "1.1"
+  test_sequence: 1
+
+test_plan:
+  current_focus:
+    - "BUG4: Search Experience Entity Detection Fix"
+    - "BUG5: Monitor All Topics on Startup Fix"
+  stuck_tasks:
+    - "BUG4: Search Experience Entity Detection Fix"
+    - "BUG5: Monitor All Topics on Startup Fix"
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "testing"
+    message: "BUG4 AND BUG5 VERIFICATION COMPLETED: Comprehensive testing of both requested bug fixes completed with detailed findings. ❌ BUG4 FAILED: Search Experience Entity Detection not working - Blueprint Creator setup incomplete, Configuration tab inaccessible, Search Experience section not found, individual query entities not displayed. Expected entities from searchExperience.json files (TeamByCityOnly, TeamByCityAndRatingID, VectorQueryTeamSearch, HybridLexicalSemanticTeamByCity) were not parsed and shown. ❌ BUG5 FAILED: Monitor All Topics on Startup not working - Despite settings.yaml activate_all_on_startup: true, Topics tab does not show 6 expected topics as monitored by default. Topic Monitoring section missing from UI, no checkboxes detected. Both fixes require main agent investigation and implementation. Console errors detected: 404 resource loading failures and Kafka status check errors."
+
 user_problem_statement: "Implement a complete Blueprint Configuration UI and backend, according to the attached technical design document, with full CRUD support for configuration entities and environment overrides. The new UI and backend must fit into the existing Blueprint Creation flow, adding a new Configuration section/tab between the Files and Build sections."
 
 backend:
