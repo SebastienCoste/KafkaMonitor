@@ -133,11 +133,8 @@ class BlueprintConfigurationParser:
                             # Add to first schema (or create new one if needed)
                             if ui_config.schemas:
                                 ui_config.schemas[0].configurations.extend(
-                                    [EntityConfiguration(
-                                        entityType=config.entityType,
-                                        name=config.name,
-                                        baseConfig=config.config,
-                                        environmentOverrides=config.environments,
+                                    result.configurations
+                                )
                                         inherit=config.inherit
                                     ) for config in result.configurations]
                                 )
