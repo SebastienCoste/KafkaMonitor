@@ -644,9 +644,9 @@ function App() {
                       {connected ? 'Connected' : 'Disconnected'}
                     </span>
                   </div>
-                  {statistics && (
+                  {statistics && statistics.traces && (
                     <Badge variant="secondary">
-                      {statistics.traces.total} traces
+                      {statistics.traces.total || 0} traces
                     </Badge>
                   )}
                   
