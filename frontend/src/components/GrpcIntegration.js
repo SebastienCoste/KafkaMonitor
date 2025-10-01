@@ -718,8 +718,8 @@ function GrpcIntegration() {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Proto files must be placed in <code>/backend/config/protos/</code> directory before initialization.
-                See the README for detailed instructions.
+                Proto files must be placed in <code>/backend/config/proto/</code> directory before initialization.
+                Click "Initialize gRPC Client" below to load your proto files and start making service calls.
               </AlertDescription>
             </Alert>
             
