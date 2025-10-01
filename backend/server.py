@@ -461,9 +461,22 @@ async def validate_blueprint_configuration():
 @api_router.get("/topics")
 async def get_topics():
     try:
+        # Try to get topics from configuration file
+        topics_yaml = ROOT_DIR / "config" / "topics.yaml"
+        if topics_yaml.exists():
+            with open(topics_yaml, 'r') as f:
+                topics_cfg = yaml.safe_load(f)
+                configured_topics = list(topics_cfg.get('topics', {}).keys())
+                monitored = topics_cfg.get('default_monitored_topics', configured_topics)
+                return {"topics": configured_topics, "monitored": monitored}
+        
+        # Fallback to graph builder
         if graph_builder:
             topics = graph_builder.topic_graph.get_all_topics()
-            return {"topics": topics, "monitored": topics}
+            if topics:
+                return {"topics": list(topics), "monitored": list(topics)}
+        
+        # Final fallback
         return {"topics": ["user-events", "analytics", "notifications", "processed-events"], "monitored": ["user-events", "analytics", "notifications", "processed-events"]}
     except Exception as e:
         logger.error(f"Failed to get topics: {e}")
