@@ -606,11 +606,10 @@ async def get_grpc_environments():
     """Get available gRPC environments"""
     try:
         if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
-            # Initialize gRPC client if not exists
+            # Initialize gRPC client if not exists (use relative paths)
             from src.grpc_client import GrpcClient
-            from pathlib import Path
-            proto_root = Path("/app/backend/config/proto")
-            env_dir = Path("/app/backend/config/environments")
+            proto_root = ROOT_DIR / "config" / "proto"
+            env_dir = ROOT_DIR / "config" / "environments"
             
             # Don't create directories, just check if they exist
             if not env_dir.exists():
