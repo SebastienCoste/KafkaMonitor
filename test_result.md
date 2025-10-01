@@ -734,13 +734,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Blueprint Configuration UI Fixes (5 Specific Fixes)"
-    - "Blueprint Configuration File Generation"
-    - "Blueprint Configuration Parser"
+    - "Critical Frontend JavaScript Runtime Error Fix"
+    - "gRPC Integration Loading Proto Files (FIX1)"
+    - "Trace Viewer Page Not Blank (FIX2)"
+    - "Configuration Tab Content (FIX3)"
+    - "File Editor Syntax Highlighting (FIX4)"
   stuck_tasks:
-    - "Blueprint Configuration Parser"
+    - "Critical Frontend JavaScript Runtime Error Fix"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
 
   - task: "Blueprint CNF Loader and Dropdown Functionality"
     implemented: true
