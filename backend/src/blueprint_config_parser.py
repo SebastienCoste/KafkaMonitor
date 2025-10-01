@@ -101,13 +101,33 @@ class BlueprintConfigurationParser:
                 ui_config.schemas.append(config_schema)
             
             # Parse search experience configurations
-            search_experience = blueprint_cnf.get('searchExperience', {})
-            if search_experience:
-                search_configs = search_experience.get('configs', [])
-                for search_config in search_configs:
-                    search_path = blueprint_path / "src" / "searchExperience" / search_config
-                    if search_path.exists():
-                        result = await self._parse_search_experience_config(search_path)
+            # Auto-discover searchExperience JSON files in the directory
+            search_exp_dir = blueprint_path / "src" / "searchExperience"
+            processed_files = set()
+            
+            if search_exp_dir.exists():
+                # First, process files listed in blueprint_cnf.json
+                search_experience = blueprint_cnf.get('searchExperience', {})
+                if search_experience:
+                    search_configs = search_experience.get('configs', [])
+                    for search_config in search_configs:
+                        search_path = search_exp_dir / search_config
+                        if search_path.exists():
+                            processed_files.add(search_path.resolve())
+                            result = await self._parse_search_experience_config(search_path)
+                            if result.success:
+                                all_configurations.extend(result.configurations)
+                                # Add to first schema (or create new one if needed)
+                                if ui_config.schemas:
+                                    ui_config.schemas[0].configurations.extend(
+                                        result.configurations
+                                    )
+                
+                # Auto-discover any other .json files in searchExperience directory
+                for search_file in search_exp_dir.glob("*.json"):
+                    if search_file.resolve() not in processed_files:
+                        logger.info(f"Auto-discovered searchExperience file: {search_file.name}")
+                        result = await self._parse_search_experience_config(search_file)
                         if result.success:
                             all_configurations.extend(result.configurations)
                             # Add to first schema (or create new one if needed)
