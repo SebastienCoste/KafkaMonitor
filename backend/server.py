@@ -632,16 +632,16 @@ async def initialize_grpc():
     """Initialize gRPC client and load proto files"""
     try:
         from src.grpc_client import GrpcClient
-        from pathlib import Path
         
-        proto_root = Path("/app/backend/config/proto")
-        env_dir = Path("/app/backend/config/environments")
+        # Use relative paths from ROOT_DIR
+        proto_root = ROOT_DIR / "config" / "proto"
+        env_dir = ROOT_DIR / "config" / "environments"
         
         # Check if proto files exist
         if not proto_root.exists() or len(list(proto_root.rglob("*.proto"))) == 0:
             return {
                 "success": False,
-                "error": "Proto files must be placed in /backend/config/proto/ directory before initialization. See the README for detailed instructions.",
+                "error": f"Proto files must be placed in backend/config/proto/ directory before initialization. Current path: {proto_root}",
                 "proto_directory": str(proto_root)
             }
         
