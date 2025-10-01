@@ -579,6 +579,12 @@ async def get_grpc_environments():
             from pathlib import Path
             proto_root = Path("/app/backend/config/proto")
             env_dir = Path("/app/backend/config/environments")
+            
+            # Don't create directories, just check if they exist
+            if not env_dir.exists():
+                logger.warning(f"Environments directory not found: {env_dir}")
+                return {"environments": ["DEV", "TEST", "INT", "LOAD", "PROD"], "current": "DEV"}
+            
             app.state.grpc_client = GrpcClient(str(proto_root), str(env_dir))
         
         environments = app.state.grpc_client.list_environments()
@@ -588,7 +594,7 @@ async def get_grpc_environments():
         }
     except Exception as e:
         logger.error(f"Error getting gRPC environments: {e}")
-        return {"environments": [], "error": str(e)}
+        return {"environments": ["DEV", "TEST", "INT", "LOAD", "PROD"], "current": "DEV", "error": str(e)}
 
 @api_router.post("/grpc/initialize")
 async def initialize_grpc():
