@@ -1,11 +1,11 @@
 {
   "schemas": [
     {
-      "id": "08f5ead7-cd94-46a8-b380-da2de9e813ab",
+      "id": "7d108e47-7e64-4a03-8c2d-9ec67c2f3443",
       "namespace": "ea.cadie.fy26.veewan.internal.v2",
       "configurations": [
         {
-          "id": "7e798e79-3478-4cd8-8465-fa3904d9300b",
+          "id": "c626680c-88e3-433f-9018-be553ba3a4eb",
           "entityType": "access",
           "name": "global_access",
           "baseConfig": {
@@ -30,7 +30,7 @@
           "enabled": true
         },
         {
-          "id": "f61376bf-cda5-434e-b372-cfc0b9881c3d",
+          "id": "010b307e-e758-4c6d-afb8-c1f9e2d4a078",
           "entityType": "messageStorage",
           "name": "global_messageStorage",
           "baseConfig": {
@@ -41,7 +41,7 @@
           "enabled": true
         },
         {
-          "id": "5cbac77e-dbca-4e76-bc4f-83b5b63e0b2f",
+          "id": "9556a12e-c27a-4018-bd55-f2c9ee95e801",
           "entityType": "discoveryStorage",
           "name": "global_discoveryStorage",
           "baseConfig": {
@@ -52,7 +52,7 @@
           "enabled": true
         },
         {
-          "id": "d3ff33e9-e266-4ac3-9a7d-7136e4908f9e",
+          "id": "3418bb4d-0287-4d70-83b1-ca579a84dd12",
           "entityType": "inferenceServiceConfigs",
           "name": "global_inferenceServiceConfigs",
           "baseConfig": {
@@ -76,7 +76,7 @@
           "enabled": true
         },
         {
-          "id": "eecb4b50-9ad6-4c8f-be3a-b34524a7fef6",
+          "id": "f041ac25-9a64-4610-a0aa-c4d59ee20409",
           "entityType": "storages",
           "name": "global_storages",
           "baseConfig": {},
@@ -135,7 +135,7 @@
           "enabled": true
         },
         {
-          "id": "369d1521-71ec-499c-9042-d5a522e9efa4",
+          "id": "0678c799-3299-49db-a7eb-972e83ca60fa",
           "entityType": "inferenceServiceConfigs",
           "name": "global_inference",
           "baseConfig": {},
@@ -154,7 +154,7 @@
           "enabled": true
         },
         {
-          "id": "e77dce30-bb42-472a-980e-cb8bd488576a",
+          "id": "e8ba9987-52b3-47c7-9f21-6cb2dc65afcf",
           "entityType": "access",
           "name": "global_access",
           "baseConfig": {},
@@ -167,7 +167,7 @@
           "enabled": true
         },
         {
-          "id": "67bdc759-7f32-4813-a52b-d7d37fe86585",
+          "id": "09cddc6d-2fd4-4333-90e3-7985274b68d5",
           "entityType": "storages",
           "name": "global_storages",
           "baseConfig": {},
@@ -221,7 +221,7 @@
           "enabled": true
         },
         {
-          "id": "39f5bec8-56b7-4518-b644-a17921babccf",
+          "id": "0c2f9334-3061-456a-b16b-ee79ddf5ab2f",
           "entityType": "inferenceServiceConfigs",
           "name": "global_inference",
           "baseConfig": {},
@@ -245,7 +245,7 @@
           "enabled": true
         },
         {
-          "id": "13a4ddc0-c7ca-4566-9acb-3ac4242fa127",
+          "id": "09821db8-5265-4f4a-bde9-01a8a13f6b5a",
           "entityType": "storages",
           "name": "global_storages",
           "baseConfig": {},
@@ -299,7 +299,7 @@
           "enabled": true
         },
         {
-          "id": "e7bca48a-a619-48ea-96a5-d5ae2fe5e4b9",
+          "id": "bee827ab-38ab-4420-b2f1-3377ffa38039",
           "entityType": "inferenceServiceConfigs",
           "name": "global_inference",
           "baseConfig": {},
@@ -323,7 +323,7 @@
           "enabled": true
         },
         {
-          "id": "eebe79f8-b96b-4595-a9f1-2a89f386888f",
+          "id": "ba8e09f7-2569-4652-bde9-a2eafa80abdf",
           "entityType": "storages",
           "name": "global_storages",
           "baseConfig": {},
@@ -382,7 +382,7 @@
           "enabled": true
         },
         {
-          "id": "21605fc8-050c-4c38-a989-e363905c15e1",
+          "id": "4762d4b6-85dd-43cf-9c1e-4158813ff64b",
           "entityType": "inferenceServiceConfigs",
           "name": "global_inference",
           "baseConfig": {},
@@ -406,7 +406,7 @@
           "enabled": true
         },
         {
-          "id": "0c7919c0-99e4-474d-8ca2-b83dbe338ca8",
+          "id": "6e702319-e442-4dbe-8d55-eb5d3c0d6f50",
           "entityType": "storages",
           "name": "global_storages",
           "baseConfig": {},
@@ -443,7 +443,7 @@
           "enabled": true
         },
         {
-          "id": "fd5d0224-811b-4605-a61b-df186ee2cf83",
+          "id": "873a7572-cf2f-4306-aced-dd7cb0fd1eac",
           "entityType": "inferenceServiceConfigs",
           "name": "global_inference",
           "baseConfig": {},
@@ -467,7 +467,7 @@
           "enabled": true
         },
         {
-          "id": "b93e373e-a2b6-4332-bc16-57587f52135f",
+          "id": "271f579d-3bcd-4395-9ec1-0b7e87b087c9",
           "entityType": "binaryAssets",
           "name": "imageModerationConfig",
           "baseConfig": {},
@@ -523,7 +523,7 @@
           "enabled": true
         },
         {
-          "id": "3970e8a7-2d92-4eb9-b4db-969c1bb8cd2f",
+          "id": "525e2e15-8106-4fbb-990c-c17277cb2efc",
           "entityType": "binaryAssets",
           "name": "imageModerationConfig",
           "baseConfig": {},
@@ -579,7 +579,7 @@
           "enabled": true
         },
         {
-          "id": "ccbbfdee-3ff3-420a-b353-b72525348a1a",
+          "id": "f87b8a64-6fed-457d-a1eb-5fba45a6ee85",
           "entityType": "binaryAssets",
           "name": "imageModerationConfig",
           "baseConfig": {},
@@ -635,7 +635,7 @@
           "enabled": true
         },
         {
-          "id": "b2e758bd-d215-4a4f-a21f-2142833a6bd2",
+          "id": "1b64d29b-1240-4d30-9335-5e25cb63aff8",
           "entityType": "binaryAssets",
           "name": "imageModerationConfig",
           "baseConfig": {},
@@ -691,7 +691,7 @@
           "enabled": true
         },
         {
-          "id": "3414641a-5130-488a-bda1-22e20906eb22",
+          "id": "eb0d9756-199d-47f1-8ab4-58be24d5bd67",
           "entityType": "binaryAssets",
           "name": "imageModerationConfig",
           "baseConfig": {},
@@ -730,7 +730,7 @@
           "enabled": true
         },
         {
-          "id": "e9e48a7b-d808-45e3-8e1c-e9e120dd7e19",
+          "id": "41f894f3-62a4-46cc-b5e8-62e37366f474",
           "entityType": "discoveryFeatures",
           "name": "cadieInternalModeratedConfig_discoveryFeatures",
           "baseConfig": {
@@ -748,7 +748,7 @@
           "enabled": true
         },
         {
-          "id": "8e79980b-b1e6-45bb-995b-fa8aefa3f31f",
+          "id": "5eaef85e-49b3-4b9d-8b27-19a139416b72",
           "entityType": "discoveryFeatures",
           "name": "cadieInternalTextOnlyConfig_discoveryFeatures",
           "baseConfig": {
@@ -764,7 +764,7 @@
           "enabled": true
         },
         {
-          "id": "023f904f-9116-4a76-a0a7-ce942ba79e1a",
+          "id": "45d5c433-2bf9-4c4b-bef3-8994f01ca5e3",
           "entityType": "discoveryFeatures",
           "name": "cadieInternalImageOnlyConfig_discoveryFeatures",
           "baseConfig": {
@@ -781,7 +781,7 @@
           "enabled": true
         },
         {
-          "id": "c38df954-c3ed-4891-94db-8fd05d70c5f3",
+          "id": "56fe2181-864d-427a-8cc1-5386c0f9f13c",
           "entityType": "imageModeration",
           "name": "imageModerationConfigBase_imageModeration",
           "baseConfig": {
@@ -793,7 +793,7 @@
           "enabled": true
         },
         {
-          "id": "f9f0d5db-be1d-4c96-9dc4-78cb6199ad7a",
+          "id": "1386db6e-3256-41b5-9ac6-f70407f5e81d",
           "entityType": "textModeration",
           "name": "textModerationConfig_textModeration",
           "baseConfig": {
@@ -811,7 +811,7 @@
           "enabled": true
         },
         {
-          "id": "9f3fc73b-e802-4312-9398-9a68a4e13bc6",
+          "id": "236f806d-768a-405f-b302-e8bc418e5724",
           "entityType": "unknown",
           "name": "storeMeConfig",
           "baseConfig": {
@@ -823,7 +823,7 @@
           "enabled": true
         },
         {
-          "id": "f468e375-694b-4605-9ee6-9e8e09476e13",
+          "id": "205745e8-b6fd-4359-9ed9-96d56ae6d4f7",
           "entityType": "unknown",
           "name": "imageModeration",
           "baseConfig": {},
@@ -832,7 +832,7 @@
           "enabled": true
         },
         {
-          "id": "a749540c-95a9-408f-b7e9-a43df39d684c",
+          "id": "30b6e353-ce7e-4686-bde9-e0ae120b52ea",
           "entityType": "transformation",
           "name": "cadieInternalModeratedTransformedConfigV2_transformation",
           "baseConfig": {
@@ -848,18 +848,60 @@
           "enabled": true
         },
         {
+          "id": "be7f8215-a7bf-4f4f-8d33-846c167ac4c2",
           "entityType": "queries",
           "name": "searchExperience",
-          "inherit": null
+          "baseConfig": {
+            "queries": {
+              "TeamByCityAndRatingID": {
+                "lexical": {
+                  "queryFile": "teambycityandratingid.json"
+                }
+              },
+              "VectorQueryTeamSearch": {
+                "vector": {
+                  "queryFile": "knnteamsearchid.json",
+                  "embeddingGlobalConfigId": "axsOutfitQueryV1",
+                  "inParams": [
+                    "myQueryParam"
+                  ],
+                  "outParam": "vect"
+                }
+              },
+              "HybridLexicalSemanticTeamByCity": {
+                "mixed": {
+                  "vectorWeight": 0.25,
+                  "lexicalWeight": 0.75,
+                  "vectorId": "VectorQueryTeamSearch",
+                  "lexicalId": "TeamByCityAndRatingID"
+                }
+              }
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         },
         {
+          "id": "5fcbd32d-e3b4-40dc-892c-a81394c006cc",
           "entityType": "queries",
           "name": "searchExperience2",
-          "inherit": null
+          "baseConfig": {
+            "queries": {
+              "TeamByCityOnly": {
+                "lexical": {
+                  "queryFile": "teambycityonly.json"
+                }
+              }
+            }
+          },
+          "environmentOverrides": {},
+          "inherit": null,
+          "enabled": true
         }
       ]
     }
   ],
   "fileOutputs": {},
-  "lastModified": "2025-10-01T23:36:06.203627"
+  "lastModified": "2025-10-01T23:37:24.429127"
 }
