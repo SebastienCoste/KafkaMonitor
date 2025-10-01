@@ -1,0 +1,17 @@
+{
+  "environments": {},
+  "messageConfigs": {
+    "textModerationConfig_textModeration": {
+      "textModeration": {
+        "ruleset": "MCR_NAMES",
+        "ttl_secs": 299,
+        "texts": {
+          "fields": [
+            "moderateMe.title",
+            "moderateMe.content"
+          ]
+        }
+      }
+    }
+  }
+}

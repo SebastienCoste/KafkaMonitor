@@ -1,9 +1,0 @@
-{
-  "queries": {
-    "TeamByCityOnly": {
-      "lexical": {
-          "queryFile": "teambycityonly.json"
-      }
-    }
-  }
-}

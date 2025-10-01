@@ -1,0 +1,105 @@
+{
+  "environments": {
+    "DEV": {
+      "storages": {
+        "defaultServiceIdentifier": "EA.EADP.PDE.MCR",
+        "storages": {
+          "EA.EADP.CADIE": {
+            "serviceIdentifier": "EA.EADP.CADIE",
+            "defaultIntegrationId": "0",
+            "hosts": [
+              {
+                "apis": [
+                  "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                  "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS",
+                  "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                  "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                  "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                  "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                ],
+                "host": "mockserver.dev.preprod.cadie-internal.ea.com:443"
+              }
+            ]
+          },
+          "EA.EADP.PDE.MCR": {
+            "serviceIdentifier": "EA.EADP.PDE.MCR",
+            "defaultIntegrationId": "2",
+            "hosts": [
+              {
+                "apis": [
+                  "STORAGE_API_BATCH_GET_BINARY_ASSET_SIGNED_URLS",
+                  "STORAGE_API_BATCH_GET_BINARY_ASSET_UNSIGNED_URLS"
+                ],
+                "host": "asset-test-internal.mcr.ea.com:443"
+              },
+              {
+                "apis": [
+                  "STORAGE_API_BATCH_UPDATE_BINARY_ASSET_STATUS",
+                  "STORAGE_API_BATCH_CREATE_BINARY_ASSET",
+                  "STORAGE_API_BATCH_FINALIZE_BINARY_ASSET",
+                  "STORAGE_API_BATCH_DELETE_BINARY_ASSET"
+                ],
+                "host": "api-test-internal.mcr.ea.com:443"
+              }
+            ]
+          }
+        }
+      },
+      "inferenceServiceConfigs": {
+        "configs": {
+          "axsOutfitV1": {
+            "kserveConfig": {
+              "url": "axs.int.ea.com:443"
+            }
+          },
+          "axsOutfitQueryV1": {
+            "kserveConfig": {
+              "url": "axs.int.ea.com:443"
+            }
+          }
+        }
+      }
+    }
+  },
+  "config": {
+    "access": {
+      "serverAccessOnlyAccount": true,
+      "authorisation": {
+        "adminClientIds": [
+          "NEOTEK-OATH_BACKEND_BETA_SERVER",
+          "CADIE_BK_OL_SERVER"
+        ],
+        "readClientIds": [
+          "NEOTEK-OATH_BACKEND_BETA_SERVER",
+          "CADIE_BK_OL_SERVER"
+        ],
+        "writeClientIds": [
+          "NEOTEK-OATH_BACKEND_BETA_SERVER",
+          "CADIE_BK_OL_SERVER"
+        ]
+      }
+    },
+    "messageStorage": {
+      "serverType": "INTERNAL_STORAGE_TYPE_INTERNAL"
+    },
+    "discoveryStorage": {
+      "serverType": "DISCOVERY_SERVER_TYPE_INTERNAL"
+    },
+    "inferenceServiceConfigs": {
+      "configs": {
+        "axsOutfitV1": {
+          "kserveConfig": {
+            "modelName": "axsOutfit",
+            "modelVersion": "v1"
+          }
+        },
+        "axsOutfitQueryV1": {
+          "kserveConfig": {
+            "modelName": "axsOutfitQuery",
+            "modelVersion": "v1"
+          }
+        }
+      }
+    }
+  }
+}

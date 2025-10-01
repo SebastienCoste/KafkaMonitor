@@ -1,0 +1,11 @@
+{
+  "environments": {},
+  "messageConfigs": {
+    "imageModerationConfigBase_imageModeration": {
+      "imageModeration": {
+        "ruleset": "MCR_IMAGE_E_BUNDLE",
+        "ttl_secs": 300
+      }
+    }
+  }
+}

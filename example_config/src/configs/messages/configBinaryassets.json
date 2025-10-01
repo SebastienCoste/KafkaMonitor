@@ -1,0 +1,59 @@
+{
+  "environments": {
+    "DEV": {
+      "configs": {
+        "imageModerationConfig": {
+          "binaryAssets": {
+            "binaryAssets": {
+              "ownedBinaryAssets": [
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.images",
+                      "moderatedContent.images"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                },
+                {
+                  "ids": {
+                    "fields": [
+                      "moderateMe.mockcadie",
+                      "moderatedContent.mockcadie"
+                    ]
+                  },
+                  "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+                }
+              ]
+            },
+            "preProcessing": {
+              "imageModeration": {
+                "images": [
+                  {
+                    "ids": {
+                      "fields": [
+                        "moderateMe.images"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.PDE.MCR"
+                  },
+                  {
+                    "ids": {
+                      "fields": [
+                        "moderateMe.mockcadie"
+                      ]
+                    },
+                    "binaryStorageServiceIdentifier": "EA.EADP.CADIE"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "messageConfigs": {
+    "imageModerationConfig": {}
+  }
+}
