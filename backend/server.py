@@ -587,9 +587,8 @@ async def get_grpc_status():
                 "proto_files_required": True
             }
         
-        # Check if proto files are available
-        from pathlib import Path
-        proto_dir = Path("/app/backend/config/proto")
+        # Check if proto files are available (use relative path)
+        proto_dir = ROOT_DIR / "config" / "proto"
         has_protos = proto_dir.exists() and len(list(proto_dir.rglob("*.proto"))) > 0
         
         return {
