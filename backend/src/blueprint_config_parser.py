@@ -135,9 +135,6 @@ class BlueprintConfigurationParser:
                                 ui_config.schemas[0].configurations.extend(
                                     result.configurations
                                 )
-                                        inherit=config.inherit
-                                    ) for config in result.configurations]
-                                )
                         else:
                             parse_errors.extend(result.errors)
                             parse_warnings.extend(result.warnings)
