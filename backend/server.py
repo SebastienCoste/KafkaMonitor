@@ -540,6 +540,100 @@ async def blueprint_websocket_endpoint(websocket: WebSocket):
         logger.error(f"Blueprint WebSocket error: {e}")
 
 # -----------------------------------------------------------------------------
+# gRPC Integration API Endpoints  
+# -----------------------------------------------------------------------------
+
+@api_router.get("/grpc/status")
+async def get_grpc_status():
+    """Get gRPC client status"""
+    try:
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            return {
+                "initialized": False,
+                "message": "gRPC client not initialized",
+                "proto_files_required": True
+            }
+        
+        # Check if proto files are available
+        from pathlib import Path
+        proto_dir = Path("/app/backend/config/proto")
+        has_protos = proto_dir.exists() and len(list(proto_dir.rglob("*.proto"))) > 0
+        
+        return {
+            "initialized": True,
+            "proto_files_present": has_protos,
+            "current_environment": getattr(app.state.grpc_client, 'current_environment', 'DEV'),
+            "available_services": app.state.grpc_client.proto_loader.list_available_services() if app.state.grpc_client.proto_loader.compiled_modules else {}
+        }
+    except Exception as e:
+        logger.error(f"Error getting gRPC status: {e}")
+        return {"initialized": False, "error": str(e)}
+
+@api_router.get("/grpc/environments")
+async def get_grpc_environments():
+    """Get available gRPC environments"""
+    try:
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            # Initialize gRPC client if not exists
+            from src.grpc_client import GrpcClient
+            from pathlib import Path
+            proto_root = Path("/app/backend/config/proto")
+            env_dir = Path("/app/backend/config/environments")
+            app.state.grpc_client = GrpcClient(str(proto_root), str(env_dir))
+        
+        environments = app.state.grpc_client.list_environments()
+        return {
+            "environments": environments,
+            "current": getattr(app.state.grpc_client, 'current_environment', 'DEV')
+        }
+    except Exception as e:
+        logger.error(f"Error getting gRPC environments: {e}")
+        return {"environments": [], "error": str(e)}
+
+@api_router.post("/grpc/initialize")
+async def initialize_grpc():
+    """Initialize gRPC client and load proto files"""
+    try:
+        from src.grpc_client import GrpcClient
+        from pathlib import Path
+        
+        proto_root = Path("/app/backend/config/proto")
+        env_dir = Path("/app/backend/config/environments")
+        
+        # Check if proto files exist
+        if not proto_root.exists() or len(list(proto_root.rglob("*.proto"))) == 0:
+            return {
+                "success": False,
+                "error": "Proto files must be placed in /backend/config/proto/ directory before initialization. See the README for detailed instructions.",
+                "proto_directory": str(proto_root)
+            }
+        
+        # Initialize client
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            app.state.grpc_client = GrpcClient(str(proto_root), str(env_dir))
+        
+        result = await app.state.grpc_client.initialize()
+        
+        if result.get('success'):
+            return {
+                "success": True,
+                "message": "gRPC client initialized successfully",
+                "available_services": result.get('available_services', {}),
+                "environments": result.get('environments', [])
+            }
+        else:
+            return result
+            
+    except Exception as e:
+        logger.error(f"Error initializing gRPC: {e}")
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+# -----------------------------------------------------------------------------
 # Middleware and Router Mount
 # -----------------------------------------------------------------------------
 app.add_middleware(
