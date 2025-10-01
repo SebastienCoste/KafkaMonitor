@@ -643,6 +643,18 @@ backend:
         comment: "✅ CRITICAL BLUEPRINT CONFIGURATION API ROUTING FIX COMPLETELY VERIFIED: Comprehensive testing completed with 100% success rate (13/13 tests passed). ✅ TEST SUITE A - CORE APIs (6/6 passed): Health Check (/api/health) returns status 'ok', App Configuration (/api/app-config) returns proper structure with 3 tabs, Environments (/api/environments) returns all 5 expected environments [DEV, TEST, INT, LOAD, PROD], File Tree (/api/blueprint/file-tree) returns 77 files/directories after root path setup. ✅ TEST SUITE B - BLUEPRINT CONFIGURATION (4/4 passed): Entity Definitions (/api/blueprint/config/entity-definitions) returns 11 entity types in dict format, Namespace Detection (/api/blueprint/namespace) successfully detects namespace 'com.test.blueprint.config' from blueprint_cnf.json, Blueprint CNF File Content (/api/blueprint/file-content/blueprint_cnf.json) returns valid JSON with all expected fields. ✅ TEST SUITE C - WEBSOCKET (2/2 passed): WebSocket Main (/api/ws) connects successfully, WebSocket Blueprint (/api/ws/blueprint) connects successfully. ✅ ROUTING FIX VERIFICATION: All API endpoints return 200 status codes (not 404), WebSocket connections establish successfully (not 403), Response data has correct structure. The backend routing fix is working perfectly - API router registration BEFORE SPA catch-all routes has resolved the 404 issues."
 
 frontend:
+  - task: "Critical Frontend JavaScript Runtime Error Fix"
+    implemented: false
+    working: false
+    file: "frontend/src/App.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL BLOCKING ISSUE: Frontend application crashes with 'Cannot read properties of undefined (reading 'total')' JavaScript runtime error. Error prevents React application from initializing properly, causing error boundary to trigger and blocking access to all functionality. Navigation buttons visible in header but non-functional. Backend APIs working correctly (/api/statistics, /api/app-config), but frontend cannot process responses. All 4 critical fixes (gRPC Integration, Trace Viewer, Configuration Tab, File Editor) cannot be tested due to this blocking error. Application stuck on landing page with red error screen. URGENT: Main agent must identify and fix the undefined object access in frontend code before any other testing can proceed."
+
   - task: "P10/P50/P95 Display on Topics Page"
     implemented: true
     working: true
