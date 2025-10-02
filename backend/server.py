@@ -96,8 +96,8 @@ async def startup_event():
                 
                 # Set environment variables so KafkaConsumerService can read them
                 os.environ['KAFKA_BOOTSTRAP_SERVERS'] = kafka_config.get('bootstrap_servers', '')
-                os.environ['KAFKA_USERNAME'] = kafka_config.get('sasl_username', '')
-                os.environ['KAFKA_PASSWORD'] = kafka_config.get('sasl_password', '')
+                os.environ['KAFKA_USERNAME'] = kafka_config.get('username', kafka_config.get('sasl_username', ''))
+                os.environ['KAFKA_PASSWORD'] = kafka_config.get('password', kafka_config.get('sasl_password', ''))
                 os.environ['KAFKA_SECURITY_PROTOCOL'] = kafka_config.get('security_protocol', 'SASL_SSL')
                 os.environ['KAFKA_SASL_MECHANISM'] = kafka_config.get('sasl_mechanism', 'SCRAM-SHA-512')
                 
