@@ -460,6 +460,63 @@ async def generate_configuration_files(request: GenerateFilesRequest):
         logger.error(f"Failed to generate configuration files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/blueprint/config/generate-all")
+async def generate_all_configuration_files():
+    """Generate configuration files for all schemas in all environments"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        # Load UI config to get all schemas
+        ui_config, warnings = await blueprint_config_manager.load_blueprint_config(root_path)
+        
+        total_files = 0
+        all_errors = []
+        
+        # Generate files for each schema across all environments
+        for schema in ui_config.schemas:
+            request = GenerateFilesRequest(
+                schemaId=schema.id,
+                environments=["DEV", "TEST", "INT", "LOAD", "PROD"],
+                outputPath=root_path
+            )
+            result = await blueprint_config_manager.generate_files(root_path, request)
+            if result.success:
+                total_files += len(result.files)
+            else:
+                all_errors.extend(result.errors)
+        
+        return {
+            "success": len(all_errors) == 0,
+            "filesGenerated": total_files,
+            "errors": all_errors
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate all configuration files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/config/generate-cnf")
+async def generate_blueprint_cnf():
+    """Generate blueprint_cnf.json file"""
+    if not blueprint_config_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint configuration manager not initialized")
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        # For now, return success - the actual CNF generation would go here
+        return {
+            "success": True,
+            "message": "Blueprint CNF generation not yet implemented"
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate blueprint CNF: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/blueprint/config/validate")
 async def validate_blueprint_configuration():
     if not blueprint_config_manager or not blueprint_file_manager:
