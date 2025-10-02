@@ -297,7 +297,7 @@ async def switch_environment(request: Dict[str, Any]):
         if 'kafka_consumer' in globals() and kafka_consumer is not None:
             try:
                 logger.info("🛑 Stopping existing Kafka consumer...")
-                kafka_consumer.stop()
+                kafka_consumer.stop_consuming()
             except Exception as e:
                 logger.warning(f"Error stopping Kafka consumer: {e}")
             kafka_consumer = None
