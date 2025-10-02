@@ -69,9 +69,12 @@ async def startup_event():
     global kafka_consumer
     try:
         from src.kafka_consumer import KafkaConsumerService
+        from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
         
         # Read the start_env from settings.yaml
         settings_path = ROOT_DIR / "config" / "settings.yaml"
+        kafka_yaml = ROOT_DIR / "config" / "kafka.yaml"
+        
         if settings_path.exists():
             with open(settings_path, 'r') as f:
                 settings = yaml.safe_load(f)
@@ -81,7 +84,7 @@ async def startup_event():
         
         logger.info(f"🔧 Auto-initializing Kafka consumer for environment: {start_env}")
         
-        # Load environment configuration
+        # Load environment configuration and set environment variables
         env_file = ROOT_DIR / "config" / "environments" / f"{start_env.lower()}.yaml"
         if env_file.exists():
             with open(env_file, 'r') as f:
@@ -91,26 +94,47 @@ async def startup_event():
             if kafka_config and kafka_config.get('bootstrap_servers'):
                 logger.info(f"   Bootstrap servers: {kafka_config.get('bootstrap_servers')}")
                 
+                # Set environment variables so KafkaConsumerService can read them
+                os.environ['KAFKA_BOOTSTRAP_SERVERS'] = kafka_config.get('bootstrap_servers', '')
+                os.environ['KAFKA_USERNAME'] = kafka_config.get('sasl_username', '')
+                os.environ['KAFKA_PASSWORD'] = kafka_config.get('sasl_password', '')
+                os.environ['KAFKA_SECURITY_PROTOCOL'] = kafka_config.get('security_protocol', 'SASL_SSL')
+                os.environ['KAFKA_SASL_MECHANISM'] = kafka_config.get('sasl_mechanism', 'SCRAM-SHA-512')
+                
+                # Initialize decoder
+                proto_dir = ROOT_DIR / "config" / "proto"
+                if proto_dir.exists() and list(proto_dir.rglob("*.proto")):
+                    decoder = ProtobufDecoder(str(proto_dir))
+                    logger.info("Using real protobuf decoder for Kafka")
+                else:
+                    decoder = MockProtobufDecoder()
+                    logger.info("Using mock protobuf decoder for Kafka")
+                
+                # Get trace header field from settings
+                trace_header_field = settings.get('trace_header_field', 'traceparent')
+                
+                # Initialize Kafka consumer
                 kafka_consumer = KafkaConsumerService(
-                    bootstrap_servers=kafka_config.get('bootstrap_servers', ''),
-                    sasl_username=kafka_config.get('sasl_username', ''),
-                    sasl_password=kafka_config.get('sasl_password', ''),
-                    security_protocol=kafka_config.get('security_protocol', 'SASL_SSL'),
-                    sasl_mechanism=kafka_config.get('sasl_mechanism', 'SCRAM-SHA-512')
+                    config_path=str(kafka_yaml),
+                    decoder=decoder,
+                    trace_header_field=trace_header_field
                 )
                 
                 # Add message handler if graph_builder exists
                 if graph_builder:
                     kafka_consumer.add_message_handler(graph_builder.add_message)
+                    logger.info("✅ Added message handler to Kafka consumer")
                 
                 # Subscribe to topics
-                topics_yaml = ROOT_DIR / "config" / "topics.yaml"
-                if topics_yaml.exists() and graph_builder:
+                topics_yaml_path = ROOT_DIR / "config" / "topics.yaml"
+                if topics_yaml_path.exists() and graph_builder:
                     all_topics = graph_builder.topic_graph.get_all_topics()
                     if all_topics:
                         logger.info(f"📋 Subscribing to {len(all_topics)} topics on startup...")
                         kafka_consumer.subscribe_to_topics(all_topics)
                         logger.info(f"✅ Kafka consumer initialized and subscribed to topics")
+                    else:
+                        logger.warning("⚠️ No topics found in topic graph")
                 else:
                     logger.warning("⚠️ No topics.yaml found or graph_builder not initialized")
             else:
