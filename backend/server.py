@@ -895,12 +895,16 @@ async def blueprint_websocket_endpoint(websocket: WebSocket):
 @api_router.post("/redis/test-connection")
 async def test_redis_connection(request: Dict[str, Any]):
     """Test Redis connection for a specific environment"""
+    environment = request.get("environment", "DEV")
+    logger.info(f"🔌 Testing Redis connection for environment: {environment}")
+    
     try:
-        environment = request.get("environment", "DEV")
-        
         # Read Redis configuration from settings.yaml
         settings_yaml = ROOT_DIR / "config" / "settings.yaml"
+        logger.info(f"📁 Settings file: {settings_yaml}")
+        
         if not settings_yaml.exists():
+            logger.error(f"❌ settings.yaml not found")
             return {
                 "status": "failed",
                 "error": "settings.yaml not found. Redis configuration is defined in settings.yaml"
@@ -909,16 +913,23 @@ async def test_redis_connection(request: Dict[str, Any]):
         with open(settings_yaml, 'r') as f:
             settings = yaml.safe_load(f)
         
+        logger.info(f"🔧 Looking for redis.{environment.lower()} configuration...")
         redis_config = settings.get('redis', {}).get(environment.lower())
+        
         if not redis_config:
+            available_envs = list(settings.get('redis', {}).keys())
+            logger.warning(f"⚠️ No Redis config for '{environment}'. Available: {available_envs}")
             return {
                 "status": "failed",
-                "error": f"No Redis configuration found for environment: {environment}"
+                "error": f"No Redis configuration found for environment: {environment}. Available: {available_envs}"
             }
+        
+        logger.info(f"✅ Found Redis config - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}, DB: {redis_config.get('db', 0)}")
         
         # Try to connect to Redis
         import redis
         try:
+            logger.info(f"🔌 Attempting connection...")
             redis_client = redis.Redis(
                 host=redis_config.get('host', 'localhost'),
                 port=redis_config.get('port', 6379),
@@ -927,9 +938,11 @@ async def test_redis_connection(request: Dict[str, Any]):
                 socket_timeout=5,
                 socket_connect_timeout=5
             )
+            
             # Test connection with ping
             redis_client.ping()
             redis_client.close()
+            logger.info(f"✅ Redis connection successful!")
             
             return {
                 "status": "connected",
@@ -938,18 +951,22 @@ async def test_redis_connection(request: Dict[str, Any]):
                 "db": redis_config.get('db', 0)
             }
         except redis.ConnectionError as e:
+            logger.error(f"❌ Redis connection failed: {e}")
             return {
                 "status": "failed",
                 "error": f"Cannot connect to Redis: {str(e)}"
             }
         except Exception as e:
+            logger.error(f"❌ Redis error: {e}")
             return {
                 "status": "failed",
                 "error": f"Redis error: {str(e)}"
             }
             
     except Exception as e:
-        logger.error(f"Error testing Redis connection: {e}")
+        logger.error(f"❌ Error testing Redis connection: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return {
             "status": "failed",
             "error": str(e)
