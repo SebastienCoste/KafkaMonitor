@@ -422,7 +422,7 @@ function GrpcIntegration() {
 
   // Handle file upload
   const handleFileUpload = async () => {
-    if (!uploadUrl || !uploadFile) {
+    if (!uploadUrl || !selectedUploadFile) {
       toast.error('Please provide both URL and file');
       return;
     }
@@ -430,10 +430,10 @@ function GrpcIntegration() {
     setUploadingFile(true);
     try {
       const formData = new FormData();
-      formData.append('file', uploadFile);
+      formData.append('file', selectedUploadFile);
 
       console.log('📤 Uploading file to:', uploadUrl);
-      console.log('📄 File:', uploadFile.name, `(${(uploadFile.size / 1024).toFixed(2)} KB)`);
+      console.log('📄 File:', selectedUploadFile.name, `(${(selectedUploadFile.size / 1024).toFixed(2)} KB)`);
 
       const response = await axios.post(uploadUrl, formData, {
         headers: {
@@ -451,7 +451,7 @@ function GrpcIntegration() {
       toast.success(`File uploaded successfully!`);
       
       // Reset file input
-      setUploadFile(null);
+      setSelectedUploadFile(null);
       
     } catch (error) {
       console.error('❌ File upload error:', error);
