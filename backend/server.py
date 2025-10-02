@@ -1256,9 +1256,22 @@ async def get_statistics():
 @api_router.get("/traces")
 async def get_traces():
     try:
-        return {"traces": [], "total": 0, "page": 1, "per_page": 50}
+        if graph_builder is None:
+            return {"traces": [], "total": 0, "page": 1, "per_page": 50}
+        
+        # Get all traces from graph_builder
+        traces = graph_builder.get_traces()
+        
+        return {
+            "traces": traces,
+            "total": len(traces),
+            "page": 1,
+            "per_page": 50
+        }
     except Exception as e:
         logger.error(f"Failed to get traces: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 # -----------------------------------------------------------------------------
