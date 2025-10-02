@@ -165,6 +165,43 @@ async def get_environments():
         "current_environment": current
     }
 
+@api_router.post("/environments/switch")
+async def switch_environment(request: Dict[str, Any]):
+    """Switch to a different environment"""
+    try:
+        new_env = request.get("environment")
+        if not new_env:
+            raise HTTPException(status_code=400, detail="Environment is required")
+        
+        logger.info(f"🔄 Switching environment to: {new_env}")
+        
+        # Update settings.yaml if it exists
+        settings_path = ROOT_DIR / "config" / "settings.yaml"
+        if settings_path.exists():
+            with open(settings_path, 'r') as f:
+                settings = yaml.safe_load(f)
+            
+            if 'application' not in settings:
+                settings['application'] = {}
+            settings['application']['start_env'] = new_env
+            
+            with open(settings_path, 'w') as f:
+                yaml.dump(settings, f, default_flow_style=False)
+        
+        # Store in app state for current session
+        app.state.current_environment = new_env
+        
+        logger.info(f"✅ Environment switched to: {new_env}")
+        
+        return {
+            "success": True,
+            "environment": new_env,
+            "message": f"Switched to {new_env} environment"
+        }
+    except Exception as e:
+        logger.error(f"Error switching environment: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # -----------------------------------------------------------------------------
 # Blueprint File APIs (file-tree, content, create-file, namespace)
 # -----------------------------------------------------------------------------
