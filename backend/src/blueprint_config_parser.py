@@ -103,26 +103,52 @@ class BlueprintConfigurationParser:
                                 parse_errors.extend(result.errors)
                                 parse_warnings.extend(result.warnings)
                 
-                # Parse message configurations
-                message_files = schema_config.get('messages', [])
-                for message_file in message_files:
-                    message_path = blueprint_path / "src" / "configs" / "messages" / message_file
-                    if message_path.exists():
-                        result = await self._parse_message_config(message_path)
-                        if result.success:
-                            all_configurations.extend(result.configurations)
-                            config_schema.configurations.extend(
-                                [EntityConfiguration(
-                                    entityType=config.entityType,
-                                    name=config.name,
-                                    baseConfig=config.config,
-                                    environmentOverrides=config.environments,
-                                    inherit=config.inherit
-                                ) for config in result.configurations]
-                            )
-                        else:
-                            parse_errors.extend(result.errors)
-                            parse_warnings.extend(result.warnings)
+                # Parse message configurations with auto-discovery
+                messages_dir = blueprint_path / "src" / "configs" / "messages"
+                processed_message_files = set()
+                
+                if messages_dir.exists():
+                    # First, process files from blueprint_cnf.json
+                    message_files = schema_config.get('messages', [])
+                    for message_file in message_files:
+                        message_path = messages_dir / message_file
+                        if message_path.exists():
+                            processed_message_files.add(message_path.resolve())
+                            result = await self._parse_message_config(message_path)
+                            if result.success:
+                                all_configurations.extend(result.configurations)
+                                config_schema.configurations.extend(
+                                    [EntityConfiguration(
+                                        entityType=config.entityType,
+                                        name=config.name,
+                                        baseConfig=config.config,
+                                        environmentOverrides=config.environments,
+                                        inherit=config.inherit
+                                    ) for config in result.configurations]
+                                )
+                            else:
+                                parse_errors.extend(result.errors)
+                                parse_warnings.extend(result.warnings)
+                    
+                    # Auto-discover any other .json files in messages directory
+                    for message_file in messages_dir.glob("*.json"):
+                        if message_file.resolve() not in processed_message_files:
+                            logger.info(f"Auto-discovered message config: {message_file.name}")
+                            result = await self._parse_message_config(message_file)
+                            if result.success:
+                                all_configurations.extend(result.configurations)
+                                config_schema.configurations.extend(
+                                    [EntityConfiguration(
+                                        entityType=config.entityType,
+                                        name=config.name,
+                                        baseConfig=config.config,
+                                        environmentOverrides=config.environments,
+                                        inherit=config.inherit
+                                    ) for config in result.configurations]
+                                )
+                            else:
+                                parse_errors.extend(result.errors)
+                                parse_warnings.extend(result.warnings)
                 
                 ui_config.schemas.append(config_schema)
             
