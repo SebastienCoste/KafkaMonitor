@@ -909,19 +909,19 @@ function GrpcIntegration() {
               <Label>Select File</Label>
               <Input
                 type="file"
-                onChange={(e) => setUploadFile(e.target.files[0])}
+                onChange={(e) => setSelectedUploadFile(e.target.files[0])}
                 accept="*/*"
               />
-              {uploadFile && (
+              {selectedUploadFile && (
                 <div className="mt-2 text-sm text-gray-600">
-                  Selected: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(2)} KB)
+                  Selected: {selectedUploadFile.name} ({(selectedUploadFile.size / 1024).toFixed(2)} KB)
                 </div>
               )}
             </div>
             
             <Button 
               onClick={handleFileUpload} 
-              disabled={!uploadUrl || !uploadFile || uploadingFile}
+              disabled={!uploadUrl || !selectedUploadFile || uploadingFile}
               className="w-full"
             >
               {uploadingFile ? (
