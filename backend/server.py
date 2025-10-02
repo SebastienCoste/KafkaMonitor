@@ -1482,6 +1482,91 @@ async def initialize_grpc():
             "traceback": traceback.format_exc()
         }
 
+@api_router.post("/grpc/environment")
+async def set_grpc_environment(request: Dict[str, Any]):
+    """Set the current gRPC environment"""
+    try:
+        environment = request.get("environment")
+        if not environment:
+            return {"success": False, "error": "Environment is required"}
+        
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            return {"success": False, "error": "gRPC client not initialized"}
+        
+        # Set the environment
+        app.state.grpc_client.set_environment(environment)
+        logger.info(f"✅ gRPC environment set to: {environment}")
+        
+        return {
+            "success": True,
+            "environment": environment,
+            "message": f"Environment set to {environment}"
+        }
+    except Exception as e:
+        logger.error(f"Error setting gRPC environment: {e}")
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/grpc/credentials")
+async def set_grpc_credentials(request: Dict[str, Any]):
+    """Set gRPC credentials (authorization and x-pop-token)"""
+    try:
+        authorization = request.get("authorization")
+        x_pop_token = request.get("x_pop_token")
+        
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            return {"success": False, "error": "gRPC client not initialized"}
+        
+        # Set the credentials
+        app.state.grpc_client.set_credentials(authorization, x_pop_token)
+        logger.info(f"✅ gRPC credentials set")
+        
+        return {
+            "success": True,
+            "message": "Credentials set successfully"
+        }
+    except Exception as e:
+        logger.error(f"Error setting gRPC credentials: {e}")
+        return {"success": False, "error": str(e)}
+
+@api_router.get("/grpc/asset-storage/urls")
+async def get_asset_storage_urls():
+    """Get available asset-storage URLs for current environment"""
+    try:
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            return {"success": False, "error": "gRPC client not initialized"}
+        
+        urls = app.state.grpc_client.get_asset_storage_urls()
+        return {
+            "success": True,
+            "urls": urls,
+            "current": app.state.grpc_client.current_asset_storage_url if hasattr(app.state.grpc_client, 'current_asset_storage_url') else None
+        }
+    except Exception as e:
+        logger.error(f"Error getting asset storage URLs: {e}")
+        return {"success": False, "error": str(e)}
+
+@api_router.post("/grpc/asset-storage/set-url")
+async def set_asset_storage_url(request: Dict[str, Any]):
+    """Set which asset-storage URL to use (reader or writer)"""
+    try:
+        url_type = request.get("url_type", "reader")
+        
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            return {"success": False, "error": "gRPC client not initialized"}
+        
+        # Set the URL type
+        app.state.grpc_client.set_asset_storage_url(url_type)
+        logger.info(f"✅ Asset storage URL type set to: {url_type}")
+        
+        return {
+            "success": True,
+            "url_type": url_type,
+            "message": f"Using {url_type} URL"
+        }
+    except Exception as e:
+        logger.error(f"Error setting asset storage URL: {e}")
+        return {"success": False, "error": str(e)}
+
 @api_router.post("/grpc/{service_name}/{method_name}")
 async def call_grpc_method(service_name: str, method_name: str, request_data: Dict[str, Any]):
     """Call a gRPC service method dynamically"""
