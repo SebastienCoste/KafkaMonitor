@@ -62,10 +62,10 @@ const VerifySection = () => {
       };
       
       // Get available environments
-      const envResponse = await fetch(`${API_BASE_URL}/api/redis/environments`);
+      const envResponse = await fetch(`${API_BASE_URL}/api/environments`);
       if (envResponse.ok) {
         const envData = await envResponse.json();
-        setAvailableEnvironments(envData.environments || []);
+        setAvailableEnvironments(envData.available_environments || envData.environments || []);
         
         // Sync with current environment from app
         const currentEnv = getCurrentEnvironment();
