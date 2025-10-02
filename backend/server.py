@@ -944,40 +944,57 @@ async def test_redis_connection(request: Dict[str, Any]):
         
         logger.info(f"✅ Found Redis config - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}")
         
-        # Try to connect to Redis
+        # Try to connect to Redis (support both standalone and cluster)
         import redis
+        from redis.cluster import RedisCluster
         try:
             logger.info(f"🔌 Attempting connection...")
             
-            # Build connection parameters
-            conn_params = {
-                'host': redis_config.get('host', 'localhost'),
-                'port': redis_config.get('port', 6379),
+            # Detect if this is a cluster configuration
+            is_cluster = 'clustercfg' in redis_config.get('host', '').lower() or redis_config.get('cluster', False)
+            
+            # Build base connection parameters
+            base_params = {
                 'socket_timeout': redis_config.get('socket_timeout', 5),
                 'socket_connect_timeout': redis_config.get('connection_timeout', 5),
             }
             
             # Add authentication if token is provided
             if redis_config.get('token'):
-                conn_params['password'] = redis_config.get('token')
+                base_params['password'] = redis_config.get('token')
             elif redis_config.get('password'):
-                conn_params['password'] = redis_config.get('password')
-            
-            # Add DB if specified (for local/non-cloud Redis)
-            if redis_config.get('db') is not None:
-                conn_params['db'] = redis_config.get('db', 0)
+                base_params['password'] = redis_config.get('password')
             
             # Add SSL if ca_cert_path is provided
             if redis_config.get('ca_cert_path'):
                 import ssl
-                conn_params['ssl'] = True
-                conn_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
+                base_params['ssl'] = True
+                base_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
                 ca_cert_full_path = ROOT_DIR / redis_config.get('ca_cert_path')
                 if ca_cert_full_path.exists():
-                    conn_params['ssl_ca_certs'] = str(ca_cert_full_path)
+                    base_params['ssl_ca_certs'] = str(ca_cert_full_path)
                     logger.info(f"🔒 Using SSL with CA cert: {ca_cert_full_path}")
             
-            redis_client = redis.Redis(**conn_params)
+            # Create appropriate client
+            if is_cluster:
+                logger.info(f"🔗 Detected Redis Cluster configuration")
+                redis_client = RedisCluster(
+                    host=redis_config.get('host', 'localhost'),
+                    port=redis_config.get('port', 6379),
+                    **base_params
+                )
+            else:
+                logger.info(f"📍 Using standalone Redis configuration")
+                conn_params = {
+                    'host': redis_config.get('host', 'localhost'),
+                    'port': redis_config.get('port', 6379),
+                    **base_params
+                }
+                # Add DB only for standalone Redis (clusters don't support db selection)
+                if redis_config.get('db') is not None:
+                    conn_params['db'] = redis_config.get('db', 0)
+                
+                redis_client = redis.Redis(**conn_params)
             
             # Test connection with ping
             redis_client.ping()
