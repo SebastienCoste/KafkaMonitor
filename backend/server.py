@@ -987,13 +987,30 @@ async def test_redis_connection(request: Dict[str, Any]):
         }
 
 @api_router.get("/redis/files")
-async def get_redis_files(environment: str, namespace: str):
+async def get_redis_files(environment: str = "", namespace: str = ""):
     """Get list of files stored in Redis for a specific environment and namespace"""
     logger.info("="*80)
     logger.info(f"🔍 [REDIS FILES] Endpoint HIT!")
-    logger.info(f"🔍 [REDIS FILES] Environment parameter: {environment}")
-    logger.info(f"🔍 [REDIS FILES] Namespace parameter: {namespace}")
+    logger.info(f"🔍 [REDIS FILES] Environment parameter: '{environment}' (empty={not environment})")
+    logger.info(f"🔍 [REDIS FILES] Namespace parameter: '{namespace}' (empty={not namespace})")
     logger.info("="*80)
+    
+    # Validate parameters
+    if not environment:
+        logger.warning("❌ [REDIS FILES] Missing environment parameter")
+        return {
+            "files": [],
+            "count": 0,
+            "error": "Environment parameter is required"
+        }
+    
+    if not namespace:
+        logger.warning("❌ [REDIS FILES] Missing namespace parameter")
+        return {
+            "files": [],
+            "count": 0,
+            "error": "Namespace parameter is required. Make sure blueprint_cnf.json is configured with a namespace."
+        }
     
     try:
         # Read Redis configuration from settings.yaml
