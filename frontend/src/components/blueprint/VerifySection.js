@@ -154,12 +154,20 @@ const VerifySection = () => {
     setError(null);
     
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/redis/files?environment=${encodeURIComponent(environment)}&namespace=${encodeURIComponent(namespace)}`
-      );
+      const url = `${API_BASE_URL}/api/redis/files?environment=${encodeURIComponent(environment)}&namespace=${encodeURIComponent(namespace)}`;
+      console.log('🔍 [VerifySection] Fetching Redis files from:', url);
+      console.log('🔍 [VerifySection] Environment:', environment);
+      console.log('🔍 [VerifySection] Namespace:', namespace);
+      
+      const response = await fetch(url);
+      
+      console.log('🔍 [VerifySection] Response status:', response.status);
+      console.log('🔍 [VerifySection] Response headers:', response.headers);
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('🔍 [VerifySection] Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
       
       const data = await response.json();
