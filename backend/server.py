@@ -813,30 +813,71 @@ async def get_traces():
         raise HTTPException(status_code=500, detail=str(e))
 
 # -----------------------------------------------------------------------------
+# WebSocket Connection Manager
+# -----------------------------------------------------------------------------
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        """Broadcast message to all connected clients"""
+        dead_connections = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                logger.error(f"Error sending to WebSocket: {e}")
+                dead_connections.append(connection)
+        
+        # Remove dead connections
+        for conn in dead_connections:
+            self.disconnect(conn)
+
+websocket_manager = ConnectionManager()
+
+async def broadcast_message(message: dict):
+    """Helper function to broadcast messages"""
+    await websocket_manager.broadcast(message)
+
+# -----------------------------------------------------------------------------
 # WebSockets
 # -----------------------------------------------------------------------------
 @api_router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+    await websocket_manager.connect(websocket)
     try:
         while True:
-            await asyncio.sleep(30)
-            await websocket.send_json({"type": "ping"})
+            # Keep connection alive and listen for messages
+            data = await websocket.receive_text()
+            # Echo back or handle client messages if needed
     except WebSocketDisconnect:
+        websocket_manager.disconnect(websocket)
         logger.info("WebSocket disconnected")
     except Exception as e:
+        websocket_manager.disconnect(websocket)
         logger.error(f"WebSocket error: {e}")
 
 @api_router.websocket("/ws/blueprint")
 async def blueprint_websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
+    await websocket_manager.connect(websocket)
     try:
         while True:
-            await asyncio.sleep(30)
-            await websocket.send_json({"type": "blueprint_ping"})
+            # Keep connection alive and listen for messages
+            data = await websocket.receive_text()
+            # Echo back or handle client messages if needed
     except WebSocketDisconnect:
+        websocket_manager.disconnect(websocket)
         logger.info("Blueprint WebSocket disconnected")
     except Exception as e:
+        websocket_manager.disconnect(websocket)
         logger.error(f"Blueprint WebSocket error: {e}")
 
 # -----------------------------------------------------------------------------
