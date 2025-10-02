@@ -1482,6 +1482,45 @@ async def initialize_grpc():
             "traceback": traceback.format_exc()
         }
 
+@api_router.post("/grpc/{service_name}/{method_name}")
+async def call_grpc_method(service_name: str, method_name: str, request_data: Dict[str, Any]):
+    """Call a gRPC service method dynamically"""
+    logger.info("="*80)
+    logger.info(f"📞 [gRPC CALL] Endpoint HIT!")
+    logger.info(f"📞 [gRPC CALL] Service: {service_name}")
+    logger.info(f"📞 [gRPC CALL] Method: {method_name}")
+    logger.info(f"📞 [gRPC CALL] Request data keys: {list(request_data.keys())}")
+    logger.info("="*80)
+    
+    try:
+        # Check if gRPC client is initialized
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            logger.error("❌ gRPC client not initialized")
+            return {
+                "success": False,
+                "error": "gRPC client not initialized. Please initialize first."
+            }
+        
+        # Call the dynamic method
+        result = await app.state.grpc_client.call_dynamic_method(
+            service_name=service_name,
+            method_name=method_name,
+            request_data=request_data
+        )
+        
+        logger.info(f"✅ gRPC call completed - Success: {result.get('success', False)}")
+        return result
+        
+    except Exception as e:
+        logger.error(f"❌ Error calling gRPC method: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
 # -----------------------------------------------------------------------------
 # Middleware and Router Mount
 # -----------------------------------------------------------------------------
