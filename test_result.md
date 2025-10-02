@@ -21,6 +21,9 @@ backend:
       - working: true
         agent: "main"
         comment: "✅ FIXED: User correctly identified that Redis config should be read from backend/config/environments/<env>.yaml instead of backend/config/settings.yaml. Updated both /api/redis/test-connection and /api/redis/files endpoints to read from environment-specific files. Added full SSL/TLS support with certificate verification. Added support for token-based authentication (preferred) with password fallback. Removed Redis config from settings.yaml. Testing confirms endpoints now correctly read from environment files (e.g., redis-int.example.com:6380 from int.yaml). Connection failures are expected (servers don't exist). Created REDIS_CONFIG_LOCATION_FIX.md with full documentation."
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED THREE ADDITIONAL ISSUES: 1) Empty environment parameter bug - was reading as empty string causing .yaml lookups, added proper handling and validation. 2) Redis Cluster support - detected user's Redis is AWS ElastiCache cluster, added automatic detection and RedisCluster client usage to properly scan keys across all cluster nodes. Detection via 'clustercfg' in hostname. 3) Missing /api/redis/file-content endpoint - created new endpoint to retrieve content of specific Redis keys with UTF-8 and base64 encoding support. All three endpoints now work correctly with cluster configuration. Testing shows proper environment reading ('TEST'), cluster detection (clustercfg.cadie-test-redis.spp3uf...), and successful key scanning across nodes. Created REDIS_CLUSTER_AND_FILE_CONTENT_FIX.md."
 
 - task: "Add Reset to Disk feature for UI Config"
   implemented: false
