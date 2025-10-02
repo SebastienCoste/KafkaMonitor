@@ -58,30 +58,4 @@ landing_page:
   subtitle: "Expecto Debuggius"
   description: "Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection."
 
-# Redis configuration for different environments
-redis:
-  dev:
-    host: "localhost"
-    port: 6379
-    password: null
-    db: 0
-  test:
-    host: "localhost"
-    port: 6379
-    password: null
-    db: 1
-  int:
-    host: "localhost"
-    port: 6379
-    password: null
-    db: 2
-  load:
-    host: "localhost"
-    port: 6379
-    password: null
-    db: 3
-  prod:
-    host: "localhost"
-    port: 6379
-    password: null
-    db: 4
+# Note: Redis configuration is in environment-specific files: backend/config/environments/<env>.yaml
