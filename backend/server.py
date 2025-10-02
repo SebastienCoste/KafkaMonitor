@@ -975,7 +975,11 @@ async def test_redis_connection(request: Dict[str, Any]):
 @api_router.get("/redis/files")
 async def get_redis_files(environment: str, namespace: str):
     """Get list of files stored in Redis for a specific environment and namespace"""
-    logger.info(f"🔍 Redis files request - Environment: {environment}, Namespace: {namespace}")
+    logger.info("="*80)
+    logger.info(f"🔍 [REDIS FILES] Endpoint HIT!")
+    logger.info(f"🔍 [REDIS FILES] Environment parameter: {environment}")
+    logger.info(f"🔍 [REDIS FILES] Namespace parameter: {namespace}")
+    logger.info("="*80)
     
     try:
         # Read Redis configuration from settings.yaml
