@@ -731,7 +731,7 @@ function GrpcIntegration() {
             {grpcStatus && (
               <div className="mt-4">
                 <h4 className="font-medium mb-2">Current Status:</h4>
-                <pre className="bg-gray-50 p-3 rounded text-sm">
+                <pre className="bg-gray-50 p-3 rounded text-sm whitespace-pre-wrap break-words">
                   {JSON.stringify(grpcStatus, null, 2)}
                 </pre>
               </div>
