@@ -53,7 +53,7 @@ function GrpcIntegration() {
   
   // File upload state
   const [uploadUrl, setUploadUrl] = useState('');
-  const [uploadFile, setUploadFile] = useState(null);
+  const [selectedUploadFile, setSelectedUploadFile] = useState(null);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
