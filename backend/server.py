@@ -33,6 +33,17 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+# Startup event to log all registered routes
+@app.on_event("startup")
+async def startup_event():
+    logger.info("="*80)
+    logger.info("🚀 APPLICATION STARTUP - REGISTERED ROUTES:")
+    logger.info("="*80)
+    for route in app.routes:
+        if hasattr(route, 'methods') and hasattr(route, 'path'):
+            logger.info(f"  {list(route.methods)} {route.path}")
+    logger.info("="*80)
+
 # -----------------------------------------------------------------------------
 # Initialization (portable for local and server)
 # -----------------------------------------------------------------------------
