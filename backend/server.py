@@ -33,7 +33,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
-# Startup event to log all registered routes
+# Startup event to log all registered routes and initialize gRPC
 @app.on_event("startup")
 async def startup_event():
     logger.info("="*80)
@@ -43,6 +43,27 @@ async def startup_event():
         if hasattr(route, 'methods') and hasattr(route, 'path'):
             logger.info(f"  {list(route.methods)} {route.path}")
     logger.info("="*80)
+    
+    # Initialize gRPC client automatically
+    try:
+        from src.grpc_client import GrpcClient
+        
+        proto_root = ROOT_DIR / "config" / "proto"
+        env_dir = ROOT_DIR / "config" / "environments"
+        
+        if proto_root.exists() and len(list(proto_root.rglob("*.proto"))) > 0:
+            logger.info("🔧 Auto-initializing gRPC client...")
+            app.state.grpc_client = GrpcClient(str(proto_root), str(env_dir))
+            result = await app.state.grpc_client.initialize()
+            
+            if result.get('success'):
+                logger.info(f"✅ gRPC client initialized: {len(result.get('available_services', {}))} services loaded")
+            else:
+                logger.warning(f"⚠️ gRPC initialization failed: {result.get('error')}")
+        else:
+            logger.info("ℹ️ No proto files found, skipping gRPC auto-initialization")
+    except Exception as e:
+        logger.error(f"❌ Error auto-initializing gRPC: {e}")
 
 # -----------------------------------------------------------------------------
 # Initialization (portable for local and server)
