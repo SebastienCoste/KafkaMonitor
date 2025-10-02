@@ -1,0 +1,27 @@
+{
+  "queries": {
+    "TeamByCityAndRatingID": {
+      "lexical": {
+        "queryFile": "teambycityandratingid.json"
+      }
+    },
+    "VectorQueryTeamSearch": {
+      "vector": {
+        "queryFile": "knnteamsearchid.json",
+        "embeddingGlobalConfigId": "axsOutfitQueryV1",
+        "inParams": [
+          "myQueryParam"
+        ],
+        "outParam": "vect"
+      }
+    },
+    "HybridLexicalSemanticTeamByCity": {
+      "mixed": {
+        "vectorWeight": 0.25,
+        "lexicalWeight": 0.75,
+        "vectorId": "VectorQueryTeamSearch",
+        "lexicalId": "TeamByCityAndRatingID"
+      }
+    }
+  }
+}
