@@ -906,10 +906,15 @@ async def blueprint_websocket_endpoint(websocket: WebSocket):
 @api_router.post("/redis/test-connection")
 async def test_redis_connection(request: Dict[str, Any]):
     """Test Redis connection for a specific environment"""
-    environment = request.get("environment", "DEV")
+    environment = request.get("environment", "DEV") if request else "DEV"
+    # Handle empty string
+    if not environment:
+        environment = "DEV"
+    
     logger.info("="*80)
     logger.info(f"🔌 [REDIS TEST] Endpoint HIT!")
-    logger.info(f"🔌 [REDIS TEST] Testing Redis connection for environment: {environment}")
+    logger.info(f"🔌 [REDIS TEST] Request body: {request}")
+    logger.info(f"🔌 [REDIS TEST] Testing Redis connection for environment: '{environment}'")
     logger.info("="*80)
     
     try:
