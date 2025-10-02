@@ -1058,14 +1058,36 @@ async def get_redis_files(environment: str = "", namespace: str = ""):
         import redis
         try:
             logger.info(f"🔌 Connecting to Redis...")
-            redis_client = redis.Redis(
-                host=redis_config.get('host', 'localhost'),
-                port=redis_config.get('port', 6379),
-                password=redis_config.get('password'),
-                db=redis_config.get('db', 0),
-                socket_timeout=5,
-                socket_connect_timeout=5
-            )
+            
+            # Build connection parameters
+            conn_params = {
+                'host': redis_config.get('host', 'localhost'),
+                'port': redis_config.get('port', 6379),
+                'socket_timeout': redis_config.get('socket_timeout', 5),
+                'socket_connect_timeout': redis_config.get('connection_timeout', 5),
+            }
+            
+            # Add authentication if token is provided
+            if redis_config.get('token'):
+                conn_params['password'] = redis_config.get('token')
+            elif redis_config.get('password'):
+                conn_params['password'] = redis_config.get('password')
+            
+            # Add DB if specified (for local/non-cloud Redis)
+            if redis_config.get('db') is not None:
+                conn_params['db'] = redis_config.get('db', 0)
+            
+            # Add SSL if ca_cert_path is provided
+            if redis_config.get('ca_cert_path'):
+                import ssl
+                conn_params['ssl'] = True
+                conn_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
+                ca_cert_full_path = ROOT_DIR / redis_config.get('ca_cert_path')
+                if ca_cert_full_path.exists():
+                    conn_params['ssl_ca_certs'] = str(ca_cert_full_path)
+                    logger.info(f"🔒 Using SSL with CA cert: {ca_cert_full_path}")
+            
+            redis_client = redis.Redis(**conn_params)
             
             # Test connection
             redis_client.ping()
