@@ -1,5 +1,23 @@
 
+# CURRENT DEBUGGING SESSION - Redis Files Endpoint 404 Issue
+# Date: 2025-01-XX
+# Status: INVESTIGATING
 
+backend:
+  - task: "Redis Files API Endpoint - 404 Investigation"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported 404 error on /api/redis/files endpoint. Investigation reveals: 1) Endpoint IS registered correctly in FastAPI (confirmed in startup logs), 2) Direct curl test to endpoint WORKS and returns valid response, 3) Enhanced logging added to both backend and frontend to trace request flow, 4) Made query parameters optional with default empty strings and added parameter validation, 5) Root cause likely: namespace parameter is empty because blueprint root path is not set."
+      - working: "testing"
+        agent: "main"
+        comment: "Testing reveals /api/blueprint/namespace returns 'Root path not set' error, which means namespace will be empty. Frontend checks for empty namespace and aborts the API call before it even reaches the backend. Need to ensure Blueprint root path is properly configured before Redis verification can work."
 
 - task: "Add Reset to Disk feature for UI Config"
   implemented: false
