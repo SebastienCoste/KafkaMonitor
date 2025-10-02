@@ -311,13 +311,35 @@ async def switch_environment(request: Dict[str, Any]):
             
             try:
                 from src.kafka_consumer import KafkaConsumerService
+                from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
                 
+                # Set environment variables for KafkaConsumerService
+                os.environ['KAFKA_BOOTSTRAP_SERVERS'] = kafka_config.get('bootstrap_servers', '')
+                os.environ['KAFKA_USERNAME'] = kafka_config.get('sasl_username', '')
+                os.environ['KAFKA_PASSWORD'] = kafka_config.get('sasl_password', '')
+                os.environ['KAFKA_SECURITY_PROTOCOL'] = kafka_config.get('security_protocol', 'SASL_SSL')
+                os.environ['KAFKA_SASL_MECHANISM'] = kafka_config.get('sasl_mechanism', 'SCRAM-SHA-512')
+                
+                # Initialize decoder
+                proto_dir = ROOT_DIR / "config" / "proto"
+                if proto_dir.exists() and list(proto_dir.rglob("*.proto")):
+                    decoder = ProtobufDecoder(str(proto_dir))
+                else:
+                    decoder = MockProtobufDecoder()
+                
+                # Read settings
+                settings_path = ROOT_DIR / "config" / "settings.yaml"
+                kafka_yaml = ROOT_DIR / "config" / "kafka.yaml"
+                
+                with open(settings_path, 'r') as f:
+                    settings = yaml.safe_load(f)
+                trace_header_field = settings.get('trace_header_field', 'traceparent')
+                
+                # Initialize Kafka consumer
                 kafka_consumer = KafkaConsumerService(
-                    bootstrap_servers=kafka_config.get('bootstrap_servers', ''),
-                    sasl_username=kafka_config.get('sasl_username', ''),
-                    sasl_password=kafka_config.get('sasl_password', ''),
-                    security_protocol=kafka_config.get('security_protocol', 'SASL_SSL'),
-                    sasl_mechanism=kafka_config.get('sasl_mechanism', 'SCRAM-SHA-512')
+                    config_path=str(kafka_yaml),
+                    decoder=decoder,
+                    trace_header_field=trace_header_field
                 )
                 
                 # Add message handler if graph_builder exists
@@ -335,6 +357,8 @@ async def switch_environment(request: Dict[str, Any]):
                 logger.info(f"✅ Kafka consumer initialized for {new_env}")
             except Exception as e:
                 logger.error(f"❌ Failed to initialize Kafka consumer: {e}")
+                import traceback
+                logger.error(traceback.format_exc())
                 # Continue anyway, don't fail the environment switch
         else:
             logger.warning(f"⚠️ No Kafka configuration found for {new_env}")
