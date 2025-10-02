@@ -1091,6 +1091,32 @@ async def test_redis_connection(request: Dict[str, Any]):
             "error": str(e)
         }
 
+@api_router.get("/redis/environments")
+async def get_redis_environments():
+    """Get list of environments that have Redis configuration"""
+    try:
+        env_dir = ROOT_DIR / "config" / "environments"
+        environments = []
+        
+        if env_dir.exists():
+            for env_file in env_dir.glob("*.yaml"):
+                try:
+                    with open(env_file, 'r') as f:
+                        config = yaml.safe_load(f)
+                        if config.get('redis'):
+                            env_name = env_file.stem.upper()
+                            environments.append(env_name)
+                except Exception as e:
+                    logger.warning(f"Could not load {env_file}: {e}")
+        
+        return {
+            "environments": environments,
+            "count": len(environments)
+        }
+    except Exception as e:
+        logger.error(f"Error getting Redis environments: {e}")
+        return {"environments": [], "count": 0, "error": str(e)}
+
 @api_router.get("/redis/file-content")
 async def get_redis_file_content(key: str, environment: str):
     """Get content of a specific Redis key"""
