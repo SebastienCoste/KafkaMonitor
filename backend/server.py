@@ -1033,27 +1033,26 @@ async def get_redis_files(environment: str = "", namespace: str = ""):
         }
     
     try:
-        # Read Redis configuration from settings.yaml
-        settings_yaml = ROOT_DIR / "config" / "settings.yaml"
-        logger.info(f"📁 Looking for settings.yaml at: {settings_yaml}")
+        # Read Redis configuration from environment-specific file
+        env_file = ROOT_DIR / "config" / "environments" / f"{environment.lower()}.yaml"
+        logger.info(f"📁 Looking for environment config at: {env_file}")
         
-        if not settings_yaml.exists():
-            logger.error(f"❌ settings.yaml not found at {settings_yaml}")
-            return {"files": [], "count": 0, "error": "settings.yaml not found"}
+        if not env_file.exists():
+            logger.error(f"❌ Environment config not found: {env_file}")
+            return {"files": [], "count": 0, "error": f"Environment configuration file not found: {environment.lower()}.yaml"}
         
-        logger.info(f"✅ Found settings.yaml, loading...")
-        with open(settings_yaml, 'r') as f:
-            settings = yaml.safe_load(f)
+        logger.info(f"✅ Found environment config, loading...")
+        with open(env_file, 'r') as f:
+            env_config = yaml.safe_load(f)
         
-        logger.info(f"🔧 Looking for Redis config for environment: {environment.lower()}")
-        redis_config = settings.get('redis', {}).get(environment.lower())
+        logger.info(f"🔧 Looking for Redis config in {environment} environment file...")
+        redis_config = env_config.get('redis')
         
         if not redis_config:
-            logger.warning(f"⚠️ No Redis configuration for environment: {environment}")
-            logger.info(f"Available Redis environments: {list(settings.get('redis', {}).keys())}")
-            return {"files": [], "count": 0, "error": f"No Redis configuration for environment: {environment}"}
+            logger.warning(f"⚠️ No Redis configuration in {environment} environment file")
+            return {"files": [], "count": 0, "error": f"No Redis configuration found for environment: {environment}"}
         
-        logger.info(f"✅ Redis config found - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}, DB: {redis_config.get('db', 0)}")
+        logger.info(f"✅ Redis config found - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}")
         
         # Connect to Redis
         import redis
