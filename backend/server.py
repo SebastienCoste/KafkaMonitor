@@ -1076,40 +1076,57 @@ async def get_redis_files(environment: str = "", namespace: str = ""):
         
         logger.info(f"✅ Redis config found - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}")
         
-        # Connect to Redis
+        # Connect to Redis (support both standalone and cluster)
         import redis
+        from redis.cluster import RedisCluster
         try:
             logger.info(f"🔌 Connecting to Redis...")
             
-            # Build connection parameters
-            conn_params = {
-                'host': redis_config.get('host', 'localhost'),
-                'port': redis_config.get('port', 6379),
+            # Detect if this is a cluster configuration
+            is_cluster = 'clustercfg' in redis_config.get('host', '').lower() or redis_config.get('cluster', False)
+            
+            # Build base connection parameters
+            base_params = {
                 'socket_timeout': redis_config.get('socket_timeout', 5),
                 'socket_connect_timeout': redis_config.get('connection_timeout', 5),
             }
             
             # Add authentication if token is provided
             if redis_config.get('token'):
-                conn_params['password'] = redis_config.get('token')
+                base_params['password'] = redis_config.get('token')
             elif redis_config.get('password'):
-                conn_params['password'] = redis_config.get('password')
-            
-            # Add DB if specified (for local/non-cloud Redis)
-            if redis_config.get('db') is not None:
-                conn_params['db'] = redis_config.get('db', 0)
+                base_params['password'] = redis_config.get('password')
             
             # Add SSL if ca_cert_path is provided
             if redis_config.get('ca_cert_path'):
                 import ssl
-                conn_params['ssl'] = True
-                conn_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
+                base_params['ssl'] = True
+                base_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
                 ca_cert_full_path = ROOT_DIR / redis_config.get('ca_cert_path')
                 if ca_cert_full_path.exists():
-                    conn_params['ssl_ca_certs'] = str(ca_cert_full_path)
+                    base_params['ssl_ca_certs'] = str(ca_cert_full_path)
                     logger.info(f"🔒 Using SSL with CA cert: {ca_cert_full_path}")
             
-            redis_client = redis.Redis(**conn_params)
+            # Create appropriate client
+            if is_cluster:
+                logger.info(f"🔗 Detected Redis Cluster - keys may be distributed across nodes")
+                redis_client = RedisCluster(
+                    host=redis_config.get('host', 'localhost'),
+                    port=redis_config.get('port', 6379),
+                    **base_params
+                )
+            else:
+                logger.info(f"📍 Using standalone Redis configuration")
+                conn_params = {
+                    'host': redis_config.get('host', 'localhost'),
+                    'port': redis_config.get('port', 6379),
+                    **base_params
+                }
+                # Add DB only for standalone Redis (clusters don't support db selection)
+                if redis_config.get('db') is not None:
+                    conn_params['db'] = redis_config.get('db', 0)
+                
+                redis_client = redis.Redis(**conn_params)
             
             # Test connection
             redis_client.ping()
@@ -1128,13 +1145,26 @@ async def get_redis_files(environment: str = "", namespace: str = ""):
                 logger.info(f"  Scanning pattern: {pattern}")
                 cursor = 0
                 pattern_keys = []
-                while True:
-                    cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
-                    decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
-                    pattern_keys.extend(decoded_keys)
-                    all_keys.update(decoded_keys)
-                    if cursor == 0:
-                        break
+                
+                # For cluster, we need to scan all nodes
+                if is_cluster:
+                    # RedisCluster.scan() automatically handles scanning across all nodes
+                    while True:
+                        cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
+                        decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
+                        pattern_keys.extend(decoded_keys)
+                        all_keys.update(decoded_keys)
+                        if cursor == 0:
+                            break
+                else:
+                    # Standard scan for standalone Redis
+                    while True:
+                        cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
+                        decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
+                        pattern_keys.extend(decoded_keys)
+                        all_keys.update(decoded_keys)
+                        if cursor == 0:
+                            break
                 logger.info(f"    Found {len(pattern_keys)} keys for pattern: {pattern}")
             
             redis_client.close()
