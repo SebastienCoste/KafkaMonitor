@@ -419,6 +419,51 @@ function GrpcIntegration() {
     }
   };
 
+  // Handle file upload
+  const handleFileUpload = async () => {
+    if (!uploadUrl || !uploadFile) {
+      toast.error('Please provide both URL and file');
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadFile);
+
+      console.log('📤 Uploading file to:', uploadUrl);
+      console.log('📄 File:', uploadFile.name, `(${(uploadFile.size / 1024).toFixed(2)} KB)`);
+
+      const response = await axios.post(uploadUrl, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(credentials.authorization && { 'Authorization': credentials.authorization }),
+          ...(credentials.x_pop_token && { 'X-POP-TOKEN': credentials.x_pop_token })
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          console.log(`Upload progress: ${percentCompleted}%`);
+        }
+      });
+
+      console.log('✅ File uploaded successfully:', response.data);
+      toast.success(`File uploaded successfully!`);
+      
+      // Reset file input
+      setUploadFile(null);
+      
+    } catch (error) {
+      console.error('❌ File upload error:', error);
+      if (error.response) {
+        toast.error(`Upload failed: ${error.response.data?.message || error.response.statusText}`);
+      } else {
+        toast.error(`Upload failed: ${error.message}`);
+      }
+    } finally {
+      setUploadingFile(false);
+    }
+  };
+
   const loadAssetStorageUrls = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/grpc/asset-storage/urls`);
