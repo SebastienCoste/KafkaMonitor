@@ -496,13 +496,39 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
     except Exception as e:
         return {"valid": False, "errors": [str(e)], "warnings": []}
 
-@api_router.post("/blueprint/validate/{filename}")
-async def validate_blueprint_tgz(filename: str, payload: Dict[str, Any]):
-    return {"status": "validated", "file": filename, "environment": payload.get("environment")}
+@api_router.post("/blueprint/validate/{filepath:path}")
+async def validate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
+    """Validate a blueprint .tgz file
+    
+    Args:
+        filepath: Path to the .tgz file (can be full path or just filename)
+        payload: Contains tgz_file, environment, and action
+    """
+    # Extract just the filename from the path
+    from pathlib import Path
+    filename = Path(filepath).name
+    
+    logger.info(f"📋 Validating blueprint: {filename} (from path: {filepath})")
+    logger.info(f"   Environment: {payload.get('environment')}")
+    
+    return {"status": "validated", "file": filename, "filepath": filepath, "environment": payload.get("environment")}
 
-@api_router.post("/blueprint/activate/{filename}")
-async def activate_blueprint_tgz(filename: str, payload: Dict[str, Any]):
-    return {"status": "activated", "file": filename, "environment": payload.get("environment")}
+@api_router.post("/blueprint/activate/{filepath:path}")
+async def activate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
+    """Activate a blueprint .tgz file
+    
+    Args:
+        filepath: Path to the .tgz file (can be full path or just filename)
+        payload: Contains tgz_file, environment, and action
+    """
+    # Extract just the filename from the path
+    from pathlib import Path
+    filename = Path(filepath).name
+    
+    logger.info(f"🚀 Activating blueprint: {filename} (from path: {filepath})")
+    logger.info(f"   Environment: {payload.get('environment')}")
+    
+    return {"status": "activated", "file": filename, "filepath": filepath, "environment": payload.get("environment")}
 
 @api_router.delete("/blueprint/config/entities/{entity_id}")
 async def delete_entity_configuration(entity_id: str):
