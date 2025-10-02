@@ -98,10 +98,15 @@ const VerifySection = () => {
       }
       
       // Get blueprint namespace
+      console.log('🔍 [VerifySection] Fetching namespace from:', `${API_BASE_URL}/api/blueprint/namespace`);
       const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+      console.log('🔍 [VerifySection] Namespace response status:', namespaceResponse.status);
+      
       if (namespaceResponse.ok) {
         const namespaceData = await namespaceResponse.json();
+        console.log('🔍 [VerifySection] Namespace data received:', namespaceData);
         setNamespace(namespaceData.namespace);
+        console.log('🔍 [VerifySection] Namespace set to:', namespaceData.namespace);
       } else {
         setError('No blueprint namespace detected. Make sure blueprint_cnf.json is configured.');
         return;
