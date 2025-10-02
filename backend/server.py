@@ -74,6 +74,7 @@ ENTITY_DEFINITIONS_PATH = str((ROOT_DIR / "config" / "entity_definitions.json").
 blueprint_file_manager: Optional[BlueprintFileManager] = None
 blueprint_config_manager: Optional[BlueprintConfigurationManager] = None
 graph_builder: Optional[TraceGraphBuilder] = None
+kafka_consumer = None  # Will be initialized on startup or environment switch
 
 try:
     blueprint_file_manager = BlueprintFileManager()
