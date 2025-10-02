@@ -451,16 +451,24 @@ async def cancel_build():
 @api_router.get("/blueprint/output-files")
 async def get_output_files(root_path: str):
     try:
-        # List files under root_path/dist if present
+        # List .tar.gz files under root_path/dist if present
         dist_dir = Path(root_path) / "dist"
         files = []
         if dist_dir.exists() and dist_dir.is_dir():
             for name in sorted(os.listdir(dist_dir)):
                 p = dist_dir / name
-                if p.is_file():
-                    files.append({"name": name, "path": str(p), "size": p.stat().st_size})
+                if p.is_file() and (name.endswith('.tar.gz') or name.endswith('.tgz')):
+                    stat = p.stat()
+                    files.append({
+                        "name": name,
+                        "path": str(p),
+                        "size": stat.st_size,
+                        "modified": int(stat.st_mtime),  # Add timestamp for frontend
+                        "directory": "dist"  # Add directory info
+                    })
         return {"files": files}
     except Exception as e:
+        logger.error(f"Error loading output files: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/blueprint/validate-config")
