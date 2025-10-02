@@ -188,7 +188,9 @@ async def get_environments():
 
 @api_router.post("/environments/switch")
 async def switch_environment(request: Dict[str, Any]):
-    """Switch to a different environment"""
+    """Switch to a different environment and reinitialize Kafka consumer"""
+    global graph_builder, kafka_consumer
+    
     try:
         new_env = request.get("environment")
         if not new_env:
@@ -196,7 +198,66 @@ async def switch_environment(request: Dict[str, Any]):
         
         logger.info(f"🔄 Switching environment to: {new_env}")
         
-        # Update settings.yaml if it exists
+        # Load new environment configuration
+        env_file = ROOT_DIR / "config" / "environments" / f"{new_env.lower()}.yaml"
+        if not env_file.exists():
+            raise HTTPException(status_code=404, detail=f"Environment configuration not found: {new_env}")
+        
+        with open(env_file, 'r') as f:
+            env_config = yaml.safe_load(f)
+        
+        # Stop existing Kafka consumer if running
+        if 'kafka_consumer' in globals() and kafka_consumer is not None:
+            try:
+                logger.info("🛑 Stopping existing Kafka consumer...")
+                kafka_consumer.stop()
+            except Exception as e:
+                logger.warning(f"Error stopping Kafka consumer: {e}")
+            kafka_consumer = None
+        
+        # Clear existing traces
+        if graph_builder is not None:
+            logger.info("🧹 Clearing existing traces...")
+            graph_builder.traces.clear()
+            graph_builder.trace_order.clear()
+        
+        # Reinitialize Kafka consumer for new environment
+        kafka_config = env_config.get('kafka', {})
+        if kafka_config and kafka_config.get('bootstrap_servers'):
+            logger.info(f"🔌 Initializing Kafka consumer for {new_env}...")
+            logger.info(f"   Bootstrap servers: {kafka_config.get('bootstrap_servers')}")
+            
+            try:
+                from src.kafka_consumer import KafkaConsumerService
+                
+                kafka_consumer = KafkaConsumerService(
+                    bootstrap_servers=kafka_config.get('bootstrap_servers', ''),
+                    sasl_username=kafka_config.get('sasl_username', ''),
+                    sasl_password=kafka_config.get('sasl_password', ''),
+                    security_protocol=kafka_config.get('security_protocol', 'SASL_SSL'),
+                    sasl_mechanism=kafka_config.get('sasl_mechanism', 'SCRAM-SHA-512')
+                )
+                
+                # Add message handler if graph_builder exists
+                if graph_builder:
+                    kafka_consumer.add_message_handler(graph_builder.add_message)
+                
+                # Subscribe to topics
+                topics_yaml = ROOT_DIR / "config" / "topics.yaml"
+                if topics_yaml.exists() and graph_builder:
+                    all_topics = graph_builder.topic_graph.get_all_topics()
+                    if all_topics:
+                        logger.info(f"📋 Subscribing to {len(all_topics)} topics...")
+                        kafka_consumer.subscribe_to_topics(all_topics)
+                
+                logger.info(f"✅ Kafka consumer initialized for {new_env}")
+            except Exception as e:
+                logger.error(f"❌ Failed to initialize Kafka consumer: {e}")
+                # Continue anyway, don't fail the environment switch
+        else:
+            logger.warning(f"⚠️ No Kafka configuration found for {new_env}")
+        
+        # Update settings.yaml to persist the change
         settings_path = ROOT_DIR / "config" / "settings.yaml"
         if settings_path.exists():
             with open(settings_path, 'r') as f:
@@ -217,10 +278,15 @@ async def switch_environment(request: Dict[str, Any]):
         return {
             "success": True,
             "environment": new_env,
-            "message": f"Switched to {new_env} environment"
+            "message": f"Switched to {new_env} environment",
+            "kafka_connected": kafka_consumer is not None and kafka_consumer.running if kafka_consumer else False
         }
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error switching environment: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 # -----------------------------------------------------------------------------
