@@ -88,6 +88,12 @@ export default function ConfigurationManager() {
     try {
       const result = await ConfigurationAPI.generateAllFiles();
       
+      // Add null check for result
+      if (!result) {
+        toast.error('Failed to generate files: No response from server');
+        return;
+      }
+      
       if (result.success) {
         toast.success(`Generated ${result.filesGenerated} configuration files across all schemas`);
       } else {
