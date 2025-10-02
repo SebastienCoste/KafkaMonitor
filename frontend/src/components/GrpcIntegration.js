@@ -840,6 +840,53 @@ function GrpcIntegration() {
             </div>
           </div>
 
+          {/* File Upload Section */}
+          <div className="p-4 bg-green-50 rounded-lg space-y-4">
+            <div className="font-semibold text-lg">File Upload</div>
+            
+            <div>
+              <Label>Upload URL</Label>
+              <Input
+                type="text"
+                placeholder="https://example.com/upload"
+                value={uploadUrl}
+                onChange={(e) => setUploadUrl(e.target.value)}
+              />
+            </div>
+            
+            <div>
+              <Label>Select File</Label>
+              <Input
+                type="file"
+                onChange={(e) => setUploadFile(e.target.files[0])}
+                accept="*/*"
+              />
+              {uploadFile && (
+                <div className="mt-2 text-sm text-gray-600">
+                  Selected: {uploadFile.name} ({(uploadFile.size / 1024).toFixed(2)} KB)
+                </div>
+              )}
+            </div>
+            
+            <Button 
+              onClick={handleFileUpload} 
+              disabled={!uploadUrl || !uploadFile || uploadingFile}
+              className="w-full"
+            >
+              {uploadingFile ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Uploading...
+                </>
+              ) : (
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload File
+                </>
+              )}
+            </Button>
+          </div>
+
           <div className="flex gap-2">
             <Button onClick={setGrpcCredentials} disabled={!currentEnvironment}>
               Set Credentials
