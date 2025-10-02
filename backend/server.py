@@ -913,45 +913,66 @@ async def test_redis_connection(request: Dict[str, Any]):
     logger.info("="*80)
     
     try:
-        # Read Redis configuration from settings.yaml
-        settings_yaml = ROOT_DIR / "config" / "settings.yaml"
-        logger.info(f"📁 Settings file: {settings_yaml}")
+        # Read Redis configuration from environment-specific file
+        env_file = ROOT_DIR / "config" / "environments" / f"{environment.lower()}.yaml"
+        logger.info(f"📁 Environment config file: {env_file}")
         
-        if not settings_yaml.exists():
-            logger.error(f"❌ settings.yaml not found")
+        if not env_file.exists():
+            logger.error(f"❌ Environment config not found: {env_file}")
             return {
                 "status": "failed",
-                "error": "settings.yaml not found. Redis configuration is defined in settings.yaml"
+                "error": f"Environment configuration file not found: {environment.lower()}.yaml"
             }
         
-        with open(settings_yaml, 'r') as f:
-            settings = yaml.safe_load(f)
+        with open(env_file, 'r') as f:
+            env_config = yaml.safe_load(f)
         
-        logger.info(f"🔧 Looking for redis.{environment.lower()} configuration...")
-        redis_config = settings.get('redis', {}).get(environment.lower())
+        logger.info(f"🔧 Looking for redis configuration in {environment} environment file...")
+        redis_config = env_config.get('redis')
         
         if not redis_config:
-            available_envs = list(settings.get('redis', {}).keys())
-            logger.warning(f"⚠️ No Redis config for '{environment}'. Available: {available_envs}")
+            logger.warning(f"⚠️ No Redis config found in {environment} environment file")
             return {
                 "status": "failed",
-                "error": f"No Redis configuration found for environment: {environment}. Available: {available_envs}"
+                "error": f"No Redis configuration found for environment: {environment}"
             }
         
-        logger.info(f"✅ Found Redis config - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}, DB: {redis_config.get('db', 0)}")
+        logger.info(f"✅ Found Redis config - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}")
         
         # Try to connect to Redis
         import redis
         try:
             logger.info(f"🔌 Attempting connection...")
-            redis_client = redis.Redis(
-                host=redis_config.get('host', 'localhost'),
-                port=redis_config.get('port', 6379),
-                password=redis_config.get('password'),
-                db=redis_config.get('db', 0),
-                socket_timeout=5,
-                socket_connect_timeout=5
-            )
+            
+            # Build connection parameters
+            conn_params = {
+                'host': redis_config.get('host', 'localhost'),
+                'port': redis_config.get('port', 6379),
+                'socket_timeout': redis_config.get('socket_timeout', 5),
+                'socket_connect_timeout': redis_config.get('connection_timeout', 5),
+            }
+            
+            # Add authentication if token is provided
+            if redis_config.get('token'):
+                conn_params['password'] = redis_config.get('token')
+            elif redis_config.get('password'):
+                conn_params['password'] = redis_config.get('password')
+            
+            # Add DB if specified (for local/non-cloud Redis)
+            if redis_config.get('db') is not None:
+                conn_params['db'] = redis_config.get('db', 0)
+            
+            # Add SSL if ca_cert_path is provided
+            if redis_config.get('ca_cert_path'):
+                import ssl
+                conn_params['ssl'] = True
+                conn_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
+                ca_cert_full_path = ROOT_DIR / redis_config.get('ca_cert_path')
+                if ca_cert_full_path.exists():
+                    conn_params['ssl_ca_certs'] = str(ca_cert_full_path)
+                    logger.info(f"🔒 Using SSL with CA cert: {ca_cert_full_path}")
+            
+            redis_client = redis.Redis(**conn_params)
             
             # Test connection with ping
             redis_client.ping()
@@ -961,8 +982,7 @@ async def test_redis_connection(request: Dict[str, Any]):
             return {
                 "status": "connected",
                 "host": redis_config.get('host'),
-                "port": redis_config.get('port'),
-                "db": redis_config.get('db', 0)
+                "port": redis_config.get('port')
             }
         except redis.ConnectionError as e:
             logger.error(f"❌ Redis connection failed: {e}")
