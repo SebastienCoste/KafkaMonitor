@@ -56,26 +56,52 @@ class BlueprintConfigurationParser:
                     configurations=[]
                 )
                 
-                # Parse global configurations
-                global_files = schema_config.get('global', [])
-                for global_file in global_files:
-                    global_path = blueprint_path / "src" / "configs" / "global" / global_file
-                    if global_path.exists():
-                        result = await self._parse_global_config(global_path)
-                        if result.success:
-                            all_configurations.extend(result.configurations)
-                            config_schema.configurations.extend(
-                                [EntityConfiguration(
-                                    entityType=config.entityType,
-                                    name=config.name,
-                                    baseConfig=config.config,
-                                    environmentOverrides=config.environments,
-                                    inherit=config.inherit
-                                ) for config in result.configurations]
-                            )
-                        else:
-                            parse_errors.extend(result.errors)
-                            parse_warnings.extend(result.warnings)
+                # Parse global configurations with auto-discovery
+                global_dir = blueprint_path / "src" / "configs" / "global"
+                processed_global_files = set()
+                
+                if global_dir.exists():
+                    # First, process files from blueprint_cnf.json
+                    global_files = schema_config.get('global', [])
+                    for global_file in global_files:
+                        global_path = global_dir / global_file
+                        if global_path.exists():
+                            processed_global_files.add(global_path.resolve())
+                            result = await self._parse_global_config(global_path)
+                            if result.success:
+                                all_configurations.extend(result.configurations)
+                                config_schema.configurations.extend(
+                                    [EntityConfiguration(
+                                        entityType=config.entityType,
+                                        name=config.name,
+                                        baseConfig=config.config,
+                                        environmentOverrides=config.environments,
+                                        inherit=config.inherit
+                                    ) for config in result.configurations]
+                                )
+                            else:
+                                parse_errors.extend(result.errors)
+                                parse_warnings.extend(result.warnings)
+                    
+                    # Auto-discover any other .json files in global directory
+                    for global_file in global_dir.glob("*.json"):
+                        if global_file.resolve() not in processed_global_files:
+                            logger.info(f"Auto-discovered global config: {global_file.name}")
+                            result = await self._parse_global_config(global_file)
+                            if result.success:
+                                all_configurations.extend(result.configurations)
+                                config_schema.configurations.extend(
+                                    [EntityConfiguration(
+                                        entityType=config.entityType,
+                                        name=config.name,
+                                        baseConfig=config.config,
+                                        environmentOverrides=config.environments,
+                                        inherit=config.inherit
+                                    ) for config in result.configurations]
+                                )
+                            else:
+                                parse_errors.extend(result.errors)
+                                parse_warnings.extend(result.warnings)
                 
                 # Parse message configurations
                 message_files = schema_config.get('messages', [])
