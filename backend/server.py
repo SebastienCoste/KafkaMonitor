@@ -1286,29 +1286,51 @@ async def get_redis_files(environment: str = "", namespace: str = ""):
             all_keys = set()
             for pattern in patterns:
                 logger.info(f"  Scanning pattern: {pattern}")
-                cursor = 0
                 pattern_keys = []
                 
                 # For cluster, we need to scan all nodes
                 if is_cluster:
-                    # RedisCluster.scan() automatically handles scanning across all nodes
-                    while True:
-                        cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
-                        decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
-                        pattern_keys.extend(decoded_keys)
-                        all_keys.update(decoded_keys)
-                        if cursor == 0:
-                            break
+                    # RedisCluster.scan_iter() is the recommended way for clusters
+                    # It automatically handles scanning across all nodes and returns an iterator
+                    try:
+                        logger.info(f"    Using scan_iter for cluster scanning...")
+                        for key in redis_client.scan_iter(match=pattern, count=100):
+                            # Decode key if it's bytes
+                            decoded_key = key.decode('utf-8') if isinstance(key, bytes) else str(key)
+                            pattern_keys.append(decoded_key)
+                            all_keys.add(decoded_key)
+                        logger.info(f"    Found {len(pattern_keys)} keys for pattern: {pattern}")
+                    except Exception as scan_error:
+                        logger.error(f"❌ Cluster scan error for pattern {pattern}: {scan_error}")
+                        logger.error(f"Error type: {type(scan_error)}")
+                        # Try alternative approach: scan each node individually
+                        try:
+                            logger.info(f"    Trying per-node scan approach...")
+                            nodes = redis_client.get_nodes()
+                            for node in nodes:
+                                cursor = 0
+                                while True:
+                                    cursor, keys = node.scan(cursor, match=pattern, count=100)
+                                    for key in keys:
+                                        decoded_key = key.decode('utf-8') if isinstance(key, bytes) else str(key)
+                                        pattern_keys.append(decoded_key)
+                                        all_keys.add(decoded_key)
+                                    if cursor == 0:
+                                        break
+                            logger.info(f"    Found {len(pattern_keys)} keys for pattern: {pattern} (per-node scan)")
+                        except Exception as node_scan_error:
+                            logger.error(f"❌ Per-node scan also failed: {node_scan_error}")
                 else:
                     # Standard scan for standalone Redis
+                    cursor = 0
                     while True:
                         cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
-                        decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
+                        decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else str(k) for k in keys]
                         pattern_keys.extend(decoded_keys)
                         all_keys.update(decoded_keys)
                         if cursor == 0:
                             break
-                logger.info(f"    Found {len(pattern_keys)} keys for pattern: {pattern}")
+                    logger.info(f"    Found {len(pattern_keys)} keys for pattern: {pattern}")
             
             redis_client.close()
             logger.info(f"✅ Total unique keys found: {len(all_keys)}")
