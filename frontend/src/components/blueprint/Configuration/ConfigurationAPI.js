@@ -61,10 +61,14 @@ class ConfigurationAPI {
     return this.request('/api/blueprint/config/validate');
   }
 
-  // Generate all files for all schemas (unchanged below, omitted for brevity)
-  static async generateAllFiles() { /* ... existing code ... */ }
+  // Generate all files for all schemas
+  static async generateAllFiles() {
+    return this.request('/api/blueprint/config/generate-all', { method: 'POST' });
+  }
 
-  static async generateBlueprintCNF() { /* ... existing code ... */ }
+  static async generateBlueprintCNF() {
+    return this.request('/api/blueprint/config/generate-cnf', { method: 'POST' });
+  }
 }
 
 export default ConfigurationAPI;
