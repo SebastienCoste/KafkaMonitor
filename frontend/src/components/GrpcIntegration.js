@@ -49,6 +49,11 @@ function GrpcIntegration() {
     x_pop_token: ''
   });
   const [showCredentials, setShowCredentials] = useState(false);
+  
+  // File upload state
+  const [uploadUrl, setUploadUrl] = useState('');
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [availableServices, setAvailableServices] = useState({}); // Dynamic services and methods
