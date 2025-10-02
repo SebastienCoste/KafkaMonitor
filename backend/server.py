@@ -907,7 +907,10 @@ async def blueprint_websocket_endpoint(websocket: WebSocket):
 async def test_redis_connection(request: Dict[str, Any]):
     """Test Redis connection for a specific environment"""
     environment = request.get("environment", "DEV")
-    logger.info(f"🔌 Testing Redis connection for environment: {environment}")
+    logger.info("="*80)
+    logger.info(f"🔌 [REDIS TEST] Endpoint HIT!")
+    logger.info(f"🔌 [REDIS TEST] Testing Redis connection for environment: {environment}")
+    logger.info("="*80)
     
     try:
         # Read Redis configuration from settings.yaml
