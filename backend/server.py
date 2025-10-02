@@ -958,22 +958,35 @@ async def test_redis_connection(request: Dict[str, Any]):
 @api_router.get("/redis/files")
 async def get_redis_files(environment: str, namespace: str):
     """Get list of files stored in Redis for a specific environment and namespace"""
+    logger.info(f"🔍 Redis files request - Environment: {environment}, Namespace: {namespace}")
+    
     try:
         # Read Redis configuration from settings.yaml
         settings_yaml = ROOT_DIR / "config" / "settings.yaml"
-        if not settings_yaml.exists():
-            raise HTTPException(status_code=404, detail="settings.yaml not found")
+        logger.info(f"📁 Looking for settings.yaml at: {settings_yaml}")
         
+        if not settings_yaml.exists():
+            logger.error(f"❌ settings.yaml not found at {settings_yaml}")
+            return {"files": [], "count": 0, "error": "settings.yaml not found"}
+        
+        logger.info(f"✅ Found settings.yaml, loading...")
         with open(settings_yaml, 'r') as f:
             settings = yaml.safe_load(f)
         
+        logger.info(f"🔧 Looking for Redis config for environment: {environment.lower()}")
         redis_config = settings.get('redis', {}).get(environment.lower())
+        
         if not redis_config:
-            raise HTTPException(status_code=404, detail=f"No Redis configuration for environment: {environment}")
+            logger.warning(f"⚠️ No Redis configuration for environment: {environment}")
+            logger.info(f"Available Redis environments: {list(settings.get('redis', {}).keys())}")
+            return {"files": [], "count": 0, "error": f"No Redis configuration for environment: {environment}"}
+        
+        logger.info(f"✅ Redis config found - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}, DB: {redis_config.get('db', 0)}")
         
         # Connect to Redis
         import redis
         try:
+            logger.info(f"🔌 Connecting to Redis...")
             redis_client = redis.Redis(
                 host=redis_config.get('host', 'localhost'),
                 port=redis_config.get('port', 6379),
@@ -983,24 +996,34 @@ async def get_redis_files(environment: str, namespace: str):
                 socket_connect_timeout=5
             )
             
+            # Test connection
+            redis_client.ping()
+            logger.info(f"✅ Redis connection successful")
+            
             # Scan for keys matching the namespace pattern
-            # Pattern: namespace:* or namespace:env:*
             patterns = [
                 f"{namespace}:*",
                 f"{namespace}:{environment}:*",
                 f"*:{namespace}:*"
             ]
+            logger.info(f"🔎 Scanning Redis with patterns: {patterns}")
             
             all_keys = set()
             for pattern in patterns:
+                logger.info(f"  Scanning pattern: {pattern}")
                 cursor = 0
+                pattern_keys = []
                 while True:
                     cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
-                    all_keys.update([k.decode('utf-8') if isinstance(k, bytes) else k for k in keys])
+                    decoded_keys = [k.decode('utf-8') if isinstance(k, bytes) else k for k in keys]
+                    pattern_keys.extend(decoded_keys)
+                    all_keys.update(decoded_keys)
                     if cursor == 0:
                         break
+                logger.info(f"    Found {len(pattern_keys)} keys for pattern: {pattern}")
             
             redis_client.close()
+            logger.info(f"✅ Total unique keys found: {len(all_keys)}")
             
             # Return keys as file list
             files = [{"key": key, "name": key} for key in sorted(all_keys)]
@@ -1013,15 +1036,17 @@ async def get_redis_files(environment: str, namespace: str):
             }
             
         except redis.ConnectionError as e:
-            raise HTTPException(status_code=503, detail=f"Cannot connect to Redis: {str(e)}")
+            logger.error(f"❌ Redis connection failed: {e}")
+            return {"files": [], "count": 0, "error": f"Cannot connect to Redis: {str(e)}"}
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Redis error: {str(e)}")
+            logger.error(f"❌ Redis error: {e}")
+            return {"files": [], "count": 0, "error": f"Redis error: {str(e)}"}
             
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error getting Redis files: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"❌ Error getting Redis files: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {"files": [], "count": 0, "error": str(e)}
 
 # -----------------------------------------------------------------------------
 # gRPC Integration API Endpoints  
