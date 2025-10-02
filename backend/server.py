@@ -106,6 +106,27 @@ async def startup_event():
                 if proto_dir.exists() and list(proto_dir.rglob("*.proto")):
                     decoder = ProtobufDecoder(str(proto_dir))
                     logger.info("Using real protobuf decoder for Kafka")
+                    
+                    # Load topic-to-protobuf mappings from topics.yaml
+                    topics_yaml_path = ROOT_DIR / "config" / "topics.yaml"
+                    if topics_yaml_path.exists():
+                        try:
+                            with open(topics_yaml_path, 'r') as f:
+                                topics_config = yaml.safe_load(f)
+                            
+                            topics_cfg = topics_config.get('topics', {})
+                            for topic_name, topic_cfg in topics_cfg.items():
+                                try:
+                                    proto_file = topic_cfg.get('proto_file', '')
+                                    message_type = topic_cfg.get('message_type', '')
+                                    if proto_file and message_type:
+                                        decoder.load_topic_protobuf(topic_name, proto_file, message_type)
+                                        logger.debug(f"   Loaded protobuf for topic '{topic_name}': {proto_file} -> {message_type}")
+                                except Exception as topic_err:
+                                    logger.warning(f"   Could not load protobuf for topic '{topic_name}': {topic_err}")
+                            logger.info(f"   Loaded protobuf mappings for {len(topics_cfg)} topics")
+                        except Exception as e:
+                            logger.warning(f"Could not load topic protobuf mappings: {e}")
                 else:
                     decoder = MockProtobufDecoder()
                     logger.info("Using mock protobuf decoder for Kafka")
