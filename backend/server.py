@@ -1028,6 +1028,149 @@ async def test_redis_connection(request: Dict[str, Any]):
             "error": str(e)
         }
 
+@api_router.get("/redis/file-content")
+async def get_redis_file_content(key: str, environment: str):
+    """Get content of a specific Redis key"""
+    logger.info("="*80)
+    logger.info(f"📄 [REDIS FILE CONTENT] Endpoint HIT!")
+    logger.info(f"📄 [REDIS FILE CONTENT] Key: '{key}'")
+    logger.info(f"📄 [REDIS FILE CONTENT] Environment: '{environment}'")
+    logger.info("="*80)
+    
+    # Validate parameters
+    if not key:
+        logger.warning("❌ [REDIS FILE CONTENT] Missing key parameter")
+        return {"error": "Key parameter is required"}
+    
+    if not environment:
+        logger.warning("❌ [REDIS FILE CONTENT] Missing environment parameter")
+        return {"error": "Environment parameter is required"}
+    
+    try:
+        # Read Redis configuration from environment-specific file
+        env_file = ROOT_DIR / "config" / "environments" / f"{environment.lower()}.yaml"
+        logger.info(f"📁 Looking for environment config at: {env_file}")
+        
+        if not env_file.exists():
+            logger.error(f"❌ Environment config not found: {env_file}")
+            return {"error": f"Environment configuration file not found: {environment.lower()}.yaml"}
+        
+        with open(env_file, 'r') as f:
+            env_config = yaml.safe_load(f)
+        
+        redis_config = env_config.get('redis')
+        
+        if not redis_config:
+            logger.warning(f"⚠️ No Redis configuration in {environment} environment file")
+            return {"error": f"No Redis configuration found for environment: {environment}"}
+        
+        logger.info(f"✅ Redis config found - Host: {redis_config.get('host')}, Port: {redis_config.get('port')}")
+        
+        # Connect to Redis (support both standalone and cluster)
+        import redis
+        from redis.cluster import RedisCluster
+        try:
+            logger.info(f"🔌 Connecting to Redis...")
+            
+            # Detect if this is a cluster configuration
+            is_cluster = 'clustercfg' in redis_config.get('host', '').lower() or redis_config.get('cluster', False)
+            
+            # Build base connection parameters
+            base_params = {
+                'socket_timeout': redis_config.get('socket_timeout', 5),
+                'socket_connect_timeout': redis_config.get('connection_timeout', 5),
+            }
+            
+            # Add authentication
+            if redis_config.get('token'):
+                base_params['password'] = redis_config.get('token')
+            elif redis_config.get('password'):
+                base_params['password'] = redis_config.get('password')
+            
+            # Add SSL if ca_cert_path is provided
+            if redis_config.get('ca_cert_path'):
+                import ssl
+                base_params['ssl'] = True
+                base_params['ssl_cert_reqs'] = ssl.CERT_REQUIRED
+                ca_cert_full_path = ROOT_DIR / redis_config.get('ca_cert_path')
+                if ca_cert_full_path.exists():
+                    base_params['ssl_ca_certs'] = str(ca_cert_full_path)
+                    logger.info(f"🔒 Using SSL with CA cert: {ca_cert_full_path}")
+            
+            # Create appropriate client
+            if is_cluster:
+                logger.info(f"🔗 Using Redis Cluster client")
+                redis_client = RedisCluster(
+                    host=redis_config.get('host', 'localhost'),
+                    port=redis_config.get('port', 6379),
+                    **base_params
+                )
+            else:
+                logger.info(f"📍 Using standalone Redis client")
+                conn_params = {
+                    'host': redis_config.get('host', 'localhost'),
+                    'port': redis_config.get('port', 6379),
+                    **base_params
+                }
+                if redis_config.get('db') is not None:
+                    conn_params['db'] = redis_config.get('db', 0)
+                
+                redis_client = redis.Redis(**conn_params)
+            
+            # Test connection
+            redis_client.ping()
+            logger.info(f"✅ Redis connection successful")
+            
+            # Get the key content
+            logger.info(f"📖 Fetching content for key: {key}")
+            content = redis_client.get(key)
+            
+            if content is None:
+                logger.warning(f"⚠️ Key not found: {key}")
+                redis_client.close()
+                return {"error": f"Key not found: {key}"}
+            
+            # Decode content
+            try:
+                decoded_content = content.decode('utf-8') if isinstance(content, bytes) else str(content)
+                logger.info(f"✅ Successfully retrieved content ({len(decoded_content)} bytes)")
+            except UnicodeDecodeError:
+                # If it's binary data, return base64 encoded
+                import base64
+                decoded_content = base64.b64encode(content).decode('utf-8')
+                logger.info(f"✅ Retrieved binary content ({len(content)} bytes, base64 encoded)")
+                redis_client.close()
+                return {
+                    "key": key,
+                    "content": decoded_content,
+                    "encoding": "base64",
+                    "size": len(content)
+                }
+            
+            redis_client.close()
+            
+            return {
+                "key": key,
+                "content": decoded_content,
+                "encoding": "utf-8",
+                "size": len(decoded_content)
+            }
+            
+        except redis.ConnectionError as e:
+            logger.error(f"❌ Redis connection failed: {e}")
+            return {"error": f"Cannot connect to Redis: {str(e)}"}
+        except Exception as e:
+            logger.error(f"❌ Redis error: {e}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return {"error": f"Redis error: {str(e)}"}
+            
+    except Exception as e:
+        logger.error(f"❌ Error getting Redis file content: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {"error": str(e)}
+
 @api_router.get("/redis/files")
 async def get_redis_files(environment: str = "", namespace: str = ""):
     """Get list of files stored in Redis for a specific environment and namespace"""
