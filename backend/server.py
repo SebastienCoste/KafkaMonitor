@@ -250,6 +250,131 @@ async def create_or_overwrite_file(request: FileOperationRequest):
         logger.error(f"Error creating/overwriting file: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.put("/blueprint/file-content/{path:path}")
+async def save_blueprint_file_content(path: str, request: Dict[str, Any]):
+    """Save content to a blueprint file"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    try:
+        content = request.get("content", "")
+        await blueprint_file_manager.write_file(path, content)
+        return {"success": True, "message": f"File saved: {path}"}
+    except Exception as e:
+        logger.error(f"Failed to save file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/blueprint/delete-file/{path:path}")
+async def delete_blueprint_file(path: str):
+    """Delete a blueprint file or directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Root path not set")
+        
+        full_path = Path(root_path) / path
+        
+        if full_path.is_file():
+            full_path.unlink()
+            logger.info(f"Deleted file: {path}")
+        elif full_path.is_dir():
+            import shutil
+            shutil.rmtree(full_path)
+            logger.info(f"Deleted directory: {path}")
+        else:
+            raise HTTPException(status_code=404, detail=f"Path not found: {path}")
+        
+        return {"success": True, "message": f"Deleted: {path}"}
+    except Exception as e:
+        logger.error(f"Failed to delete: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/move-file")
+async def move_blueprint_file(request: Dict[str, Any]):
+    """Move or rename a blueprint file/directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    try:
+        source_path = request.get("source_path")
+        destination_path = request.get("destination_path")
+        
+        if not source_path or not destination_path:
+            raise HTTPException(status_code=400, detail="source_path and destination_path are required")
+        
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Root path not set")
+        
+        source = Path(root_path) / source_path
+        destination = Path(root_path) / destination_path
+        
+        if not source.exists():
+            raise HTTPException(status_code=404, detail=f"Source not found: {source_path}")
+        
+        # Create parent directory if needed
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        
+        source.rename(destination)
+        logger.info(f"Moved {source_path} to {destination_path}")
+        
+        return {"success": True, "message": f"Moved to {destination_path}"}
+    except Exception as e:
+        logger.error(f"Failed to move file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/rename-file")
+async def rename_blueprint_file(request: Dict[str, Any]):
+    """Rename a blueprint file/directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    try:
+        source_path = request.get("source_path")
+        new_name = request.get("new_name")
+        
+        if not source_path or not new_name:
+            raise HTTPException(status_code=400, detail="source_path and new_name are required")
+        
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Root path not set")
+        
+        source = Path(root_path) / source_path
+        destination = source.parent / new_name
+        
+        if not source.exists():
+            raise HTTPException(status_code=404, detail=f"Source not found: {source_path}")
+        
+        if destination.exists():
+            raise HTTPException(status_code=409, detail=f"Destination already exists: {new_name}")
+        
+        source.rename(destination)
+        logger.info(f"Renamed {source_path} to {new_name}")
+        
+        return {"success": True, "message": f"Renamed to {new_name}"}
+    except Exception as e:
+        logger.error(f"Failed to rename file: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/blueprint/create-directory")
+async def create_blueprint_directory(request: FileOperationRequest):
+    """Create a new directory"""
+    if not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint file manager not initialized")
+    try:
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Root path not set")
+        
+        new_dir = Path(root_path) / request.path
+        new_dir.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Created directory: {request.path}")
+        
+        return {"success": True, "message": f"Directory created: {request.path}"}
+    except Exception as e:
+        logger.error(f"Failed to create directory: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Convenience: namespace detection from blueprint_cnf.json at project root
 @api_router.get("/blueprint/namespace")
 async def get_blueprint_namespace():
