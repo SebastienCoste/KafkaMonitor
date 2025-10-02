@@ -1259,12 +1259,12 @@ async def get_traces():
         if graph_builder is None:
             return {"traces": [], "total": 0, "page": 1, "per_page": 50}
         
-        # Get all traces from graph_builder
-        traces = graph_builder.get_traces()
+        # Get trace summary from graph_builder
+        summary = graph_builder.get_trace_summary()
         
         return {
-            "traces": traces,
-            "total": len(traces),
+            "traces": summary.get('traces', []),
+            "total": summary.get('total_traces', 0),
             "page": 1,
             "per_page": 50
         }
