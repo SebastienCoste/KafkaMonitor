@@ -358,6 +358,10 @@ async def switch_environment(request: Dict[str, Any]):
                     if all_topics:
                         logger.info(f"📋 Subscribing to {len(all_topics)} topics...")
                         kafka_consumer.subscribe_to_topics(all_topics)
+                        
+                        # Start consuming messages asynchronously
+                        logger.info(f"🚀 Starting Kafka message consumption for {new_env}...")
+                        asyncio.create_task(kafka_consumer.start_consuming_async())
                 
                 logger.info(f"✅ Kafka consumer initialized for {new_env}")
             except Exception as e:
