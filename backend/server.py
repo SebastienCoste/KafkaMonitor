@@ -132,7 +132,12 @@ async def startup_event():
                     if all_topics:
                         logger.info(f"📋 Subscribing to {len(all_topics)} topics on startup...")
                         kafka_consumer.subscribe_to_topics(all_topics)
-                        logger.info(f"✅ Kafka consumer initialized and subscribed to topics")
+                        logger.info(f"✅ Kafka consumer subscribed to topics")
+                        
+                        # Start consuming messages asynchronously
+                        logger.info(f"🚀 Starting Kafka message consumption...")
+                        asyncio.create_task(kafka_consumer.start_consuming_async())
+                        logger.info(f"✅ Kafka consumer started")
                     else:
                         logger.warning("⚠️ No topics found in topic graph")
                 else:
