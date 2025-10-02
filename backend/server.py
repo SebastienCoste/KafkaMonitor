@@ -359,11 +359,90 @@ async def update_entity_configuration(entity_id: str, request: UpdateEntityReque
 # -----------------------------------------------------------------------------
 @api_router.post("/blueprint/build")
 async def build_blueprint(request: Dict[str, Any]):
-    # Placeholder: emit success and rely on WebSocket for async updates in full impl
+    """Execute build script and stream output via WebSocket"""
     root_path = request.get("root_path")
+    script_name = request.get("script_name", "buildBlueprint.sh")
+    
     if not root_path:
         raise HTTPException(status_code=400, detail="root_path is required")
-    return {"status": "started", "root_path": root_path, "script": request.get("script_name", "buildBlueprint.sh")}
+    
+    root_path_obj = Path(root_path)
+    script_path = root_path_obj / script_name
+    
+    if not script_path.exists():
+        raise HTTPException(status_code=404, detail=f"Build script not found: {script_name}")
+    
+    if not os.access(script_path, os.X_OK):
+        raise HTTPException(status_code=403, detail=f"Build script is not executable: {script_name}")
+    
+    try:
+        # Broadcast build started
+        await broadcast_message({
+            "type": "build_started",
+            "data": {"script": script_name}
+        })
+        
+        # Execute build script synchronously and capture output
+        import subprocess
+        process = subprocess.Popen(
+            ['/bin/bash', str(script_path)],
+            cwd=str(root_path_obj),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1  # Line buffered
+        )
+        
+        # Read and broadcast output line by line as it comes
+        for line in iter(process.stdout.readline, ''):
+            if line:
+                await broadcast_message({
+                    "type": "build_output",
+                    "data": {"content": line.rstrip()}
+                })
+        
+        # Wait for process to complete
+        return_code = process.wait()
+        success = return_code == 0
+        
+        # Find generated .tar.gz files
+        dist_dir = root_path_obj / "dist"
+        generated_files = []
+        if dist_dir.exists():
+            for f in dist_dir.glob("*.tar.gz"):
+                if f.is_file():
+                    stat = f.stat()
+                    generated_files.append({
+                        "name": f.name,
+                        "path": str(f),
+                        "size": stat.st_size,
+                        "modified": int(stat.st_mtime),
+                        "directory": "dist"
+                    })
+        
+        # Broadcast build complete
+        await broadcast_message({
+            "type": "build_complete",
+            "data": {
+                "success": success,
+                "return_code": return_code,
+                "generated_files": generated_files
+            }
+        })
+        
+        return {
+            "status": "completed" if success else "failed",
+            "return_code": return_code,
+            "files_generated": len(generated_files)
+        }
+        
+    except Exception as e:
+        logger.error(f"Build error: {e}")
+        await broadcast_message({
+            "type": "build_error",
+            "data": {"error": str(e)}
+        })
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/blueprint/cancel-build")
 async def cancel_build():
