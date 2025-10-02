@@ -24,6 +24,9 @@ backend:
       - working: true
         agent: "main"
         comment: "✅ FIXED THREE ADDITIONAL ISSUES: 1) Empty environment parameter bug - was reading as empty string causing .yaml lookups, added proper handling and validation. 2) Redis Cluster support - detected user's Redis is AWS ElastiCache cluster, added automatic detection and RedisCluster client usage to properly scan keys across all cluster nodes. Detection via 'clustercfg' in hostname. 3) Missing /api/redis/file-content endpoint - created new endpoint to retrieve content of specific Redis keys with UTF-8 and base64 encoding support. All three endpoints now work correctly with cluster configuration. Testing shows proper environment reading ('TEST'), cluster detection (clustercfg.cadie-test-redis.spp3uf...), and successful key scanning across nodes. Created REDIS_CLUSTER_AND_FILE_CONTENT_FIX.md."
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED CLUSTER SCAN ERROR: User reported 'Invalid input of type: dict' error during cluster scan. Root cause: Redis Cluster's scan() method returns different format than standalone Redis. Solution: Changed from low-level scan(cursor, match, count) to high-level scan_iter(match, count) which is the recommended API for clusters and automatically handles multi-node scanning. Added fallback to per-node scanning if scan_iter fails. Proper error handling and logging added. The scan_iter method abstracts cluster complexity and provides standard Python iterator interface. Created REDIS_CLUSTER_SCAN_FIX.md with detailed explanation."
 
 - task: "Add Reset to Disk feature for UI Config"
   implemented: false
