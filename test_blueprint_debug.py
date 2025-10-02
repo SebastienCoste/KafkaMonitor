@@ -7,7 +7,7 @@ import requests
 import json
 import time
 
-base_url = "https://portable-config-ui.preview.emergentagent.com"
+base_url = "https://blueprint-studio-2.preview.emergentagent.com"
 
 def test_blueprint_config():
     print("🔧 Testing Blueprint Configuration...")
