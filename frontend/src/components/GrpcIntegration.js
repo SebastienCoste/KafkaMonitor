@@ -1104,7 +1104,7 @@ function GrpcIntegration() {
             <CardTitle>Client Status</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto">
+            <pre className="bg-gray-50 p-3 rounded text-sm overflow-auto whitespace-pre-wrap break-words">
               {JSON.stringify(grpcStatus, null, 2)}
             </pre>
           </CardContent>
