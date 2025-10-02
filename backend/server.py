@@ -889,6 +889,141 @@ async def blueprint_websocket_endpoint(websocket: WebSocket):
         logger.error(f"Blueprint WebSocket error: {e}")
 
 # -----------------------------------------------------------------------------
+# Redis Verification API Endpoints
+# -----------------------------------------------------------------------------
+
+@api_router.post("/redis/test-connection")
+async def test_redis_connection(request: Dict[str, Any]):
+    """Test Redis connection for a specific environment"""
+    try:
+        environment = request.get("environment", "DEV")
+        
+        # Read Redis configuration from settings.yaml
+        settings_yaml = ROOT_DIR / "config" / "settings.yaml"
+        if not settings_yaml.exists():
+            return {
+                "status": "failed",
+                "error": "settings.yaml not found. Redis configuration is defined in settings.yaml"
+            }
+        
+        with open(settings_yaml, 'r') as f:
+            settings = yaml.safe_load(f)
+        
+        redis_config = settings.get('redis', {}).get(environment.lower())
+        if not redis_config:
+            return {
+                "status": "failed",
+                "error": f"No Redis configuration found for environment: {environment}"
+            }
+        
+        # Try to connect to Redis
+        import redis
+        try:
+            redis_client = redis.Redis(
+                host=redis_config.get('host', 'localhost'),
+                port=redis_config.get('port', 6379),
+                password=redis_config.get('password'),
+                db=redis_config.get('db', 0),
+                socket_timeout=5,
+                socket_connect_timeout=5
+            )
+            # Test connection with ping
+            redis_client.ping()
+            redis_client.close()
+            
+            return {
+                "status": "connected",
+                "host": redis_config.get('host'),
+                "port": redis_config.get('port'),
+                "db": redis_config.get('db', 0)
+            }
+        except redis.ConnectionError as e:
+            return {
+                "status": "failed",
+                "error": f"Cannot connect to Redis: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "status": "failed",
+                "error": f"Redis error: {str(e)}"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error testing Redis connection: {e}")
+        return {
+            "status": "failed",
+            "error": str(e)
+        }
+
+@api_router.get("/redis/files")
+async def get_redis_files(environment: str, namespace: str):
+    """Get list of files stored in Redis for a specific environment and namespace"""
+    try:
+        # Read Redis configuration from settings.yaml
+        settings_yaml = ROOT_DIR / "config" / "settings.yaml"
+        if not settings_yaml.exists():
+            raise HTTPException(status_code=404, detail="settings.yaml not found")
+        
+        with open(settings_yaml, 'r') as f:
+            settings = yaml.safe_load(f)
+        
+        redis_config = settings.get('redis', {}).get(environment.lower())
+        if not redis_config:
+            raise HTTPException(status_code=404, detail=f"No Redis configuration for environment: {environment}")
+        
+        # Connect to Redis
+        import redis
+        try:
+            redis_client = redis.Redis(
+                host=redis_config.get('host', 'localhost'),
+                port=redis_config.get('port', 6379),
+                password=redis_config.get('password'),
+                db=redis_config.get('db', 0),
+                socket_timeout=5,
+                socket_connect_timeout=5
+            )
+            
+            # Scan for keys matching the namespace pattern
+            # Pattern: namespace:* or namespace:env:*
+            patterns = [
+                f"{namespace}:*",
+                f"{namespace}:{environment}:*",
+                f"*:{namespace}:*"
+            ]
+            
+            all_keys = set()
+            for pattern in patterns:
+                cursor = 0
+                while True:
+                    cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
+                    all_keys.update([k.decode('utf-8') if isinstance(k, bytes) else k for k in keys])
+                    if cursor == 0:
+                        break
+            
+            redis_client.close()
+            
+            # Return keys as file list
+            files = [{"key": key, "name": key} for key in sorted(all_keys)]
+            
+            return {
+                "files": files,
+                "count": len(files),
+                "environment": environment,
+                "namespace": namespace
+            }
+            
+        except redis.ConnectionError as e:
+            raise HTTPException(status_code=503, detail=f"Cannot connect to Redis: {str(e)}")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Redis error: {str(e)}")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting Redis files: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# -----------------------------------------------------------------------------
 # gRPC Integration API Endpoints  
 # -----------------------------------------------------------------------------
 
