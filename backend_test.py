@@ -912,6 +912,7 @@ class BackendRoutingTester:
         suite_c_results = []
         suite_d_results = []
         suite_e_results = []
+        suite_f_results = []
         other_results = []
         
         for result in self.test_results:
@@ -926,6 +927,8 @@ class BackendRoutingTester:
                 suite_d_results.append(result)
             elif any(keyword in name for keyword in ["graph", "disconnected", "component"]):
                 suite_e_results.append(result)
+            elif any(keyword in name for keyword in ["grpc", "example"]):
+                suite_f_results.append(result)
             else:
                 other_results.append(result)
         
