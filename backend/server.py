@@ -1077,9 +1077,18 @@ async def get_topics():
                 }
                 topic_details.append(topic_info)
             
-            # Extract topic names and those with messages
+            # Extract topic names
             all_topics = list(topic_details_dict.keys())
-            monitored = [t for t, d in topic_details_dict.items() if d.get('message_count', 0) > 0]
+            
+            # Use stored monitored topics if available, otherwise use all topics with messages
+            if hasattr(app.state, 'monitored_topics') and app.state.monitored_topics:
+                monitored = app.state.monitored_topics
+            else:
+                # Default: monitor topics that have messages
+                monitored = [t for t, d in topic_details_dict.items() if d.get('message_count', 0) > 0]
+                # If no topics have messages yet, monitor all topics
+                if not monitored:
+                    monitored = all_topics
             
             return {
                 "topics": all_topics,
