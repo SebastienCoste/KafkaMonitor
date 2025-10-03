@@ -512,8 +512,14 @@ function GrpcIntegration() {
       const response = await axios.get(`${API_BASE_URL}/api/grpc/asset-storage/urls`);
       
       if (response.data.success) {
-        setAssetStorageUrls(response.data.urls);
-        setSelectedAssetUrlType(response.data.current_selection);
+        setAssetStorageUrls(response.data.urls || {});
+        // Set current selection if available, otherwise default to first key or 'reader'
+        if (response.data.current) {
+          setSelectedAssetUrlType(response.data.current);
+        } else if (response.data.urls) {
+          const firstKey = Object.keys(response.data.urls)[0];
+          setSelectedAssetUrlType(firstKey || 'reader');
+        }
       }
     } catch (error) {
       console.error('Error loading asset-storage URLs:', error);
