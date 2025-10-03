@@ -2196,11 +2196,13 @@ async def upload_file_proxy(
             # This allows S3 to accept any content type
             logger.info(f"📝 Content-Type not in signed headers - not sending Content-Type header")
         
-        # Add custom headers if provided (not typically part of S3 signature)
-        if authorization:
-            headers['Authorization'] = authorization
-        if x_pop_token:
-            headers['X-POP-TOKEN'] = x_pop_token
+        # IMPORTANT: Do NOT send Authorization or X-POP-TOKEN headers to S3 signed URLs!
+        # S3 signed URLs already contain authentication in query parameters (X-Amz-Signature, etc.)
+        # Sending additional auth headers causes S3 to reject with:
+        # "Only one auth mechanism allowed"
+        # 
+        # These auth headers are for gRPC service calls, not for S3 uploads
+        # If you need to pass credentials through, they should be in the signed URL itself
         
         logger.info(f"📨 Request headers: {headers}")
         
