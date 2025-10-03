@@ -73,6 +73,30 @@ backend:
         agent: "main"
         comment: "User reported that in Blueprint Creator / Global Config / Storage Configuration, when adding Host Configurations in Environment tab, it behaves differently than Configuration tab. Issue 1: When clicking '+' on Host Configurations array in environments, it creates empty object {} instead of proper default structure with all required fields. Issue 2: APIs field (array of strings with options) renders as plain text input instead of checkboxes like in Configuration tab. Root cause: EnvironmentOverrides.js has duplicate renderField logic missing two key features from EntityEditor.js: 1) createDefaultFromFields helper that initializes objects with proper defaults based on field definitions (EntityEditor lines 338-356), 2) Special checkbox rendering for array of strings with options (EntityEditor lines 383-407). Fixed by: 1) Adding createDefaultFromFields helper to EnvironmentOverrides array handling, 2) Adding checkbox rendering for arrays with string items and options, 3) Modified onClick handler to use createDefaultFromFields when adding new array items. Now both Configuration and Environment tabs create identical structures when adding Host Configurations, and APIs field renders as checkboxes in both tabs."
   
+  - task: "Blueprint Environment Overrides - BUG1: Existing Configuration Not Loading"
+    implemented: true
+    working: true
+    file: "backend/src/blueprint_config_parser.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported that existing environment configurations from file are not displayed in Environment Overrides tab. Root cause: Parser was creating SEPARATE ParsedConfiguration objects for each environment (one for INT, one for DEV, etc) instead of combining them. In _parse_global_config lines 246-273, loop iterated over environments and called configurations.append() for each env separately, creating multiple ParsedConfiguration objects with single-env dicts. When converted to EntityConfiguration, this created separate entities instead of one entity with all environments in environmentOverrides. Fixed by: Collecting all environments for each entity type first into temporary dicts (storages_envs, inference_envs, access_envs), then creating single ParsedConfiguration per entity type with combined environments dict. Now file with INT and DEV environments creates one EntityConfiguration with environmentOverrides: {INT: {...}, DEV: {...}}."
+  
+  - task: "Blueprint Environment Overrides - BUG2: Dotted Map Keys Creating Nested Objects"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/Configuration/EnvironmentOverrides.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported that map key 'TOTO.TITI' was creating nested structure {TOTO: {TITI: {...}}} instead of {'TOTO.TITI': {...}}. Root cause: setNestedProperty and getNestedProperty split path by dots, but only took single key after map field (line 74: mapKey = keys[i+1]), assuming map keys don't contain dots. When path was storages.storages.TOTO.TITI.serviceIdentifier, it only used 'TOTO' as map key, treating remaining as nested fields. Fixed by: Enhanced both functions to detect where map key ends by checking against valueType.fields. Algorithm: 1) Find map field in path, 2) Get map's valueType fields, 3) Scan remaining keys backwards to find first match with valueType field, 4) Everything between map field and matched field is the map key (can contain dots), 5) Join these keys with dots to get full map key like 'TOTO.TITI'. Now correctly handles Storage Service keys with dots like 'EA.EADP.PDE.MCR'."
+  
   - task: "Redis Files API Endpoint - 404 Investigation & Config Location Fix"
     implemented: true
     working: true
