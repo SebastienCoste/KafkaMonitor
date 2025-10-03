@@ -141,10 +141,12 @@ class BlueprintConfigurationGenerator:
                 # Add environment overrides
                 for env in environments:
                     if env in config.environmentOverrides:
-                        if env not in global_config["environments"]:
-                            global_config["environments"][env] = {}
+                        # Convert environment name to lowercase for output file
+                        env_key = env.lower()
+                        if env_key not in global_config["environments"]:
+                            global_config["environments"][env_key] = {}
                         
-                        global_config["environments"][env][config.entityType] = config.environmentOverrides[env]
+                        global_config["environments"][env_key][config.entityType] = config.environmentOverrides[env]
             
             # Create schema-specific filename to avoid conflicts
             mapping = self.file_mappings['global']
