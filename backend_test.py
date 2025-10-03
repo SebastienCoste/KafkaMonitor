@@ -608,6 +608,7 @@ class BackendRoutingTester:
         suite_a_results = []
         suite_b_results = []
         suite_c_results = []
+        suite_d_results = []
         other_results = []
         
         for result in self.test_results:
@@ -618,6 +619,8 @@ class BackendRoutingTester:
                 suite_b_results.append(result)
             elif "websocket" in name:
                 suite_c_results.append(result)
+            elif "statistics" in name:
+                suite_d_results.append(result)
             else:
                 other_results.append(result)
         
