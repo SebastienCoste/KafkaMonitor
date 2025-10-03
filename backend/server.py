@@ -1274,6 +1274,99 @@ async def get_traces():
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/trace/{trace_id}")
+async def get_trace_detail(trace_id: str):
+    """Get detailed information about a specific trace"""
+    try:
+        if graph_builder is None:
+            raise HTTPException(status_code=503, detail="Graph builder not initialized")
+        
+        # Get trace from graph_builder
+        if trace_id not in graph_builder.traces:
+            raise HTTPException(status_code=404, detail=f"Trace not found: {trace_id}")
+        
+        trace = graph_builder.traces[trace_id]
+        
+        # Build detailed trace response
+        messages = []
+        for msg in trace.messages:
+            messages.append({
+                "topic": msg.get("topic", ""),
+                "timestamp": msg.get("timestamp", ""),
+                "offset": msg.get("offset", 0),
+                "partition": msg.get("partition", 0),
+                "headers": msg.get("headers", {}),
+                "data": msg.get("data", {})
+            })
+        
+        return {
+            "trace_id": trace_id,
+            "start_time": trace.start_time.isoformat() if trace.start_time else None,
+            "end_time": trace.end_time.isoformat() if trace.end_time else None,
+            "duration_ms": trace.duration_ms,
+            "message_count": len(trace.messages),
+            "topics": list(trace.topics),
+            "messages": messages
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get trace detail: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/trace/{trace_id}/flow")
+async def get_trace_flow(trace_id: str):
+    """Get flow/graph data for a specific trace"""
+    try:
+        if graph_builder is None:
+            raise HTTPException(status_code=503, detail="Graph builder not initialized")
+        
+        # Get trace from graph_builder
+        if trace_id not in graph_builder.traces:
+            raise HTTPException(status_code=404, detail=f"Trace not found: {trace_id}")
+        
+        trace = graph_builder.traces[trace_id]
+        
+        # Build nodes (topics) and edges (message flow)
+        nodes = []
+        edges = []
+        topic_set = set()
+        
+        for i, msg in enumerate(trace.messages):
+            topic = msg.get("topic", "")
+            if topic and topic not in topic_set:
+                nodes.append({
+                    "id": topic,
+                    "label": topic,
+                    "message_count": sum(1 for m in trace.messages if m.get("topic") == topic)
+                })
+                topic_set.add(topic)
+            
+            # Create edge to next message's topic
+            if i < len(trace.messages) - 1:
+                next_topic = trace.messages[i + 1].get("topic", "")
+                if topic and next_topic and topic != next_topic:
+                    edges.append({
+                        "source": topic,
+                        "target": next_topic,
+                        "label": f"msg {i+1}"
+                    })
+        
+        return {
+            "trace_id": trace_id,
+            "nodes": nodes,
+            "edges": edges
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get trace flow: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
+
 # -----------------------------------------------------------------------------
 # WebSocket Connection Manager
 # -----------------------------------------------------------------------------
