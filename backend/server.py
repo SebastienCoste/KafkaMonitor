@@ -2077,12 +2077,9 @@ async def get_asset_storage_urls():
         if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
             return {"success": False, "error": "gRPC client not initialized"}
         
-        urls = app.state.grpc_client.get_asset_storage_urls()
-        return {
-            "success": True,
-            "urls": urls,
-            "current": app.state.grpc_client.current_asset_storage_url if hasattr(app.state.grpc_client, 'current_asset_storage_url') else None
-        }
+        # grpc_client.get_asset_storage_urls() already returns a complete response
+        # with success, urls dict, and current_selection
+        return app.state.grpc_client.get_asset_storage_urls()
     except Exception as e:
         logger.error(f"Error getting asset storage URLs: {e}")
         return {"success": False, "error": str(e)}
