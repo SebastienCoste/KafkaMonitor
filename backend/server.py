@@ -902,20 +902,100 @@ async def validate_blueprint_config(path: str = "blueprint_cnf.json"):
 
 @api_router.post("/blueprint/validate/{filepath:path}")
 async def validate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
-    """Validate a blueprint .tgz file
+    """Validate a blueprint .tgz file by calling blueprint server
     
     Args:
         filepath: Path to the .tgz file (can be full path or just filename)
         payload: Contains tgz_file, environment, and action
     """
+    if not blueprint_build_manager or not blueprint_file_manager:
+        raise HTTPException(status_code=503, detail="Blueprint build manager not initialized")
+    
     # Extract just the filename from the path
     from pathlib import Path
     filename = Path(filepath).name
+    environment = payload.get('environment', 'TEST')
     
-    logger.info(f"📋 Validating blueprint: {filename} (from path: {filepath})")
-    logger.info(f"   Environment: {payload.get('environment')}")
+    logger.info("="*80)
+    logger.info(f"📋 [VALIDATE] Starting blueprint validation")
+    logger.info(f"   File: {filename}")
+    logger.info(f"   Full path: {filepath}")
+    logger.info(f"   Environment: {environment}")
+    logger.info(f"   Payload: {payload}")
+    logger.info("="*80)
     
-    return {"status": "validated", "file": filename, "filepath": filepath, "environment": payload.get("environment")}
+    try:
+        # Get root path
+        root_path = blueprint_file_manager.root_path
+        if not root_path:
+            raise HTTPException(status_code=400, detail="Blueprint root path not set")
+        
+        # Load environment configuration
+        env_config_data = load_environment_config(environment)
+        if not env_config_data:
+            logger.error(f"❌ Failed to load environment config for: {environment}")
+            raise HTTPException(status_code=400, detail=f"Environment {environment} not configured")
+        
+        env_config = env_config_data['blueprint_server']
+        logger.info(f"🔧 Loaded environment config:")
+        logger.info(f"   Base URL: {env_config.get('base_url')}")
+        logger.info(f"   Validate path: {env_config.get('validate_path')}")
+        
+        # Get namespace from blueprint_cnf.json
+        blueprint_cnf_path = os.path.join(root_path, "blueprint_cnf.json")
+        namespace = "default"
+        if os.path.exists(blueprint_cnf_path):
+            with open(blueprint_cnf_path, 'r') as f:
+                blueprint_cnf = json.load(f)
+                namespace = blueprint_cnf.get('namespace', 'default')
+        
+        logger.info(f"📦 Using namespace: {namespace}")
+        
+        # Call deployment manager
+        from src.blueprint_models import EnvironmentConfig, DeploymentAction
+        env_cfg = EnvironmentConfig(**env_config)
+        
+        logger.info(f"🚀 Calling blueprint server validate endpoint...")
+        result = await blueprint_build_manager.deploy_blueprint(
+            root_path=root_path,
+            tgz_file=filepath,
+            environment=environment,
+            action=DeploymentAction.VALIDATE,
+            env_config=env_cfg,
+            namespace=namespace
+        )
+        
+        logger.info(f"📥 Response received:")
+        logger.info(f"   Success: {result.success}")
+        logger.info(f"   Status Code: {result.status_code}")
+        logger.info(f"   Response Length: {len(result.response)} chars")
+        logger.info(f"   Response Preview: {result.response[:500] if result.response else 'None'}")
+        if result.error_message:
+            logger.error(f"   Error: {result.error_message}")
+        logger.info("="*80)
+        
+        return {
+            "status": "validated" if result.success else "failed",
+            "success": result.success,
+            "file": filename,
+            "filepath": filepath,
+            "environment": environment,
+            "status_code": result.status_code,
+            "response": result.response,
+            "error_message": result.error_message,
+            "details": {
+                "namespace": namespace,
+                "endpoint": env_cfg.base_url + env_cfg.validate_path.replace('{namespace}', namespace)
+            }
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Validation error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/blueprint/activate/{filepath:path}")
 async def activate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
