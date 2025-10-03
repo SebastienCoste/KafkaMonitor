@@ -732,6 +732,157 @@ class BackendRoutingTester:
             self.log_test("Blueprint Create File", False, f"Exception: {str(e)}")
             return False
     
+    def test_grpc_example_endpoints(self):
+        """Test Suite F: gRPC Example Endpoints - Load Default Buttons Fix"""
+        print("\n📡 TEST SUITE F - gRPC EXAMPLE ENDPOINTS")
+        print("-" * 50)
+        
+        # Test ingress_server methods
+        ingress_methods = [
+            "UpsertContent",
+            "DeleteContent", 
+            "BatchCreateAssets",
+            "BatchAddDownloadCounts",
+            "BatchAddRatings"
+        ]
+        
+        # Test asset_storage methods
+        asset_storage_methods = [
+            "BatchGetSignedUrls",
+            "BatchGetUnsignedUrls",
+            "BatchUpdateStatuses",
+            "BatchDeleteAssets",
+            "BatchFinalizeAssets"
+        ]
+        
+        print("\n🔧 Testing ingress_server example endpoints:")
+        for method in ingress_methods:
+            self.test_single_grpc_example("ingress_server", method)
+        
+        print("\n🔧 Testing asset_storage example endpoints:")
+        for method in asset_storage_methods:
+            self.test_single_grpc_example("asset_storage", method)
+        
+        return True
+    
+    def test_single_grpc_example(self, service_name: str, method_name: str):
+        """Test a single gRPC example endpoint"""
+        try:
+            start_time = time.time()
+            response = requests.get(
+                f"{self.base_url}/api/grpc/{service_name}/example/{method_name}", 
+                timeout=10
+            )
+            response_time = time.time() - start_time
+            
+            test_name = f"gRPC Example {service_name}.{method_name}"
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time (should be < 1 second as per requirement)
+                if response_time < 1.0:
+                    self.log_test(f"{test_name} Response Time", True, f"{response_time:.3f}s")
+                else:
+                    self.log_test(f"{test_name} Response Time", False, f"Too slow: {response_time:.3f}s")
+                
+                # Check response structure
+                if data.get("success") is True:
+                    self.log_test(f"{test_name} Success", True, "Returns success: true")
+                    
+                    # Check example object
+                    if "example" in data and isinstance(data["example"], dict):
+                        example = data["example"]
+                        
+                        if example:  # Non-empty example
+                            field_count = len(example)
+                            self.log_test(f"{test_name} Example Structure", True, 
+                                        f"Example has {field_count} fields: {list(example.keys())}")
+                            
+                            # Verify example contains appropriate field names and data types
+                            valid_fields = 0
+                            for field_name, field_value in example.items():
+                                if isinstance(field_name, str) and field_name:
+                                    valid_fields += 1
+                            
+                            if valid_fields > 0:
+                                self.log_test(f"{test_name} Field Validation", True, 
+                                            f"{valid_fields}/{field_count} fields have valid names")
+                            else:
+                                self.log_test(f"{test_name} Field Validation", False, 
+                                            "No valid field names found")
+                        else:
+                            self.log_test(f"{test_name} Example Structure", False, "Example is empty")
+                    else:
+                        self.log_test(f"{test_name} Example Object", False, 
+                                    f"Missing or invalid example object: {type(data.get('example'))}")
+                else:
+                    # Check for expected error cases
+                    error_msg = data.get("error", "")
+                    if "not initialized" in error_msg.lower():
+                        self.log_test(f"{test_name} Error Handling", True, 
+                                    "Proper error for uninitialized gRPC client")
+                    elif "could not generate" in error_msg.lower():
+                        self.log_test(f"{test_name} Error Handling", True, 
+                                    "Proper error for method not found")
+                    else:
+                        self.log_test(f"{test_name} Success", False, 
+                                    f"Returns success: false, error: {error_msg}")
+            elif response.status_code == 404:
+                self.log_test(f"{test_name}", False, 
+                            "HTTP 404 - Endpoint not found (Load Default buttons won't work)")
+            else:
+                self.log_test(f"{test_name}", False, f"HTTP {response.status_code}")
+                
+        except Exception as e:
+            self.log_test(f"gRPC Example {service_name}.{method_name}", False, f"Exception: {str(e)}")
+    
+    def test_grpc_error_handling(self):
+        """Test Suite F.2: gRPC Example Error Handling"""
+        print("\n🔧 Testing gRPC example error handling:")
+        
+        # Test non-existent method
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/grpc/ingress_server/example/NonExistentMethod", 
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") is False and "error" in data:
+                    self.log_test("gRPC Error - Non-existent Method", True, 
+                                f"Proper error handling: {data['error']}")
+                else:
+                    self.log_test("gRPC Error - Non-existent Method", False, 
+                                "Should return success: false with error message")
+            else:
+                self.log_test("gRPC Error - Non-existent Method", False, 
+                            f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("gRPC Error - Non-existent Method", False, f"Exception: {str(e)}")
+        
+        # Test non-existent service
+        try:
+            response = requests.get(
+                f"{self.base_url}/api/grpc/non_existent_service/example/SomeMethod", 
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") is False and "error" in data:
+                    self.log_test("gRPC Error - Non-existent Service", True, 
+                                f"Proper error handling: {data['error']}")
+                else:
+                    self.log_test("gRPC Error - Non-existent Service", False, 
+                                "Should return success: false with error message")
+            else:
+                self.log_test("gRPC Error - Non-existent Service", False, 
+                            f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("gRPC Error - Non-existent Service", False, f"Exception: {str(e)}")
+
     def print_summary(self):
         """Print test summary"""
         print("\n" + "=" * 80)
