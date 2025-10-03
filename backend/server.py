@@ -2147,6 +2147,53 @@ async def get_grpc_method_example(service_name: str, method_name: str):
             "error": str(e)
         }
 
+@api_router.post("/grpc/upload-proxy")
+async def upload_file_proxy(
+    url: str = Form(...),
+    file: UploadFile = File(...),
+    authorization: Optional[str] = Form(None),
+    x_pop_token: Optional[str] = Form(None)
+):
+    """Proxy file uploads to avoid CORS issues with S3 signed URLs"""
+    logger.info(f"📤 [FILE UPLOAD PROXY] Uploading to: {url}")
+    logger.info(f"📄 File: {file.filename} ({file.size} bytes)")
+    
+    try:
+        import httpx
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Prepare headers
+        headers = {
+            'Content-Type': file.content_type or 'application/octet-stream'
+        }
+        if authorization:
+            headers['Authorization'] = authorization
+        if x_pop_token:
+            headers['X-POP-TOKEN'] = x_pop_token
+        
+        # Upload to the target URL using httpx (supports async)
+        async with httpx.AsyncClient(timeout=300.0) as client:
+            response = await client.put(url, content=file_content, headers=headers)
+        
+        logger.info(f"✅ Upload successful: {response.status_code}")
+        
+        return {
+            "success": True,
+            "status_code": response.status_code,
+            "message": "File uploaded successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"❌ Upload proxy error: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @api_router.post("/grpc/{service_name}/{method_name}")
 async def call_grpc_method(service_name: str, method_name: str, request_data: Dict[str, Any]):
     """Call a gRPC service method dynamically"""
