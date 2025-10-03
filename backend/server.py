@@ -2177,32 +2177,32 @@ async def upload_file_proxy(
         # Prepare headers
         headers = {}
         
-        # For S3 signed URLs, we need to match the exact Content-Type used in signing
-        # If 'content-type' is in signed headers, we MUST send the exact same Content-Type
-        # The safest approach for S3 is to let it auto-detect or use what's in the file
+        # For S3 signed URLs, Content-Type MUST match what was used during signing
+        # If content-type is in signed headers, we need to send the exact same value
         if 'content-type' in signed_headers.lower():
-            # S3 signed URLs with content-type in signature are tricky
-            # Try to match the expected content-type from the file extension or mime type
+            # Infer content type from file
+            import mimetypes
             content_type = file.content_type
+            
+            # If browser didn't provide content type, guess from filename
             if not content_type or content_type == 'application/octet-stream':
-                # Try to infer from filename
-                import mimetypes
                 guessed_type, _ = mimetypes.guess_type(file.filename)
-                if guessed_type:
-                    content_type = guessed_type
-                else:
-                    content_type = 'image/png'  # Default for images
+                content_type = guessed_type or 'application/octet-stream'
             
             headers['Content-Type'] = content_type
-            logger.info(f"📝 Using Content-Type: {content_type}")
+            logger.info(f"📝 Using Content-Type: {content_type} (from {'browser' if file.content_type else 'filename'})")
+        else:
+            # If content-type is NOT in signed headers, don't send it
+            # This allows S3 to accept any content type
+            logger.info(f"📝 Content-Type not in signed headers - not sending Content-Type header")
         
-        # Add custom headers if provided
+        # Add custom headers if provided (not typically part of S3 signature)
         if authorization:
             headers['Authorization'] = authorization
         if x_pop_token:
             headers['X-POP-TOKEN'] = x_pop_token
         
-        logger.info(f"📨 Request headers: {list(headers.keys())}")
+        logger.info(f"📨 Request headers: {headers}")
         
         # Upload to the target URL using httpx (supports async)
         async with httpx.AsyncClient(timeout=300.0) as client:
