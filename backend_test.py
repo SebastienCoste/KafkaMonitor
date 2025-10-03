@@ -14,7 +14,7 @@ from datetime import datetime
 from typing import Dict, Any, List
 
 class BackendRoutingTester:
-    def __init__(self, base_url: str = "https://blueprint-studio-2.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "https://kafka-tracer-app.preview.emergentagent.com"):
         self.base_url = base_url
         self.ws_base_url = base_url.replace("https://", "wss://").replace("http://", "ws://")
         self.tests_run = 0

@@ -7,7 +7,7 @@ import requests
 import json
 import time
 
-base_url = "https://blueprint-studio-2.preview.emergentagent.com"
+base_url = "https://kafka-tracer-app.preview.emergentagent.com"
 
 def test_blueprint_config():
     print("🔧 Testing Blueprint Configuration...")
