@@ -311,21 +311,85 @@ export default function EnvironmentOverrides({
 
       case 'array': {
         const arrayValue = Array.isArray(currentValue) ? currentValue : [];
+        
+        // Helper to create default object for array item when items.type === 'object'
+        // This matches the logic from EntityEditor to ensure consistent behavior
+        const createDefaultFromFields = (fieldsDef = {}) => {
+          const obj = {};
+          Object.entries(fieldsDef).forEach(([k, def]) => {
+            if (def.type === 'object' && def.fields) {
+              obj[k] = createDefaultFromFields(def.fields);
+            } else if (def.type === 'array') {
+              obj[k] = Array.isArray(def.default) ? def.default : [];
+            } else if (def.type === 'boolean') {
+              obj[k] = typeof def.default === 'boolean' ? def.default : false;
+            } else if (def.type === 'integer' || def.type === 'number') {
+              obj[k] = typeof def.default === 'number' ? def.default : 0;
+            } else if (def.type === 'map') {
+              obj[k] = {};
+            } else {
+              obj[k] = def.default ?? '';
+            }
+          });
+          return obj;
+        };
+
+        const renderArrayControls = () => (
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">{title}</Label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                let newItem;
+                if (fieldDef.items?.type === 'string') {
+                  newItem = '';
+                } else if (fieldDef.items?.type === 'object' && fieldDef.items?.fields) {
+                  newItem = createDefaultFromFields(fieldDef.items.fields);
+                } else {
+                  newItem = {};
+                }
+                const newArray = [...arrayValue, newItem];
+                updateEnvironmentConfig(env, fullPath, newArray);
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        );
+
+        // Special rendering: array of strings with options → checkbox list
+        // This matches EntityEditor behavior for fields like "apis" in host configurations
+        if (fieldDef.items?.type === 'string' && Array.isArray(fieldDef.options) && fieldDef.options.length > 0) {
+          return (
+            <div key={fullPath} className="space-y-2">
+              {renderArrayControls()}
+              {description && <p className="text-xs text-gray-600">{description}</p>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {fieldDef.options.map((opt) => (
+                  <label key={opt} className="flex items-center space-x-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={arrayValue.includes(opt)}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        let next = [...arrayValue];
+                        if (checked && !next.includes(opt)) next.push(opt);
+                        if (!checked) next = next.filter((v) => v !== opt);
+                        updateEnvironmentConfig(env, fullPath, next);
+                      }}
+                    />
+                    <span>{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          );
+        }
+
         return (
           <div key={fullPath} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">{title}</Label>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  const newArray = [...arrayValue, fieldDef.items?.type === 'string' ? '' : {}];
-                  updateEnvironmentConfig(env, fullPath, newArray);
-                }}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            {renderArrayControls()}
             {description && <p className="text-xs text-gray-600">{description}</p>}
             <div className="space-y-2">
               {arrayValue.map((item, index) => (
