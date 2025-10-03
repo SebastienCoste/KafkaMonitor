@@ -1117,27 +1117,19 @@ async def update_monitored_topics(topics: List[str]):
 async def get_topic_graph():
     try:
         if graph_builder:
-            topics = graph_builder.topic_graph.get_all_topics()
-            edges = graph_builder.topic_graph.edges
-            return {
-                "nodes": [{"id": t, "label": t} for t in topics],
-                "edges": [{"source": e.source, "target": e.destination} for e in edges]
-            }
+            # Get full graph data with statistics and colors
+            graph_data = graph_builder.get_full_graph()
+            return graph_data
+        
+        # Fallback with basic data
         return {
-            "nodes": [
-                {"id": "user-events", "label": "user-events"},
-                {"id": "analytics", "label": "analytics"},
-                {"id": "notifications", "label": "notifications"},
-                {"id": "processed-events", "label": "processed-events"}
-            ],
-            "edges": [
-                {"source": "user-events", "target": "analytics"},
-                {"source": "user-events", "target": "notifications"},
-                {"source": "analytics", "target": "processed-events"}
-            ]
+            "nodes": [],
+            "edges": []
         }
     except Exception as e:
         logger.error(f"Failed to get topic graph: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/graph/disconnected")
