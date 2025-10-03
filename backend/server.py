@@ -2164,7 +2164,7 @@ async def upload_file_proxy(
         # Read file content
         file_content = await file.read()
         
-        # Prepare headers
+        # Prepare headers - match what the signed URL expects
         headers = {
             'Content-Type': file.content_type or 'application/octet-stream'
         }
@@ -2177,13 +2177,23 @@ async def upload_file_proxy(
         async with httpx.AsyncClient(timeout=300.0) as client:
             response = await client.put(url, content=file_content, headers=headers)
         
-        logger.info(f"✅ Upload successful: {response.status_code}")
-        
-        return {
-            "success": True,
-            "status_code": response.status_code,
-            "message": "File uploaded successfully"
-        }
+        # Check if upload was successful (2xx status codes)
+        if 200 <= response.status_code < 300:
+            logger.info(f"✅ Upload successful: {response.status_code}")
+            return {
+                "success": True,
+                "status_code": response.status_code,
+                "message": "File uploaded successfully"
+            }
+        else:
+            # Upload failed - return error details
+            error_text = response.text[:500]  # First 500 chars of error response
+            logger.error(f"❌ Upload failed with status {response.status_code}: {error_text}")
+            return {
+                "success": False,
+                "status_code": response.status_code,
+                "error": f"S3 returned {response.status_code}: {error_text}"
+            }
         
     except Exception as e:
         logger.error(f"❌ Upload proxy error: {e}")
