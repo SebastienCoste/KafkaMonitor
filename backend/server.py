@@ -933,6 +933,38 @@ async def validate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
         if not root_path:
             raise HTTPException(status_code=400, detail="Blueprint root path not set")
         
+        # Resolve the full path to the .tgz file
+        # If it's just a filename, look for it in the out/ directory
+        if not filepath.startswith('/'):
+            # Try common output directories
+            output_dirs = ['out', 'output', 'build', 'dist']
+            full_tgz_path = None
+            
+            for output_dir in output_dirs:
+                potential_path = os.path.join(root_path, output_dir, filepath)
+                if os.path.exists(potential_path):
+                    full_tgz_path = potential_path
+                    logger.info(f"📁 Found blueprint file at: {full_tgz_path}")
+                    break
+            
+            if not full_tgz_path:
+                # Try root directory as fallback
+                potential_path = os.path.join(root_path, filepath)
+                if os.path.exists(potential_path):
+                    full_tgz_path = potential_path
+                    logger.info(f"📁 Found blueprint file at: {full_tgz_path}")
+                else:
+                    logger.error(f"❌ Blueprint file not found in any output directory: {filepath}")
+                    logger.error(f"   Searched in: {', '.join([os.path.join(root_path, d) for d in output_dirs])}")
+                    raise HTTPException(status_code=404, detail=f"Blueprint file not found: {filepath}")
+        else:
+            full_tgz_path = filepath
+            if not os.path.exists(full_tgz_path):
+                logger.error(f"❌ Blueprint file not found at: {full_tgz_path}")
+                raise HTTPException(status_code=404, detail=f"Blueprint file not found: {filepath}")
+        
+        logger.info(f"✅ Using blueprint file: {full_tgz_path}")
+        
         # Load environment configuration from YAML
         import yaml
         from pathlib import Path
