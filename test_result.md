@@ -4,6 +4,18 @@
 # Status: FIXED - TESTING
 
 backend:
+  - task: "Trace Viewer Statistics Endpoint - Real-time Data Display Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported BUG1: Topic Statistics boxes show default values instead of live message counts, rates, and slowest traces. BUG2: Graph Statistics (median age, P95 age, total messages) show default values. Root cause identified: /api/statistics endpoint was returning hardcoded mock data instead of calling graph_builder.get_statistics(). Fixed by updating endpoint to return real-time statistics from graph_builder including topics.details dict with all per-topic metrics (message_count, trace_count, messages_per_minute_total, messages_per_minute_rolling, message_age_p10/p50/p95_ms, monitored status, slowest_traces). Fallback structure also updated to match expected frontend format."
+  
   - task: "Redis Files API Endpoint - 404 Investigation & Config Location Fix"
     implemented: true
     working: true
