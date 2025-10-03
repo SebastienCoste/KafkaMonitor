@@ -150,6 +150,33 @@ class BlueprintConfigurationParser:
                                 parse_errors.extend(result.errors)
                                 parse_warnings.extend(result.warnings)
                 
+                # Merge duplicate entities with same entityType and name
+                # This handles cases where same entity has separate entries for different environments
+                merged_configs = {}
+                for entity in config_schema.configurations:
+                    key = (entity.entityType, entity.name)
+                    if key in merged_configs:
+                        # Merge environmentOverrides
+                        existing = merged_configs[key]
+                        existing.environmentOverrides.update(entity.environmentOverrides)
+                        # Merge baseConfig (prefer non-empty)
+                        if entity.baseConfig and not existing.baseConfig:
+                            existing.baseConfig = entity.baseConfig
+                        elif entity.baseConfig and existing.baseConfig:
+                            # Merge nested dicts
+                            existing.baseConfig.update(entity.baseConfig)
+                        # Merge inherit lists
+                        if entity.inherit:
+                            if existing.inherit:
+                                existing.inherit = list(set(existing.inherit + entity.inherit))
+                            else:
+                                existing.inherit = entity.inherit
+                    else:
+                        merged_configs[key] = entity
+                
+                # Replace configurations with merged ones
+                config_schema.configurations = list(merged_configs.values())
+                
                 ui_config.schemas.append(config_schema)
             
             # Parse search experience configurations
