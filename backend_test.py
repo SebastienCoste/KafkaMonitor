@@ -673,6 +673,13 @@ class BackendRoutingTester:
         print("\n🔟 Testing Statistics Endpoint Structure")
         self.test_statistics_endpoint()
         
+        # Test Suite E - Graph Component Statistics Fix
+        print("\n📈 TEST SUITE E - GRAPH COMPONENT STATISTICS FIX")
+        print("-" * 50)
+        
+        print("\n1️⃣1️⃣ Testing Graph Disconnected Endpoint Real-time Data")
+        self.test_graph_disconnected_endpoint()
+        
         # Print final summary
         self.print_summary()
 
