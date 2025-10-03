@@ -1148,7 +1148,7 @@ async def activate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
         logger.info(f"🚀 Calling blueprint server activate endpoint...")
         result = await blueprint_build_manager.deploy_blueprint(
             root_path=root_path,
-            tgz_file=filepath,
+            tgz_file=full_tgz_path,
             environment=environment,
             action=DeploymentAction.ACTIVATE,
             env_config=env_cfg,
