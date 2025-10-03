@@ -750,6 +750,7 @@ class BackendRoutingTester:
         suite_b_results = []
         suite_c_results = []
         suite_d_results = []
+        suite_e_results = []
         other_results = []
         
         for result in self.test_results:
@@ -760,8 +761,10 @@ class BackendRoutingTester:
                 suite_b_results.append(result)
             elif "websocket" in name:
                 suite_c_results.append(result)
-            elif "statistics" in name:
+            elif "statistics" in name and "graph" not in name:
                 suite_d_results.append(result)
+            elif any(keyword in name for keyword in ["graph", "disconnected", "component"]):
+                suite_e_results.append(result)
             else:
                 other_results.append(result)
         
