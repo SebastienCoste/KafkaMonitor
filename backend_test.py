@@ -680,6 +680,16 @@ class BackendRoutingTester:
         print("\n1️⃣1️⃣ Testing Graph Disconnected Endpoint Real-time Data")
         self.test_graph_disconnected_endpoint()
         
+        # Test Suite F - gRPC Example Endpoints
+        print("\n📡 TEST SUITE F - gRPC EXAMPLE ENDPOINTS (Load Default Buttons Fix)")
+        print("-" * 50)
+        
+        print("\n1️⃣2️⃣ Testing gRPC Example Endpoints")
+        self.test_grpc_example_endpoints()
+        
+        print("\n1️⃣3️⃣ Testing gRPC Error Handling")
+        self.test_grpc_error_handling()
+        
         # Print final summary
         self.print_summary()
 
