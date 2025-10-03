@@ -166,18 +166,18 @@ function App() {
   // Auto-refresh traces, topics, and statistics every 2 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      if (currentView === 'traces') {
+      if (activeTab === 'traces') {
         loadTraces();
         loadStatistics();
       }
-      if (currentView === 'topics') {
+      if (activeTab === 'topics') {
         loadTopics();
         loadTopicGraph();
       }
     }, 2000); // Refresh every 2 seconds
 
     return () => clearInterval(interval);
-  }, [currentView]);
+  }, [activeTab]);
 
   const loadInitialData = async () => {
     try {
