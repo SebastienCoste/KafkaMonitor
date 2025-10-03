@@ -1288,22 +1288,18 @@ async def get_trace_detail(trace_id: str):
         trace = graph_builder.traces[trace_id]
         
         # Build detailed trace response
-        messages = []
-        for msg in trace.messages:
-            messages.append({
-                "topic": msg.get("topic", ""),
-                "timestamp": msg.get("timestamp", ""),
-                "offset": msg.get("offset", 0),
-                "partition": msg.get("partition", 0),
-                "headers": msg.get("headers", {}),
-                "data": msg.get("data", {})
-            })
+        messages = [msg.to_dict() for msg in trace.messages]
+        
+        # Calculate duration
+        duration_ms = 0
+        if trace.start_time and trace.end_time:
+            duration_ms = int((trace.end_time - trace.start_time).total_seconds() * 1000)
         
         return {
             "trace_id": trace_id,
             "start_time": trace.start_time.isoformat() if trace.start_time else None,
             "end_time": trace.end_time.isoformat() if trace.end_time else None,
-            "duration_ms": trace.duration_ms,
+            "duration_ms": duration_ms,
             "message_count": len(trace.messages),
             "topics": list(trace.topics),
             "messages": messages
