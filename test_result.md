@@ -19,6 +19,18 @@ backend:
         agent: "testing"
         comment: "✅ STATISTICS ENDPOINT FIX VERIFIED: Comprehensive testing completed with 100% success rate (10/10 tests passed). ✅ RESPONSE TIME: Endpoint responds in 0.077s (well under 1 second requirement). ✅ DATA STRUCTURE: Returns correct nested JSON structure with all required fields - traces (total, max_capacity, utilization), topics (total, monitored, with_messages, details), messages (total, by_topic), time_range (earliest, latest). ✅ TOPICS DETAILS: Contains per-topic statistics dict with all expected fields including message_count, trace_count, monitored status, messages_per_minute_total/rolling (as decimal rates, not raw counts), message_age_p10/p50/p95_ms, slowest_traces array. ✅ REAL-TIME DATA: Confirmed endpoint calls graph_builder.get_statistics() instead of returning hardcoded mock data. ✅ FRONTEND COMPATIBILITY: Structure matches expected format for App.js line 892 access pattern statistics?.topics?.details?.[topic]. Currently shows 4 topics (user-events, notifications, analytics, processed-events) with zero values due to no Kafka data, but structure is correct for when real data flows in. BUG1 and BUG2 are completely resolved."
   
+  - task: "Graph Component Statistics - Real-time Data Display Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported additional bug: In 'Trace Viewer / Graph / Component 1', statistics showing mock values (2m Median Age, 5m P95 Age, 2400 Total Messages, 95 Active Traces). Root cause: /api/graph/disconnected endpoint was returning hardcoded mock statistics instead of calling graph_builder.get_disconnected_graphs(). Fixed by updating endpoint to call graph_builder.get_disconnected_graphs() which returns real component statistics calculated by _calculate_component_statistics() including total_messages, active_traces, median_trace_age, p95_trace_age, health_score. Removed all mock data calculations (len(edges)*100, len(nodes)*5, hardcoded 120s and 300s)."
+  
   - task: "Redis Files API Endpoint - 404 Investigation & Config Location Fix"
     implemented: true
     working: true
