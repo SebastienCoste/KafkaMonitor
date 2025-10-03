@@ -2157,21 +2157,52 @@ async def upload_file_proxy(
     """Proxy file uploads to avoid CORS issues with S3 signed URLs"""
     logger.info(f"📤 [FILE UPLOAD PROXY] Uploading to: {url}")
     logger.info(f"📄 File: {file.filename} ({file.size} bytes)")
+    logger.info(f"📄 Content-Type from file: {file.content_type}")
     
     try:
         import httpx
+        from urllib.parse import urlparse, parse_qs
         
         # Read file content
         file_content = await file.read()
         
-        # Prepare headers - match what the signed URL expects
-        headers = {
-            'Content-Type': file.content_type or 'application/octet-stream'
-        }
+        # Parse the URL to check for signed headers
+        parsed = urlparse(url)
+        query_params = parse_qs(parsed.query)
+        
+        # Check if Content-Type was included in the signature
+        signed_headers = query_params.get('X-Amz-SignedHeaders', [''])[0]
+        logger.info(f"🔍 Signed headers: {signed_headers}")
+        
+        # Prepare headers
+        headers = {}
+        
+        # For S3 signed URLs, we need to match the exact Content-Type used in signing
+        # If 'content-type' is in signed headers, we MUST send the exact same Content-Type
+        # The safest approach for S3 is to let it auto-detect or use what's in the file
+        if 'content-type' in signed_headers.lower():
+            # S3 signed URLs with content-type in signature are tricky
+            # Try to match the expected content-type from the file extension or mime type
+            content_type = file.content_type
+            if not content_type or content_type == 'application/octet-stream':
+                # Try to infer from filename
+                import mimetypes
+                guessed_type, _ = mimetypes.guess_type(file.filename)
+                if guessed_type:
+                    content_type = guessed_type
+                else:
+                    content_type = 'image/png'  # Default for images
+            
+            headers['Content-Type'] = content_type
+            logger.info(f"📝 Using Content-Type: {content_type}")
+        
+        # Add custom headers if provided
         if authorization:
             headers['Authorization'] = authorization
         if x_pop_token:
             headers['X-POP-TOKEN'] = x_pop_token
+        
+        logger.info(f"📨 Request headers: {list(headers.keys())}")
         
         # Upload to the target URL using httpx (supports async)
         async with httpx.AsyncClient(timeout=300.0) as client:
