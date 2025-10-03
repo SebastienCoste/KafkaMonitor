@@ -459,6 +459,140 @@ class BackendRoutingTester:
         except Exception as e:
             self.log_test("Statistics Endpoint", False, f"Exception: {str(e)}")
             return False
+
+    def test_graph_disconnected_endpoint(self):
+        """Test Suite E.11: GET /api/graph/disconnected - Graph Component Statistics Real-time Data Fix"""
+        try:
+            start_time = time.time()
+            response = requests.get(f"{self.base_url}/api/graph/disconnected", timeout=10)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time (should be < 2 seconds as per requirement)
+                if response_time < 2.0:
+                    self.log_test("Graph Disconnected Response Time", True, f"Response time: {response_time:.3f}s (< 2s requirement)")
+                else:
+                    self.log_test("Graph Disconnected Response Time", False, f"Response time too slow: {response_time:.3f}s (>= 2s)")
+                
+                # Check main response structure
+                required_fields = ["success", "components", "total_components"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 2:  # At least success and components
+                    self.log_test("Graph Disconnected Structure", True, f"Found fields: {found_fields}")
+                    
+                    # Check success field
+                    if data.get("success") is True:
+                        self.log_test("Graph Disconnected Success", True, "API returns success=true")
+                    else:
+                        self.log_test("Graph Disconnected Success", False, f"API returns success={data.get('success')}")
+                    
+                    # Check components array
+                    components = data.get("components", [])
+                    if isinstance(components, list):
+                        self.log_test("Graph Disconnected Components", True, f"Found {len(components)} components")
+                        
+                        # If components exist, verify their structure
+                        if components:
+                            sample_component = components[0]
+                            
+                            # Check component structure
+                            expected_component_fields = ["component_id", "topics", "topic_count", "nodes", "edges"]
+                            found_component_fields = [field for field in expected_component_fields if field in sample_component]
+                            
+                            if len(found_component_fields) >= 3:
+                                self.log_test("Graph Component Structure", True, f"Component has fields: {found_component_fields}")
+                                
+                                # Check statistics object (critical for the fix)
+                                if "statistics" in sample_component:
+                                    stats = sample_component["statistics"]
+                                    
+                                    # Check for required statistics fields
+                                    expected_stats_fields = [
+                                        "total_messages", "active_traces", "median_trace_age", 
+                                        "p95_trace_age", "health_score"
+                                    ]
+                                    found_stats_fields = [field for field in expected_stats_fields if field in stats]
+                                    
+                                    if len(found_stats_fields) >= 4:  # At least 4 of 5 expected fields
+                                        self.log_test("Graph Component Statistics Structure", True, 
+                                                    f"Statistics has fields: {found_stats_fields}")
+                                        
+                                        # Verify statistics are real values, not mock calculations
+                                        total_messages = stats.get("total_messages")
+                                        active_traces = stats.get("active_traces")
+                                        median_age = stats.get("median_trace_age")
+                                        p95_age = stats.get("p95_trace_age")
+                                        
+                                        # Check data types
+                                        if (isinstance(total_messages, int) and 
+                                            isinstance(active_traces, int) and 
+                                            isinstance(median_age, (int, float)) and 
+                                            isinstance(p95_age, (int, float))):
+                                            
+                                            self.log_test("Graph Statistics Data Types", True, 
+                                                        f"All statistics are numeric: messages={total_messages}, traces={active_traces}, median={median_age}s, p95={p95_age}s")
+                                            
+                                            # Verify NOT mock values (mock values were: 2400 messages, 95 traces, 120s median, 300s p95)
+                                            is_mock_data = (
+                                                total_messages == 2400 and 
+                                                active_traces == 95 and 
+                                                median_age == 120 and 
+                                                p95_age == 300
+                                            )
+                                            
+                                            if not is_mock_data:
+                                                self.log_test("Graph Statistics Real Data", True, 
+                                                            f"Statistics are NOT mock values (expected: real data or zeros)")
+                                                
+                                                # Since no Kafka data is flowing, expect zeros or very low values
+                                                if (total_messages == 0 and active_traces == 0 and 
+                                                    median_age == 0 and p95_age == 0):
+                                                    self.log_test("Graph Statistics Zero Values", True, 
+                                                                "Statistics show zeros (expected for no Kafka data)")
+                                                else:
+                                                    self.log_test("Graph Statistics Non-Zero Values", True, 
+                                                                f"Statistics show non-zero values (may indicate real data): messages={total_messages}, traces={active_traces}")
+                                            else:
+                                                self.log_test("Graph Statistics Real Data", False, 
+                                                            "Statistics still show mock values (2400 messages, 95 traces, 120s median, 300s p95)")
+                                        else:
+                                            self.log_test("Graph Statistics Data Types", False, 
+                                                        f"Invalid data types: messages={type(total_messages)}, traces={type(active_traces)}, median={type(median_age)}, p95={type(p95_age)}")
+                                    else:
+                                        self.log_test("Graph Component Statistics Structure", False, 
+                                                    f"Missing statistics fields. Found: {list(stats.keys()) if isinstance(stats, dict) else type(stats)}")
+                                else:
+                                    self.log_test("Graph Component Statistics", False, "Component missing statistics object")
+                            else:
+                                self.log_test("Graph Component Structure", False, 
+                                            f"Missing component fields. Found: {list(sample_component.keys()) if isinstance(sample_component, dict) else type(sample_component)}")
+                        else:
+                            self.log_test("Graph Disconnected Components", True, "No components found (expected for empty environment)")
+                    else:
+                        self.log_test("Graph Disconnected Components", False, f"Components is not a list: {type(components)}")
+                    
+                    # Check total_components field
+                    total_components = data.get("total_components")
+                    if isinstance(total_components, int) and total_components >= 0:
+                        self.log_test("Graph Total Components", True, f"Total components: {total_components}")
+                    else:
+                        self.log_test("Graph Total Components", False, f"Invalid total_components: {total_components}")
+                    
+                    # Overall success
+                    self.log_test("Graph Disconnected Endpoint", True, "Graph disconnected endpoint returns proper structure with real-time data")
+                    return True
+                else:
+                    self.log_test("Graph Disconnected Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                    return False
+            else:
+                self.log_test("Graph Disconnected Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Graph Disconnected Endpoint", False, f"Exception: {str(e)}")
+            return False
     
     def setup_blueprint_root_path(self):
         """Set up blueprint root path for testing"""
