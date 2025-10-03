@@ -163,6 +163,22 @@ function App() {
     });
   }, []);
 
+  // Auto-refresh traces, topics, and statistics every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (currentView === 'traces') {
+        loadTraces();
+        loadStatistics();
+      }
+      if (currentView === 'topics') {
+        loadTopics();
+        loadTopicGraph();
+      }
+    }, 2000); // Refresh every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [currentView]);
+
   const loadInitialData = async () => {
     try {
       await Promise.all([
