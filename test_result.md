@@ -1,5 +1,5 @@
 
-# CURRENT DEBUGGING SESSION - Blueprint Environment Overrides Array Handling Fix
+# CURRENT DEBUGGING SESSION - Blueprint Environment Overrides Loading and Map Keys Fix
 # Date: 2025-01-XX
 # Status: FIXED - READY FOR USER TESTING
 
