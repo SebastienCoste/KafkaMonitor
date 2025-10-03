@@ -482,7 +482,9 @@ function GrpcIntegration() {
             toast.success(`File uploaded successfully via proxy!`);
             setSelectedUploadFile(null);
           } else {
-            throw new Error(proxyResponse.data.error || 'Proxy upload failed');
+            const errorMsg = proxyResponse.data.error || 'Proxy upload failed';
+            console.error('❌ Proxy upload failed:', errorMsg);
+            throw new Error(errorMsg);
           }
         } else {
           // Re-throw if not a CORS error
