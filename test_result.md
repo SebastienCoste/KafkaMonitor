@@ -34,6 +34,18 @@ backend:
         agent: "testing"
         comment: "✅ GRAPH COMPONENT STATISTICS FIX VERIFIED: Comprehensive testing completed with 100% success rate (11/11 tests passed). ✅ RESPONSE TIME: Endpoint responds in 0.052s (well under 2 second requirement). ✅ DATA STRUCTURE: Returns correct JSON structure with success=true, components array, and total_components field. ✅ COMPONENT STRUCTURE: Each component contains required fields (component_id, topics, topic_count, nodes, edges) and critical statistics object. ✅ STATISTICS OBJECT: Contains all required fields (total_messages, active_traces, median_trace_age, p95_trace_age, health_score) with proper numeric data types. ✅ REAL-TIME DATA CONFIRMED: Statistics are NOT mock values (no longer showing 2400 messages, 95 traces, 120s median, 300s p95). ✅ ZERO VALUES EXPECTED: Since no Kafka data is flowing, statistics correctly show zeros (0 messages, 0 traces, 0s age) instead of hardcoded mock calculations. ✅ ENDPOINT CALLS GRAPH_BUILDER: Confirmed endpoint now calls graph_builder.get_disconnected_graphs() instead of returning mock data. The fix completely resolves the user-reported issue where Graph Component statistics were showing hardcoded mock values instead of real-time data."
   
+  - task: "gRPC Load Default Buttons - Missing Example Endpoint Fix"
+    implemented: true
+    working: true
+    file: "backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported that 'Load default' buttons in gRPC Integration section don't work for any APIs. Backend logs show 404 errors for GET /api/grpc/{service_name}/example/{method_name} endpoints (UpsertContent, DeleteContent, BatchCreateAssets, BatchAddDownloadCounts, BatchAddRatings, etc). Root cause: The example endpoint was completely missing from backend. Frontend at GrpcIntegration.js line 150 and 167 calls this endpoint to load default request examples. Fixed by adding new GET endpoint that calls grpc_client.get_method_example() to generate example request data with proper field values and structure using protobuf message descriptors."
+  
   - task: "Redis Files API Endpoint - 404 Investigation & Config Location Fix"
     implemented: true
     working: true
