@@ -429,15 +429,16 @@ function GrpcIntegration() {
 
     setUploadingFile(true);
     try {
-      const formData = new FormData();
-      formData.append('file', selectedUploadFile);
-
       console.log('📤 Uploading file to:', uploadUrl);
       console.log('📄 File:', selectedUploadFile.name, `(${(selectedUploadFile.size / 1024).toFixed(2)} KB)`);
 
-      const response = await axios.post(uploadUrl, formData, {
+      // Determine the content type from file
+      const contentType = selectedUploadFile.type || 'application/octet-stream';
+      
+      // For S3 signed URLs, use PUT with the file as body (not FormData)
+      const response = await axios.put(uploadUrl, selectedUploadFile, {
         headers: {
-          'Content-Type': 'multipart/form-data',
+          'Content-Type': contentType,
           ...(credentials.authorization && { 'Authorization': credentials.authorization }),
           ...(credentials.x_pop_token && { 'X-POP-TOKEN': credentials.x_pop_token })
         },
@@ -447,7 +448,7 @@ function GrpcIntegration() {
         }
       });
 
-      console.log('✅ File uploaded successfully:', response.data);
+      console.log('✅ File uploaded successfully:', response.status);
       toast.success(`File uploaded successfully!`);
       
       // Reset file input
@@ -456,7 +457,12 @@ function GrpcIntegration() {
     } catch (error) {
       console.error('❌ File upload error:', error);
       if (error.response) {
-        toast.error(`Upload failed: ${error.response.data?.message || error.response.statusText}`);
+        const errorMsg = error.response.status === 403 
+          ? 'Access denied - URL may be expired or invalid' 
+          : error.response.data?.message || error.response.statusText;
+        toast.error(`Upload failed: ${errorMsg}`);
+      } else if (error.message.includes('CORS') || error.message.includes('Network Error')) {
+        toast.error('Upload failed: CORS or network error - URL may not support browser uploads');
       } else {
         toast.error(`Upload failed: ${error.message}`);
       }
