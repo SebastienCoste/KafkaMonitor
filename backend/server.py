@@ -1062,44 +1062,35 @@ async def validate_blueprint_configuration():
 @api_router.get("/topics")
 async def get_topics():
     try:
-        # Try to get topics from configuration file
+        # Get topics with statistics from graph_builder
+        if graph_builder:
+            stats = graph_builder.get_statistics()
+            topic_details = stats.get('topics', [])
+            
+            # Extract topic names and those with messages
+            all_topics = [t['name'] for t in topic_details]
+            monitored = [t['name'] for t in topic_details if t.get('message_count', 0) > 0]
+            
+            return {
+                "topics": all_topics,
+                "monitored": monitored,
+                "topic_details": topic_details  # Include full statistics
+            }
+        
+        # Fallback: Try to get from configuration file
         topics_yaml = ROOT_DIR / "config" / "topics.yaml"
-        settings_yaml = ROOT_DIR / "config" / "settings.yaml"
-        
-        # Check if we should activate all topics
-        activate_all = False
-        if settings_yaml.exists():
-            try:
-                with open(settings_yaml, 'r') as f:
-                    settings = yaml.safe_load(f)
-                    activate_all = settings.get('topic_monitoring', {}).get('activate_all_on_startup', False)
-            except Exception as e:
-                logger.warning(f"Could not read activate_all_on_startup from settings.yaml: {e}")
-        
         if topics_yaml.exists():
             with open(topics_yaml, 'r') as f:
                 topics_cfg = yaml.safe_load(f)
                 configured_topics = list(topics_cfg.get('topics', {}).keys())
-                
-                # If activate_all_on_startup is true, monitor all topics
-                if activate_all:
-                    monitored = configured_topics
-                    logger.info(f"Activating all {len(configured_topics)} topics on startup")
-                else:
-                    monitored = topics_cfg.get('default_monitored_topics', configured_topics)
-                
-                return {"topics": configured_topics, "monitored": monitored}
-        
-        # Fallback to graph builder
-        if graph_builder:
-            topics = graph_builder.topic_graph.get_all_topics()
-            if topics:
-                return {"topics": list(topics), "monitored": list(topics)}
+                return {"topics": configured_topics, "monitored": configured_topics}
         
         # Final fallback
-        return {"topics": ["user-events", "analytics", "notifications", "processed-events"], "monitored": ["user-events", "analytics", "notifications", "processed-events"]}
+        return {"topics": [], "monitored": []}
     except Exception as e:
         logger.error(f"Failed to get topics: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/topics/monitor")
