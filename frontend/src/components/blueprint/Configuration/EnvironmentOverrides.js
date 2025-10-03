@@ -58,11 +58,12 @@ export default function EnvironmentOverrides({
     const keys = path.split('.');
     let current = obj;
 
-    // Detect if we are inside a map field (next segment after the map is map key – can contain dots)
+    // Detect if we are inside a map field
     const entityTypeFields = fields;
     let mapFieldFound = false;
     let mapFieldPath = '';
     let mapKey = '';
+    let mapFieldDef = null;
 
     for (let i = 0; i < keys.length - 1; i++) {
       const currentPath = keys.slice(0, i + 1).join('.');
@@ -70,9 +71,36 @@ export default function EnvironmentOverrides({
       if (fieldDef?.type === 'map') {
         mapFieldFound = true;
         mapFieldPath = currentPath;
-        if (i + 1 < keys.length) {
-          mapKey = keys[i + 1];
+        mapFieldDef = fieldDef;
+        
+        // The map key could contain dots, so we need to find where it ends
+        // It ends when we hit a field that exists in the map's valueType
+        const startIdx = i + 1;
+        let endIdx = startIdx;
+        
+        // If the map has valueType with fields, find where the map key ends
+        if (mapFieldDef.valueType?.fields) {
+          const valueFields = Object.keys(mapFieldDef.valueType.fields);
+          // Try progressively longer map keys until we find a matching field
+          for (let j = keys.length - 1; j >= startIdx; j--) {
+            const potentialField = keys[j];
+            if (valueFields.includes(potentialField)) {
+              // Found a field of the value type, so map key is everything before this
+              endIdx = j - 1;
+              break;
+            }
+          }
+          // If we didn't find any matching field, the map key is everything remaining
+          if (endIdx === startIdx) {
+            endIdx = keys.length - 2; // -2 because we need at least one key for the field
+          }
+        } else {
+          // No valueType fields defined, map key is everything remaining except last
+          endIdx = keys.length - 2;
         }
+        
+        // Join all keys that are part of the map key
+        mapKey = keys.slice(startIdx, endIdx + 1).join('.');
         break;
       }
     }
@@ -90,7 +118,8 @@ export default function EnvironmentOverrides({
 
       // Remaining keys after the map key
       const mapFieldPathLength = mapFieldPath.split('.').length;
-      const remainingKeys = keys.slice(mapFieldPathLength + 1);
+      const mapKeyLength = mapKey.split('.').length;
+      const remainingKeys = keys.slice(mapFieldPathLength + mapKeyLength);
 
       if (remainingKeys.length > 0) {
         if (!(mapKey in current) || typeof current[mapKey] !== 'object') {
