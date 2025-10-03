@@ -25,11 +25,14 @@ backend:
     file: "backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "User reported additional bug: In 'Trace Viewer / Graph / Component 1', statistics showing mock values (2m Median Age, 5m P95 Age, 2400 Total Messages, 95 Active Traces). Root cause: /api/graph/disconnected endpoint was returning hardcoded mock statistics instead of calling graph_builder.get_disconnected_graphs(). Fixed by updating endpoint to call graph_builder.get_disconnected_graphs() which returns real component statistics calculated by _calculate_component_statistics() including total_messages, active_traces, median_trace_age, p95_trace_age, health_score. Removed all mock data calculations (len(edges)*100, len(nodes)*5, hardcoded 120s and 300s)."
+      - working: true
+        agent: "testing"
+        comment: "✅ GRAPH COMPONENT STATISTICS FIX VERIFIED: Comprehensive testing completed with 100% success rate (11/11 tests passed). ✅ RESPONSE TIME: Endpoint responds in 0.052s (well under 2 second requirement). ✅ DATA STRUCTURE: Returns correct JSON structure with success=true, components array, and total_components field. ✅ COMPONENT STRUCTURE: Each component contains required fields (component_id, topics, topic_count, nodes, edges) and critical statistics object. ✅ STATISTICS OBJECT: Contains all required fields (total_messages, active_traces, median_trace_age, p95_trace_age, health_score) with proper numeric data types. ✅ REAL-TIME DATA CONFIRMED: Statistics are NOT mock values (no longer showing 2400 messages, 95 traces, 120s median, 300s p95). ✅ ZERO VALUES EXPECTED: Since no Kafka data is flowing, statistics correctly show zeros (0 messages, 0 traces, 0s age) instead of hardcoded mock calculations. ✅ ENDPOINT CALLS GRAPH_BUILDER: Confirmed endpoint now calls graph_builder.get_disconnected_graphs() instead of returning mock data. The fix completely resolves the user-reported issue where Graph Component statistics were showing hardcoded mock values instead of real-time data."
   
   - task: "Redis Files API Endpoint - 404 Investigation & Config Location Fix"
     implemented: true
