@@ -241,36 +241,47 @@ class BlueprintConfigurationParser:
                         ))
             
             # Parse environment-specific configurations
+            # Collect all environments for each entity type first, then create single ParsedConfiguration
             environments_config = config_data.get('environments', {})
             if environments_config:
+                # Group environment configs by entity type
+                storages_envs = {}
+                inference_envs = {}
+                access_envs = {}
+                
                 for env, env_config in environments_config.items():
                     if env.upper() in self.environments:
-                        # Extract storages
                         if 'storages' in env_config:
-                            configurations.append(ParsedConfiguration(
-                                entityType='storages',
-                                name='global_storages',
-                                config={},
-                                environments={env.upper(): env_config['storages']}
-                            ))
-                        
-                        # Extract inferenceServiceConfigs
+                            storages_envs[env.upper()] = env_config['storages']
                         if 'inferenceServiceConfigs' in env_config:
-                            configurations.append(ParsedConfiguration(
-                                entityType='inferenceServiceConfigs',
-                                name='global_inference',
-                                config={},
-                                environments={env.upper(): env_config['inferenceServiceConfigs']}
-                            ))
-                        
-                        # Extract access
+                            inference_envs[env.upper()] = env_config['inferenceServiceConfigs']
                         if 'access' in env_config:
-                            configurations.append(ParsedConfiguration(
-                                entityType='access',
-                                name='global_access',
-                                config={},
-                                environments={env.upper(): env_config['access']}
-                            ))
+                            access_envs[env.upper()] = env_config['access']
+                
+                # Create single ParsedConfiguration for each entity type with all environments
+                if storages_envs:
+                    configurations.append(ParsedConfiguration(
+                        entityType='storages',
+                        name='global_storages',
+                        config={},
+                        environments=storages_envs
+                    ))
+                
+                if inference_envs:
+                    configurations.append(ParsedConfiguration(
+                        entityType='inferenceServiceConfigs',
+                        name='global_inference',
+                        config={},
+                        environments=inference_envs
+                    ))
+                
+                if access_envs:
+                    configurations.append(ParsedConfiguration(
+                        entityType='access',
+                        name='global_access',
+                        config={},
+                        environments=access_envs
+                    ))
             
             return ConfigurationParseResult(
                 success=True,
