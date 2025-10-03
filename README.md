@@ -1,4 +1,4 @@
-# Kafka Trace Viewer
+# Marauder's Map
 
 A real-time web application for visualizing Kafka message traces with gRPC integration, P10/P50/P95 metrics, and interactive topic graphs.
 

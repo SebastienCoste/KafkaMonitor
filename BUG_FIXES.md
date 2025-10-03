@@ -1,6 +1,6 @@
-# Bug Fixes Summary - Kafka Trace Viewer
+# Bug Fixes Summary - Marauder's Map
 
-This document details the resolution of critical bugs reported in the Kafka Trace Viewer application.
+This document details the resolution of critical bugs reported in the Marauder's Map application.
 
 ## 🐛 Issues Identified and Fixed
 

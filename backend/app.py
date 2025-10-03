@@ -1,5 +1,5 @@
 """
-Main application entry point for Kafka Trace Viewer
+Main application entry point for Marauder's Map
 """
 import asyncio
 import logging
@@ -101,7 +101,7 @@ class KafkaTraceViewerApp:
 
     async def start(self):
         """Start the application"""
-        logger.info("Starting Kafka Trace Viewer (standalone mode)...")
+        logger.info("Starting Marauder's Map (standalone mode)...")
 
         try:
             # Start Kafka consumer
@@ -125,7 +125,7 @@ class KafkaTraceViewerApp:
 
 def main():
     """Main entry point"""
-    print("Kafka Trace Viewer - Standalone Consumer")
+    print("Marauder's Map - Standalone Consumer")
     print("This runs only the Kafka consumer for testing purposes.")
     print("Use the web server (server.py) for the full application.\n")
 

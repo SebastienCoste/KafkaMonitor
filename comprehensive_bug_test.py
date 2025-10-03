@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Comprehensive Bug Fix Validation for Kafka Trace Viewer
+Comprehensive Bug Fix Validation for Marauder's Map
 Tests all three major bug fixes:
 1. Protobuf Caching System
 2. Message Type Resolution (Event vs ProcessEvent)

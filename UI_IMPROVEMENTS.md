@@ -1,4 +1,4 @@
-# Kafka Trace Viewer - UI Improvements Summary
+# Marauder's Map - UI Improvements Summary
 
 This document details all the UI/UX improvements made to address the identified issues and enhance the user experience, with priority focus on message readability.
 
@@ -228,7 +228,7 @@ const options = {
 ### Layout Structure
 ```
 Header (Full Width)
-├── Title: "Kafka Trace Viewer"
+├── Title: "Marauder's Map"
 ├── Status: Connection indicator + trace count
 └── Navigation: Clean, professional header
 
@@ -260,4 +260,4 @@ Main Content (4-Column Grid)
 4. **Graph Visualization**: Beautiful and functional network displays
 5. **Professional Feel**: Clean, modern interface suitable for production use
 
-The UI improvements have transformed the Kafka Trace Viewer from a basic functional tool into a professional, user-friendly application that prioritizes message readability and developer workflow efficiency.
+The UI improvements have transformed the Marauder's Map from a basic functional tool into a professional, user-friendly application that prioritizes message readability and developer workflow efficiency.

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Local development runner for Kafka Trace Viewer
+Local development runner for Marauder's Map
 Handles setup and provides better error messages for local development
 """
 import os
@@ -186,11 +186,11 @@ def kill_process_on_port(port):
 def main():
     """Main function to run all checks and start the server"""
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Kafka Trace Viewer Local Development')
+    parser = argparse.ArgumentParser(description='Marauder's Map Local Development')
     parser.add_argument('--port', type=int, default=8001, help='Port to run the server on (default: 8001)')
     args = parser.parse_args()
     
-    print("🚀 Kafka Trace Viewer - Local Development Setup")
+    print("🚀 Marauder's Map - Local Development Setup")
     print("=" * 50)
     
     # Check if port is available; if not, try to free it automatically
@@ -217,7 +217,7 @@ def main():
         sys.exit(1)
     
     print("\n" + "=" * 50)
-    print("✅ All checks passed! Starting Kafka Trace Viewer...")
+    print("✅ All checks passed! Starting Marauder's Map...")
     print("=" * 50)
     
     # Start the server

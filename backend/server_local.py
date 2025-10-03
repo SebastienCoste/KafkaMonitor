@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Local development server for Kafka Trace Viewer
+Local development server for Marauder's Map
 This server properly serves static files for local development
 """
 
@@ -25,7 +25,7 @@ async def lifespan(app: FastAPI):
     print("🛑 Shutting down local development server...")
 
 # Create FastAPI app
-app = FastAPI(title="Kafka Trace Viewer - Local", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Marauder's Map - Local", version="1.0.0", lifespan=lifespan)
 
 # Mount static files FIRST - this is crucial for local development
 if os.path.exists("../frontend/build/static"):
@@ -240,7 +240,7 @@ async def catch_all(full_path: str):
 if __name__ == "__main__":
     import uvicorn
     print("\n" + "="*50)
-    print("🌐 Local Kafka Trace Viewer Server")
+    print("🌐 Local Marauder's Map Server")
     print("="*50)
     print("📁 Static files: /static/*")
     print("🔗 Frontend: http://localhost:8002")

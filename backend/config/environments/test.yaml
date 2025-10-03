@@ -39,7 +39,7 @@ blueprint_server:
 # Redis Configuration for Blueprint Verification
 redis:
   host: "redis-test.example.com"
-  port: 6380
+  port: 6379
   token: "test-redis-auth-token-here"
   ca_cert_path: "config/redis-ca.pem"
   connection_timeout: 10

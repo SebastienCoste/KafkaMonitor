@@ -72,7 +72,7 @@ function App() {
       ws.onopen = () => {
         console.log('WebSocket connected');
         setConnected(true);
-        toast.success('Connected to Kafka trace viewer');
+        toast.success("Connected to Marauder's Map");
       };
 
       ws.onmessage = (event) => {
@@ -701,7 +701,7 @@ function App() {
 
       {/* Main Content */}
       {currentPage === 'traces' ? (
-        // Existing Kafka Trace Viewer Content
+        // Existing Marauder's Map Content
         <div className="max-w-full mx-auto p-4">
           {/* Tab Navigation */}
           <div className="mb-4">
@@ -1214,7 +1214,7 @@ function App() {
                       <CardContent className="text-center">
                         <Activity className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          Welcome to Kafka Trace Viewer
+                          Welcome to Marauder's Map
                         </h3>
                         <p className="text-gray-600 mb-4">
                           Select a trace from the sidebar to view its message flow and details

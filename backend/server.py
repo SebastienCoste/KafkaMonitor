@@ -823,11 +823,12 @@ async def build_blueprint(request: Dict[str, Any]):
         return_code = process.wait()
         success = return_code == 0
         
-        # Find generated .tar.gz files
+        # Find generated .tgz files
         dist_dir = root_path_obj / "dist"
         generated_files = []
         if dist_dir.exists():
-            for f in dist_dir.glob("*.tar.gz"):
+            # for f in dist_dir.glob("*.tgz"):
+            for f in list(dist_dir.glob("*.tgz")) + list(dist_dir.glob("*.tar.gz")):
                 if f.is_file():
                     stat = f.stat()
                     generated_files.append({
@@ -869,8 +870,8 @@ async def cancel_build():
 @api_router.get("/blueprint/output-files")
 async def get_output_files(root_path: str):
     try:
-        # List .tar.gz files under root_path/dist if present
-        dist_dir = Path(root_path) / "dist"
+        # List .tgz files under root_path/dist if present
+        dist_dir = Path(root_path) / "out"
         files = []
         if dist_dir.exists() and dist_dir.is_dir():
             for name in sorted(os.listdir(dist_dir)):
@@ -882,7 +883,7 @@ async def get_output_files(root_path: str):
                         "path": str(p),
                         "size": stat.st_size,
                         "modified": int(stat.st_mtime),  # Add timestamp for frontend
-                        "directory": "dist"  # Add directory info
+                        "directory": "out"  # Add directory info
                     })
         return {"files": files}
     except Exception as e:
@@ -2099,7 +2100,8 @@ async def get_redis_files(environment: str = "", namespace: str = ""):
             # Scan for keys matching the namespace pattern
             patterns = [
                 f"{namespace}:*",
-                f"{namespace}:{environment}:*",
+                f"*{namespace}*",
+                f"{namespace}.*",
                 f"*:{namespace}:*"
             ]
             logger.info(f"🔎 Scanning Redis with patterns: {patterns}")

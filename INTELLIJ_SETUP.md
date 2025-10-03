@@ -1,4 +1,4 @@
-# IntelliJ/PyCharm Setup Guide for Kafka Trace Viewer
+# IntelliJ/PyCharm Setup Guide for Marauder's Map
 
 ## 🚨 Your Issue - RESOLVED ✅
 
@@ -99,7 +99,7 @@ python -c "import confluent_kafka, google.protobuf, yaml; print('✅ All package
 1. Run → Edit Configurations
 2. Click "+" → Python
 3. Configure:
-   - **Name**: "Kafka Trace Viewer"
+   - **Name**: "Marauder's Map"
    - **Script path**: `backend/run_local.py`
    - **Working directory**: `backend/` ⚠️ **MUST BE backend FOLDER**
    - **Python interpreter**: Your configured interpreter
@@ -109,13 +109,13 @@ python -c "import confluent_kafka, google.protobuf, yaml; print('✅ All package
 - Click Run (or Debug)
 - You should see:
   ```
-  🚀 Kafka Trace Viewer - Local Development Setup
+  🚀 Marauder's Map - Local Development Setup
   ==================================================
   🔍 Checking system requirements...
   ✅ Python 3.11.x
   ✅ libprotoc 3.x.x
   ...
-  ✅ All checks passed! Starting Kafka Trace Viewer...
+  ✅ All checks passed! Starting Marauder's Map...
   ```
 
 ## 🚨 Troubleshooting IntelliJ Issues
