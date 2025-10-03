@@ -930,16 +930,29 @@ async def validate_blueprint_tgz(filepath: str, payload: Dict[str, Any]):
         if not root_path:
             raise HTTPException(status_code=400, detail="Blueprint root path not set")
         
-        # Load environment configuration
-        env_config_data = load_environment_config(environment)
-        if not env_config_data:
-            logger.error(f"❌ Failed to load environment config for: {environment}")
+        # Load environment configuration from YAML
+        import yaml
+        from pathlib import Path
+        env_file = Path(__file__).parent / "config" / "environments" / f"{environment.lower()}.yaml"
+        
+        logger.info(f"📂 Loading environment config from: {env_file}")
+        
+        if not env_file.exists():
+            logger.error(f"❌ Environment config file not found: {env_file}")
             raise HTTPException(status_code=400, detail=f"Environment {environment} not configured")
+        
+        with open(env_file, 'r') as f:
+            env_config_data = yaml.safe_load(f)
+        
+        if 'blueprint_server' not in env_config_data:
+            logger.error(f"❌ 'blueprint_server' section not found in {env_file}")
+            raise HTTPException(status_code=400, detail=f"Blueprint server not configured for {environment}")
         
         env_config = env_config_data['blueprint_server']
         logger.info(f"🔧 Loaded environment config:")
         logger.info(f"   Base URL: {env_config.get('base_url')}")
         logger.info(f"   Validate path: {env_config.get('validate_path')}")
+        logger.info(f"   Auth header: {env_config.get('auth_header_name')}: {env_config.get('auth_header_value')[:10]}...")
         
         # Get namespace from blueprint_cnf.json
         blueprint_cnf_path = os.path.join(root_path, "blueprint_cnf.json")
