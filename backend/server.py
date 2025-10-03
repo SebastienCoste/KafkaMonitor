@@ -2109,6 +2109,44 @@ async def set_asset_storage_url(request: Dict[str, Any]):
         logger.error(f"Error setting asset storage URL: {e}")
         return {"success": False, "error": str(e)}
 
+@api_router.get("/grpc/{service_name}/example/{method_name}")
+async def get_grpc_method_example(service_name: str, method_name: str):
+    """Get example request data for a gRPC method"""
+    logger.info(f"📋 [gRPC EXAMPLE] Generating example for {service_name}.{method_name}")
+    
+    try:
+        # Check if gRPC client is initialized
+        if not hasattr(app.state, 'grpc_client') or app.state.grpc_client is None:
+            logger.error("❌ gRPC client not initialized")
+            return {
+                "success": False,
+                "error": "gRPC client not initialized. Please initialize first."
+            }
+        
+        # Get example request data
+        example = await app.state.grpc_client.get_method_example(service_name, method_name)
+        
+        if example:
+            logger.info(f"✅ Generated example for {service_name}.{method_name}")
+            return {
+                "success": True,
+                "example": example
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Could not generate example for {service_name}.{method_name}"
+            }
+        
+    except Exception as e:
+        logger.error(f"❌ Error generating example: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
 @api_router.post("/grpc/{service_name}/{method_name}")
 async def call_grpc_method(service_name: str, method_name: str, request_data: Dict[str, Any]):
     """Call a gRPC service method dynamically"""
