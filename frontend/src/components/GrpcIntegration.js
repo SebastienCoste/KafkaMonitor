@@ -435,24 +435,60 @@ function GrpcIntegration() {
       // Determine the content type from file
       const contentType = selectedUploadFile.type || 'application/octet-stream';
       
-      // For S3 signed URLs, use PUT with the file as body (not FormData)
-      const response = await axios.put(uploadUrl, selectedUploadFile, {
-        headers: {
-          'Content-Type': contentType,
-          ...(credentials.authorization && { 'Authorization': credentials.authorization }),
-          ...(credentials.x_pop_token && { 'X-POP-TOKEN': credentials.x_pop_token })
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          console.log(`Upload progress: ${percentCompleted}%`);
-        }
-      });
+      // Try direct upload first (for S3 signed URLs, use PUT with the file as body)
+      try {
+        const response = await axios.put(uploadUrl, selectedUploadFile, {
+          headers: {
+            'Content-Type': contentType,
+            ...(credentials.authorization && { 'Authorization': credentials.authorization }),
+            ...(credentials.x_pop_token && { 'X-POP-TOKEN': credentials.x_pop_token })
+          },
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`Upload progress: ${percentCompleted}%`);
+          }
+        });
 
-      console.log('✅ File uploaded successfully:', response.status);
-      toast.success(`File uploaded successfully!`);
-      
-      // Reset file input
-      setSelectedUploadFile(null);
+        console.log('✅ File uploaded successfully (direct):', response.status);
+        toast.success(`File uploaded successfully!`);
+        setSelectedUploadFile(null);
+        return;
+        
+      } catch (directError) {
+        // If direct upload fails due to CORS, try proxy
+        if (directError.message.includes('CORS') || directError.message.includes('Network Error') || 
+            (directError.response && directError.response.status === 0)) {
+          console.log('⚠️ Direct upload failed (CORS), trying proxy...');
+          
+          // Use backend proxy to upload
+          const formData = new FormData();
+          formData.append('url', uploadUrl);
+          formData.append('file', selectedUploadFile);
+          if (credentials.authorization) {
+            formData.append('authorization', credentials.authorization);
+          }
+          if (credentials.x_pop_token) {
+            formData.append('x_pop_token', credentials.x_pop_token);
+          }
+
+          const proxyResponse = await axios.post(`${API_BASE_URL}/api/grpc/upload-proxy`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          if (proxyResponse.data.success) {
+            console.log('✅ File uploaded successfully (via proxy)');
+            toast.success(`File uploaded successfully via proxy!`);
+            setSelectedUploadFile(null);
+          } else {
+            throw new Error(proxyResponse.data.error || 'Proxy upload failed');
+          }
+        } else {
+          // Re-throw if not a CORS error
+          throw directError;
+        }
+      }
       
     } catch (error) {
       console.error('❌ File upload error:', error);
@@ -461,8 +497,6 @@ function GrpcIntegration() {
           ? 'Access denied - URL may be expired or invalid' 
           : error.response.data?.message || error.response.statusText;
         toast.error(`Upload failed: ${errorMsg}`);
-      } else if (error.message.includes('CORS') || error.message.includes('Network Error')) {
-        toast.error('Upload failed: CORS or network error - URL may not support browser uploads');
       } else {
         toast.error(`Upload failed: ${error.message}`);
       }
