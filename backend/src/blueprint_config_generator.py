@@ -217,13 +217,15 @@ class BlueprintConfigurationGenerator:
                     # Add environment-specific configurations
                     for env in environments:
                         if env in config.environmentOverrides:
-                            if env not in message_config["environments"]:
-                                message_config["environments"][env] = {"configs": {}}
+                            # Convert environment name to lowercase for output file
+                            env_key = env.lower()
+                            if env_key not in message_config["environments"]:
+                                message_config["environments"][env_key] = {"configs": {}}
                             
-                            if "configs" not in message_config["environments"][env]:
-                                message_config["environments"][env]["configs"] = {}
+                            if "configs" not in message_config["environments"][env_key]:
+                                message_config["environments"][env_key]["configs"] = {}
                             
-                            message_config["environments"][env]["configs"][config.name] = {
+                            message_config["environments"][env_key]["configs"][config.name] = {
                                 config.entityType: config.environmentOverrides[env]
                             }
                 
