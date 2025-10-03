@@ -1065,11 +1065,21 @@ async def get_topics():
         # Get topics with statistics from graph_builder
         if graph_builder:
             stats = graph_builder.get_statistics()
-            topic_details = stats.get('topics', [])
+            topic_stats = stats.get('topics', {})
+            topic_details_dict = topic_stats.get('details', {})
+            
+            # Convert dict to list and add topic name
+            topic_details = []
+            for topic_name, details in topic_details_dict.items():
+                topic_info = {
+                    'name': topic_name,
+                    **details  # Spread all the details
+                }
+                topic_details.append(topic_info)
             
             # Extract topic names and those with messages
-            all_topics = [t['name'] for t in topic_details]
-            monitored = [t['name'] for t in topic_details if t.get('message_count', 0) > 0]
+            all_topics = list(topic_details_dict.keys())
+            monitored = [t for t, d in topic_details_dict.items() if d.get('message_count', 0) > 0]
             
             return {
                 "topics": all_topics,
