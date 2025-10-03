@@ -339,6 +339,127 @@ class BackendRoutingTester:
             self.log_test("WebSocket Blueprint", False, f"Async error: {str(e)}")
             return False
     
+    def test_statistics_endpoint(self):
+        """Test Suite D.10: GET /api/statistics - Statistics endpoint structure verification"""
+        try:
+            start_time = time.time()
+            response = requests.get(f"{self.base_url}/api/statistics", timeout=10)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time (should be < 1 second)
+                if response_time < 1.0:
+                    self.log_test("Statistics Response Time", True, f"Response time: {response_time:.3f}s")
+                else:
+                    self.log_test("Statistics Response Time", False, f"Response time too slow: {response_time:.3f}s")
+                
+                # Check main structure
+                required_top_level = ["traces", "topics", "messages", "time_range"]
+                found_top_level = [field for field in required_top_level if field in data]
+                
+                if len(found_top_level) >= 3:  # At least 3 of 4 required fields
+                    self.log_test("Statistics Structure", True, f"Found top-level fields: {found_top_level}")
+                    
+                    # Check traces structure
+                    if "traces" in data and isinstance(data["traces"], dict):
+                        traces = data["traces"]
+                        traces_fields = ["total", "max_capacity", "utilization"]
+                        found_traces_fields = [field for field in traces_fields if field in traces]
+                        
+                        if len(found_traces_fields) >= 2:
+                            self.log_test("Statistics Traces", True, f"Traces fields: {found_traces_fields}")
+                        else:
+                            self.log_test("Statistics Traces", False, f"Missing traces fields. Found: {list(traces.keys())}")
+                    
+                    # Check topics structure
+                    if "topics" in data and isinstance(data["topics"], dict):
+                        topics = data["topics"]
+                        topics_fields = ["total", "monitored", "with_messages", "details"]
+                        found_topics_fields = [field for field in topics_fields if field in topics]
+                        
+                        if len(found_topics_fields) >= 3:
+                            self.log_test("Statistics Topics", True, f"Topics fields: {found_topics_fields}")
+                            
+                            # Check topics.details structure (critical for frontend)
+                            if "details" in topics and isinstance(topics["details"], dict):
+                                details = topics["details"]
+                                self.log_test("Statistics Topics Details", True, f"Found {len(details)} topic details")
+                                
+                                # Check structure of individual topic details
+                                if details:
+                                    sample_topic = list(details.keys())[0]
+                                    sample_details = details[sample_topic]
+                                    
+                                    expected_detail_fields = [
+                                        "message_count", "trace_count", "monitored", "status",
+                                        "messages_per_minute_total", "messages_per_minute_rolling",
+                                        "message_age_p10_ms", "message_age_p50_ms", "message_age_p95_ms",
+                                        "slowest_traces"
+                                    ]
+                                    
+                                    found_detail_fields = [field for field in expected_detail_fields if field in sample_details]
+                                    
+                                    if len(found_detail_fields) >= 6:  # At least 6 of 10 expected fields
+                                        self.log_test("Statistics Topic Detail Structure", True, 
+                                                    f"Sample topic '{sample_topic}' has fields: {found_detail_fields}")
+                                        
+                                        # Verify rate fields are numbers (not raw counts)
+                                        total_rate = sample_details.get("messages_per_minute_total")
+                                        rolling_rate = sample_details.get("messages_per_minute_rolling")
+                                        
+                                        if isinstance(total_rate, (int, float)) and isinstance(rolling_rate, (int, float)):
+                                            self.log_test("Statistics Rate Fields", True, 
+                                                        f"Rate fields are numeric: total={total_rate}, rolling={rolling_rate}")
+                                        else:
+                                            self.log_test("Statistics Rate Fields", False, 
+                                                        f"Rate fields not numeric: total={type(total_rate)}, rolling={type(rolling_rate)}")
+                                    else:
+                                        self.log_test("Statistics Topic Detail Structure", False, 
+                                                    f"Missing detail fields. Found: {list(sample_details.keys())}")
+                                else:
+                                    self.log_test("Statistics Topics Details", True, "No topic details (empty environment)")
+                            else:
+                                self.log_test("Statistics Topics Details", False, f"Invalid details structure: {type(topics.get('details'))}")
+                        else:
+                            self.log_test("Statistics Topics", False, f"Missing topics fields. Found: {list(topics.keys())}")
+                    
+                    # Check messages structure
+                    if "messages" in data and isinstance(data["messages"], dict):
+                        messages = data["messages"]
+                        messages_fields = ["total", "by_topic"]
+                        found_messages_fields = [field for field in messages_fields if field in messages]
+                        
+                        if len(found_messages_fields) >= 1:
+                            self.log_test("Statistics Messages", True, f"Messages fields: {found_messages_fields}")
+                        else:
+                            self.log_test("Statistics Messages", False, f"Missing messages fields. Found: {list(messages.keys())}")
+                    
+                    # Check time_range structure
+                    if "time_range" in data and isinstance(data["time_range"], dict):
+                        time_range = data["time_range"]
+                        time_fields = ["earliest", "latest"]
+                        found_time_fields = [field for field in time_fields if field in time_range]
+                        
+                        if len(found_time_fields) >= 1:
+                            self.log_test("Statistics Time Range", True, f"Time range fields: {found_time_fields}")
+                        else:
+                            self.log_test("Statistics Time Range", False, f"Missing time range fields. Found: {list(time_range.keys())}")
+                    
+                    # Overall success
+                    self.log_test("Statistics Endpoint", True, "Statistics endpoint returns proper structure")
+                    return True
+                else:
+                    self.log_test("Statistics Structure", False, f"Missing required top-level fields. Found: {list(data.keys())}")
+                    return False
+            else:
+                self.log_test("Statistics Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Statistics Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
     def setup_blueprint_root_path(self):
         """Set up blueprint root path for testing"""
         try:
