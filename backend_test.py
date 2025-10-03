@@ -532,6 +532,13 @@ class BackendRoutingTester:
         print("\n9️⃣ Testing WebSocket Blueprint Connection")
         self.test_websocket_blueprint()
         
+        # Test Suite D - Statistics Endpoint
+        print("\n📊 TEST SUITE D - STATISTICS ENDPOINT")
+        print("-" * 50)
+        
+        print("\n🔟 Testing Statistics Endpoint Structure")
+        self.test_statistics_endpoint()
+        
         # Print final summary
         self.print_summary()
 
