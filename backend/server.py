@@ -1127,8 +1127,8 @@ async def update_monitored_topics(topics: List[str]):
 async def get_topic_graph():
     try:
         if graph_builder:
-            # Get full graph data with statistics and colors
-            graph_data = graph_builder.get_full_graph()
+            # Get topic graph data with statistics and colors
+            graph_data = graph_builder.get_topic_graph_data()
             return graph_data
         
         # Fallback with basic data
