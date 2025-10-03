@@ -514,8 +514,8 @@ function GrpcIntegration() {
       if (response.data.success) {
         setAssetStorageUrls(response.data.urls || {});
         // Set current selection if available, otherwise default to first key or 'reader'
-        if (response.data.current) {
-          setSelectedAssetUrlType(response.data.current);
+        if (response.data.current_selection) {
+          setSelectedAssetUrlType(response.data.current_selection);
         } else if (response.data.urls) {
           const firstKey = Object.keys(response.data.urls)[0];
           setSelectedAssetUrlType(firstKey || 'reader');
