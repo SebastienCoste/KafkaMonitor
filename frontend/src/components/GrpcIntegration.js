@@ -894,9 +894,9 @@ function GrpcIntegration() {
               </div>
               
               <div className="flex items-end">
-                <div className="text-sm">
+                <div className="text-sm w-full">
                   <div className="font-medium">Current URL:</div>
-                  <div className="text-gray-600 font-mono text-xs">
+                  <div className="text-gray-600 font-mono text-xs break-all">
                     {assetStorageUrls[selectedAssetUrlType] || 'Not selected'}
                   </div>
                 </div>
