@@ -1153,44 +1153,24 @@ async def get_topic_graph():
 
 @api_router.get("/graph/disconnected")
 async def get_disconnected_components():
-    """Get disconnected components in the topic graph"""
+    """Get disconnected components in the topic graph with real-time statistics"""
     try:
-        # Get the full graph from topics
-        topics_graph_response = await get_topic_graph()
-        nodes = topics_graph_response.get("nodes", [])
-        edges = topics_graph_response.get("edges", [])
-        
-        if not nodes:
-            return {"success": True, "components": [], "total_components": 0}
-        
-        # Extract topic names from nodes
-        topic_names = [node.get("id") or node.get("label") for node in nodes]
-        
-        # Create component structure with all required fields for frontend
-        component = {
-            "component_id": 0,  # Numeric ID starting from 0
-            "topics": topic_names,  # Array of topic names
-            "topic_count": len(topic_names),  # Number of topics
-            "nodes": nodes,
-            "edges": edges,
-            "statistics": {
-                "total_messages": len(edges) * 100,
-                "active_traces": len(nodes) * 5,  # Mock: 5 traces per topic
-                "health_score": 85,
-                "median_trace_age": 120,  # 2 minutes in seconds
-                "p95_trace_age": 300,  # 5 minutes in seconds
-                "avg_latency_ms": 45.2,
-                "throughput": len(nodes) * 10
+        if graph_builder:
+            # Get real disconnected components from graph_builder with real statistics
+            components = graph_builder.get_disconnected_graphs()
+            
+            return {
+                "success": True,
+                "components": components,
+                "total_components": len(components)
             }
-        }
         
-        return {
-            "success": True,
-            "components": [component],
-            "total_components": 1
-        }
+        # Fallback when graph_builder is not available
+        return {"success": True, "components": [], "total_components": 0}
     except Exception as e:
         logger.error(f"Failed to get disconnected components: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         return {"success": False, "components": [], "total_components": 0}
 
 @api_router.get("/graph/filtered")
