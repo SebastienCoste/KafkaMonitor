@@ -1331,18 +1331,18 @@ async def get_trace_flow(trace_id: str):
         topic_set = set()
         
         for i, msg in enumerate(trace.messages):
-            topic = msg.get("topic", "")
+            topic = msg.topic
             if topic and topic not in topic_set:
                 nodes.append({
                     "id": topic,
                     "label": topic,
-                    "message_count": sum(1 for m in trace.messages if m.get("topic") == topic)
+                    "message_count": sum(1 for m in trace.messages if m.topic == topic)
                 })
                 topic_set.add(topic)
             
             # Create edge to next message's topic
             if i < len(trace.messages) - 1:
-                next_topic = trace.messages[i + 1].get("topic", "")
+                next_topic = trace.messages[i + 1].topic
                 if topic and next_topic and topic != next_topic:
                     edges.append({
                         "source": topic,
