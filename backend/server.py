@@ -1249,10 +1249,38 @@ async def apply_mock_data():
 
 @api_router.get("/statistics")
 async def get_statistics():
+    """Get comprehensive statistics including topic details from graph_builder"""
     try:
-        return {"total_traces": 0, "active_topics": 4, "processed_messages": 0, "error_count": 0}
+        if graph_builder:
+            # Get real-time statistics from graph_builder
+            return graph_builder.get_statistics()
+        
+        # Fallback when graph_builder is not available
+        return {
+            "traces": {
+                "total": 0,
+                "max_capacity": 1000,
+                "utilization": 0
+            },
+            "topics": {
+                "total": 0,
+                "monitored": 0,
+                "with_messages": 0,
+                "details": {}
+            },
+            "messages": {
+                "total": 0,
+                "by_topic": {}
+            },
+            "time_range": {
+                "earliest": None,
+                "latest": None
+            }
+        }
     except Exception as e:
         logger.error(f"Failed to get statistics: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/traces")
