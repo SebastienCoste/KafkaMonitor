@@ -61,6 +61,18 @@ backend:
         agent: "main"
         comment: "User reported file upload failing with CORS error and 403 Forbidden when uploading to S3 signed URL. Root cause: Frontend was using POST with multipart/form-data which doesn't work for S3 signed URLs, and browser CORS restrictions prevented direct uploads. Fixed by: 1) Changing frontend to use PUT with file body (correct S3 method) instead of POST with FormData, 2) Adding backend proxy endpoint POST /api/grpc/upload-proxy that accepts file and URL, then uploads via backend to bypass CORS, 3) Implementing automatic fallback - tries direct upload first, falls back to proxy if CORS error occurs, 4) Added better error messages for 403 (expired URL) and CORS issues. Frontend now tries direct upload (faster) and automatically falls back to proxy upload if CORS blocks it."
   
+  - task: "Blueprint Environment Overrides - Storage Configuration Array Handling Fix"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/Configuration/EnvironmentOverrides.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "User reported that in Blueprint Creator / Global Config / Storage Configuration, when adding Host Configurations in Environment tab, it behaves differently than Configuration tab. Issue 1: When clicking '+' on Host Configurations array in environments, it creates empty object {} instead of proper default structure with all required fields. Issue 2: APIs field (array of strings with options) renders as plain text input instead of checkboxes like in Configuration tab. Root cause: EnvironmentOverrides.js has duplicate renderField logic missing two key features from EntityEditor.js: 1) createDefaultFromFields helper that initializes objects with proper defaults based on field definitions (EntityEditor lines 338-356), 2) Special checkbox rendering for array of strings with options (EntityEditor lines 383-407). Fixed by: 1) Adding createDefaultFromFields helper to EnvironmentOverrides array handling, 2) Adding checkbox rendering for arrays with string items and options, 3) Modified onClick handler to use createDefaultFromFields when adding new array items. Now both Configuration and Environment tabs create identical structures when adding Host Configurations, and APIs field renders as checkboxes in both tabs."
+  
   - task: "Redis Files API Endpoint - 404 Investigation & Config Location Fix"
     implemented: true
     working: true
