@@ -57,3 +57,5 @@ landing_page:
   title: "Marauder's Map"
   subtitle: "Expecto Debuggius"
   description: "Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection."
+
+# Note: Redis configuration is in environment-specific files: backend/config/environments/<env>.yaml

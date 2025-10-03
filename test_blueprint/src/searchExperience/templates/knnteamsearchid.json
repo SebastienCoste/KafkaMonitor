@@ -1,0 +1,18 @@
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "city": "{{city_name}}" } },
+        { "range": { "rating": { "gte": {{min_rating}}{{^min_rating}}10{{/min_rating}} } } }
+      ],
+      "must": {
+        "knn": {
+          "vector_field": {
+            "vector": "{{vect}}",
+            "k": 10
+          }
+        }
+      }
+    }
+  }
+}

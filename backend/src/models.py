@@ -1,5 +1,5 @@
 """
-Data models for the Kafka trace viewer application
+Data models for the Marauder's Map application
 """
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Any

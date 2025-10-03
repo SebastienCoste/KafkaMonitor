@@ -62,10 +62,10 @@ const VerifySection = () => {
       };
       
       // Get available environments
-      const envResponse = await fetch(`${API_BASE_URL}/api/redis/environments`);
+      const envResponse = await fetch(`${API_BASE_URL}/api/environments`);
       if (envResponse.ok) {
         const envData = await envResponse.json();
-        setAvailableEnvironments(envData.environments || []);
+        setAvailableEnvironments(envData.available_environments || envData.environments || []);
         
         // Sync with current environment from app
         const currentEnv = getCurrentEnvironment();
@@ -98,10 +98,15 @@ const VerifySection = () => {
       }
       
       // Get blueprint namespace
+      console.log('🔍 [VerifySection] Fetching namespace from:', `${API_BASE_URL}/api/blueprint/namespace`);
       const namespaceResponse = await fetch(`${API_BASE_URL}/api/blueprint/namespace`);
+      console.log('🔍 [VerifySection] Namespace response status:', namespaceResponse.status);
+      
       if (namespaceResponse.ok) {
         const namespaceData = await namespaceResponse.json();
+        console.log('🔍 [VerifySection] Namespace data received:', namespaceData);
         setNamespace(namespaceData.namespace);
+        console.log('🔍 [VerifySection] Namespace set to:', namespaceData.namespace);
       } else {
         setError('No blueprint namespace detected. Make sure blueprint_cnf.json is configured.');
         return;
@@ -154,12 +159,20 @@ const VerifySection = () => {
     setError(null);
     
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/redis/files?environment=${encodeURIComponent(environment)}&namespace=${encodeURIComponent(namespace)}`
-      );
+      const url = `${API_BASE_URL}/api/redis/files?environment=${encodeURIComponent(environment)}&namespace=${encodeURIComponent(namespace)}`;
+      console.log('🔍 [VerifySection] Fetching Redis files from:', url);
+      console.log('🔍 [VerifySection] Environment:', environment);
+      console.log('🔍 [VerifySection] Namespace:', namespace);
+      
+      const response = await fetch(url);
+      
+      console.log('🔍 [VerifySection] Response status:', response.status);
+      console.log('🔍 [VerifySection] Response headers:', response.headers);
       
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('🔍 [VerifySection] Error response:', errorText);
+        throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
       }
       
       const data = await response.json();

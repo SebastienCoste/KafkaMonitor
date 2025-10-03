@@ -21,6 +21,7 @@ import OutputFiles from './BuildPanel/OutputFiles';
 import EnvironmentSelector from './Deployment/EnvironmentSelector';
 import DeploymentPanel from './Deployment/DeploymentPanel';
 import VerifySection from './VerifySection';
+import ConfigurationManager from './Configuration/ConfigurationManager';
 
 // Icons
 import { 
@@ -278,11 +279,15 @@ export default function BlueprintCreator() {
             {/* Main Content Area - Full Width */}
             <div className="flex-1 flex flex-col overflow-hidden">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-                <div className="border-b border-gray-200 px-4">
-                  <TabsList className="h-12">
+                <div className="border-b border-gray-200 px-4 overflow-x-auto">
+                  <TabsList className="h-12 w-full flex">
                     <TabsTrigger value="files" className="flex items-center space-x-2">
                       <FileText className="h-4 w-4" />
                       <span>Files</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="configuration" className="flex items-center space-x-2">
+                      <Settings className="h-4 w-4" />
+                      <span>Configuration</span>
                     </TabsTrigger>
                     <TabsTrigger value="build" className="flex items-center space-x-2">
                       <Play className="h-4 w-4" />
@@ -404,6 +409,10 @@ export default function BlueprintCreator() {
                         )}
                       </div>
                     </div>
+                  </TabsContent>
+
+                  <TabsContent value="configuration" className="h-full m-0">
+                    <ConfigurationManager />
                   </TabsContent>
 
                   <TabsContent value="build" className="h-full m-0">

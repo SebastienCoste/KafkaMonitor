@@ -1,0 +1,9 @@
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "term": { "city": "{{city_name}}" } }
+      ]
+    }
+  }
+}

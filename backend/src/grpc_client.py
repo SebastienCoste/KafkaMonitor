@@ -488,7 +488,7 @@ class GrpcClient:
         timeout = self.environment_config.get('grpc_services', {}).get(service_name, {}).get('timeout', 10)
         
         # Set maximum retry limit (default 3, configurable)
-        max_retry_limit = max_retries if max_retries is not None else 3
+        max_retry_limit = max_retries if max_retries is not None else 0
         retry_count = 0
         method_key = f"{service_name}.{method_name}"
         

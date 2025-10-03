@@ -1,6 +1,6 @@
-# Kafka Trace Viewer - Troubleshooting Guide
+# Marauder's Map - Troubleshooting Guide
 
-This document contains solutions to common issues encountered with the Kafka Trace Viewer application.
+This document contains solutions to common issues encountered with the Marauder's Map application.
 
 ## 🔧 Issues Fixed
 

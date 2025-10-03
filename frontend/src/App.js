@@ -72,7 +72,7 @@ function App() {
       ws.onopen = () => {
         console.log('WebSocket connected');
         setConnected(true);
-        toast.success('Connected to Kafka trace viewer');
+        toast.success("Connected to Marauder's Map");
       };
 
       ws.onmessage = (event) => {
@@ -162,6 +162,22 @@ function App() {
       loadInitialData();
     });
   }, []);
+
+  // Auto-refresh traces, topics, and statistics every 2 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (activeTab === 'traces') {
+        loadTraces();
+        loadStatistics();
+      }
+      if (activeTab === 'topics') {
+        loadTopics();
+        loadTopicGraph();
+      }
+    }, 2000); // Refresh every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [activeTab]);
 
   const loadInitialData = async () => {
     try {
@@ -267,8 +283,8 @@ function App() {
   const loadTopics = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/topics`);
-      setAvailableTopics(response.data.all_topics || []);
-      setMonitoredTopics(response.data.monitored_topics || []);
+      setAvailableTopics(response.data.topics || []);
+      setMonitoredTopics(response.data.monitored || []);
     } catch (error) {
       console.error('Error loading topics:', error);
     }
@@ -644,9 +660,9 @@ function App() {
                       {connected ? 'Connected' : 'Disconnected'}
                     </span>
                   </div>
-                  {statistics && (
+                  {statistics && statistics.traces && (
                     <Badge variant="secondary">
-                      {statistics.traces.total} traces
+                      {statistics.traces.total || 0} traces
                     </Badge>
                   )}
                   
@@ -685,7 +701,7 @@ function App() {
 
       {/* Main Content */}
       {currentPage === 'traces' ? (
-        // Existing Kafka Trace Viewer Content
+        // Existing Marauder's Map Content
         <div className="max-w-full mx-auto p-4">
           {/* Tab Navigation */}
           <div className="mb-4">
@@ -1198,7 +1214,7 @@ function App() {
                       <CardContent className="text-center">
                         <Activity className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                         <h3 className="text-lg font-medium text-gray-900 mb-2">
-                          Welcome to Kafka Trace Viewer
+                          Welcome to Marauder's Map
                         </h3>
                         <p className="text-gray-600 mb-4">
                           Select a trace from the sidebar to view its message flow and details

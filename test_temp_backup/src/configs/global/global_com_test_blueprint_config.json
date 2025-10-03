@@ -1,0 +1,15 @@
+{
+  "environments": {
+    "DEV": {
+      "access": {
+        "debug": true
+      }
+    }
+  },
+  "config": {
+    "access": {
+      "enabled": true,
+      "description": "Base configuration for inheritance testing"
+    }
+  }
+}

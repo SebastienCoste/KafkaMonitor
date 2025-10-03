@@ -1,0 +1,6 @@
+{
+  "realId": ._system.id,
+  "tags": ["mockTag"],
+  "moderateMe": null,
+  "moderatedContent": if(is-array(.moderatedContent)) .moderatedContent + [.moderateMe] else [.moderateMe]
+}

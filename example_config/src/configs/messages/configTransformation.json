@@ -1,0 +1,16 @@
+{
+  "environments": {},
+  "messageConfigs": {
+    "cadieInternalModeratedTransformedConfigV2_transformation": {
+      "inherit": [
+        "cadieInternalModeratedConfig"
+      ],
+      "transformation": {
+        "customTransformation": {
+          "outputModel": "ea.cadie.fy26.veewan.internal.v2.EventForModerationTransformed",
+          "inputSpec": "moderation_transform.jslt"
+        }
+      }
+    }
+  }
+}
