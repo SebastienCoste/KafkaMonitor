@@ -283,6 +283,10 @@ export default function BlueprintCreator() {
               <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                 <div className="border-b border-gray-200 px-4 overflow-x-auto">
                   <TabsList className="h-12 w-full flex">
+                    <TabsTrigger value="git" className="flex items-center space-x-2">
+                      <GitBranch className="h-4 w-4" />
+                      <span>Git</span>
+                    </TabsTrigger>
                     <TabsTrigger value="files" className="flex items-center space-x-2">
                       <FileText className="h-4 w-4" />
                       <span>Files</span>
