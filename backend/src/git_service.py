@@ -389,28 +389,56 @@ class GitService:
                         error="Directory not empty. Use pull to update or reset to start fresh."
                     )
             
-            # Prepare environment with credentials if provided
+            # Prepare environment with credentials using Git credential helper
+            # This is more secure than embedding credentials in URLs
             env = os.environ.copy()
-            modified_url = git_url
             
-            if credentials and 'username' in credentials and 'password' in credentials:
-                # Inject credentials into HTTPS URL
-                if git_url.startswith('https://'):
-                    parsed = urlparse(git_url)
-                    modified_url = f"https://{credentials['username']}:{credentials['password']}@{parsed.netloc}{parsed.path}"
-            elif credentials and 'token' in credentials:
-                # Use token authentication
-                if git_url.startswith('https://'):
-                    parsed = urlparse(git_url)
-                    modified_url = f"https://{credentials['token']}@{parsed.netloc}{parsed.path}"
+            # Configure Git to use credentials from environment
+            if credentials:
+                if 'username' in credentials and 'password' in credentials:
+                    # Set up Git credential helper with environment variables
+                    env['GIT_USERNAME'] = credentials['username']
+                    env['GIT_PASSWORD'] = credentials['password']
+                    # Use Git askpass helper for credentials
+                    env['GIT_ASKPASS'] = 'echo'
+                    env['GIT_PASSWORD'] = credentials['password']
+                elif 'token' in credentials:
+                    # For token-based auth
+                    env['GIT_USERNAME'] = credentials.get('username', 'oauth2')
+                    env['GIT_PASSWORD'] = credentials['token']
+                    env['GIT_ASKPASS'] = 'echo'
             
-            # Clone repository
-            args = ['clone', '--branch', branch, '--single-branch', modified_url, '.']
-            success, stdout, stderr = await self._run_git_command(
-                args,
-                cwd=self.integrator_path,
-                env=env
-            )
+            # Clone repository without credentials in URL (more secure)
+            # Use longer timeout for clone operations
+            args = ['clone', '--branch', branch, '--single-branch', git_url, '.']
+            try:
+                success, stdout, stderr = await self._run_git_command(
+                    args,
+                    cwd=self.integrator_path,
+                    env=env,
+                    timeout_override=600  # 10 minutes for clone
+                )
+            except GitAuthenticationError as e:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.CLONE,
+                    message="Authentication failed. Please check your credentials.",
+                    error=str(e)
+                )
+            except GitNetworkError as e:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.CLONE,
+                    message="Network error. Please check your connection and repository URL.",
+                    error=str(e)
+                )
+            except GitCommandError as e:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.CLONE,
+                    message="Clone operation failed.",
+                    error=str(e)
+                )
             
             if success:
                 return GitOperationResult(
