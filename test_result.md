@@ -353,6 +353,7 @@ metadata:
 
 test_plan:
   current_focus:
+    - "Git Integration Frontend UI Testing"
     - "BUG4: Search Experience Entity Detection Fix"
     - "BUG5: Monitor All Topics on Startup Fix"
   stuck_tasks:
