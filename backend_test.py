@@ -690,6 +690,13 @@ class BackendRoutingTester:
         print("\n1️⃣3️⃣ Testing gRPC Error Handling")
         self.test_grpc_error_handling()
         
+        # Test Suite G - Git Integration Feature
+        print("\n🔧 TEST SUITE G - GIT INTEGRATION FEATURE")
+        print("-" * 50)
+        
+        print("\n1️⃣4️⃣ Testing Git Integration Feature")
+        self.run_git_integration_tests()
+        
         # Print final summary
         self.print_summary()
 
