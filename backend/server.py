@@ -193,7 +193,12 @@ try:
     # Initialize Git service
     from src.git_service import GitService
     integrator_path = ROOT_DIR / "integrator"
-    app.state.git_service = GitService(str(integrator_path), timeout=300)
+    git_config_path = ROOT_DIR / "config" / "git.yaml"
+    app.state.git_service = GitService(
+        str(integrator_path), 
+        timeout=300,
+        config_path=str(git_config_path) if git_config_path.exists() else None
+    )
     logger.info(f"Initialized Git service with integrator path: {integrator_path}")
 
     topics_yaml = ROOT_DIR / "config" / "topics.yaml"
