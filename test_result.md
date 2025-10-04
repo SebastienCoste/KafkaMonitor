@@ -368,7 +368,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Git Integration Frontend UI Testing"
     - "BUG4: Search Experience Entity Detection Fix"
     - "BUG5: Monitor All Topics on Startup Fix"
   stuck_tasks:
@@ -377,6 +376,7 @@ test_plan:
   completed_tasks:
     - "Graph Component Statistics - Real-time Data Display Fix"
     - "Git Integration Feature Implementation"
+    - "Git Integration Frontend UI Testing"
   test_all: false
   test_priority: "high_first"
 
