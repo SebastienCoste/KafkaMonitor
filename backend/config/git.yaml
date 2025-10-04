@@ -1,15 +1,48 @@
 git:
   integrator_path: "./integrator"
   default_branch: "main"
-  timeout_seconds: 300
+  
+  # Timeouts for different operations (in seconds)
+  timeouts:
+    clone: 600        # 10 minutes for clone
+    fetch: 120        # 2 minutes for fetch
+    pull: 300         # 5 minutes for pull
+    push: 300         # 5 minutes for push
+    default: 300      # 5 minutes for other operations
+  
+  # Repository size limits
   max_repo_size_mb: 500
+  
+  # Allowed Git hosts (whitelist for security)
   allowed_hosts:
     - "github.com"
     - "gitlab.com"
     - "bitbucket.org"
+    - "gitea.com"
+  
+  # Credential management
   credentials:
     store_temporarily: true
+    use_credential_helper: true
     environment_variables:
       username: "GIT_USERNAME"
       password: "GIT_PASSWORD"
       token: "GIT_TOKEN"
+  
+  # Security settings
+  security:
+    validate_urls: true
+    whitelist_hosts: true
+    sanitize_errors: true
+    prevent_command_injection: true
+  
+  # Operation limits
+  limits:
+    max_concurrent_operations: 3
+    rate_limit_per_minute: 10
+  
+  # Logging
+  logging:
+    log_commands: true
+    log_errors: true
+    sanitize_credentials: true
