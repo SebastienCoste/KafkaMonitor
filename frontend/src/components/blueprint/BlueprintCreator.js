@@ -22,6 +22,7 @@ import EnvironmentSelector from './Deployment/EnvironmentSelector';
 import DeploymentPanel from './Deployment/DeploymentPanel';
 import VerifySection from './VerifySection';
 import ConfigurationManager from './Configuration/ConfigurationManager';
+import GitIntegration from './GitIntegration';
 
 // Icons
 import { 
