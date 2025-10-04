@@ -36,7 +36,8 @@ import {
   Clock,
   Database,
   Plus,
-  X
+  X,
+  GitBranch
 } from 'lucide-react';
 
 export default function BlueprintCreator() {
