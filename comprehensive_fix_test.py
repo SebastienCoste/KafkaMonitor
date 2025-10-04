@@ -13,7 +13,7 @@ import os
 from pathlib import Path
 
 class ComprehensiveFixTester:
-    def __init__(self, base_url: str = "https://kafka-tracer-app.preview.emergentagent.com"):
+    def __init__(self, base_url: str = "https://blueprint-connect.preview.emergentagent.com"):
         self.base_url = base_url
         self.tests_run = 0
         self.tests_passed = 0
@@ -583,7 +583,7 @@ class ComprehensiveFixTester:
 
 def main():
     """Main function"""
-    base_url = "https://kafka-tracer-app.preview.emergentagent.com"
+    base_url = "https://blueprint-connect.preview.emergentagent.com"
     if len(sys.argv) > 1:
         base_url = sys.argv[1]
     
