@@ -401,13 +401,14 @@ class GitService:
             GitOperationResult
         """
         try:
-            # Validate URL
-            if not self.validate_git_url(git_url):
+            # Validate URL with whitelist if security is enabled
+            allowed = self.allowed_hosts if self.security_enabled else None
+            if not self.validate_git_url(git_url, allowed_hosts=allowed):
                 return GitOperationResult(
                     success=False,
                     operation=GitOperationType.CLONE,
-                    message="Invalid Git URL",
-                    error="URL validation failed"
+                    message="Invalid or unauthorized Git URL",
+                    error="URL validation failed. Please use an allowed Git host."
                 )
             
             # Sanitize branch name
