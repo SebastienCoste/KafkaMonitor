@@ -1310,6 +1310,232 @@ async def validate_blueprint_configuration():
         raise HTTPException(status_code=500, detail=str(e))
 
 # -----------------------------------------------------------------------------
+# Git Integration API Endpoints
+# -----------------------------------------------------------------------------
+
+@api_router.get("/blueprint/git/status")
+async def get_git_status():
+    """Get current Git repository status"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        status = await app.state.git_service.get_status()
+        return {
+            "success": True,
+            "status": {
+                "is_repo": status.is_repo,
+                "current_branch": status.current_branch,
+                "remote_url": status.remote_url,
+                "has_uncommitted_changes": status.has_uncommitted_changes,
+                "uncommitted_files": status.uncommitted_files,
+                "ahead_commits": status.ahead_commits,
+                "behind_commits": status.behind_commits,
+                "last_commit": status.last_commit,
+                "last_commit_author": status.last_commit_author,
+                "last_commit_date": status.last_commit_date
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error getting Git status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/blueprint/git/branches")
+async def get_git_branches():
+    """Get list of all branches"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        branches = await app.state.git_service.list_branches()
+        return {
+            "success": True,
+            "branches": branches
+        }
+    except Exception as e:
+        logger.error(f"Error getting Git branches: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/git/clone")
+async def clone_repository(request: Dict[str, Any]):
+    """Clone a Git repository into integrator folder"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        git_url = request.get('git_url')
+        branch = request.get('branch', 'main')
+        credentials = request.get('credentials')
+        
+        if not git_url:
+            raise HTTPException(status_code=400, detail="git_url is required")
+        
+        result = await app.state.git_service.clone_repository(git_url, branch, credentials)
+        
+        if result.success:
+            # Set integrator path as blueprint root path
+            integrator_path = str(app.state.git_service.integrator_path)
+            if blueprint_file_manager:
+                blueprint_file_manager.set_root_path(integrator_path)
+                logger.info(f"Set blueprint root path to integrator: {integrator_path}")
+            
+            # Broadcast update to WebSocket clients
+            await websocket_manager.broadcast({
+                "type": "git_operation",
+                "operation": "clone",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error,
+            "details": result.details
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cloning repository: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/git/pull")
+async def pull_changes():
+    """Pull latest changes from remote repository"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        result = await app.state.git_service.pull_changes()
+        
+        if result.success:
+            # Broadcast update to WebSocket clients
+            await websocket_manager.broadcast({
+                "type": "git_operation",
+                "operation": "pull",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error
+        }
+    except Exception as e:
+        logger.error(f"Error pulling changes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/git/push")
+async def push_changes(request: Dict[str, Any]):
+    """Add all changes, commit, and push to remote repository"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        commit_message = request.get('commit_message')
+        force = request.get('force', False)
+        
+        if not commit_message:
+            raise HTTPException(status_code=400, detail="commit_message is required")
+        
+        result = await app.state.git_service.push_changes(commit_message, force)
+        
+        if result.success:
+            # Broadcast update to WebSocket clients
+            await websocket_manager.broadcast({
+                "type": "git_operation",
+                "operation": "push",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error,
+            "details": result.details
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error pushing changes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/git/reset")
+async def reset_changes():
+    """Reset all local changes to HEAD"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        result = await app.state.git_service.reset_changes()
+        
+        if result.success:
+            # Broadcast update to WebSocket clients
+            await websocket_manager.broadcast({
+                "type": "git_operation",
+                "operation": "reset",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error
+        }
+    except Exception as e:
+        logger.error(f"Error resetting changes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/git/switch-branch")
+async def switch_branch(request: Dict[str, Any]):
+    """Switch to a different branch"""
+    if not hasattr(app.state, 'git_service') or not app.state.git_service:
+        raise HTTPException(status_code=503, detail="Git service not initialized")
+    
+    try:
+        branch_name = request.get('branch_name')
+        
+        if not branch_name:
+            raise HTTPException(status_code=400, detail="branch_name is required")
+        
+        result = await app.state.git_service.switch_branch(branch_name)
+        
+        if result.success:
+            # Broadcast update to WebSocket clients
+            await websocket_manager.broadcast({
+                "type": "git_operation",
+                "operation": "switch_branch",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error,
+            "details": result.details
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error switching branch: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# -----------------------------------------------------------------------------
 # Kafka/Traces placeholder endpoints (keep UI functional in mock mode)
 # -----------------------------------------------------------------------------
 @api_router.get("/topics")
