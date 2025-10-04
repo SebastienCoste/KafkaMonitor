@@ -31,7 +31,7 @@ export default function GitIntegration({ onRepositoryChange }) {
   const [gitUrl, setGitUrl] = useState('');
   const [branch, setBranch] = useState('main');
   const [commitMessage, setCommitMessage] = useState('');
-  const [forceePush, setForcePush] = useState(false);
+  const [forcePush, setForcePush] = useState(false);
   
   // Git status state
   const [gitStatus, setGitStatus] = useState(null);
