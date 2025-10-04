@@ -65,7 +65,7 @@ export default function BlueprintCreator() {
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // 320px = w-80
   const [isResizing, setIsResizing] = useState(false);
 
-  const [activeTab, setActiveTab] = useState('files');
+  const [activeTab, setActiveTab] = useState('git');
 
   // Mouse resize handlers
   const handleMouseDown = (e) => {
