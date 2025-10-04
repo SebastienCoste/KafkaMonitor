@@ -7,6 +7,7 @@ import asyncio
 import os
 import re
 import logging
+import shlex
 from pathlib import Path
 from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
@@ -14,6 +15,32 @@ from enum import Enum
 from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
+
+
+# Custom exceptions for better error handling
+class GitError(Exception):
+    """Base Git operation error"""
+    pass
+
+
+class GitAuthenticationError(GitError):
+    """Git authentication failed"""
+    pass
+
+
+class GitNetworkError(GitError):
+    """Network-related Git operation failed"""
+    pass
+
+
+class GitRepositoryError(GitError):
+    """Repository-specific error"""
+    pass
+
+
+class GitCommandError(GitError):
+    """Git command execution error"""
+    pass
 
 
 class GitOperationType(Enum):
