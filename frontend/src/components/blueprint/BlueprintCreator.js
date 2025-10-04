@@ -311,6 +311,19 @@ export default function BlueprintCreator() {
                 </div>
 
                 <div className="flex-1 overflow-hidden">
+                  <TabsContent value="git" className="h-full m-0">
+                    <div className="h-full p-4 overflow-y-auto">
+                      <div className="max-w-3xl mx-auto">
+                        <GitIntegration
+                          onRepositoryChange={(url, branch) => {
+                            // Refresh file tree when repository changes
+                            refreshFileTree();
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </TabsContent>
+
                   <TabsContent value="files" className="h-full m-0">
                     <div className="h-full flex">
                       {/* Left Sidebar - File Explorer */}
