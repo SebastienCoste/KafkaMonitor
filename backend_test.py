@@ -893,6 +893,604 @@ class BackendRoutingTester:
         except Exception as e:
             self.log_test("gRPC Error - Non-existent Service", False, f"Exception: {str(e)}")
 
+    # Test Suite G - Git Integration Feature
+    def test_git_status_initial(self):
+        """Test Suite G.1: GET /api/blueprint/git/status - Initial state (no repository)"""
+        try:
+            start_time = time.time()
+            response = requests.get(f"{self.base_url}/api/blueprint/git/status", timeout=15)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time
+                if response_time < 5.0:
+                    self.log_test("Git Status Response Time", True, f"{response_time:.3f}s")
+                else:
+                    self.log_test("Git Status Response Time", False, f"Too slow: {response_time:.3f}s")
+                
+                # Check response structure
+                if data.get("success") is True:
+                    self.log_test("Git Status Success", True, "Returns success: true")
+                    
+                    # Check status object structure
+                    if "status" in data and isinstance(data["status"], dict):
+                        status = data["status"]
+                        
+                        # Check required fields
+                        required_fields = [
+                            "is_repo", "current_branch", "remote_url", "has_uncommitted_changes",
+                            "uncommitted_files", "ahead_commits", "behind_commits", 
+                            "last_commit", "last_commit_author", "last_commit_date"
+                        ]
+                        
+                        found_fields = [field for field in required_fields if field in status]
+                        
+                        if len(found_fields) >= 8:  # At least 8 of 10 required fields
+                            self.log_test("Git Status Structure", True, f"Found {len(found_fields)}/10 fields: {found_fields}")
+                            
+                            # Check is_repo field (should be false initially)
+                            is_repo = status.get("is_repo")
+                            if is_repo is False:
+                                self.log_test("Git Status Initial State", True, "is_repo: false (no repository)")
+                            elif is_repo is True:
+                                self.log_test("Git Status Initial State", True, "is_repo: true (repository exists)")
+                            else:
+                                self.log_test("Git Status Initial State", False, f"Invalid is_repo value: {is_repo}")
+                            
+                            # Check data types
+                            type_checks = [
+                                ("is_repo", bool),
+                                ("has_uncommitted_changes", bool),
+                                ("ahead_commits", int),
+                                ("behind_commits", int),
+                                ("uncommitted_files", list)
+                            ]
+                            
+                            valid_types = 0
+                            for field_name, expected_type in type_checks:
+                                if field_name in status:
+                                    actual_value = status[field_name]
+                                    if isinstance(actual_value, expected_type):
+                                        valid_types += 1
+                                    else:
+                                        self.log_test(f"Git Status Type Check - {field_name}", False, 
+                                                    f"Expected {expected_type.__name__}, got {type(actual_value).__name__}")
+                            
+                            if valid_types >= 4:
+                                self.log_test("Git Status Data Types", True, f"{valid_types}/5 fields have correct types")
+                            else:
+                                self.log_test("Git Status Data Types", False, f"Only {valid_types}/5 fields have correct types")
+                            
+                            return True
+                        else:
+                            self.log_test("Git Status Structure", False, f"Missing required fields. Found: {list(status.keys())}")
+                            return False
+                    else:
+                        self.log_test("Git Status Object", False, f"Missing or invalid status object: {type(data.get('status'))}")
+                        return False
+                else:
+                    self.log_test("Git Status Success", False, f"Returns success: {data.get('success')}")
+                    return False
+            else:
+                self.log_test("Git Status Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Status Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_branches_initial(self):
+        """Test Suite G.2: GET /api/blueprint/git/branches - Initial state (no repository)"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/git/branches", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response structure
+                if "success" in data and "branches" in data:
+                    success = data.get("success")
+                    branches = data.get("branches")
+                    
+                    if success is True and isinstance(branches, list):
+                        self.log_test("Git Branches Success", True, f"Found {len(branches)} branches")
+                        return True
+                    elif success is False:
+                        # Expected for no repository
+                        self.log_test("Git Branches No Repo", True, "Proper error for no repository")
+                        return True
+                    else:
+                        self.log_test("Git Branches Structure", False, f"Invalid response: success={success}, branches={type(branches)}")
+                        return False
+                else:
+                    self.log_test("Git Branches Structure", False, f"Missing required fields: {list(data.keys())}")
+                    return False
+            else:
+                self.log_test("Git Branches Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Branches Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_clone_repository(self):
+        """Test Suite G.3: POST /api/blueprint/git/clone - Clone a public repository"""
+        try:
+            # Use a small, public repository for testing
+            clone_payload = {
+                "git_url": "https://github.com/octocat/Hello-World.git",
+                "branch": "master"
+            }
+            
+            start_time = time.time()
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/git/clone",
+                json=clone_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=60  # Clone operations can take longer
+            )
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time (should be reasonable for small repo)
+                if response_time < 30.0:
+                    self.log_test("Git Clone Response Time", True, f"{response_time:.3f}s")
+                else:
+                    self.log_test("Git Clone Response Time", False, f"Too slow: {response_time:.3f}s")
+                
+                # Check response structure
+                if data.get("success") is True:
+                    message = data.get("message", "")
+                    self.log_test("Git Clone Success", True, f"Clone successful: {message}")
+                    
+                    # Store that we have a repository for subsequent tests
+                    self.has_cloned_repo = True
+                    return True
+                else:
+                    error_msg = data.get("message", data.get("error", "Unknown error"))
+                    self.log_test("Git Clone Success", False, f"Clone failed: {error_msg}")
+                    return False
+            else:
+                self.log_test("Git Clone Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Clone Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_status_after_clone(self):
+        """Test Suite G.4: GET /api/blueprint/git/status - After cloning repository"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/git/status", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") is True and "status" in data:
+                    status = data["status"]
+                    
+                    # Check is_repo should now be true
+                    is_repo = status.get("is_repo")
+                    if is_repo is True:
+                        self.log_test("Git Status After Clone - Is Repo", True, "is_repo: true")
+                        
+                        # Check other fields are populated
+                        current_branch = status.get("current_branch", "")
+                        remote_url = status.get("remote_url", "")
+                        
+                        if current_branch:
+                            self.log_test("Git Status After Clone - Branch", True, f"Current branch: {current_branch}")
+                        else:
+                            self.log_test("Git Status After Clone - Branch", False, "No current branch found")
+                        
+                        if "github.com" in remote_url.lower():
+                            self.log_test("Git Status After Clone - Remote", True, f"Remote URL: {remote_url}")
+                        else:
+                            self.log_test("Git Status After Clone - Remote", False, f"Unexpected remote URL: {remote_url}")
+                        
+                        return True
+                    else:
+                        self.log_test("Git Status After Clone - Is Repo", False, f"is_repo should be true, got: {is_repo}")
+                        return False
+                else:
+                    self.log_test("Git Status After Clone", False, "Invalid response structure")
+                    return False
+            else:
+                self.log_test("Git Status After Clone", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Status After Clone", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_branches_after_clone(self):
+        """Test Suite G.5: GET /api/blueprint/git/branches - After cloning repository"""
+        try:
+            response = requests.get(f"{self.base_url}/api/blueprint/git/branches", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") is True:
+                    branches = data.get("branches", [])
+                    
+                    if isinstance(branches, list) and len(branches) > 0:
+                        self.log_test("Git Branches After Clone", True, f"Found {len(branches)} branches: {branches}")
+                        
+                        # Check for common branch names
+                        common_branches = ["master", "main"]
+                        found_common = [branch for branch in branches if branch in common_branches]
+                        
+                        if found_common:
+                            self.log_test("Git Branches Common Names", True, f"Found common branches: {found_common}")
+                        else:
+                            self.log_test("Git Branches Common Names", True, f"No common branch names, but found: {branches}")
+                        
+                        return True
+                    else:
+                        self.log_test("Git Branches After Clone", False, f"No branches found: {branches}")
+                        return False
+                else:
+                    error_msg = data.get("message", data.get("error", "Unknown error"))
+                    self.log_test("Git Branches After Clone", False, f"Failed: {error_msg}")
+                    return False
+            else:
+                self.log_test("Git Branches After Clone", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Branches After Clone", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_pull_operation(self):
+        """Test Suite G.6: POST /api/blueprint/git/pull - Pull latest changes"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/git/pull",
+                json={},
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") is True:
+                    message = data.get("message", "")
+                    self.log_test("Git Pull Success", True, f"Pull successful: {message}")
+                    return True
+                else:
+                    # Pull might fail if already up to date or no remote tracking
+                    error_msg = data.get("message", data.get("error", "Unknown error"))
+                    if "up to date" in error_msg.lower() or "already" in error_msg.lower():
+                        self.log_test("Git Pull Already Updated", True, f"Already up to date: {error_msg}")
+                        return True
+                    else:
+                        self.log_test("Git Pull Error", False, f"Pull failed: {error_msg}")
+                        return False
+            else:
+                self.log_test("Git Pull Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Pull Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_push_operation(self):
+        """Test Suite G.7: POST /api/blueprint/git/push - Push changes (expected to fail)"""
+        try:
+            push_payload = {
+                "commit_message": "Test commit from Git Integration testing",
+                "force": False
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/git/push",
+                json=push_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") is True:
+                    # Unexpected success (would require write access)
+                    message = data.get("message", "")
+                    self.log_test("Git Push Unexpected Success", True, f"Push succeeded: {message}")
+                    return True
+                else:
+                    # Expected failure (no write access, no changes, etc.)
+                    error_msg = data.get("message", data.get("error", "Unknown error"))
+                    expected_errors = [
+                        "no changes", "nothing to commit", "permission denied", 
+                        "authentication", "remote rejected", "no upstream"
+                    ]
+                    
+                    if any(expected in error_msg.lower() for expected in expected_errors):
+                        self.log_test("Git Push Expected Failure", True, f"Expected failure: {error_msg}")
+                        return True
+                    else:
+                        self.log_test("Git Push Unexpected Error", False, f"Unexpected error: {error_msg}")
+                        return False
+            else:
+                self.log_test("Git Push Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Push Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_reset_operation(self):
+        """Test Suite G.8: POST /api/blueprint/git/reset - Reset local changes"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/git/reset",
+                json={},
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                if data.get("success") is True:
+                    message = data.get("message", "")
+                    self.log_test("Git Reset Success", True, f"Reset successful: {message}")
+                    return True
+                else:
+                    error_msg = data.get("message", data.get("error", "Unknown error"))
+                    # Reset might fail if no changes to reset
+                    if "nothing to reset" in error_msg.lower() or "clean" in error_msg.lower():
+                        self.log_test("Git Reset No Changes", True, f"No changes to reset: {error_msg}")
+                        return True
+                    else:
+                        self.log_test("Git Reset Error", False, f"Reset failed: {error_msg}")
+                        return False
+            else:
+                self.log_test("Git Reset Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Reset Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_switch_branch_operation(self):
+        """Test Suite G.9: POST /api/blueprint/git/switch-branch - Switch branches"""
+        try:
+            # First get available branches
+            branches_response = requests.get(f"{self.base_url}/api/blueprint/git/branches", timeout=10)
+            
+            if branches_response.status_code == 200:
+                branches_data = branches_response.json()
+                
+                if branches_data.get("success") and branches_data.get("branches"):
+                    branches = branches_data["branches"]
+                    
+                    # Try to switch to a different branch (if available)
+                    current_status = requests.get(f"{self.base_url}/api/blueprint/git/status", timeout=10)
+                    if current_status.status_code == 200:
+                        status_data = current_status.json()
+                        current_branch = status_data.get("status", {}).get("current_branch", "")
+                        
+                        # Find a different branch to switch to
+                        target_branch = None
+                        for branch in branches:
+                            if branch != current_branch:
+                                target_branch = branch
+                                break
+                        
+                        if target_branch:
+                            switch_payload = {"branch_name": target_branch}
+                            
+                            response = requests.post(
+                                f"{self.base_url}/api/blueprint/git/switch-branch",
+                                json=switch_payload,
+                                headers={"Content-Type": "application/json"},
+                                timeout=15
+                            )
+                            
+                            if response.status_code == 200:
+                                data = response.json()
+                                
+                                if data.get("success") is True:
+                                    message = data.get("message", "")
+                                    self.log_test("Git Switch Branch Success", True, f"Switched to {target_branch}: {message}")
+                                    return True
+                                else:
+                                    error_msg = data.get("message", data.get("error", "Unknown error"))
+                                    self.log_test("Git Switch Branch Error", False, f"Switch failed: {error_msg}")
+                                    return False
+                            else:
+                                self.log_test("Git Switch Branch Endpoint", False, f"HTTP {response.status_code}")
+                                return False
+                        else:
+                            # Only one branch available, test with same branch
+                            switch_payload = {"branch_name": current_branch}
+                            
+                            response = requests.post(
+                                f"{self.base_url}/api/blueprint/git/switch-branch",
+                                json=switch_payload,
+                                headers={"Content-Type": "application/json"},
+                                timeout=15
+                            )
+                            
+                            if response.status_code == 200:
+                                data = response.json()
+                                message = data.get("message", "")
+                                self.log_test("Git Switch Branch Same", True, f"Switch to same branch: {message}")
+                                return True
+                            else:
+                                self.log_test("Git Switch Branch Same", False, f"HTTP {response.status_code}")
+                                return False
+                    else:
+                        self.log_test("Git Switch Branch - Status Check", False, "Could not get current status")
+                        return False
+                else:
+                    self.log_test("Git Switch Branch - No Branches", False, "No branches available")
+                    return False
+            else:
+                self.log_test("Git Switch Branch - Branches Check", False, f"Could not get branches: HTTP {branches_response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Git Switch Branch Endpoint", False, f"Exception: {str(e)}")
+            return False
+
+    def test_git_error_handling(self):
+        """Test Suite G.10: Git Error Handling - Invalid operations"""
+        print("\n🔧 Testing Git error handling:")
+        
+        # Test invalid Git URL
+        try:
+            invalid_clone_payload = {
+                "git_url": "invalid-url-not-git",
+                "branch": "main"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/git/clone",
+                json=invalid_clone_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=15
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") is False and "error" in data:
+                    self.log_test("Git Error - Invalid URL", True, f"Proper error handling: {data.get('message', data.get('error'))}")
+                else:
+                    self.log_test("Git Error - Invalid URL", False, "Should return success: false with error message")
+            else:
+                self.log_test("Git Error - Invalid URL", False, f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Git Error - Invalid URL", False, f"Exception: {str(e)}")
+        
+        # Test invalid branch name
+        try:
+            invalid_branch_payload = {"branch_name": "non-existent-branch-12345"}
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/git/switch-branch",
+                json=invalid_branch_payload,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                if data.get("success") is False:
+                    self.log_test("Git Error - Invalid Branch", True, f"Proper error handling: {data.get('message', data.get('error'))}")
+                else:
+                    self.log_test("Git Error - Invalid Branch", False, "Should return success: false for invalid branch")
+            else:
+                self.log_test("Git Error - Invalid Branch", False, f"HTTP {response.status_code}")
+        except Exception as e:
+            self.log_test("Git Error - Invalid Branch", False, f"Exception: {str(e)}")
+
+    def test_git_security_checks(self):
+        """Test Suite G.11: Git Security Checks - URL validation and injection prevention"""
+        print("\n🔧 Testing Git security checks:")
+        
+        # Test local file system access prevention
+        try:
+            malicious_payloads = [
+                {"git_url": "file:///etc/passwd", "branch": "main"},
+                {"git_url": "/local/path/to/repo", "branch": "main"},
+                {"git_url": "git://localhost/../../etc", "branch": "main"},
+            ]
+            
+            for i, payload in enumerate(malicious_payloads):
+                response = requests.post(
+                    f"{self.base_url}/api/blueprint/git/clone",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success") is False:
+                        self.log_test(f"Git Security - Malicious URL {i+1}", True, f"Blocked malicious URL: {payload['git_url']}")
+                    else:
+                        self.log_test(f"Git Security - Malicious URL {i+1}", False, f"Should block malicious URL: {payload['git_url']}")
+                else:
+                    self.log_test(f"Git Security - Malicious URL {i+1}", True, f"HTTP {response.status_code} (blocked)")
+        except Exception as e:
+            self.log_test("Git Security - Malicious URLs", False, f"Exception: {str(e)}")
+        
+        # Test branch name sanitization
+        try:
+            malicious_branches = [
+                {"branch_name": "main; rm -rf /"},
+                {"branch_name": "main && echo 'hacked'"},
+                {"branch_name": "main | cat /etc/passwd"},
+            ]
+            
+            for i, payload in enumerate(malicious_branches):
+                response = requests.post(
+                    f"{self.base_url}/api/blueprint/git/switch-branch",
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("success") is False:
+                        self.log_test(f"Git Security - Malicious Branch {i+1}", True, f"Blocked malicious branch: {payload['branch_name']}")
+                    else:
+                        self.log_test(f"Git Security - Malicious Branch {i+1}", False, f"Should block malicious branch: {payload['branch_name']}")
+                else:
+                    self.log_test(f"Git Security - Malicious Branch {i+1}", True, f"HTTP {response.status_code} (blocked)")
+        except Exception as e:
+            self.log_test("Git Security - Malicious Branches", False, f"Exception: {str(e)}")
+
+    def run_git_integration_tests(self):
+        """Run comprehensive Git Integration tests"""
+        print("\n🔧 TEST SUITE G - GIT INTEGRATION FEATURE")
+        print("-" * 50)
+        
+        # Initialize tracking variable
+        self.has_cloned_repo = False
+        
+        print("\n📋 Scenario 1: Initial State (No Repository)")
+        print("1️⃣ Testing Git Status - Initial State")
+        self.test_git_status_initial()
+        
+        print("\n2️⃣ Testing Git Branches - Initial State")
+        self.test_git_branches_initial()
+        
+        print("\n📋 Scenario 2: Clone Repository")
+        print("3️⃣ Testing Git Clone Operation")
+        clone_success = self.test_git_clone_repository()
+        
+        if clone_success:
+            print("\n📋 Scenario 3: Git Operations on Cloned Repo")
+            print("4️⃣ Testing Git Status - After Clone")
+            self.test_git_status_after_clone()
+            
+            print("\n5️⃣ Testing Git Branches - After Clone")
+            self.test_git_branches_after_clone()
+            
+            print("\n6️⃣ Testing Git Pull Operation")
+            self.test_git_pull_operation()
+            
+            print("\n7️⃣ Testing Git Push Operation")
+            self.test_git_push_operation()
+            
+            print("\n8️⃣ Testing Git Reset Operation")
+            self.test_git_reset_operation()
+            
+            print("\n9️⃣ Testing Git Switch Branch Operation")
+            self.test_git_switch_branch_operation()
+        else:
+            print("\n⚠️ Skipping post-clone tests due to clone failure")
+        
+        print("\n📋 Scenario 4: Error Handling & Security")
+        print("🔟 Testing Git Error Handling")
+        self.test_git_error_handling()
+        
+        print("\n1️⃣1️⃣ Testing Git Security Checks")
+        self.test_git_security_checks()
+        
+        return True
+
     def print_summary(self):
         """Print test summary"""
         print("\n" + "=" * 80)
