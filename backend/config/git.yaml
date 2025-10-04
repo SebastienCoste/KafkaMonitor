@@ -1,0 +1,15 @@
+git:
+  integrator_path: "./integrator"
+  default_branch: "main"
+  timeout_seconds: 300
+  max_repo_size_mb: 500
+  allowed_hosts:
+    - "github.com"
+    - "gitlab.com"
+    - "bitbucket.org"
+  credentials:
+    store_temporarily: true
+    environment_variables:
+      username: "GIT_USERNAME"
+      password: "GIT_PASSWORD"
+      token: "GIT_TOKEN"
