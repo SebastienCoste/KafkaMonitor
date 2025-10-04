@@ -452,17 +452,25 @@ class GitService:
                 return GitOperationResult(
                     success=False,
                     operation=GitOperationType.CLONE,
-                    message="Failed to clone repository",
+                    message="Failed to clone repository. Please check the URL and credentials.",
                     error=stderr,
                     output=stdout
                 )
         
-        except Exception as e:
-            self.logger.error(f"Error cloning repository: {e}")
+        except (GitAuthenticationError, GitNetworkError, GitRepositoryError, GitCommandError) as e:
+            # Already handled above, but catch here for safety
             return GitOperationResult(
                 success=False,
                 operation=GitOperationType.CLONE,
-                message="Error during clone operation",
+                message=str(e),
+                error=str(e)
+            )
+        except Exception as e:
+            self.logger.error(f"Unexpected error cloning repository: {e}")
+            return GitOperationResult(
+                success=False,
+                operation=GitOperationType.CLONE,
+                message="An unexpected error occurred during clone operation",
                 error=str(e)
             )
     
