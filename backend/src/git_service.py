@@ -233,28 +233,42 @@ class GitService:
         self,
         args: List[str],
         cwd: Optional[Path] = None,
-        env: Optional[Dict[str, str]] = None
+        env: Optional[Dict[str, str]] = None,
+        timeout_override: Optional[int] = None
     ) -> Tuple[bool, str, str]:
         """
-        Execute Git command safely with async subprocess
+        Execute Git command safely with async subprocess and proper error handling
         
         Args:
             args: Git command arguments
             cwd: Working directory
             env: Environment variables
+            timeout_override: Optional timeout override for specific operations
             
         Returns:
             Tuple of (success, stdout, stderr)
+            
+        Raises:
+            GitCommandError: If command execution fails critically
         """
         if cwd is None:
             cwd = self.integrator_path
         
+        # Validate working directory is within integrator path
+        if not self._validate_path_security(Path(cwd)):
+            raise GitCommandError("Working directory outside allowed path")
+        
         try:
-            # Prepare command
+            # Prepare command - args are NOT shell-escaped here as we use exec, not shell
             cmd = ['git'] + args
-            self.logger.info(f"Executing Git command: {' '.join(cmd)} in {cwd}")
             
-            # Create process
+            # Log command (sanitize for security - don't log credentials)
+            safe_cmd = ' '.join(cmd)
+            if env and ('GIT_USERNAME' in env or 'GIT_PASSWORD' in env):
+                safe_cmd = safe_cmd.replace(env.get('GIT_PASSWORD', ''), '***')
+            self.logger.info(f"Executing Git command: {safe_cmd} in {cwd}")
+            
+            # Create process with environment
             process = await asyncio.create_subprocess_exec(
                 *cmd,
                 cwd=str(cwd),
@@ -263,32 +277,73 @@ class GitService:
                 env=env
             )
             
+            # Use override timeout if provided, otherwise use default
+            timeout = timeout_override if timeout_override is not None else self.timeout
+            
             # Wait for completion with timeout
             try:
                 stdout, stderr = await asyncio.wait_for(
                     process.communicate(),
-                    timeout=self.timeout
+                    timeout=timeout
                 )
             except asyncio.TimeoutError:
+                self.logger.error(f"Git command timed out after {timeout} seconds")
                 process.kill()
                 await process.wait()
-                return False, "", f"Git command timed out after {self.timeout} seconds"
+                raise GitCommandError(f"Git operation timed out after {timeout} seconds")
+            except asyncio.CancelledError:
+                self.logger.warning("Git command cancelled")
+                process.kill()
+                await process.wait()
+                raise
             
-            stdout_str = stdout.decode('utf-8') if stdout else ""
-            stderr_str = stderr.decode('utf-8') if stderr else ""
+            stdout_str = stdout.decode('utf-8', errors='replace') if stdout else ""
+            stderr_str = stderr.decode('utf-8', errors='replace') if stderr else ""
             
             success = process.returncode == 0
             
+            # Provide specific error types based on stderr content
             if not success:
-                self.logger.error(f"Git command failed: {stderr_str}")
+                # Sanitize error messages to avoid leaking sensitive info
+                sanitized_error = self._sanitize_error_message(stderr_str)
+                self.logger.error(f"Git command failed with return code {process.returncode}: {sanitized_error}")
+                
+                # Classify error type
+                if 'authentication' in stderr_str.lower() or 'permission denied' in stderr_str.lower():
+                    raise GitAuthenticationError(f"Authentication failed: {sanitized_error}")
+                elif 'network' in stderr_str.lower() or 'could not resolve' in stderr_str.lower():
+                    raise GitNetworkError(f"Network error: {sanitized_error}")
+                elif 'not found' in stderr_str.lower() or 'does not exist' in stderr_str.lower():
+                    raise GitRepositoryError(f"Repository error: {sanitized_error}")
             else:
                 self.logger.info(f"Git command succeeded")
             
             return success, stdout_str, stderr_str
             
+        except (GitAuthenticationError, GitNetworkError, GitRepositoryError, GitCommandError):
+            # Re-raise specific Git errors
+            raise
         except Exception as e:
-            self.logger.error(f"Error executing Git command: {e}")
-            return False, "", str(e)
+            self.logger.error(f"Unexpected error executing Git command: {e}")
+            raise GitCommandError(f"Git command failed: {str(e)}")
+    
+    def _sanitize_error_message(self, error: str) -> str:
+        """
+        Sanitize error messages to prevent credential leakage
+        
+        Args:
+            error: Raw error message
+            
+        Returns:
+            Sanitized error message
+        """
+        # Remove any URLs with credentials
+        sanitized = re.sub(r'https://[^@]+@', 'https://***@', error)
+        # Remove password patterns
+        sanitized = re.sub(r'password[=:]\s*\S+', 'password=***', sanitized, flags=re.IGNORECASE)
+        # Remove token patterns
+        sanitized = re.sub(r'token[=:]\s*\S+', 'token=***', sanitized, flags=re.IGNORECASE)
+        return sanitized
     
     async def clone_repository(
         self,
