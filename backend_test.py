@@ -1571,6 +1571,11 @@ class BackendRoutingTester:
             status = "✅" if result["success"] else "❌"
             print(f"   {status} {result['name']}")
         
+        print(f"\n🔧 TEST SUITE G - GIT INTEGRATION FEATURE ({len([r for r in suite_g_results if r['success']])}/{len(suite_g_results)} passed):")
+        for result in suite_g_results:
+            status = "✅" if result["success"] else "❌"
+            print(f"   {status} {result['name']}")
+        
         if other_results:
             print(f"\n🔧 OTHER TESTS ({len([r for r in other_results if r['success']])}/{len(other_results)} passed):")
             for result in other_results:
