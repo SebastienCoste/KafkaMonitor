@@ -189,6 +189,12 @@ try:
     blueprint_file_manager = BlueprintFileManager()
     blueprint_config_manager = BlueprintConfigurationManager(ENTITY_DEFINITIONS_PATH, blueprint_file_manager)
     blueprint_build_manager = BlueprintBuildManager()
+    
+    # Initialize Git service
+    from src.git_service import GitService
+    integrator_path = ROOT_DIR / "integrator"
+    app.state.git_service = GitService(str(integrator_path), timeout=300)
+    logger.info(f"Initialized Git service with integrator path: {integrator_path}")
 
     topics_yaml = ROOT_DIR / "config" / "topics.yaml"
     settings_yaml = ROOT_DIR / "config" / "settings.yaml"
