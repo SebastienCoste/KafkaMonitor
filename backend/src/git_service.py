@@ -94,25 +94,63 @@ class GitStatus:
 
 
 class GitService:
-    """Service for handling Git operations"""
+    """Service for handling Git operations with enhanced security and configuration"""
     
-    def __init__(self, integrator_path: str, timeout: int = 300):
+    def __init__(self, integrator_path: str, timeout: int = 300, config_path: Optional[str] = None):
         """
         Initialize Git service
         
         Args:
             integrator_path: Path to integrator directory
-            timeout: Timeout for Git operations in seconds
+            timeout: Default timeout for Git operations in seconds
+            config_path: Optional path to git.yaml configuration file
         """
         self.integrator_path = Path(integrator_path)
         self.timeout = timeout
         self.logger = logging.getLogger(__name__)
+        
+        # Load configuration from YAML if provided
+        self.config = self._load_config(config_path) if config_path else {}
+        
+        # Get timeouts from config or use defaults
+        self.timeouts = self.config.get('timeouts', {
+            'clone': 600,
+            'fetch': 120,
+            'pull': 300,
+            'push': 300,
+            'default': 300
+        })
+        
+        # Get allowed hosts from config
+        self.allowed_hosts = self.config.get('allowed_hosts', [])
+        
+        # Security settings
+        self.security_enabled = self.config.get('security', {}).get('whitelist_hosts', True)
         
         # Create integrator directory if it doesn't exist
         self.integrator_path.mkdir(parents=True, exist_ok=True)
         
         # Initialize Git config
         self._initialize_git_config()
+    
+    def _load_config(self, config_path: str) -> Dict[str, Any]:
+        """
+        Load Git configuration from YAML file
+        
+        Args:
+            config_path: Path to configuration file
+            
+        Returns:
+            Configuration dictionary
+        """
+        try:
+            import yaml
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+                return config.get('git', {})
+        except Exception as e:
+            self.logger.warning(f"Could not load Git configuration from {config_path}: {e}")
+            return {}
     
     def _initialize_git_config(self):
         """Initialize basic Git configuration"""
