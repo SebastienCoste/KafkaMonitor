@@ -129,32 +129,77 @@ class GitService:
         except Exception as e:
             self.logger.warning(f"Could not check Git config: {e}")
     
-    def validate_git_url(self, url: str) -> bool:
+    def _validate_path_security(self, path: Path) -> bool:
         """
-        Validate Git URL format and security
+        Validate that path is within integrator directory (prevent directory traversal)
+        
+        Args:
+            path: Path to validate
+            
+        Returns:
+            True if path is safe, False otherwise
+        """
+        try:
+            # Resolve to absolute path and check if it's within integrator
+            resolved = path.resolve()
+            integrator_resolved = self.integrator_path.resolve()
+            return str(resolved).startswith(str(integrator_resolved))
+        except Exception:
+            return False
+    
+    def validate_git_url(self, url: str, allowed_hosts: Optional[List[str]] = None) -> bool:
+        """
+        Validate Git URL format and security with whitelist support
         
         Args:
             url: Git repository URL
+            allowed_hosts: Optional list of allowed hosts (e.g., ['github.com', 'gitlab.com'])
             
         Returns:
             True if valid, False otherwise
         """
-        if not url:
+        if not url or not isinstance(url, str):
+            return False
+        
+        # Prevent command injection attempts
+        dangerous_chars = [';', '&', '|', '`', '$', '(', ')', '<', '>', '\n', '\r']
+        if any(char in url for char in dangerous_chars):
+            self.logger.warning(f"Rejected URL with dangerous characters: {url}")
             return False
         
         # Check for valid URL patterns
-        # Support HTTPS and SSH formats
-        https_pattern = r'^https?://[a-zA-Z0-9-._~:/?#\[\]@!$&\'()*+,;=]+\.git$|^https?://[a-zA-Z0-9-._~:/?#\[\]@!$&\'()*+,;=]+$'
-        ssh_pattern = r'^git@[a-zA-Z0-9.-]+:[a-zA-Z0-9/_.-]+\.git$|^git@[a-zA-Z0-9.-]+:[a-zA-Z0-9/_.-]+$'
+        # Support HTTPS and SSH formats with strict validation
+        https_pattern = r'^https://[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*(/[a-zA-Z0-9._-]+)+(\.git)?$'
+        ssh_pattern = r'^git@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*:[a-zA-Z0-9/_.-]+(\.git)?$'
         
-        if re.match(https_pattern, url) or re.match(ssh_pattern, url):
-            # Additional security: prevent local file system access
-            parsed = urlparse(url)
-            if parsed.scheme in ['file', '']:
-                return False
-            return True
+        is_valid_format = re.match(https_pattern, url) or re.match(ssh_pattern, url)
         
-        return False
+        if not is_valid_format:
+            self.logger.warning(f"Invalid Git URL format: {url}")
+            return False
+        
+        # Additional security checks
+        parsed = urlparse(url)
+        
+        # Prevent local file system access
+        if parsed.scheme in ['file', ''] or url.startswith('/') or url.startswith('.'):
+            self.logger.warning(f"Rejected local file system URL: {url}")
+            return False
+        
+        # Whitelist check if provided
+        if allowed_hosts:
+            if url.startswith('https://'):
+                host = parsed.netloc.split('@')[-1]  # Remove any user info
+                if not any(host.endswith(allowed) for allowed in allowed_hosts):
+                    self.logger.warning(f"URL host not in whitelist: {host}")
+                    return False
+            elif url.startswith('git@'):
+                host = url.split('@')[1].split(':')[0]
+                if not any(host.endswith(allowed) for allowed in allowed_hosts):
+                    self.logger.warning(f"URL host not in whitelist: {host}")
+                    return False
+        
+        return True
     
     def sanitize_branch_name(self, branch: str) -> str:
         """
