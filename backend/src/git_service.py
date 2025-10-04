@@ -203,17 +203,31 @@ class GitService:
     
     def sanitize_branch_name(self, branch: str) -> str:
         """
-        Sanitize branch name to prevent command injection
+        Sanitize branch name to prevent command injection with strict validation
         
         Args:
             branch: Branch name
             
         Returns:
             Sanitized branch name
+            
+        Raises:
+            GitCommandError: If branch name is invalid
         """
-        # Remove dangerous characters
-        sanitized = re.sub(r'[^a-zA-Z0-9._/-]', '', branch)
-        return sanitized
+        if not branch or not isinstance(branch, str):
+            raise GitCommandError("Branch name must be a non-empty string")
+        
+        # Whitelist-based validation: only allow alphanumeric, dash, underscore, slash, dot
+        if not re.match(r'^[a-zA-Z0-9._/-]+$', branch):
+            raise GitCommandError(f"Invalid branch name format: {branch}")
+        
+        # Prevent command injection sequences
+        dangerous_sequences = ['..', '--', '|||', '&&', ';;']
+        if any(seq in branch for seq in dangerous_sequences):
+            raise GitCommandError(f"Branch name contains dangerous sequence: {branch}")
+        
+        # Additional safety: use shlex.quote for shell safety
+        return branch
     
     async def _run_git_command(
         self,
