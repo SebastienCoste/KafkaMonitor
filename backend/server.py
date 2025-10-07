@@ -1321,7 +1321,320 @@ async def validate_blueprint_configuration():
         raise HTTPException(status_code=500, detail=str(e))
 
 # -----------------------------------------------------------------------------
-# Git Integration API Endpoints
+# Multi-Project Git Integration API Endpoints
+# -----------------------------------------------------------------------------
+
+@api_router.get("/blueprint/integration/projects")
+async def get_integration_projects():
+    """Get list of all projects in integration directory"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        # Discover and return all projects
+        projects = await app.state.integration_manager.discover_projects()
+        return {
+            "success": True,
+            "projects": [project.dict() for project in projects],
+            "total": len(projects)
+        }
+    except Exception as e:
+        logger.error(f"Error getting integration projects: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/integration/add-project")
+async def add_git_project(request: Dict[str, Any]):
+    """Add a new Git project (clone if needed, or return existing)"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        from src.integration_models import AddProjectRequest
+        
+        # Validate request
+        add_request = AddProjectRequest(**request)
+        
+        # Get or create project
+        project, error = await app.state.integration_manager.get_or_create_project(add_request)
+        
+        if error:
+            return {
+                "success": False,
+                "message": error,
+                "project": None
+            }
+        
+        # Broadcast update to WebSocket clients
+        await websocket_manager.broadcast({
+            "type": "project_added",
+            "project": project.dict()
+        })
+        
+        return {
+            "success": True,
+            "message": f"Project added successfully: {project.name}",
+            "project": project.dict()
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error adding project: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.delete("/blueprint/integration/projects/{project_id}")
+async def remove_project(project_id: str, force: bool = False):
+    """Remove project from integration directory (hard delete)"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        success, error = await app.state.integration_manager.remove_project(project_id, force)
+        
+        if not success:
+            return {
+                "success": False,
+                "message": error or "Failed to remove project"
+            }
+        
+        # Broadcast update to WebSocket clients
+        await websocket_manager.broadcast({
+            "type": "project_removed",
+            "project_id": project_id
+        })
+        
+        return {
+            "success": True,
+            "message": f"Project removed successfully: {project_id}"
+        }
+    except Exception as e:
+        logger.error(f"Error removing project: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/blueprint/integration/projects/{project_id}/git/status")
+async def get_project_git_status(project_id: str):
+    """Get Git status for specific project"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        status = await app.state.integration_manager.get_project_git_status(project_id)
+        
+        if not status:
+            raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+        
+        return {
+            "success": True,
+            "project_id": project_id,
+            "status": {
+                "is_repo": status.is_repo,
+                "current_branch": status.current_branch,
+                "remote_url": status.remote_url,
+                "has_uncommitted_changes": status.has_uncommitted_changes,
+                "uncommitted_files": status.uncommitted_files,
+                "ahead_commits": status.ahead_commits,
+                "behind_commits": status.behind_commits,
+                "last_commit": status.last_commit,
+                "last_commit_author": status.last_commit_author,
+                "last_commit_date": status.last_commit_date
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting project Git status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/integration/projects/{project_id}/git/pull")
+async def pull_project_changes(project_id: str):
+    """Pull latest changes for specific project"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        git_service = app.state.integration_manager.get_git_service(project_id)
+        if not git_service:
+            raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+        
+        result = await git_service.pull_changes()
+        
+        if result.success:
+            # Broadcast update
+            await websocket_manager.broadcast({
+                "type": "project_git_operation",
+                "project_id": project_id,
+                "operation": "pull",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error pulling project changes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/integration/projects/{project_id}/git/push")
+async def push_project_changes(project_id: str, request: Dict[str, Any]):
+    """Push changes for specific project"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        commit_message = request.get('commit_message')
+        force = request.get('force', False)
+        
+        if not commit_message:
+            raise HTTPException(status_code=400, detail="commit_message is required")
+        
+        git_service = app.state.integration_manager.get_git_service(project_id)
+        if not git_service:
+            raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+        
+        result = await git_service.push_changes(commit_message, force)
+        
+        if result.success:
+            # Broadcast update
+            await websocket_manager.broadcast({
+                "type": "project_git_operation",
+                "project_id": project_id,
+                "operation": "push",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error,
+            "details": result.details
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error pushing project changes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/integration/projects/{project_id}/git/reset")
+async def reset_project_changes(project_id: str):
+    """Reset all local changes for specific project"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        git_service = app.state.integration_manager.get_git_service(project_id)
+        if not git_service:
+            raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+        
+        result = await git_service.reset_changes()
+        
+        if result.success:
+            # Broadcast update
+            await websocket_manager.broadcast({
+                "type": "project_git_operation",
+                "project_id": project_id,
+                "operation": "reset",
+                "success": True,
+                "message": result.message
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resetting project changes: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/blueprint/integration/projects/{project_id}/git/switch-branch")
+async def switch_project_branch(project_id: str, request: Dict[str, Any]):
+    """Switch branch for specific project"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        branch_name = request.get('branch_name')
+        
+        if not branch_name:
+            raise HTTPException(status_code=400, detail="branch_name is required")
+        
+        git_service = app.state.integration_manager.get_git_service(project_id)
+        if not git_service:
+            raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+        
+        result = await git_service.switch_branch(branch_name)
+        
+        if result.success:
+            # Broadcast update
+            await websocket_manager.broadcast({
+                "type": "project_git_operation",
+                "project_id": project_id,
+                "operation": "switch_branch",
+                "success": True,
+                "message": result.message,
+                "branch": branch_name
+            })
+        
+        return {
+            "success": result.success,
+            "message": result.message,
+            "output": result.output,
+            "error": result.error,
+            "details": result.details
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error switching project branch: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.get("/blueprint/integration/projects/{project_id}/git/branches")
+async def get_project_branches(project_id: str):
+    """Get list of all branches for specific project"""
+    if not hasattr(app.state, 'integration_manager') or not app.state.integration_manager:
+        raise HTTPException(status_code=503, detail="Integration manager not initialized")
+    
+    try:
+        git_service = app.state.integration_manager.get_git_service(project_id)
+        if not git_service:
+            raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
+        
+        branches = await git_service.list_branches()
+        
+        return {
+            "success": True,
+            "project_id": project_id,
+            "branches": branches
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting project branches: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# -----------------------------------------------------------------------------
+# Legacy Single-Project Git Integration API Endpoints (Deprecated)
+# These endpoints are maintained for backward compatibility
+# New code should use the multi-project endpoints above
 # -----------------------------------------------------------------------------
 
 @api_router.get("/blueprint/git/status")
