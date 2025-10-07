@@ -192,6 +192,11 @@ export default function GitIntegration() {
   };
 
   const handleSwitchBranch = async (branchName) => {
+    if (!projectId) {
+      toast.error('No Git project selected');
+      return;
+    }
+    
     if (gitStatus?.has_uncommitted_changes) {
       const confirm = window.confirm(
         'You have uncommitted changes. Switching branches may lose these changes. Continue?'
@@ -203,7 +208,7 @@ export default function GitIntegration() {
     setOperation('switch');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/blueprint/git/switch-branch`, {
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/switch-branch`, {
         branch_name: branchName
       });
 
