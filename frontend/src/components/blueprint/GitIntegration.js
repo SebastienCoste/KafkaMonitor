@@ -134,7 +134,7 @@ export default function GitIntegration() {
     setOperation('push');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/blueprint/git/push`, {
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/push`, {
         commit_message: commitMessage,
         force: forcePush
       });
