@@ -31,6 +31,8 @@ export function BlueprintProvider({ children }) {
   const [namespace, setNamespace] = useState('');
   const [blueprints, setBlueprints] = useState([]); // Multiple blueprints support
   const [activeBlueprint, setActiveBlueprint] = useState(null);
+  const [integrationProjects, setIntegrationProjects] = useState([]); // NEW: Git integration projects
+  const [showGitSelector, setShowGitSelector] = useState(false); // NEW: Git selector modal visibility
 
   const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
