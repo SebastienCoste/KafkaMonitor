@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { toast } from 'sonner';
+import { useBlueprintContext } from './Common/BlueprintContext';
 import { 
   GitBranch, 
   GitPullRequest, 
@@ -26,10 +27,14 @@ import {
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
-export default function GitIntegration({ onRepositoryChange }) {
+export default function GitIntegration() {
+  const { blueprints, activeBlueprint } = useBlueprintContext();
+  
+  // Get current blueprint and project ID
+  const currentBlueprint = blueprints.find(bp => bp.id === activeBlueprint);
+  const projectId = currentBlueprint?.projectId;
+  
   // Git repository state
-  const [gitUrl, setGitUrl] = useState('');
-  const [branch, setBranch] = useState('main');
   const [commitMessage, setCommitMessage] = useState('');
   const [forcePush, setForcePush] = useState(false);
   
@@ -40,26 +45,28 @@ export default function GitIntegration({ onRepositoryChange }) {
   // UI state
   const [loading, setLoading] = useState(false);
   const [operation, setOperation] = useState('');
-  const [showCloneForm, setShowCloneForm] = useState(true);
 
-  // Load Git status on mount and periodically
+  // Load Git status on mount and periodically, only if we have a project ID
   useEffect(() => {
-    loadGitStatus();
-    const interval = setInterval(loadGitStatus, 10000); // Every 10 seconds
-    return () => clearInterval(interval);
-  }, []);
+    if (projectId) {
+      loadGitStatus();
+      const interval = setInterval(loadGitStatus, 10000); // Every 10 seconds
+      return () => clearInterval(interval);
+    }
+  }, [projectId]);
 
   // Load branches when status changes
   useEffect(() => {
-    if (gitStatus?.is_repo) {
+    if (gitStatus?.is_repo && projectId) {
       loadBranches();
-      setShowCloneForm(false);
     }
-  }, [gitStatus?.is_repo]);
+  }, [gitStatus?.is_repo, projectId]);
 
   const loadGitStatus = async () => {
+    if (!projectId) return;
+    
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/blueprint/git/status`);
+      const response = await axios.get(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/status`);
       if (response.data.success) {
         setGitStatus(response.data.status);
       }
@@ -70,8 +77,10 @@ export default function GitIntegration({ onRepositoryChange }) {
   };
 
   const loadBranches = async () => {
+    if (!projectId) return;
+    
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/blueprint/git/branches`);
+      const response = await axios.get(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/branches`);
       if (response.data.success) {
         setBranches(response.data.branches);
       }
@@ -80,51 +89,17 @@ export default function GitIntegration({ onRepositoryChange }) {
     }
   };
 
-  const handleCloneRepository = async () => {
-    if (!gitUrl) {
-      toast.error('Please enter a Git URL');
+  const handlePullChanges = async () => {
+    if (!projectId) {
+      toast.error('No Git project selected');
       return;
     }
-
-    setLoading(true);
-    setOperation('clone');
-
-    try {
-      const response = await axios.post(`${API_BASE_URL}/api/blueprint/git/clone`, {
-        git_url: gitUrl,
-        branch: branch || 'main'
-      });
-
-      if (response.data.success) {
-        toast.success(response.data.message);
-        await loadGitStatus();
-        if (onRepositoryChange) {
-          onRepositoryChange(gitUrl, branch);
-        }
-        // Clear form
-        setGitUrl('');
-        setBranch('main');
-      } else {
-        toast.error(response.data.message || 'Failed to clone repository');
-        if (response.data.error) {
-          console.error('Clone error:', response.data.error);
-        }
-      }
-    } catch (error) {
-      console.error('Error cloning repository:', error);
-      toast.error(error.response?.data?.detail || 'Failed to clone repository');
-    } finally {
-      setLoading(false);
-      setOperation('');
-    }
-  };
-
-  const handlePullChanges = async () => {
+    
     setLoading(true);
     setOperation('pull');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/blueprint/git/pull`);
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/pull`);
 
       if (response.data.success) {
         toast.success(response.data.message);
@@ -145,6 +120,11 @@ export default function GitIntegration({ onRepositoryChange }) {
   };
 
   const handlePushChanges = async () => {
+    if (!projectId) {
+      toast.error('No Git project selected');
+      return;
+    }
+    
     if (!commitMessage || !commitMessage.trim()) {
       toast.error('Please enter a commit message');
       return;
