@@ -552,14 +552,16 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Phase 2 - Frontend Core Changes for multi-project UI"
-    - "Frontend integration with new multi-project API endpoints"
+    - "Multi-Project Git Integration Frontend UI Testing"
+    - "GitProjectSelector modal functionality"
+    - "Per-project Git operations in GitIntegration tab"
+    - "Project switching and management"
   completed_tasks:
     - "Backend API endpoints testing"
     - "Integration Manager project operations"
     - "Automatic migration from integrator/ to integration/"
     - "Multi-project Git operations (per-project basis)"
-  test_priority: "frontend_next"
+  test_priority: "comprehensive_ui_testing"
 
 agent_communication:
   - agent: "main"
