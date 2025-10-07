@@ -66,6 +66,40 @@ async def startup_event():
     except Exception as e:
         logger.error(f"❌ Error auto-initializing gRPC: {e}")
     
+    # Perform Git integration migration if needed
+    try:
+        if hasattr(app.state, 'integration_manager') and app.state.integration_manager:
+            from src.migration_helper import IntegrationMigration
+            
+            integrator_path = ROOT_DIR / "integrator"
+            integration_path = ROOT_DIR / "integration"
+            
+            migration = IntegrationMigration(
+                str(integrator_path),
+                str(integration_path)
+            )
+            
+            if migration.detect_legacy_setup():
+                logger.info("🔄 Legacy Git setup detected, performing automatic migration...")
+                success, project_info, error = await migration.migrate_existing_setup()
+                
+                if success and project_info:
+                    # Add migrated project to integration manager
+                    app.state.integration_manager.manifest.add_project(project_info)
+                    app.state.integration_manager._save_manifest(app.state.integration_manager.manifest)
+                    logger.info(f"✅ Migration successful: {project_info.name} -> integration/{project_info.path}")
+                    logger.info(f"   Git URL: {project_info.git_url}")
+                    logger.info(f"   Branch: {project_info.branch}")
+                    logger.info(f"   Namespace: {project_info.namespace or 'N/A'}")
+                elif error:
+                    logger.warning(f"⚠️ Migration failed: {error}")
+            else:
+                logger.info("ℹ️ No legacy Git setup detected, skipping migration")
+    except Exception as e:
+        logger.error(f"❌ Error during Git integration migration: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
+    
     # Initialize Kafka consumer automatically
     global kafka_consumer
     try:
