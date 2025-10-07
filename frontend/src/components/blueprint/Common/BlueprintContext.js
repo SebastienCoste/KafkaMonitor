@@ -227,10 +227,24 @@ export function BlueprintProvider({ children }) {
     }
   };
 
-  // Load environments on mount
+  // Load environments and integration projects on mount
   useEffect(() => {
     loadEnvironments();
+    loadIntegrationProjects();
   }, []);
+
+  const loadIntegrationProjects = useCallback(async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/api/blueprint/integration/projects`);
+      if (response.data.success) {
+        setIntegrationProjects(response.data.projects || []);
+        console.log(`✅ Loaded ${response.data.projects?.length || 0} integration projects`);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load integration projects:', error);
+      setIntegrationProjects([]);
+    }
+  }, [API_BASE_URL]);
 
   const refreshFileTree = useCallback(async () => {
     if (!rootPath) return;
