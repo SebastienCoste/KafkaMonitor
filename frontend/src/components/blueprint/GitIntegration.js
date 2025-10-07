@@ -228,62 +228,7 @@ export default function GitIntegration() {
     }
   };
 
-  const renderCloneForm = () => (
-    <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <GitBranch className="h-5 w-5" />
-          <span>Clone Repository</span>
-        </CardTitle>
-        <CardDescription>
-          Enter a Git repository URL to clone it into the integrator folder
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="git-url">Git Repository URL</Label>
-            <Input
-              id="git-url"
-              placeholder="https://github.com/user/repo.git"
-              value={gitUrl}
-              onChange={(e) => setGitUrl(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="branch">Branch Name</Label>
-            <Input
-              id="branch"
-              placeholder="main"
-              value={branch}
-              onChange={(e) => setBranch(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          <Button
-            onClick={handleCloneRepository}
-            disabled={loading || !gitUrl}
-            className="w-full"
-          >
-            {loading && operation === 'clone' ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Cloning...
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4 mr-2" />
-                Clone Repository
-              </>
-            )}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const renderCloneForm = () => null; // Remove clone form since we use GitProjectSelector now
 
   const renderGitStatus = () => {
     if (!gitStatus || !gitStatus.is_repo) {
