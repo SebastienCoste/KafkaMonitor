@@ -499,10 +499,55 @@ backend:
         agent: "testing"
         comment: "✅ GIT CONFIGURATION VERIFIED: Configuration working correctly for both legacy and multi-project systems. ✅ PATH CONFIGURATION: Both integrator_path and integration_path supported for backward compatibility. ✅ SECURITY: Git URL validation working correctly - blocks invalid URLs, enforces allowed hosts whitelist. ✅ TIMEOUT SETTINGS: Proper timeout configurations in place for Git operations. ✅ CREDENTIAL MANAGEMENT: Supports both environment-based and request-based credentials. All Git configuration settings are working as designed."
 
+frontend:
+  - task: "Git Project Selector Component"
+    implemented: true
+    working: unknown
+    file: "frontend/src/components/blueprint/GitProjectSelector.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Created GitProjectSelector modal component for selecting and adding Git projects. Features: 1) Lists existing projects with status badges (clean/dirty), 2) Shows project details (name, URL, branch), 3) Git URL input with validation, 4) Branch input, 5) Add project button (clones if new, returns existing if duplicate), 6) Click to select existing projects, 7) Cancel button to close modal, 8) Loading states and error messages. Replaces the old FileBrowser component."
+  
+  - task: "Blueprint Context - Multi-Project Integration"
+    implemented: true
+    working: unknown
+    file: "frontend/src/components/blueprint/Common/BlueprintContext.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Modified BlueprintContext to support multi-project Git integration. Changes: 1) Added integrationProjects state to track Git projects, 2) Added showGitSelector state for modal visibility, 3) Added loadIntegrationProjects function (loads from /api/blueprint/integration/projects on mount), 4) Modified addNewBlueprint to show Git selector instead of prompting for path, 5) Added handleGitProjectSelect to create blueprints from Git projects (links blueprint to project_id, sets path to /integration/{project.path}, includes Git metadata), 6) Blueprints now contain projectId, gitUrl, branch fields. Context now manages Git projects alongside blueprints."
+  
+  - task: "Blueprint Creator - Git Selector Integration"
+    implemented: true
+    working: unknown
+    file: "frontend/src/components/blueprint/BlueprintCreator.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Updated BlueprintCreator to integrate GitProjectSelector. Changes: 1) Replaced FileBrowser import with GitProjectSelector, 2) Added showGitSelector and handleGitProjectSelect to context usage, 3) Modified initial setup screen to show 'Select Git Project' button instead of file browser, 4) Updated '+ Add' blueprint button to show Git selector modal instead of path prompt, 5) Integrated GitProjectSelector modal in both setup and main interface views. Users can now only add blueprints via Git projects, no more local file system browsing."
+
 metadata:
-  phase: "Phase 1 - Backend Infrastructure"
-  next_phase: "Phase 2 - Frontend Core Changes"
-  migration_status: "automatic migration implemented"
+  phase: "Phase 2 - Frontend Core Changes (PARTIALLY COMPLETE)"
+  completed_tasks:
+    - "Git Project Selector UI component"
+    - "Blueprint Context multi-project support"
+    - "Blueprint Creator Git integration"
+  pending_tasks:
+    - "GitIntegration.js per-project operations"
+    - "Project management UI (remove, switch)"
+    - "Project status indicators"
+  next_phase: "Phase 3 - Multi-Project UI/UX & Phase 4 - Testing"
+  migration_status: "automatic migration implemented and tested"
   backward_compatibility: true
 
 test_plan:
