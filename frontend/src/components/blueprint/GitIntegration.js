@@ -528,10 +528,55 @@ export default function GitIntegration() {
     );
   };
 
+  // Show message if no project is selected
+  if (!projectId || !currentBlueprint) {
+    return (
+      <div className="p-6">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No Git project selected. Please select or add a Git project from the Blueprint Creator setup.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const renderProjectInfo = () => (
+    <Card className="mb-4">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <GitBranch className="h-5 w-5" />
+          <span>Current Project</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2">
+          <div>
+            <span className="text-sm font-medium text-gray-600">Name:</span>
+            <span className="ml-2 text-sm">{currentBlueprint.name}</span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-600">URL:</span>
+            <span className="ml-2 text-sm break-all">{currentBlueprint.gitUrl}</span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-600">Branch:</span>
+            <span className="ml-2 text-sm">{currentBlueprint.branch}</span>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-gray-600">Project ID:</span>
+            <span className="ml-2 text-sm text-gray-500">{projectId}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="git-integration space-y-4">
+      {renderProjectInfo()}
       {renderGitStatus()}
-      {showCloneForm && renderCloneForm()}
       {renderGitOperations()}
     </div>
   );
