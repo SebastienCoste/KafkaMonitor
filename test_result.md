@@ -549,15 +549,36 @@ frontend:
   
   - task: "Multi-Project Git Integration - Path Resolution Issue"
     implemented: true
-    working: false
-    file: "frontend/src/components/blueprint/Common/BlueprintContext.js, backend/server.py"
-    stuck_count: 1
+    working: true
+    file: "frontend/src/components/blueprint/Common/BlueprintContext.js"
+    stuck_count: 0
     priority: "critical"
     needs_retesting: false
     status_history:
       - working: false
         agent: "testing"
         comment: "❌ CRITICAL PATH RESOLUTION ISSUE: Multi-project Git integration UI is fully functional but has a backend path resolution error. ✅ UI COMPONENTS WORKING: GitProjectSelector modal, project selection, multi-project management UI all working correctly. ❌ BACKEND ERROR: When selecting a Git project, frontend sends path '/integration/migrated-project-main' but backend expects full path '/app/backend/integration/migrated-project-main'. Error: 'Root path does not exist: /integration/migrated-project-main' (HTTP 500). ✅ ERROR HANDLING: UI properly displays error message 'No Git project selected. Please select or add a Git project from the Blueprint Creator setup.' ✅ MULTI-PROJECT UI: Project tabs and '+ Add' button visible and functional. REQUIRES FIX: Path resolution between frontend and backend for Git project paths."
+      - working: true
+        agent: "main"
+        comment: "✅ FIXED: Changed handleGitProjectSelect to use absolute path `/app/backend/integration/${project.path}` instead of relative path `/integration/${project.path}`. This resolves the 'Root path does not exist' error."
+      - working: true
+        agent: "testing"
+        comment: "✅ PATH RESOLUTION FIX VERIFIED: Comprehensive re-testing confirms the critical path issue is completely resolved. ✅ PROJECT SELECTION: Blueprint Creator loads successfully without HTTP 500 errors, Git Project Selector modal displays 2 existing projects, project selection works correctly with absolute paths. ✅ MULTI-PROJECT WORKFLOW: Multiple project tabs functional (migrated-project-main, hello-world-test), project switching works, '+ Add' button opens Git Project Selector. ✅ BACKEND API: All endpoints return proper responses with Git status (is_repo=true, current_branch=master, clean working tree). ✅ NO ERRORS: No path-related errors in console, no HTTP 500 errors, WebSocket connections established. The path resolution fix is production-ready."
+  
+  - task: "Git Integration Component - Per-Project Operations"
+    implemented: true
+    working: true
+    file: "frontend/src/components/blueprint/GitIntegration.js"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Updated GitIntegration.js to work with per-project endpoints. Changes: 1) Added useBlueprintContext to get current blueprint and projectId, 2) Replaced all legacy single-project endpoints (/api/blueprint/git/*) with per-project endpoints (/api/blueprint/integration/projects/{projectId}/git/*), 3) Added projectId validation for all Git operations, 4) Added renderProjectInfo card showing current project details (name, URL, branch, project ID), 5) Removed clone form (replaced by GitProjectSelector), 6) Added early return with helpful message when no project selected. Component now properly integrates with multi-project system."
+      - working: true
+        agent: "testing"
+        comment: "✅ GIT INTEGRATION PER-PROJECT OPERATIONS VERIFIED: Component successfully updated to work with project-specific Git operations. After path resolution fix, Git Integration tab loads correctly and displays project information. All Git operations (pull, push, reset, switch branch) use correct per-project API endpoints with projectId parameter. Component properly validates projectId existence before operations and shows appropriate error messages when no project is selected."
 
 metadata:
   phase: "Phase 2 - Frontend Core Changes (PARTIALLY COMPLETE)"
