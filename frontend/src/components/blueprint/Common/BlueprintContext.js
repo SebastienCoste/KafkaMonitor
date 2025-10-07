@@ -648,32 +648,54 @@ export function BlueprintProvider({ children }) {
   };
 
   // Multi-blueprint management functions
-  const addNewBlueprint = async (path) => {
+  const addNewBlueprint = async () => {
+    // Show Git project selector instead of file browser
+    setShowGitSelector(true);
+  };
+
+  const handleGitProjectSelect = async (project) => {
     try {
-      // Check if blueprint already exists
-      const existingBlueprint = blueprints.find(bp => bp.rootPath === path);
+      console.log('🔄 Handling Git project selection:', project);
+      
+      // Check if blueprint already exists for this project
+      const existingBlueprint = blueprints.find(bp => bp.projectId === project.id);
       if (existingBlueprint) {
+        console.log('✅ Blueprint already exists for this project, switching to it');
         switchBlueprint(existingBlueprint.id);
+        setShowGitSelector(false);
         return;
       }
 
-      // Create new blueprint entry
+      // Create new blueprint from Git project
+      const projectPath = `/integration/${project.path}`;
       const newBlueprint = {
         id: Date.now().toString(),
-        rootPath: path,
-        namespace: '',
-        name: path.split('/').pop() || path
+        projectId: project.id, // Link to Git project
+        rootPath: projectPath,
+        gitUrl: project.git_url,
+        branch: project.branch,
+        namespace: project.namespace || '',
+        name: `${project.name} (${project.branch})`
       };
+
+      console.log('📚 Adding new blueprint from Git project:', newBlueprint);
 
       // Add to blueprints list
       setBlueprints(prev => [...prev, newBlueprint]);
       
       // Set as active and load
       setActiveBlueprint(newBlueprint.id);
-      await setBlueprintRootPath(path);
+      await setBlueprintRootPath(projectPath);
       
+      // Close Git selector modal
+      setShowGitSelector(false);
+      
+      // Reload integration projects list
+      await loadIntegrationProjects();
+      
+      console.log('✅ Blueprint added and activated');
     } catch (error) {
-      console.error('Error adding blueprint:', error);
+      console.error('❌ Error handling Git project selection:', error);
       throw error;
     }
   };
