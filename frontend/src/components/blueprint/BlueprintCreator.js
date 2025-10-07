@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 // Blueprint Creator Components
 import { useBlueprintContext } from './Common/BlueprintContext';
 import FileTree from './FileExplorer/FileTree';
-import FileBrowser from './FileExplorer/FileBrowser';
 import FileUpload from './FileExplorer/FileUpload';
 import CodeEditor from './Editors/CodeEditor';
 import FileTabs from './Editors/FileTabs';
@@ -23,6 +22,7 @@ import DeploymentPanel from './Deployment/DeploymentPanel';
 import VerifySection from './VerifySection';
 import ConfigurationManager from './Configuration/ConfigurationManager';
 import GitIntegration from './GitIntegration';
+import GitProjectSelector from './GitProjectSelector';
 
 // Icons
 import { 
