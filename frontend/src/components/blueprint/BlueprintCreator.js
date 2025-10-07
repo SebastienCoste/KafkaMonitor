@@ -248,35 +248,49 @@ export default function BlueprintCreator() {
             </Card>
           </div>
         ) : !rootPath ? (
-          // Initial setup view
+          // Initial setup view - Show Git Project Selector
           <div className="flex-1 flex items-center justify-center">
             <Card className="w-full max-w-2xl mx-4">
               <CardHeader className="text-center">
                 <CardTitle className="flex items-center justify-center space-x-2">
-                  <Settings className="h-6 w-6" />
+                  <GitBranch className="h-6 w-6" />
                   <span>Setup Blueprint Creator</span>
                 </CardTitle>
                 <CardDescription>
-                  Select your blueprint project root directory to begin managing blueprints
+                  Select a Git project to begin managing blueprints
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <FileBrowser />
+              <CardContent className="text-center">
+                <p className="text-gray-600 mb-6">
+                  Get started by selecting an existing Git project or adding a new one from a repository.
+                </p>
+                <Button 
+                  onClick={() => setShowGitSelector(true)}
+                  className="flex items-center gap-2"
+                >
+                  <GitBranch className="h-4 w-4" />
+                  Select Git Project
+                </Button>
                 
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                  <h4 className="font-medium text-blue-900 mb-2">Expected Structure:</h4>
-                  <pre className="text-xs text-blue-800 font-mono">
-{`<root>/
-├── blueprint_cnf.json
-├── src/
-│   ├── configs/
-│   ├── transformSpecs/
-│   └── protobuf/
-└── out/`}
-                  </pre>
+                  <h4 className="font-medium text-blue-900 mb-2">How it works:</h4>
+                  <ul className="text-sm text-blue-800 text-left space-y-1">
+                    <li>• Clone Git repositories into isolated project folders</li>
+                    <li>• Each repository + branch combination gets its own workspace</li>
+                    <li>• Manage multiple projects simultaneously</li>
+                    <li>• All Git operations work per-project</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Git Project Selector Modal */}
+            {showGitSelector && (
+              <GitProjectSelector
+                onProjectSelect={handleGitProjectSelect}
+                onCancel={() => setShowGitSelector(false)}
+              />
+            )}
           </div>
         ) : (
           // Main blueprint interface
