@@ -190,7 +190,7 @@ try:
     blueprint_config_manager = BlueprintConfigurationManager(ENTITY_DEFINITIONS_PATH, blueprint_file_manager)
     blueprint_build_manager = BlueprintBuildManager()
     
-    # Initialize Git service
+    # Initialize Git service (legacy single-project)
     from src.git_service import GitService
     integrator_path = ROOT_DIR / "integrator"
     git_config_path = ROOT_DIR / "config" / "git.yaml"
@@ -200,6 +200,40 @@ try:
         config_path=str(git_config_path) if git_config_path.exists() else None
     )
     logger.info(f"Initialized Git service with integrator path: {integrator_path}")
+    
+    # Initialize Integration Manager (multi-project)
+    from src.integration_manager import IntegrationManager
+    from src.migration_helper import IntegrationMigration
+    
+    integration_path = ROOT_DIR / "integration"
+    app.state.integration_manager = IntegrationManager(
+        str(integration_path),
+        git_config_path=str(git_config_path) if git_config_path.exists() else None
+    )
+    logger.info(f"Initialized Integration Manager with integration path: {integration_path}")
+    
+    # Check for and perform migration if needed
+    migration = IntegrationMigration(
+        str(integrator_path),
+        str(integration_path)
+    )
+    if migration.detect_legacy_setup():
+        logger.info("Legacy setup detected, performing migration...")
+        import asyncio
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        success, project_info, error = loop.run_until_complete(migration.migrate_existing_setup())
+        loop.close()
+        
+        if success and project_info:
+            # Add migrated project to integration manager
+            app.state.integration_manager.manifest.add_project(project_info)
+            app.state.integration_manager._save_manifest(app.state.integration_manager.manifest)
+            logger.info(f"✅ Migration successful: {project_info.name} -> {project_info.path}")
+        elif error:
+            logger.warning(f"⚠️ Migration failed: {error}")
+    else:
+        logger.info("No legacy setup detected, skipping migration")
 
     topics_yaml = ROOT_DIR / "config" / "topics.yaml"
     settings_yaml = ROOT_DIR / "config" / "settings.yaml"
