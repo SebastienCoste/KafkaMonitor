@@ -1613,6 +1613,557 @@ class BackendRoutingTester:
         
         print(f"{'='*80}")
 
+    # Test Suite H - Multi-Project Git Integration
+    def run_multi_project_integration_tests(self):
+        """Test Suite H: Multi-Project Git Integration API Endpoints"""
+        print("\n🔀 TEST SUITE H - MULTI-PROJECT GIT INTEGRATION")
+        print("-" * 50)
+        print("Testing the new multi-project Git integration backend API endpoints")
+        print("Context: Phase 1 of multi-project system - backend infrastructure with 9 new endpoints")
+        print("Expected: 1 migrated project (migrated-project-main) from Hello-World repository")
+        print("-" * 50)
+        
+        # H.1 - Test GET /api/blueprint/integration/projects
+        print("\n1️⃣ Testing GET /api/blueprint/integration/projects - List all projects")
+        self.test_integration_projects_list()
+        
+        # H.2 - Test GET /api/blueprint/integration/projects/{project_id}/git/status
+        print("\n2️⃣ Testing GET /api/blueprint/integration/projects/migrated-project-main/git/status")
+        self.test_integration_project_git_status()
+        
+        # H.3 - Test GET /api/blueprint/integration/projects/{project_id}/git/branches
+        print("\n3️⃣ Testing GET /api/blueprint/integration/projects/migrated-project-main/git/branches")
+        self.test_integration_project_git_branches()
+        
+        # H.4 - Test POST /api/blueprint/integration/projects/{project_id}/git/pull
+        print("\n4️⃣ Testing POST /api/blueprint/integration/projects/migrated-project-main/git/pull")
+        self.test_integration_project_git_pull()
+        
+        # H.5 - Test POST /api/blueprint/integration/add-project (existing project)
+        print("\n5️⃣ Testing POST /api/blueprint/integration/add-project - Existing project")
+        self.test_integration_add_existing_project()
+        
+        # H.6 - Test POST /api/blueprint/integration/add-project (new project)
+        print("\n6️⃣ Testing POST /api/blueprint/integration/add-project - New project")
+        self.test_integration_add_new_project()
+        
+        # H.7 - Test Error Handling - Non-existent project
+        print("\n7️⃣ Testing Error Handling - Non-existent project")
+        self.test_integration_nonexistent_project()
+        
+        # H.8 - Test Error Handling - Invalid Git URL
+        print("\n8️⃣ Testing Error Handling - Invalid Git URL")
+        self.test_integration_invalid_git_url()
+        
+        return True
+    
+    def test_integration_projects_list(self):
+        """Test H.1: GET /api/blueprint/integration/projects - List all projects"""
+        try:
+            start_time = time.time()
+            response = requests.get(f"{self.base_url}/api/blueprint/integration/projects", timeout=15)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time
+                if response_time < 5.0:
+                    self.log_test("Integration Projects List Response Time", True, f"{response_time:.3f}s")
+                else:
+                    self.log_test("Integration Projects List Response Time", False, f"Too slow: {response_time:.3f}s")
+                
+                # Check response structure
+                required_fields = ["success", "projects", "total"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 3:
+                    self.log_test("Integration Projects List Structure", True, f"Found fields: {found_fields}")
+                    
+                    # Check success field
+                    if data.get("success") is True:
+                        self.log_test("Integration Projects List Success", True, "Returns success: true")
+                        
+                        # Check projects array
+                        projects = data.get("projects", [])
+                        total = data.get("total", 0)
+                        
+                        if isinstance(projects, list) and isinstance(total, int):
+                            self.log_test("Integration Projects List Data Types", True, f"Projects: list, Total: int")
+                            
+                            # Expect at least 1 project (migrated-project-main)
+                            if len(projects) >= 1:
+                                self.log_test("Integration Projects Count", True, f"Found {len(projects)} projects (expected >= 1)")
+                                
+                                # Check for migrated project
+                                migrated_project = None
+                                for project in projects:
+                                    if isinstance(project, dict) and project.get("id") == "migrated-project-main":
+                                        migrated_project = project
+                                        break
+                                
+                                if migrated_project:
+                                    self.log_test("Integration Migrated Project Found", True, f"Found migrated-project-main")
+                                    
+                                    # Verify project structure
+                                    expected_project_fields = [
+                                        "id", "name", "git_url", "branch", "status", "path",
+                                        "uncommitted_changes", "ahead_commits", "behind_commits",
+                                        "last_commit", "last_commit_author", "last_commit_date"
+                                    ]
+                                    found_project_fields = [field for field in expected_project_fields if field in migrated_project]
+                                    
+                                    if len(found_project_fields) >= 8:
+                                        self.log_test("Integration Project Structure", True, f"Project has {len(found_project_fields)}/12 expected fields")
+                                        
+                                        # Verify specific values for migrated project
+                                        git_url = migrated_project.get("git_url", "")
+                                        branch = migrated_project.get("branch", "")
+                                        name = migrated_project.get("name", "")
+                                        
+                                        if "github.com/octocat/Hello-World" in git_url:
+                                            self.log_test("Integration Project Git URL", True, f"Correct Git URL: {git_url}")
+                                        else:
+                                            self.log_test("Integration Project Git URL", False, f"Unexpected Git URL: {git_url}")
+                                        
+                                        if branch == "master":
+                                            self.log_test("Integration Project Branch", True, f"Correct branch: {branch}")
+                                        else:
+                                            self.log_test("Integration Project Branch", False, f"Unexpected branch: {branch}")
+                                        
+                                        if name == "Hello-World":
+                                            self.log_test("Integration Project Name", True, f"Correct name: {name}")
+                                        else:
+                                            self.log_test("Integration Project Name", False, f"Unexpected name: {name}")
+                                    else:
+                                        self.log_test("Integration Project Structure", False, f"Missing project fields. Found: {list(migrated_project.keys())}")
+                                else:
+                                    self.log_test("Integration Migrated Project Found", False, "migrated-project-main not found in projects list")
+                            else:
+                                self.log_test("Integration Projects Count", False, f"Expected >= 1 project, found {len(projects)}")
+                        else:
+                            self.log_test("Integration Projects List Data Types", False, f"Invalid data types: projects={type(projects)}, total={type(total)}")
+                    else:
+                        self.log_test("Integration Projects List Success", False, f"Returns success: {data.get('success')}")
+                else:
+                    self.log_test("Integration Projects List Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                
+                return True
+            else:
+                self.log_test("Integration Projects List Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Projects List Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_project_git_status(self):
+        """Test H.2: GET /api/blueprint/integration/projects/migrated-project-main/git/status"""
+        try:
+            project_id = "migrated-project-main"
+            start_time = time.time()
+            response = requests.get(f"{self.base_url}/api/blueprint/integration/projects/{project_id}/git/status", timeout=15)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response time
+                if response_time < 5.0:
+                    self.log_test("Integration Project Git Status Response Time", True, f"{response_time:.3f}s")
+                else:
+                    self.log_test("Integration Project Git Status Response Time", False, f"Too slow: {response_time:.3f}s")
+                
+                # Check response structure
+                required_fields = ["success", "project_id", "status"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 3:
+                    self.log_test("Integration Project Git Status Structure", True, f"Found fields: {found_fields}")
+                    
+                    # Check success and project_id
+                    if data.get("success") is True and data.get("project_id") == project_id:
+                        self.log_test("Integration Project Git Status Success", True, f"Success: true, Project ID: {project_id}")
+                        
+                        # Check status object
+                        status = data.get("status", {})
+                        if isinstance(status, dict):
+                            expected_status_fields = [
+                                "is_repo", "current_branch", "remote_url", "has_uncommitted_changes",
+                                "uncommitted_files", "ahead_commits", "behind_commits",
+                                "last_commit", "last_commit_author", "last_commit_date"
+                            ]
+                            found_status_fields = [field for field in expected_status_fields if field in status]
+                            
+                            if len(found_status_fields) >= 8:
+                                self.log_test("Integration Project Git Status Fields", True, f"Status has {len(found_status_fields)}/10 expected fields")
+                                
+                                # Verify specific values
+                                is_repo = status.get("is_repo")
+                                current_branch = status.get("current_branch", "")
+                                remote_url = status.get("remote_url", "")
+                                
+                                if is_repo is True:
+                                    self.log_test("Integration Project Is Repo", True, "is_repo: true")
+                                else:
+                                    self.log_test("Integration Project Is Repo", False, f"is_repo: {is_repo}")
+                                
+                                if current_branch == "master":
+                                    self.log_test("Integration Project Current Branch", True, f"Current branch: {current_branch}")
+                                else:
+                                    self.log_test("Integration Project Current Branch", False, f"Unexpected branch: {current_branch}")
+                                
+                                if "github.com/octocat/Hello-World" in remote_url:
+                                    self.log_test("Integration Project Remote URL", True, f"Correct remote URL: {remote_url}")
+                                else:
+                                    self.log_test("Integration Project Remote URL", False, f"Unexpected remote URL: {remote_url}")
+                                
+                                # Check data types
+                                type_checks = [
+                                    ("is_repo", bool),
+                                    ("has_uncommitted_changes", bool),
+                                    ("ahead_commits", int),
+                                    ("behind_commits", int),
+                                    ("uncommitted_files", list)
+                                ]
+                                
+                                valid_types = 0
+                                for field_name, expected_type in type_checks:
+                                    if field_name in status:
+                                        actual_value = status[field_name]
+                                        if isinstance(actual_value, expected_type):
+                                            valid_types += 1
+                                        else:
+                                            self.log_test(f"Integration Git Status Type - {field_name}", False, 
+                                                        f"Expected {expected_type.__name__}, got {type(actual_value).__name__}")
+                                
+                                if valid_types >= 4:
+                                    self.log_test("Integration Git Status Data Types", True, f"{valid_types}/5 fields have correct types")
+                                else:
+                                    self.log_test("Integration Git Status Data Types", False, f"Only {valid_types}/5 fields have correct types")
+                            else:
+                                self.log_test("Integration Project Git Status Fields", False, f"Missing status fields. Found: {list(status.keys())}")
+                        else:
+                            self.log_test("Integration Project Git Status Object", False, f"Invalid status object: {type(status)}")
+                    else:
+                        self.log_test("Integration Project Git Status Success", False, f"Success: {data.get('success')}, Project ID: {data.get('project_id')}")
+                else:
+                    self.log_test("Integration Project Git Status Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                
+                return True
+            elif response.status_code == 404:
+                self.log_test("Integration Project Git Status Endpoint", False, "HTTP 404 - Project not found")
+                return False
+            else:
+                self.log_test("Integration Project Git Status Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Project Git Status Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_project_git_branches(self):
+        """Test H.3: GET /api/blueprint/integration/projects/migrated-project-main/git/branches"""
+        try:
+            project_id = "migrated-project-main"
+            response = requests.get(f"{self.base_url}/api/blueprint/integration/projects/{project_id}/git/branches", timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response structure
+                required_fields = ["success", "project_id", "branches"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 3:
+                    self.log_test("Integration Project Branches Structure", True, f"Found fields: {found_fields}")
+                    
+                    # Check success and project_id
+                    if data.get("success") is True and data.get("project_id") == project_id:
+                        self.log_test("Integration Project Branches Success", True, f"Success: true, Project ID: {project_id}")
+                        
+                        # Check branches array
+                        branches = data.get("branches", [])
+                        if isinstance(branches, list):
+                            if len(branches) > 0:
+                                self.log_test("Integration Project Branches List", True, f"Found {len(branches)} branches: {branches}")
+                                
+                                # Check for master branch (expected for Hello-World repo)
+                                if "master" in branches:
+                                    self.log_test("Integration Project Master Branch", True, "Found master branch")
+                                else:
+                                    self.log_test("Integration Project Master Branch", False, f"Master branch not found in: {branches}")
+                            else:
+                                self.log_test("Integration Project Branches List", False, "No branches found")
+                        else:
+                            self.log_test("Integration Project Branches Array", False, f"Branches is not a list: {type(branches)}")
+                    else:
+                        self.log_test("Integration Project Branches Success", False, f"Success: {data.get('success')}, Project ID: {data.get('project_id')}")
+                else:
+                    self.log_test("Integration Project Branches Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                
+                return True
+            elif response.status_code == 404:
+                self.log_test("Integration Project Branches Endpoint", False, "HTTP 404 - Project not found")
+                return False
+            else:
+                self.log_test("Integration Project Branches Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Project Branches Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_project_git_pull(self):
+        """Test H.4: POST /api/blueprint/integration/projects/migrated-project-main/git/pull"""
+        try:
+            project_id = "migrated-project-main"
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/integration/projects/{project_id}/git/pull",
+                json={},
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response structure
+                required_fields = ["success", "message"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 2:
+                    self.log_test("Integration Project Pull Structure", True, f"Found fields: {found_fields}")
+                    
+                    # Check success field
+                    success = data.get("success")
+                    message = data.get("message", "")
+                    
+                    if success is True:
+                        self.log_test("Integration Project Pull Success", True, f"Pull successful: {message}")
+                    elif success is False:
+                        # Pull might fail if already up to date
+                        if any(phrase in message.lower() for phrase in ["up to date", "already", "nothing to pull"]):
+                            self.log_test("Integration Project Pull Already Updated", True, f"Already up to date: {message}")
+                        else:
+                            self.log_test("Integration Project Pull Failed", False, f"Pull failed: {message}")
+                    else:
+                        self.log_test("Integration Project Pull Success Field", False, f"Invalid success value: {success}")
+                    
+                    # Check for optional fields
+                    if "output" in data:
+                        self.log_test("Integration Project Pull Output", True, "Pull output included")
+                    if "error" in data and data["error"]:
+                        self.log_test("Integration Project Pull Error", True, f"Error details: {data['error']}")
+                else:
+                    self.log_test("Integration Project Pull Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                
+                return True
+            elif response.status_code == 404:
+                self.log_test("Integration Project Pull Endpoint", False, "HTTP 404 - Project not found")
+                return False
+            else:
+                self.log_test("Integration Project Pull Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Project Pull Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_add_existing_project(self):
+        """Test H.5: POST /api/blueprint/integration/add-project - Existing project (should return existing)"""
+        try:
+            # Try to add the same Hello-World project that should already exist
+            add_request = {
+                "git_url": "https://github.com/octocat/Hello-World.git",
+                "branch": "master"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/integration/add-project",
+                json=add_request,
+                headers={"Content-Type": "application/json"},
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response structure
+                required_fields = ["success", "message", "project"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 3:
+                    self.log_test("Integration Add Existing Project Structure", True, f"Found fields: {found_fields}")
+                    
+                    # Should return success with existing project
+                    if data.get("success") is True:
+                        self.log_test("Integration Add Existing Project Success", True, f"Success: {data.get('message')}")
+                        
+                        # Check project object
+                        project = data.get("project")
+                        if isinstance(project, dict):
+                            project_id = project.get("id", "")
+                            if project_id == "migrated-project-main":
+                                self.log_test("Integration Add Existing Project ID", True, f"Returned existing project: {project_id}")
+                            else:
+                                self.log_test("Integration Add Existing Project ID", False, f"Unexpected project ID: {project_id}")
+                        else:
+                            self.log_test("Integration Add Existing Project Object", False, f"Invalid project object: {type(project)}")
+                    else:
+                        self.log_test("Integration Add Existing Project Success", False, f"Failed: {data.get('message')}")
+                else:
+                    self.log_test("Integration Add Existing Project Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                
+                return True
+            else:
+                self.log_test("Integration Add Existing Project Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Add Existing Project Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_add_new_project(self):
+        """Test H.6: POST /api/blueprint/integration/add-project - New project (small test repo)"""
+        try:
+            # Try to add a different small public repository
+            add_request = {
+                "git_url": "https://github.com/octocat/Hello-World.git",
+                "branch": "test"  # Different branch to create a new project
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/integration/add-project",
+                json=add_request,
+                headers={"Content-Type": "application/json"},
+                timeout=60  # Clone operations can take longer
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check response structure
+                required_fields = ["success", "message"]
+                found_fields = [field for field in required_fields if field in data]
+                
+                if len(found_fields) >= 2:
+                    self.log_test("Integration Add New Project Structure", True, f"Found fields: {found_fields}")
+                    
+                    success = data.get("success")
+                    message = data.get("message", "")
+                    
+                    if success is True:
+                        self.log_test("Integration Add New Project Success", True, f"Success: {message}")
+                        
+                        # Check if project was created
+                        project = data.get("project")
+                        if isinstance(project, dict):
+                            project_id = project.get("id", "")
+                            project_branch = project.get("branch", "")
+                            if project_branch == "test":
+                                self.log_test("Integration Add New Project Branch", True, f"New project with test branch: {project_id}")
+                            else:
+                                self.log_test("Integration Add New Project Branch", False, f"Unexpected branch: {project_branch}")
+                        else:
+                            self.log_test("Integration Add New Project Object", True, "Project creation successful (no project object returned)")
+                    elif success is False:
+                        # Might fail if branch doesn't exist or other issues
+                        if any(phrase in message.lower() for phrase in ["branch", "not found", "does not exist"]):
+                            self.log_test("Integration Add New Project Branch Error", True, f"Expected error for non-existent branch: {message}")
+                        else:
+                            self.log_test("Integration Add New Project Failed", False, f"Unexpected failure: {message}")
+                    else:
+                        self.log_test("Integration Add New Project Success Field", False, f"Invalid success value: {success}")
+                else:
+                    self.log_test("Integration Add New Project Structure", False, f"Missing required fields. Found: {list(data.keys())}")
+                
+                return True
+            else:
+                self.log_test("Integration Add New Project Endpoint", False, f"HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Add New Project Endpoint", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_nonexistent_project(self):
+        """Test H.7: Error Handling - Non-existent project"""
+        try:
+            # Test with non-existent project ID
+            nonexistent_project_id = "non-existent-project-123"
+            response = requests.get(f"{self.base_url}/api/blueprint/integration/projects/{nonexistent_project_id}/git/status", timeout=10)
+            
+            if response.status_code == 404:
+                self.log_test("Integration Non-existent Project 404", True, "Correctly returns HTTP 404 for non-existent project")
+                
+                # Check if response has error details
+                try:
+                    data = response.json()
+                    if "detail" in data and "not found" in data["detail"].lower():
+                        self.log_test("Integration Non-existent Project Error Message", True, f"Proper error message: {data['detail']}")
+                    else:
+                        self.log_test("Integration Non-existent Project Error Message", True, "HTTP 404 returned (error message format may vary)")
+                except:
+                    self.log_test("Integration Non-existent Project Error Message", True, "HTTP 404 returned (no JSON response)")
+                
+                return True
+            elif response.status_code == 200:
+                # Unexpected success
+                self.log_test("Integration Non-existent Project 404", False, "Should return 404 for non-existent project, got 200")
+                return False
+            else:
+                self.log_test("Integration Non-existent Project 404", False, f"Expected 404, got HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Non-existent Project Error Handling", False, f"Exception: {str(e)}")
+            return False
+    
+    def test_integration_invalid_git_url(self):
+        """Test H.8: Error Handling - Invalid Git URL"""
+        try:
+            # Test with invalid Git URL
+            invalid_request = {
+                "git_url": "not-a-valid-git-url",
+                "branch": "main"
+            }
+            
+            response = requests.post(
+                f"{self.base_url}/api/blueprint/integration/add-project",
+                json=invalid_request,
+                headers={"Content-Type": "application/json"},
+                timeout=10
+            )
+            
+            if response.status_code == 400:
+                self.log_test("Integration Invalid Git URL 400", True, "Correctly returns HTTP 400 for invalid Git URL")
+                
+                # Check error message
+                try:
+                    data = response.json()
+                    if "detail" in data and any(phrase in data["detail"].lower() for phrase in ["git url", "invalid", "must start"]):
+                        self.log_test("Integration Invalid Git URL Error Message", True, f"Proper validation error: {data['detail']}")
+                    else:
+                        self.log_test("Integration Invalid Git URL Error Message", True, "HTTP 400 returned (error message format may vary)")
+                except:
+                    self.log_test("Integration Invalid Git URL Error Message", True, "HTTP 400 returned (no JSON response)")
+                
+                return True
+            elif response.status_code == 200:
+                # Check if it's a success with error message
+                try:
+                    data = response.json()
+                    if data.get("success") is False:
+                        self.log_test("Integration Invalid Git URL Validation", True, f"Validation error returned: {data.get('message')}")
+                        return True
+                    else:
+                        self.log_test("Integration Invalid Git URL 400", False, "Should return 400 or success=false for invalid Git URL, got success=true")
+                        return False
+                except:
+                    self.log_test("Integration Invalid Git URL 400", False, "Should return 400 for invalid Git URL, got 200")
+                    return False
+            else:
+                self.log_test("Integration Invalid Git URL 400", False, f"Expected 400, got HTTP {response.status_code}")
+                return False
+        except Exception as e:
+            self.log_test("Integration Invalid Git URL Error Handling", False, f"Exception: {str(e)}")
+            return False
+
+
 if __name__ == "__main__":
     tester = BackendRoutingTester()
     tester.run_critical_routing_tests()
