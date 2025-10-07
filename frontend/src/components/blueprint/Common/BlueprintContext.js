@@ -765,6 +765,8 @@ export function BlueprintProvider({ children }) {
     namespace,
     blueprints,
     activeBlueprint,
+    integrationProjects,
+    showGitSelector,
     
     // Actions
     setRootPath: setBlueprintRootPath,
@@ -778,6 +780,9 @@ export function BlueprintProvider({ children }) {
     addBlueprint: addNewBlueprint,
     removeBlueprint,
     switchBlueprint,
+    setShowGitSelector,
+    handleGitProjectSelect,
+    loadIntegrationProjects,
     
     // Tab Management
     switchToTab,
