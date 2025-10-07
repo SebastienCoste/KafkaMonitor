@@ -7,7 +7,7 @@
       "git_url": "https://github.com/octocat/Hello-World.git",
       "branch": "master",
       "namespace": "",
-      "last_sync": "2025-10-07T20:52:21.464521",
+      "last_sync": "2025-10-07T20:53:48.311037",
       "status": "clean",
       "path": "migrated-project-main",
       "uncommitted_changes": 0,
@@ -23,7 +23,7 @@
       "git_url": "https://github.com/octocat/Hello-World.git",
       "branch": "test",
       "namespace": "",
-      "last_sync": "2025-10-07T20:52:21.487564",
+      "last_sync": "2025-10-07T20:53:48.331822",
       "status": "clean",
       "path": "hello-world-test",
       "uncommitted_changes": 0,
@@ -35,5 +35,5 @@
     }
   },
   "created_at": "2025-10-07T19:23:05.682568",
-  "updated_at": "2025-10-07T20:52:21.487579"
+  "updated_at": "2025-10-07T20:53:48.331834"
 }
