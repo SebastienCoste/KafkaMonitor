@@ -697,6 +697,13 @@ class BackendRoutingTester:
         print("\n1️⃣4️⃣ Testing Git Integration Feature")
         self.run_git_integration_tests()
         
+        # Test Suite H - Multi-Project Git Integration
+        print("\n🔀 TEST SUITE H - MULTI-PROJECT GIT INTEGRATION")
+        print("-" * 50)
+        
+        print("\n1️⃣5️⃣ Testing Multi-Project Git Integration API Endpoints")
+        self.run_multi_project_integration_tests()
+        
         # Print final summary
         self.print_summary()
 
