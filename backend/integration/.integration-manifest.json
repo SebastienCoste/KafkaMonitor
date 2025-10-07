@@ -1,6 +1,23 @@
 {
   "version": "1.0",
-  "projects": {},
+  "projects": {
+    "migrated-project-main": {
+      "id": "migrated-project-main",
+      "name": "Hello-World",
+      "git_url": "https://github.com/octocat/Hello-World.git",
+      "branch": "master",
+      "namespace": "",
+      "last_sync": "2025-10-07T19:26:07.531439",
+      "status": "clean",
+      "path": "migrated-project-main",
+      "uncommitted_changes": 0,
+      "ahead_commits": 0,
+      "behind_commits": 0,
+      "last_commit": "7fd1a60b",
+      "last_commit_author": "The Octocat",
+      "last_commit_date": "2012-03-06 15:06:50 -0800"
+    }
+  },
   "created_at": "2025-10-07T19:23:05.682568",
-  "updated_at": "2025-10-07T19:23:05.682602"
+  "updated_at": "2025-10-07T19:26:07.534831"
 }
