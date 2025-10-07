@@ -475,6 +475,14 @@ export default function BlueprintCreator() {
                 </div>
               </Tabs>
             </div>
+            
+            {/* Git Project Selector Modal (available in main interface) */}
+            {showGitSelector && (
+              <GitProjectSelector
+                onProjectSelect={handleGitProjectSelect}
+                onCancel={() => setShowGitSelector(false)}
+              />
+            )}
           </>
         )}
       </div>
