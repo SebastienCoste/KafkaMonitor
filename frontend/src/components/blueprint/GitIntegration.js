@@ -161,6 +161,11 @@ export default function GitIntegration() {
   };
 
   const handleResetChanges = async () => {
+    if (!projectId) {
+      toast.error('No Git project selected');
+      return;
+    }
+    
     if (!window.confirm('Are you sure you want to reset all local changes? This cannot be undone.')) {
       return;
     }
@@ -169,7 +174,7 @@ export default function GitIntegration() {
     setOperation('reset');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/blueprint/git/reset`);
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/reset`);
 
       if (response.data.success) {
         toast.success(response.data.message);
