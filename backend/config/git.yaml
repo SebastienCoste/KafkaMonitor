@@ -1,5 +1,6 @@
 git:
-  integrator_path: "./integrator"
+  integrator_path: "./integrator"  # Legacy single-project path (deprecated)
+  integration_path: "./integration"  # NEW: Multi-project container path
   default_branch: "main"
   
   # Timeouts for different operations (in seconds)
