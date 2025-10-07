@@ -667,7 +667,8 @@ export function BlueprintProvider({ children }) {
       }
 
       // Create new blueprint from Git project
-      const projectPath = `/integration/${project.path}`;
+      // Use full absolute path for backend
+      const projectPath = `/app/backend/integration/${project.path}`;
       const newBlueprint = {
         id: Date.now().toString(),
         projectId: project.id, // Link to Git project
