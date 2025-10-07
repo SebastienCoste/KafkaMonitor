@@ -177,16 +177,9 @@ export default function BlueprintCreator() {
                     </div>
                   ))}
                   <button
-                    onClick={() => {
-                      const newPath = prompt('Enter new blueprint directory path:');
-                      if (newPath) {
-                        addBlueprint(newPath).catch(error => {
-                          toast.error(`Failed to add blueprint: ${error.message}`);
-                        });
-                      }
-                    }}
+                    onClick={() => setShowGitSelector(true)}
                     className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                    title="Add another blueprint"
+                    title="Add another Git project"
                   >
                     <Plus className="h-3 w-3" />
                     <span>Add</span>
