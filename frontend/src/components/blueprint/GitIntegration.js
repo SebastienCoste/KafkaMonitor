@@ -69,6 +69,8 @@ export default function GitIntegration() {
       setBranches([]);
       setCommitMessage('');
       setForcePush(false);
+      setSelectedFiles([]);
+      setShowFileSelection(false);
       
       // Load new project's Git status
       loadGitStatus();
