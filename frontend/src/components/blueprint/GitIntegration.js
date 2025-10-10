@@ -515,6 +515,89 @@ export default function GitIntegration() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* File Selection Toggle */}
+            {gitStatus?.uncommitted_files && gitStatus.uncommitted_files.length > 0 && (
+              <div className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-900">
+                    {gitStatus.uncommitted_files.length} file(s) changed
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowFileSelection(!showFileSelection);
+                    if (!showFileSelection) {
+                      // Auto-select all files when opening
+                      handleSelectAllFiles();
+                    }
+                  }}
+                  disabled={loading}
+                >
+                  {showFileSelection ? 'Hide Files' : 'Select Files to Commit'}
+                </Button>
+              </div>
+            )}
+            
+            {/* File Selection List */}
+            {showFileSelection && gitStatus?.uncommitted_files && gitStatus.uncommitted_files.length > 0 && (
+              <Card className="bg-gray-50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-semibold">Select Files to Commit</CardTitle>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleSelectAllFiles}
+                        disabled={loading}
+                        className="text-xs"
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleDeselectAllFiles}
+                        disabled={loading}
+                        className="text-xs"
+                      >
+                        Deselect All
+                      </Button>
+                    </div>
+                  </div>
+                  <CardDescription className="text-xs">
+                    Selected: {selectedFiles.length} of {gitStatus.uncommitted_files.length} files
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {gitStatus.uncommitted_files.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center space-x-2 p-2 hover:bg-white rounded transition-colors"
+                      >
+                        <Checkbox
+                          id={`file-${index}`}
+                          checked={selectedFiles.includes(file)}
+                          onCheckedChange={(checked) => handleFileSelection(file, checked)}
+                          disabled={loading}
+                        />
+                        <Label
+                          htmlFor={`file-${index}`}
+                          className="flex-1 text-sm font-mono cursor-pointer text-gray-700"
+                        >
+                          {file}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <div>
               <Label htmlFor="commit-message">Commit Message *</Label>
               <Textarea
