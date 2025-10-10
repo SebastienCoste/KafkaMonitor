@@ -383,6 +383,119 @@ class GitService:
         sanitized = re.sub(r'token[=:]\s*\S+', 'token=***', sanitized, flags=re.IGNORECASE)
         return sanitized
     
+    async def _initialize_submodules(self, env: Optional[Dict[str, str]] = None) -> str:
+        """
+        Initialize Git submodules according to configuration
+        
+        Args:
+            env: Environment variables for Git operations
+            
+        Returns:
+            String describing submodule initialization result
+        """
+        try:
+            # Check if submodules are enabled in config
+            submodule_config = self.config.get('submodules', {})
+            if not submodule_config.get('enabled', True):
+                self.logger.info("Submodule initialization disabled in config")
+                return ""
+            
+            init_sequence = submodule_config.get('init_sequence', [])
+            if not init_sequence:
+                self.logger.info("No submodule init sequence configured")
+                return ""
+            
+            continue_on_error = submodule_config.get('continue_on_error', True)
+            log_operations = submodule_config.get('log_operations', True)
+            timeout = submodule_config.get('timeout', 600)
+            
+            if log_operations:
+                self.logger.info(f"Initializing submodules with {len(init_sequence)} step(s)")
+            
+            results = []
+            env_copy = (env or os.environ).copy()
+            
+            for step_idx, step in enumerate(init_sequence, 1):
+                step_path = step.get('path', '.')
+                commands = step.get('commands', [])
+                
+                if not commands:
+                    continue
+                
+                # Resolve step path relative to integrator_path
+                work_dir = self.integrator_path / step_path
+                
+                if not work_dir.exists():
+                    if log_operations:
+                        self.logger.warning(f"Submodule step {step_idx}: Path does not exist: {step_path}")
+                    if continue_on_error:
+                        continue
+                    else:
+                        return f" (submodule init failed: path not found: {step_path})"
+                
+                if log_operations:
+                    self.logger.info(f"Submodule step {step_idx}/{len(init_sequence)}: Running {len(commands)} command(s) in {step_path}")
+                
+                for cmd_idx, command in enumerate(commands, 1):
+                    try:
+                        # Parse command safely
+                        cmd_parts = shlex.split(command)
+                        
+                        if log_operations:
+                            self.logger.info(f"  Command {cmd_idx}/{len(commands)}: {command}")
+                        
+                        # Run command with timeout
+                        process = await asyncio.create_subprocess_exec(
+                            *cmd_parts,
+                            cwd=str(work_dir),
+                            stdout=asyncio.subprocess.PIPE,
+                            stderr=asyncio.subprocess.PIPE,
+                            env=env_copy
+                        )
+                        
+                        try:
+                            stdout, stderr = await asyncio.wait_for(
+                                process.communicate(),
+                                timeout=timeout
+                            )
+                            
+                            if process.returncode != 0:
+                                error_msg = stderr.decode('utf-8', errors='ignore')
+                                if log_operations:
+                                    self.logger.warning(f"  Command failed (exit code {process.returncode}): {error_msg[:200]}")
+                                
+                                if not continue_on_error:
+                                    return f" (submodule init failed: {command})"
+                            else:
+                                if log_operations:
+                                    self.logger.info(f"  Command succeeded")
+                        
+                        except asyncio.TimeoutError:
+                            process.kill()
+                            if log_operations:
+                                self.logger.error(f"  Command timed out after {timeout}s")
+                            
+                            if not continue_on_error:
+                                return f" (submodule init timeout: {command})"
+                    
+                    except Exception as e:
+                        if log_operations:
+                            self.logger.error(f"  Error executing command: {e}")
+                        
+                        if not continue_on_error:
+                            return f" (submodule init error: {str(e)})"
+                
+                results.append(f"step {step_idx}")
+            
+            if results:
+                return f" and initialized submodules ({len(results)} steps)"
+            else:
+                return ""
+        
+        except Exception as e:
+            self.logger.error(f"Unexpected error initializing submodules: {e}")
+            return " (submodule init error)"
+    
     async def clone_repository(
         self,
         git_url: str,
