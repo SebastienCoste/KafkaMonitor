@@ -496,6 +496,12 @@ class GitService:
                 
                 results.append(f"step {step_idx}")
             
+            if log_operations:
+                self.logger.info("=" * 80)
+                self.logger.info(f"✅ SUBMODULE INITIALIZATION COMPLETE")
+                self.logger.info(f"Successfully completed {len(results)} of {len(init_sequence)} steps")
+                self.logger.info("=" * 80)
+            
             if results:
                 return f" and initialized submodules ({len(results)} steps)"
             else:
