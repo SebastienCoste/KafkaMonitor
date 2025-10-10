@@ -50,6 +50,7 @@ export default function GitIntegration() {
   // Git repository state
   const [commitMessage, setCommitMessage] = useState('');
   const [forcePush, setForcePush] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]); // Files selected for commit
   
   // Git status state
   const [gitStatus, setGitStatus] = useState(null);
@@ -58,6 +59,7 @@ export default function GitIntegration() {
   // UI state
   const [loading, setLoading] = useState(false);
   const [operation, setOperation] = useState('');
+  const [showFileSelection, setShowFileSelection] = useState(false);
 
   // Load Git status on mount and periodically, only if we have a project ID
   useEffect(() => {
