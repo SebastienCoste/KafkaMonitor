@@ -576,9 +576,21 @@ export default function GitIntegration() {
   const renderProjectInfo = () => (
     <Card className="mb-4">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <GitBranch className="h-5 w-5" />
-          <span>Current Project</span>
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <GitBranch className="h-5 w-5" />
+            <span>Current Project</span>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleWipeInstallation}
+            disabled={loading}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Wipe Installation
+          </Button>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -600,6 +612,13 @@ export default function GitIntegration() {
             <span className="ml-2 text-sm text-gray-500">{projectId}</span>
           </div>
         </div>
+        
+        <Alert className="mt-4 bg-red-50 border-red-200">
+          <AlertCircle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-xs text-red-800">
+            <strong>Warning:</strong> "Wipe Installation" permanently deletes this project from the server. This action cannot be undone.
+          </AlertDescription>
+        </Alert>
       </CardContent>
     </Card>
   );
