@@ -28,7 +28,7 @@ import {
 const API_BASE_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function GitIntegration() {
-  const { blueprints, activeBlueprint } = useBlueprintContext();
+  const { blueprints, activeBlueprint, loadIntegrationProjects, removeBlueprint } = useBlueprintContext();
   
   // Get current blueprint and project ID
   const currentBlueprint = blueprints.find(bp => bp.id === activeBlueprint);
