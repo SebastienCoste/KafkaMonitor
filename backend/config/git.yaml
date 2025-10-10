@@ -18,6 +18,7 @@ git:
   allowed_hosts:
     - "github.com"
     - "gitlab.com"
+    - "gitlab.ea.com"  # EA internal GitLab
     - "bitbucket.org"
     - "gitea.com"
   
