@@ -925,21 +925,45 @@ async def cancel_build():
 @api_router.get("/blueprint/output-files")
 async def get_output_files(root_path: str):
     try:
-        # List .tar.gz files under root_path/dist if present
-        dist_dir = Path(root_path) / "dist"
+        # List .tar.gz and .tgz files in multiple possible output directories
+        root = Path(root_path)
+        possible_dirs = [
+            root / "dist",
+            root / "out",
+            root / "build",
+            root / "output",
+            root  # Check root directory too
+        ]
+        
         files = []
-        if dist_dir.exists() and dist_dir.is_dir():
-            for name in sorted(os.listdir(dist_dir)):
-                p = dist_dir / name
-                if p.is_file() and (name.endswith('.tar.gz') or name.endswith('.tgz')):
-                    stat = p.stat()
-                    files.append({
-                        "name": name,
-                        "path": str(p),
-                        "size": stat.st_size,
-                        "modified": int(stat.st_mtime),  # Add timestamp for frontend
-                        "directory": "dist"  # Add directory info
-                    })
+        for check_dir in possible_dirs:
+            if not check_dir.exists() or not check_dir.is_dir():
+                continue
+            
+            try:
+                for name in sorted(os.listdir(check_dir)):
+                    p = check_dir / name
+                    # Check for .tar.gz, .tgz files
+                    if p.is_file() and (name.endswith('.tar.gz') or name.endswith('.tgz')):
+                        try:
+                            stat = p.stat()
+                            # Get relative directory name
+                            rel_dir = check_dir.relative_to(root) if check_dir != root else Path(".")
+                            files.append({
+                                "name": name,
+                                "path": str(p),
+                                "size": stat.st_size,
+                                "modified": int(stat.st_mtime),
+                                "directory": str(rel_dir)
+                            })
+                        except (OSError, FileNotFoundError) as e:
+                            logger.warning(f"Skipping file {p}: {e}")
+                            continue
+            except PermissionError:
+                logger.warning(f"Permission denied reading directory: {check_dir}")
+                continue
+        
+        logger.info(f"Found {len(files)} output files in {root_path}")
         return {"files": files}
     except Exception as e:
         logger.error(f"Error loading output files: {e}")
