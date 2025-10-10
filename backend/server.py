@@ -1562,6 +1562,7 @@ async def push_project_changes(project_id: str, request: Dict[str, Any]):
     try:
         commit_message = request.get('commit_message')
         force = request.get('force', False)
+        selected_files = request.get('selected_files', None)  # Optional list of files to stage
         
         if not commit_message:
             raise HTTPException(status_code=400, detail="commit_message is required")
@@ -1570,7 +1571,12 @@ async def push_project_changes(project_id: str, request: Dict[str, Any]):
         if not git_service:
             raise HTTPException(status_code=404, detail=f"Project not found: {project_id}")
         
-        result = await git_service.push_changes(commit_message, force)
+        # If specific files are selected, stage them first
+        if selected_files and isinstance(selected_files, list) and len(selected_files) > 0:
+            result = await git_service.push_selected_changes(commit_message, selected_files, force)
+        else:
+            # Push all changes (existing behavior)
+            result = await git_service.push_changes(commit_message, force)
         
         if result.success:
             # Broadcast update
