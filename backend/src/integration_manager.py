@@ -260,6 +260,10 @@ class IntegrationManager:
                 project.last_commit_author = status.last_commit_author
                 project.last_commit_date = status.last_commit_date
                 project.last_sync = datetime.utcnow().isoformat()
+                
+                # Update absolute_path if not set (for backward compatibility with old manifests)
+                if not project.absolute_path:
+                    project.absolute_path = str(project_path.resolve())
             else:
                 project.status = ProjectStatus.ERROR
             
