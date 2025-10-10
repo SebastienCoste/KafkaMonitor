@@ -410,7 +410,13 @@ class GitService:
             timeout = submodule_config.get('timeout', 600)
             
             if log_operations:
-                self.logger.info(f"Initializing submodules with {len(init_sequence)} step(s)")
+                self.logger.info("=" * 80)
+                self.logger.info("🔧 SUBMODULE INITIALIZATION")
+                self.logger.info(f"Project root: {self.integrator_path}")
+                self.logger.info(f"Total steps: {len(init_sequence)}")
+                self.logger.info(f"Timeout per command: {timeout}s")
+                self.logger.info(f"Continue on error: {continue_on_error}")
+                self.logger.info("=" * 80)
             
             results = []
             env_copy = (env or os.environ).copy()
