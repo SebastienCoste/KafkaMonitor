@@ -56,6 +56,13 @@ git:
     
     # Commands to run after clone (executed in sequence)
     # Each command can have a 'path' (cd to that directory first) and 'commands' (list of git commands)
+    #
+    # IMPORTANT: All paths are RELATIVE to the cloned project root
+    # Example: If you clone to /Users/user/project/backend/integration/cfb-mm/
+    #   - path: "." means /Users/user/project/backend/integration/cfb-mm/
+    #   - path: "Externals/CadieProtos" means /Users/user/project/backend/integration/cfb-mm/Externals/CadieProtos/
+    #   - path: "opt/monorepo" means /Users/user/project/backend/integration/cfb-mm/opt/monorepo/
+    #
     init_sequence:
       # Step 1: Initialize all submodules from root
       - path: "."
