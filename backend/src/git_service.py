@@ -480,12 +480,15 @@ class GitService:
                 )
             
             if success:
+                # Initialize submodules if configured
+                submodule_result = await self._initialize_submodules(env)
+                
                 return GitOperationResult(
                     success=True,
                     operation=GitOperationType.CLONE,
-                    message=f"Successfully cloned repository on branch '{branch}'",
+                    message=f"Successfully cloned repository on branch '{branch}'{submodule_result}",
                     output=stdout,
-                    details={'branch': branch, 'url': git_url}
+                    details={'branch': branch, 'url': git_url, 'submodules_initialized': submodule_result != ''}
                 )
             else:
                 return GitOperationResult(
