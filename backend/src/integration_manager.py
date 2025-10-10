@@ -203,6 +203,7 @@ class IntegrationManager:
                             git_url=status.remote_url or "",
                             branch=status.current_branch or "main",
                             path=item.name,
+                            absolute_path=str(item.resolve()),  # Full absolute path
                             status=ProjectStatus.CLEAN if not status.has_uncommitted_changes else ProjectStatus.DIRTY,
                             uncommitted_changes=len(status.uncommitted_files),
                             ahead_commits=status.ahead_commits,
