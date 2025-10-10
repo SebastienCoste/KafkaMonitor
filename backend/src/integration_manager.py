@@ -337,6 +337,7 @@ class IntegrationManager:
                 git_url=request.git_url,
                 branch=request.branch,
                 path=folder_name,
+                absolute_path=str(project_path.resolve()),  # Full absolute path
                 status=ProjectStatus.CLEAN,
                 last_sync=datetime.utcnow().isoformat(),
                 uncommitted_changes=0,
