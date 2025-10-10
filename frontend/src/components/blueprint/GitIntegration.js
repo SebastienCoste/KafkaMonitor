@@ -252,6 +252,68 @@ export default function GitIntegration() {
     }
   };
 
+  const handleWipeInstallation = async () => {
+    if (!projectId) {
+      toast.error('No Git project selected');
+      return;
+    }
+
+    const confirmMessage = `⚠️ WARNING: This will permanently delete the entire project from the server!\n\nProject: ${currentBlueprint?.name}\nPath: ${projectId}\n\nThis action CANNOT be undone. The project will be removed from:\n- Local integration directory\n- Project manifest\n- All associated data\n\nAre you absolutely sure you want to proceed?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    // Second confirmation for safety
+    const finalConfirm = window.prompt(
+      `Type the project name "${currentBlueprint?.name}" to confirm deletion:`
+    );
+    
+    if (finalConfirm !== currentBlueprint?.name) {
+      toast.error('Project name did not match. Deletion cancelled.');
+      return;
+    }
+
+    setLoading(true);
+    setOperation('wipe');
+
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}`, {
+        params: { force: true }
+      });
+
+      if (response.data.success) {
+        toast.success('Project wiped successfully. Redirecting...');
+        
+        // Reload integration projects to update the list
+        const { loadIntegrationProjects, removeBlueprint } = useBlueprintContext();
+        if (loadIntegrationProjects) {
+          await loadIntegrationProjects();
+        }
+        
+        // Remove blueprint from context
+        if (removeBlueprint && currentBlueprint) {
+          removeBlueprint(currentBlueprint.id);
+        }
+        
+        // Clear local state
+        setGitStatus(null);
+        setBranches([]);
+        
+        // Redirect or show message
+        toast.info('Project removed. Please select another project.');
+      } else {
+        toast.error(response.data.message || 'Failed to wipe project');
+      }
+    } catch (error) {
+      console.error('Error wiping project:', error);
+      toast.error(error.response?.data?.detail || 'Failed to wipe project');
+    } finally {
+      setLoading(false);
+      setOperation('');
+    }
+  };
+
   const renderCloneForm = () => null; // Remove clone form since we use GitProjectSelector now
 
   const renderGitStatus = () => {
