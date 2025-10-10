@@ -126,30 +126,42 @@ class BlueprintFileManager:
                 item_full_path = os.path.join(full_path, item_name)
                 item_relative_path = os.path.join(relative_path, item_name) if relative_path else item_name
                 
-                stat = os.stat(item_full_path)
-                
-                if os.path.isdir(item_full_path):
-                    # Directory
-                    children = await self._build_file_tree(item_full_path, item_relative_path)
-                    file_info = FileInfo(
-                        name=item_name,
-                        path=item_relative_path,
-                        type=FileType.DIRECTORY,
-                        size=None,
-                        modified=datetime.fromtimestamp(stat.st_mtime),
-                        children=children
-                    )
-                else:
-                    # File
-                    file_info = FileInfo(
-                        name=item_name,
-                        path=item_relative_path,
-                        type=FileType.FILE,
-                        size=stat.st_size,
-                        modified=datetime.fromtimestamp(stat.st_mtime)
-                    )
-                
-                items.append(file_info)
+                try:
+                    # Check if it's a symlink first
+                    if os.path.islink(item_full_path):
+                        # For symlinks, check if target exists
+                        if not os.path.exists(item_full_path):
+                            print(f"Skipping broken symlink: {item_full_path}")
+                            continue  # Skip broken symlinks
+                    
+                    stat = os.stat(item_full_path)
+                    
+                    if os.path.isdir(item_full_path):
+                        # Directory
+                        children = await self._build_file_tree(item_full_path, item_relative_path)
+                        file_info = FileInfo(
+                            name=item_name,
+                            path=item_relative_path,
+                            type=FileType.DIRECTORY,
+                            size=None,
+                            modified=datetime.fromtimestamp(stat.st_mtime),
+                            children=children
+                        )
+                    else:
+                        # File
+                        file_info = FileInfo(
+                            name=item_name,
+                            path=item_relative_path,
+                            type=FileType.FILE,
+                            size=stat.st_size,
+                            modified=datetime.fromtimestamp(stat.st_mtime)
+                        )
+                    
+                    items.append(file_info)
+                except (OSError, FileNotFoundError) as e:
+                    # Skip files/directories that cause errors (broken symlinks, permission issues, etc.)
+                    print(f"Skipping {item_full_path}: {e}")
+                    continue
         except PermissionError:
             pass  # Skip directories we can't read
         
