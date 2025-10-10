@@ -798,6 +798,137 @@ class GitService:
                 error=str(e)
             )
     
+    async def push_selected_changes(
+        self,
+        commit_message: str,
+        selected_files: List[str],
+        force: bool = False
+    ) -> GitOperationResult:
+        """
+        Stage and commit only selected files, then push to remote
+        
+        Args:
+            commit_message: Commit message
+            selected_files: List of file paths to stage and commit
+            force: Whether to force push
+            
+        Returns:
+            GitOperationResult
+        """
+        try:
+            # Check if directory is a Git repository
+            if not (self.integrator_path / '.git').exists():
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.PUSH,
+                    message="Not a Git repository",
+                    error="Integrator directory is not a Git repository"
+                )
+            
+            # Validate commit message
+            if not commit_message or not commit_message.strip():
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.PUSH,
+                    message="Commit message is required",
+                    error="Please provide a commit message"
+                )
+            
+            # Validate selected files
+            if not selected_files or len(selected_files) == 0:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.PUSH,
+                    message="No files selected",
+                    error="Please select at least one file to commit"
+                )
+            
+            self.logger.info(f"Staging {len(selected_files)} selected file(s)")
+            
+            # Stage selected files one by one
+            staged_count = 0
+            failed_files = []
+            for file_path in selected_files:
+                success, stdout, stderr = await self._run_git_command(['add', file_path])
+                if success:
+                    staged_count += 1
+                    self.logger.info(f"Staged: {file_path}")
+                else:
+                    failed_files.append(file_path)
+                    self.logger.warning(f"Failed to stage {file_path}: {stderr}")
+            
+            if staged_count == 0:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.PUSH,
+                    message="Failed to stage any files",
+                    error=f"Could not stage files: {', '.join(failed_files)}"
+                )
+            
+            # Check if there are changes to commit
+            success, stdout, stderr = await self._run_git_command(['diff', '--cached', '--quiet'])
+            if success:
+                # No changes to commit
+                return GitOperationResult(
+                    success=True,
+                    operation=GitOperationType.PUSH,
+                    message="No changes to commit (files already staged or unchanged)",
+                    output="Working tree is clean"
+                )
+            
+            # Commit changes
+            success, stdout, stderr = await self._run_git_command(['commit', '-m', commit_message])
+            if not success:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.PUSH,
+                    message="Failed to commit changes",
+                    error=stderr,
+                    output=stdout
+                )
+            
+            # Push changes
+            push_args = ['push']
+            if force:
+                push_args.append('--force')
+            
+            success, stdout, stderr = await self._run_git_command(push_args)
+            
+            if success:
+                message = f"Successfully committed {staged_count} file(s) and pushed to remote"
+                if failed_files:
+                    message += f" (skipped {len(failed_files)} file(s))"
+                
+                return GitOperationResult(
+                    success=True,
+                    operation=GitOperationType.PUSH,
+                    message=message,
+                    output=stdout + "\n" + stderr,
+                    details={
+                        'force': force,
+                        'commit_message': commit_message,
+                        'staged_files': staged_count,
+                        'failed_files': len(failed_files)
+                    }
+                )
+            else:
+                return GitOperationResult(
+                    success=False,
+                    operation=GitOperationType.PUSH,
+                    message="Failed to push changes",
+                    error=stderr,
+                    output=stdout
+                )
+        
+        except Exception as e:
+            self.logger.error(f"Error pushing selected changes: {e}")
+            return GitOperationResult(
+                success=False,
+                operation=GitOperationType.PUSH,
+                message="Error during push operation",
+                error=str(e)
+            )
+    
     async def reset_changes(self) -> GitOperationResult:
         """
         Reset all local changes to HEAD
