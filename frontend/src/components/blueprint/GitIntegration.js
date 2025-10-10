@@ -49,9 +49,20 @@ export default function GitIntegration() {
   // Load Git status on mount and periodically, only if we have a project ID
   useEffect(() => {
     if (projectId) {
+      // Reset state when project changes
+      setGitStatus(null);
+      setBranches([]);
+      setCommitMessage('');
+      setForcePush(false);
+      
+      // Load new project's Git status
       loadGitStatus();
       const interval = setInterval(loadGitStatus, 10000); // Every 10 seconds
       return () => clearInterval(interval);
+    } else {
+      // Clear state when no project selected
+      setGitStatus(null);
+      setBranches([]);
     }
   }, [projectId]);
 
