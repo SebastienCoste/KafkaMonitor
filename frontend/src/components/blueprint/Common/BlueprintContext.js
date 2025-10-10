@@ -684,9 +684,9 @@ export function BlueprintProvider({ children }) {
       // Add to blueprints list
       setBlueprints(prev => [...prev, newBlueprint]);
       
-      // Set as active and load
+      // Set as active and load (skip auto-add since we already added it above)
       setActiveBlueprint(newBlueprint.id);
-      await setBlueprintRootPath(projectPath);
+      await setBlueprintRootPath(projectPath, true); // true = skip auto-add blueprint
       
       // Close Git selector modal
       setShowGitSelector(false);
