@@ -281,7 +281,7 @@ export function BlueprintProvider({ children }) {
     }
   };
 
-  const setBlueprintRootPath = async (path) => {
+  const setBlueprintRootPath = async (path, skipBlueprintAdd = false) => {
     try {
       setLoading(true);
       
@@ -321,8 +321,8 @@ export function BlueprintProvider({ children }) {
           setNamespace('');
         }
 
-        // Add to blueprints array if not already present
-        if (!blueprints.find(bp => bp.rootPath === data.root_path)) {
+        // Add to blueprints array if not already present (skip if called from handleGitProjectSelect)
+        if (!skipBlueprintAdd && !blueprints.find(bp => bp.rootPath === data.root_path)) {
           const newBlueprint = {
             id: Date.now().toString(),
             rootPath: data.root_path,
