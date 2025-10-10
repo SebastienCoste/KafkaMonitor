@@ -7,7 +7,7 @@
       "git_url": "https://github.com/octocat/Hello-World.git",
       "branch": "master",
       "namespace": "",
-      "last_sync": "2025-10-10T22:29:56.867917",
+      "last_sync": "2025-10-10T22:42:33.959132",
       "status": "clean",
       "path": "migrated-project-main",
       "absolute_path": "/app/backend/integration/migrated-project-main",
@@ -24,7 +24,7 @@
       "git_url": "https://github.com/octocat/Hello-World.git",
       "branch": "test",
       "namespace": "",
-      "last_sync": "2025-10-10T22:29:56.896597",
+      "last_sync": "2025-10-10T22:42:33.981120",
       "status": "clean",
       "path": "hello-world-test",
       "absolute_path": "/app/backend/integration/hello-world-test",
@@ -34,8 +34,25 @@
       "last_commit": "b3cbd5bb",
       "last_commit_author": "The Octocat",
       "last_commit_date": "2014-06-10 15:22:26 -0700"
+    },
+    "kafkamonitor-main": {
+      "id": "kafkamonitor-main",
+      "name": "KafkaMonitor",
+      "git_url": "https://github.com/SebastienCoste/KafkaMonitor",
+      "branch": "main",
+      "namespace": "com.test.blueprint.config",
+      "last_sync": "2025-10-10T22:42:39.528628",
+      "status": "clean",
+      "path": "kafkamonitor-main",
+      "absolute_path": "/app/backend/integration/kafkamonitor-main",
+      "uncommitted_changes": 0,
+      "ahead_commits": 0,
+      "behind_commits": 0,
+      "last_commit": "dc2aa343",
+      "last_commit_author": "Sebastien Coste",
+      "last_commit_date": "2025-10-03 16:52:49 -0700"
     }
   },
   "created_at": "2025-10-07T19:23:05.682568",
-  "updated_at": "2025-10-10T22:29:56.896721"
+  "updated_at": "2025-10-10T22:42:39.528917"
 }
