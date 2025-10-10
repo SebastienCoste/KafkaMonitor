@@ -27,6 +27,7 @@ class ProjectInfo(BaseModel):
     last_sync: Optional[str] = Field(None, description="Last synchronization timestamp (ISO format)")
     status: ProjectStatus = Field(ProjectStatus.CLEAN, description="Project status")
     path: str = Field(..., description="Relative path within integration directory")
+    absolute_path: Optional[str] = Field("", description="Full absolute path to project directory")
     uncommitted_changes: int = Field(0, description="Number of uncommitted changes")
     ahead_commits: int = Field(0, description="Number of commits ahead of remote")
     behind_commits: int = Field(0, description="Number of commits behind remote")
