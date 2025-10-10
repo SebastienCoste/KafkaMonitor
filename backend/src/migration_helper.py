@@ -115,6 +115,7 @@ class IntegrationMigration:
                 branch=branch,
                 namespace=namespace,
                 path=self.migrated_folder_name,
+                absolute_path=str(migrated_path.resolve()),  # Full absolute path
                 status=ProjectStatus.CLEAN if not git_status.has_uncommitted_changes else ProjectStatus.DIRTY,
                 last_sync=datetime.utcnow().isoformat(),
                 uncommitted_changes=len(git_status.uncommitted_files),
