@@ -32,7 +32,7 @@ class IntegrationManager:
             integration_root: Root directory for all Git projects
             git_config_path: Optional path to git.yaml configuration
         """
-        self.integration_root = Path(integration_root)
+        self.integration_root = Path(integration_root).resolve()  # Always resolve to absolute path
         self.git_config_path = git_config_path
         self.manifest_file = self.integration_root / ".integration-manifest.json"
         self.git_services: Dict[str, GitService] = {}  # project_id -> GitService instance
