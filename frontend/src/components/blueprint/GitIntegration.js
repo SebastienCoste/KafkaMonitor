@@ -158,21 +158,36 @@ export default function GitIntegration() {
       return;
     }
 
+    // Check if we have uncommitted files and none selected
+    if (showFileSelection && gitStatus?.uncommitted_files?.length > 0 && selectedFiles.length === 0) {
+      toast.error('Please select at least one file to commit');
+      return;
+    }
+
     setLoading(true);
     setOperation('push');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/push`, {
+      const requestBody = {
         commit_message: commitMessage,
         force: forcePush
-      });
+      };
+      
+      // Add selected files if file selection is enabled and files are selected
+      if (showFileSelection && selectedFiles.length > 0) {
+        requestBody.selected_files = selectedFiles;
+      }
+      
+      const response = await axios.post(`${API_BASE_URL}/api/blueprint/integration/projects/${projectId}/git/push`, requestBody);
 
       if (response.data.success) {
         toast.success(response.data.message);
         await loadGitStatus();
-        // Clear commit message
+        // Clear commit message, force push, and selected files after successful push
         setCommitMessage('');
         setForcePush(false);
+        setSelectedFiles([]);
+        setShowFileSelection(false);
       } else {
         toast.error(response.data.message || 'Failed to push changes');
         if (response.data.error) {
@@ -186,6 +201,24 @@ export default function GitIntegration() {
       setLoading(false);
       setOperation('');
     }
+  };
+  
+  const handleFileSelection = (file, checked) => {
+    if (checked) {
+      setSelectedFiles(prev => [...prev, file]);
+    } else {
+      setSelectedFiles(prev => prev.filter(f => f !== file));
+    }
+  };
+  
+  const handleSelectAllFiles = () => {
+    if (gitStatus?.uncommitted_files) {
+      setSelectedFiles([...gitStatus.uncommitted_files]);
+    }
+  };
+  
+  const handleDeselectAllFiles = () => {
+    setSelectedFiles([]);
   };
 
   const handleResetChanges = async () => {
