@@ -283,25 +283,24 @@ export default function GitIntegration() {
       });
 
       if (response.data.success) {
-        toast.success('Project wiped successfully. Redirecting...');
-        
-        // Reload integration projects to update the list
-        const { loadIntegrationProjects, removeBlueprint } = useBlueprintContext();
-        if (loadIntegrationProjects) {
-          await loadIntegrationProjects();
-        }
+        toast.success('Project wiped successfully from server!');
         
         // Remove blueprint from context
         if (removeBlueprint && currentBlueprint) {
           removeBlueprint(currentBlueprint.id);
         }
         
+        // Reload integration projects to update the list
+        if (loadIntegrationProjects) {
+          await loadIntegrationProjects();
+        }
+        
         // Clear local state
         setGitStatus(null);
         setBranches([]);
         
-        // Redirect or show message
-        toast.info('Project removed. Please select another project.');
+        // Show success message
+        toast.info('Project removed. Please select another project to continue.');
       } else {
         toast.error(response.data.message || 'Failed to wipe project');
       }
