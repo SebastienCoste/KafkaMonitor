@@ -422,19 +422,22 @@ class GitService:
                 if not commands:
                     continue
                 
-                # Resolve step path relative to integrator_path
+                # Resolve step path relative to integrator_path (project root)
                 work_dir = self.integrator_path / step_path
+                
+                if log_operations:
+                    self.logger.info(f"Submodule step {step_idx}/{len(init_sequence)}:")
+                    self.logger.info(f"  Config path: '{step_path}'")
+                    self.logger.info(f"  Full path: {work_dir}")
+                    self.logger.info(f"  Commands: {len(commands)}")
                 
                 if not work_dir.exists():
                     if log_operations:
-                        self.logger.warning(f"Submodule step {step_idx}: Path does not exist: {step_path}")
+                        self.logger.warning(f"  ⚠️ Path does not exist: {work_dir}")
                     if continue_on_error:
                         continue
                     else:
                         return f" (submodule init failed: path not found: {step_path})"
-                
-                if log_operations:
-                    self.logger.info(f"Submodule step {step_idx}/{len(init_sequence)}: Running {len(commands)} command(s) in {step_path}")
                 
                 for cmd_idx, command in enumerate(commands, 1):
                     try:
