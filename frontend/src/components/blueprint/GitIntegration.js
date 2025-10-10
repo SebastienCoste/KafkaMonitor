@@ -34,6 +34,19 @@ export default function GitIntegration() {
   const currentBlueprint = blueprints.find(bp => bp.id === activeBlueprint);
   const projectId = currentBlueprint?.projectId;
   
+  // Debug logging
+  useEffect(() => {
+    console.log('🔄 GitIntegration: Blueprint changed', {
+      activeBlueprint,
+      projectId,
+      currentBlueprint: currentBlueprint ? {
+        id: currentBlueprint.id,
+        name: currentBlueprint.name,
+        projectId: currentBlueprint.projectId
+      } : null
+    });
+  }, [activeBlueprint, projectId, currentBlueprint]);
+  
   // Git repository state
   const [commitMessage, setCommitMessage] = useState('');
   const [forcePush, setForcePush] = useState(false);
