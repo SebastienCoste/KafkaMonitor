@@ -47,3 +47,40 @@ git:
     log_commands: true
     log_errors: true
     sanitize_credentials: true
+  
+  # Git Submodules Configuration
+  # Automatically initialize and update submodules after cloning
+  submodules:
+    enabled: true  # Set to false to disable automatic submodule initialization
+    
+    # Commands to run after clone (executed in sequence)
+    # Each command can have a 'path' (cd to that directory first) and 'commands' (list of git commands)
+    init_sequence:
+      # Step 1: Initialize all submodules from root
+      - path: "."
+        commands:
+          - "git submodule init"
+          - "git submodule update"
+      
+      # Step 2: Initialize nested submodules in Externals/CadieProtos
+      - path: "Externals/CadieProtos"
+        commands:
+          - "git submodule init"
+          - "git submodule update"
+      
+      # Step 3: Initialize specific submodules in opt/monorepo
+      - path: "opt/monorepo"
+        commands:
+          - "git submodule init -- lib/protoc-gen-validate"
+          - "git submodule update -- lib/protoc-gen-validate"
+          - "git submodule init -- lib/typelib"
+          - "git submodule update -- lib/typelib"
+    
+    # Timeout for submodule operations (in seconds)
+    timeout: 600  # 10 minutes
+    
+    # Continue on error (if true, errors in submodule init won't fail the whole clone)
+    continue_on_error: true
+    
+    # Log submodule operations
+    log_operations: true
