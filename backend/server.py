@@ -556,13 +556,15 @@ async def switch_environment(request: Dict[str, Any]):
         # Store in app state for current session
         app.state.current_environment = new_env
         
-        logger.info(f"✅ Environment switched to: {new_env}")
+        logger.info(f"✅ Environment switch to {new_env} completed successfully")
         
         return {
             "success": True,
             "environment": new_env,
             "message": f"Switched to {new_env} environment",
-            "kafka_connected": kafka_consumer is not None and kafka_consumer.running if kafka_consumer else False
+            "kafka_connected": kafka_consumer.running if kafka_consumer else False,
+            "memory_freed": collected > 0,
+            "tasks_managed": hasattr(app.state, 'task_manager')
         }
     except HTTPException:
         raise
