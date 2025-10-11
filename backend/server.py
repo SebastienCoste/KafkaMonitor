@@ -216,6 +216,28 @@ async def startup_event():
         import traceback
         logger.error(traceback.format_exc())
 
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Graceful shutdown handler"""
+    logger.info("🛑 APPLICATION SHUTDOWN - CLEANING UP RESOURCES")
+    
+    # Shutdown task manager first
+    if hasattr(app.state, 'task_manager'):
+        await app.state.task_manager.shutdown()
+    
+    # Gracefully stop Kafka consumer
+    global kafka_consumer
+    if kafka_consumer is not None:
+        try:
+            logger.info("🛑 Gracefully shutting down Kafka consumer...")
+            await kafka_consumer.stop_consuming_gracefully(timeout=10)
+            await kafka_consumer.cleanup_resources()
+            logger.info("✅ Kafka consumer shutdown complete")
+        except Exception as e:
+            logger.error(f"❌ Error during Kafka consumer shutdown: {e}")
+    
+    logger.info("✅ Application shutdown completed")
+
 # -----------------------------------------------------------------------------
 # Initialization (portable for local and server)
 # -----------------------------------------------------------------------------
