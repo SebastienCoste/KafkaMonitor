@@ -44,7 +44,7 @@ class KafkaConsumerService:
         
         self._load_config()
         
-        logger.info(f"✅ KafkaConsumerService initialized successfully")
+        logger.info(f"✅ KafkaConsumerService initialized with graceful shutdown support")
 
     def _load_config(self):
         """Load Kafka configuration from YAML file and environment variables"""
