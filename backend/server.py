@@ -394,30 +394,56 @@ async def switch_environment(request: Dict[str, Any]):
         if not new_env:
             raise HTTPException(status_code=400, detail="Environment is required")
         
-        logger.info(f"🔄 Switching environment to: {new_env}")
+        logger.info(f"🔄 Starting graceful environment switch to: {new_env}")
         
-        # Load new environment configuration
+        # Phase 1: Graceful Kafka consumer shutdown with timeout
+        if kafka_consumer is not None:
+            logger.info("🛑 Gracefully stopping Kafka consumer...")
+            try:
+                await kafka_consumer.stop_consuming_gracefully(timeout=10)
+                await kafka_consumer.cleanup_resources()
+                logger.info("✅ Kafka consumer gracefully stopped and cleaned up")
+            except Exception as e:
+                logger.error(f"❌ Error during graceful Kafka shutdown: {e}")
+                # Force cleanup as fallback
+                if kafka_consumer:
+                    try:
+                        kafka_consumer.stop_consuming()
+                    except:
+                        pass
+            finally:
+                kafka_consumer = None
+        
+        # Phase 2: Efficient trace clearing with batching
+        if graph_builder is not None:
+            logger.info("🧹 Clearing trace data with batching...")
+            if hasattr(graph_builder, 'clear_traces_efficiently'):
+                await graph_builder.clear_traces_efficiently()
+            else:
+                # Fallback to simple clearing if method not available yet
+                graph_builder.traces.clear()
+                graph_builder.trace_order.clear()
+            logger.info("✅ Trace data cleared efficiently")
+        
+        # Phase 3: Clean up any remaining async tasks for this environment
+        if hasattr(app.state, 'task_manager'):
+            logger.info("🧹 Cleaning up environment-specific tasks...")
+            await app.state.task_manager.cleanup_environment_tasks(new_env)
+        
+        # Phase 4: Force garbage collection to free memory immediately
+        import gc
+        before_gc = gc.get_count()
+        collected = gc.collect()
+        after_gc = gc.get_count()
+        logger.info(f"🗑️ Garbage collection: collected {collected} objects, before: {before_gc}, after: {after_gc}")
+        
+        # Phase 5: Load new environment configuration
         env_file = ROOT_DIR / "config" / "environments" / f"{new_env.lower()}.yaml"
         if not env_file.exists():
             raise HTTPException(status_code=404, detail=f"Environment configuration not found: {new_env}")
         
         with open(env_file, 'r') as f:
             env_config = yaml.safe_load(f)
-        
-        # Stop existing Kafka consumer if running
-        if 'kafka_consumer' in globals() and kafka_consumer is not None:
-            try:
-                logger.info("🛑 Stopping existing Kafka consumer...")
-                kafka_consumer.stop_consuming()
-            except Exception as e:
-                logger.warning(f"Error stopping Kafka consumer: {e}")
-            kafka_consumer = None
-        
-        # Clear existing traces
-        if graph_builder is not None:
-            logger.info("🧹 Clearing existing traces...")
-            graph_builder.traces.clear()
-            graph_builder.trace_order.clear()
         
         # Reinitialize Kafka consumer for new environment
         kafka_config = env_config.get('kafka', {})
