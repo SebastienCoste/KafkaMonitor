@@ -47,6 +47,11 @@ async def startup_event():
     app.state.task_manager = AsyncTaskManager(max_concurrent=20)
     logger.info("✅ Task manager initialized with 20 max concurrent tasks")
     
+    # Initialize performance monitoring
+    app.state.performance_monitor = PerformanceMonitor(sample_interval=30.0)
+    app.state.performance_monitor.start()
+    logger.info("✅ Performance monitoring started")
+    
     logger.info("="*80)
     logger.info("🚀 APPLICATION STARTUP - REGISTERED ROUTES:")
     logger.info("="*80)
