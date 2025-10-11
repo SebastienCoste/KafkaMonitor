@@ -682,7 +682,11 @@ class TraceGraphBuilder:
         return len(to_remove)
 
     def get_statistics(self) -> Dict[str, Any]:
-        """Get detailed statistics about traces and topics"""
+        """Get comprehensive statistics with intelligent caching"""
+        return self.stats_manager.get_statistics(self)
+    
+    def get_statistics_uncached(self) -> Dict[str, Any]:
+        """Get detailed statistics about traces and topics (original uncached version)"""
         stats = {
             'traces': {
                 'total': len(self.traces),
