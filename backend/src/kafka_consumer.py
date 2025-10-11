@@ -35,6 +35,13 @@ class KafkaConsumerService:
         self.mock_mode = False
         self.message_handlers: List[Callable[[KafkaMessage], None]] = []
         self.subscribed_topics = []
+        
+        # ADD THESE NEW ATTRIBUTES FOR GRACEFUL SHUTDOWN:
+        self._shutdown_event = asyncio.Event()
+        self._cleanup_tasks = set()
+        self._consumption_task = None
+        self._graceful_shutdown_timeout = 10.0
+        
         self._load_config()
         
         logger.info(f"✅ KafkaConsumerService initialized successfully")
