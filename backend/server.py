@@ -25,6 +25,7 @@ from src.blueprint_config_models import (
 from src.graph_builder import TraceGraphBuilder
 from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 from src.performance.task_manager import AsyncTaskManager
+from src.performance.performance_monitor import PerformanceMonitor
 
 # -----------------------------------------------------------------------------
 # App and Router
