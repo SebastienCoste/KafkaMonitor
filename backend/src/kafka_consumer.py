@@ -1,5 +1,6 @@
 """
 Kafka consumer implementation with SASL/SCRAM authentication and mock support
+Phase 3 Optimization: Adaptive polling strategy
 """
 import asyncio
 import logging
@@ -7,7 +8,8 @@ import random
 import time
 import traceback
 import os
-from typing import Dict, List, Callable, Optional
+from typing import Dict, List, Callable, Optional, Any, Deque
+from collections import deque
 from confluent_kafka import Consumer, KafkaError, KafkaException
 import yaml
 from datetime import datetime
@@ -17,6 +19,91 @@ from src.protobuf_decoder import ProtobufDecoder, MockProtobufDecoder
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+class AdaptivePollingStrategy:
+    """Adaptive polling strategy that adjusts timeout based on message activity"""
+    
+    def __init__(self):
+        self.base_timeout = 1.0
+        self.max_timeout = 30.0
+        self.current_timeout = self.base_timeout
+        self.consecutive_empty_polls = 0
+        self.message_rate_history: Deque[float] = deque(maxlen=100)
+        self.last_message_time = time.time()
+        self.adaptive_factor = 1.2
+        
+        # Performance tracking
+        self.stats = {
+            'empty_polls': 0,
+            'message_polls': 0,
+            'timeout_increases': 0,
+            'timeout_decreases': 0,
+            'avg_timeout': self.base_timeout
+        }
+        
+        logger.info(f"AdaptivePollingStrategy initialized: base={self.base_timeout}s, max={self.max_timeout}s")
+    
+    def get_poll_timeout(self) -> float:
+        """Get current adaptive polling timeout"""
+        return self.current_timeout
+    
+    def on_message_received(self):
+        """Called when a message is successfully received"""
+        current_time = time.time()
+        self.message_rate_history.append(current_time)
+        self.last_message_time = current_time
+        self.consecutive_empty_polls = 0
+        self.stats['message_polls'] += 1
+        
+        # Reset to base timeout for high activity
+        if self.current_timeout > self.base_timeout:
+            self.current_timeout = self.base_timeout
+            self.stats['timeout_decreases'] += 1
+            logger.debug(f"📊 Polling timeout decreased to {self.current_timeout}s (message received)")
+    
+    def on_empty_poll(self):
+        """Called when poll returns no messages"""
+        self.consecutive_empty_polls += 1
+        self.stats['empty_polls'] += 1
+        
+        # Gradually increase timeout for sustained low activity
+        if self.consecutive_empty_polls > 3:
+            old_timeout = self.current_timeout
+            self.current_timeout = min(
+                self.current_timeout * self.adaptive_factor,
+                self.max_timeout
+            )
+            
+            if self.current_timeout != old_timeout:
+                self.stats['timeout_increases'] += 1
+                logger.debug(f"📊 Polling timeout increased to {self.current_timeout:.1f}s ({self.consecutive_empty_polls} empty polls)")
+        
+        # Update average timeout stat
+        total_polls = self.stats['empty_polls'] + self.stats['message_polls']
+        if total_polls > 0:
+            self.stats['avg_timeout'] = (
+                (self.stats['avg_timeout'] * (total_polls - 1) + self.current_timeout) / total_polls
+            )
+    
+    def get_current_message_rate(self) -> float:
+        """Calculate current messages per second"""
+        if len(self.message_rate_history) < 2:
+            return 0.0
+        
+        time_span = self.message_rate_history[-1] - self.message_rate_history[0]
+        return len(self.message_rate_history) / max(time_span, 1.0)
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """Get adaptive polling statistics"""
+        return {
+            **self.stats,
+            'current_timeout': self.current_timeout,
+            'consecutive_empty_polls': self.consecutive_empty_polls,
+            'message_rate_per_second': self.get_current_message_rate(),
+            'message_history_size': len(self.message_rate_history),
+            'time_since_last_message': time.time() - self.last_message_time
+        }
 
 class KafkaConsumerService:
     """Kafka consumer with SASL/SCRAM authentication and mock support"""
