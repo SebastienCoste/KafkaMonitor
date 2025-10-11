@@ -39,6 +39,14 @@ api_router = APIRouter(prefix="/api")
 @app.on_event("startup")
 async def startup_event():
     logger.info("="*80)
+    logger.info("🚀 APPLICATION STARTUP - INITIALIZING TASK MANAGER")
+    logger.info("="*80)
+    
+    # Initialize task manager FIRST, before any other async operations
+    app.state.task_manager = AsyncTaskManager(max_concurrent=20)
+    logger.info("✅ Task manager initialized with 20 max concurrent tasks")
+    
+    logger.info("="*80)
     logger.info("🚀 APPLICATION STARTUP - REGISTERED ROUTES:")
     logger.info("="*80)
     for route in app.routes:
