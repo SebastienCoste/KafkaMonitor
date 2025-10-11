@@ -362,6 +362,11 @@ class TraceGraphBuilder:
             self.trace_order.remove(message.trace_id)
         self.trace_order.append(message.trace_id)
 
+        # ADD CACHE INVALIDATION (only when needed):
+        # Invalidate cache every 10th message to reduce overhead
+        if len(self.traces) % 10 == 0:
+            self.stats_manager.invalidate("message_batch")
+
         # Enforce max traces limit with improved logic
         self._enforce_trace_limit()
 
