@@ -2279,11 +2279,15 @@ async def get_performance_stats():
         logger.error(f"Error collecting app status: {e}")
         app_status['error'] = str(e)
     
+    # Get alerts for response
+    alerts_24h = monitor.get_alerts(24)
+    
     return {
         "current": current_stats,
         "trends": trends,
         "application": app_status,
-        "alerts_last_24h": len(monitor.get_alerts(24))
+        "alerts": alerts_24h,  # Full alerts array for frontend display
+        "alerts_last_24h": len(alerts_24h)  # Count for quick reference
     }
 
 @api_router.get("/system/performance/history")
