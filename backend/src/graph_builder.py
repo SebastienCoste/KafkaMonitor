@@ -261,9 +261,23 @@ class TraceGraphBuilder:
         self.traces: Dict[str, TraceInfo] = {}
         self.trace_order = deque()  # For FIFO eviction
         self.monitored_topics: Set[str] = set()
+        
+        # ADD THESE NEW ATTRIBUTES FOR PHASE 2 OPTIMIZATIONS:
+        self._memory_stats = {
+            'traces_cleared_total': 0,
+            'batches_processed': 0,
+            'gc_collections': 0,
+            'last_clear_duration': 0.0,
+            'memory_freed_mb': 0.0
+        }
+        self._clear_batch_size = 100
+        
+        # ADD CACHING SYSTEM:
+        self.stats_manager = CachedStatsManager(cache_ttl=5.0)
+        
         self._load_topic_graph()
         
-        logger.info("✅ TraceGraphBuilder initialized successfully")
+        logger.info("✅ TraceGraphBuilder initialized with statistics caching and efficient clearing support")
 
     def _load_topic_graph(self):
         """Load topic graph configuration"""
