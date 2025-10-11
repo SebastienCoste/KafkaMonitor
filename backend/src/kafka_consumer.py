@@ -518,6 +518,19 @@ class KafkaConsumerService:
             logger.info("Consumer stopped")
 
     async def start_consuming_async(self):
-        """Start consuming messages asynchronously"""
-        loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self.start_consuming)
+        """Start consuming messages asynchronously with proper task tracking"""
+        logger.info("🚀 Starting async Kafka message consumption...")
+        
+        # Store reference to consumption task
+        self._consumption_task = asyncio.current_task()
+        
+        try:
+            # Use existing start_consuming logic but make it awaitable
+            loop = asyncio.get_event_loop()
+            await loop.run_in_executor(None, self.start_consuming)
+        except Exception as e:
+            logger.error(f"❌ Error in async consumption: {e}")
+            raise
+        finally:
+            self._consumption_task = None
+            logger.info("🛑 Async Kafka consumption ended")
