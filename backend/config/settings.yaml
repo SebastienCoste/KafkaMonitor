@@ -1,61 +1,44 @@
-# Application configuration
-trace_header_field: "traceparent"  # Configurable trace header field name
-max_traces: 1000                 # Maximum traces to retain in memory
-cleanup_interval: 300            # Seconds between cleanup cycles
-
-# Web server settings
-web_server:
-  host: "0.0.0.0"
-  port: 8001
-  debug: true
-  cors_enabled: true
-
-# Logging configuration
+application:
+  start_env: DEV
+cleanup_interval: 300
+landing_page:
+  description: Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint
+    secrets. Track every movement, discover every connection.
+  enabled: true
+  subtitle: Expecto Debuggius
+  title: Marauder's Map
 logging:
-  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
-  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-# Message processing settings
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: INFO
+max_traces: 1000
 message_processing:
-  batch_size: 100              # Messages to process in batch
-  processing_timeout: 30       # Seconds to wait for message processing
-  decode_errors: "log"      # ignore, raise, log
-
-# Mock data settings for development
+  batch_size: 100
+  decode_errors: log
+  processing_timeout: 30
 mock_data:
   enabled: true
-  message_interval: 2.0        # Seconds between mock messages
-  traces_per_hour: 50         # Number of traces to generate per hour
-  topics_rotation: true       # Rotate through different topics
-
-# Topic monitoring settings
-topic_monitoring:
-  activate_all_on_startup: true  # Whether to monitor all configured topics on startup
-
-application:
-  start_env: INT
-
-# Application tabs configuration
-# Application tabs configuration
+  message_interval: 2.0
+  topics_rotation: true
+  traces_per_hour: 50
 tabs:
-  trace_viewer:
-    enabled: true
-    title: "Trace Viewer"
-    description: "Track footsteps through Kafka message corridors and reveal hidden paths"
-  grpc_integration:
-    enabled: true
-    title: "gRPC Integration"
-    description: "Unlock secret passages to gRPC services and test their defenses"
   blueprint_creator:
+    description: Chart new territories and verify Redis chamber secrets
     enabled: true
-    title: "Blueprint Creator"
-    description: "Chart new territories and verify Redis chamber secrets"
-
-# Landing page configuration
-landing_page:
-  enabled: true
-  title: "Marauder's Map"
-  subtitle: "Expecto Debuggius"
-  description: "Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint secrets. Track every movement, discover every connection."
-
-# Note: Redis configuration is in environment-specific files: backend/config/environments/<env>.yaml
+    title: Blueprint Creator
+  grpc_integration:
+    description: Unlock secret passages to gRPC services and test their defenses
+    enabled: true
+    title: gRPC Integration
+  trace_viewer:
+    description: Track footsteps through Kafka message corridors and reveal hidden
+      paths
+    enabled: true
+    title: Trace Viewer
+topic_monitoring:
+  activate_all_on_startup: true
+trace_header_field: traceparent
+web_server:
+  cors_enabled: true
+  debug: true
+  host: 0.0.0.0
+  port: 8001
