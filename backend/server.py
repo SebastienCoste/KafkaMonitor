@@ -201,7 +201,20 @@ async def startup_event():
                         
                         # Start consuming messages asynchronously
                         logger.info(f"🚀 Starting Kafka message consumption...")
-                        asyncio.create_task(kafka_consumer.start_consuming_async())
+                        
+                        # Use managed task creation
+                        if hasattr(app.state, 'task_manager'):
+                            logger.info(f"🚀 Starting managed Kafka consumption task for startup...")
+                            await app.state.task_manager.create_managed_task(
+                                kafka_consumer.start_consuming_async(),
+                                name=f"kafka_consumer_startup",
+                                environment=start_env,
+                                task_type="kafka"
+                            )
+                        else:
+                            # Fallback to bare task if manager not ready
+                            asyncio.create_task(kafka_consumer.start_consuming_async())
+                        
                         logger.info(f"✅ Kafka consumer started")
                     else:
                         logger.warning("⚠️ No topics found in topic graph")
