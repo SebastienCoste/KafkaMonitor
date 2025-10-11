@@ -240,7 +240,11 @@ async def shutdown_event():
     """Graceful shutdown handler"""
     logger.info("🛑 APPLICATION SHUTDOWN - CLEANING UP RESOURCES")
     
-    # Shutdown task manager first
+    # Stop performance monitoring
+    if hasattr(app.state, 'performance_monitor'):
+        app.state.performance_monitor.stop()
+    
+    # Shutdown task manager
     if hasattr(app.state, 'task_manager'):
         await app.state.task_manager.shutdown()
     
