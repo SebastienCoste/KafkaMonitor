@@ -313,24 +313,42 @@ class KafkaConsumerService:
             self._start_real_consuming()
 
     def _start_real_consuming(self):
-        """Start consuming from real Kafka"""
+        """Start consuming from real Kafka with adaptive polling"""
         if not self.consumer:
             raise RuntimeError("Consumer not initialized. Call subscribe_to_topics first.")
 
-        # Topic refresh counter
-        poll_count = 0
-        topic_refresh_interval = 300  # Refresh every 5 minutes (300 polls of 1 second each)
+        # Initialize adaptive polling strategy
+        poller = AdaptivePollingStrategy()
+        topic_refresh_counter = 0
 
         try:
-            while self.running:
-                msg = self.consumer.poll(timeout=1.0)
+            logger.info("🚀 Starting real Kafka consumption with adaptive polling...")
+            
+            while self.running and not self._shutdown_event.is_set():
+                # Get adaptive timeout
+                timeout = poller.get_poll_timeout()
+                
+                msg = self.consumer.poll(timeout=timeout)
 
                 if msg is None:
-                    # Periodically check for new topics
-                    poll_count += 1
-                    if poll_count >= topic_refresh_interval:
-                        self.refresh_topic_subscription()
-                        poll_count = 0
+                    poller.on_empty_poll()
+                    
+                    # Check for shutdown during empty polls
+                    if self._shutdown_event.is_set():
+                        logger.info("🛑 Shutdown event detected during empty poll")
+                        break
+                    
+                    # Adaptive topic refresh (less frequent during low activity)
+                    topic_refresh_counter += 1
+                    # Increase refresh interval when timeout is high (low activity)
+                    effective_interval = 300 * (1 + int(timeout > 5))
+                    
+                    if topic_refresh_counter >= effective_interval:
+                        if not self._shutdown_event.is_set():
+                            logger.debug(f"🔄 Refreshing topic subscription (interval: {effective_interval})")
+                            self.refresh_topic_subscription()
+                        topic_refresh_counter = 0
+                    
                     continue
 
                 if msg.error():
@@ -352,21 +370,39 @@ class KafkaConsumerService:
                         logger.error(f"❌ Consumer error: {error_msg}")
                     continue
 
+                # Message received successfully
+                poller.on_message_received()
+                topic_refresh_counter = 0  # Reset on activity
+                
                 # Process message
                 try:
                     kafka_msg = self._process_message(msg)
                     if kafka_msg:
                         # Call all registered handlers
                         for handler in self.message_handlers:
-                            handler(kafka_msg)
+                            try:
+                                handler(kafka_msg)
+                            except Exception as handler_error:
+                                logger.error(f"❌ Error in message handler: {handler_error}")
 
                 except Exception as e:
                     logger.error(f"Error processing message: {e}")
 
         except KeyboardInterrupt:
             logger.info("Consumer interrupted")
+        except Exception as e:
+            logger.error(f"❌ Unexpected error in consumption loop: {e}")
         finally:
-            self.stop_consuming()
+            # Log adaptive polling statistics
+            stats = poller.get_stats()
+            logger.info(
+                f"🛑 Kafka consumption ended. Adaptive polling stats: "
+                f"avg_timeout={stats['avg_timeout']:.1f}s, "
+                f"message_rate={stats['message_rate_per_second']:.1f}/s, "
+                f"empty_polls={stats['empty_polls']}, "
+                f"message_polls={stats['message_polls']}"
+            )
+            self.running = False
 
     def _start_mock_consuming(self):
         """Start consuming mock messages"""
