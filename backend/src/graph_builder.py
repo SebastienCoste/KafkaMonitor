@@ -1,11 +1,17 @@
 """
 Topic graph builder and trace management with FIFO eviction
 Enhanced for Phase 2: Multiple disconnected graphs, real-time statistics, trace age analysis
+Phase 2 Optimization: Caching system and efficient memory management
 """
 import logging
+import time
+import copy
+import hashlib
+import asyncio
 from typing import Dict, List, Optional, Set, Any
-from collections import defaultdict, deque
+from collections import defaultdict, deque, Counter
 from datetime import datetime, timedelta
+from threading import RLock
 import yaml
 import numpy as np
 from src.models import KafkaMessage, TraceInfo, TopicGraph
@@ -13,6 +19,232 @@ from src.models import KafkaMessage, TraceInfo, TopicGraph
 # Set up extensive logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+class CachedStatsManager:
+    """Intelligent caching system for expensive statistics calculations"""
+    
+    def __init__(self, cache_ttl: float = 5.0):
+        self.cache_ttl = cache_ttl
+        self.stats_cache: Optional[Dict[str, Any]] = None
+        self.cache_timestamp = 0.0
+        self.cache_lock = RLock()  # Reentrant lock for nested calls
+        self.dirty = True
+        
+        # Cache performance metrics
+        self.cache_hits = 0
+        self.cache_misses = 0
+        self.calculations = 0
+        self.total_calculation_time = 0.0
+        
+        # Change detection for smart invalidation
+        self.last_trace_count = 0
+        self.last_message_count = 0
+        self.last_monitored_topics_hash = ""
+        
+        logger.info(f"CachedStatsManager initialized with {cache_ttl}s TTL")
+    
+    def invalidate(self, reason: str = "manual"):
+        """Invalidate cache with reason tracking"""
+        with self.cache_lock:
+            if not self.dirty:
+                logger.debug(f"📊 Cache invalidated: {reason}")
+            self.dirty = True
+    
+    def get_statistics(self, graph_builder) -> Dict[str, Any]:
+        """Get cached or calculate fresh statistics"""
+        current_time = time.time()
+        
+        with self.cache_lock:
+            # Check if we need to recalculate
+            needs_refresh = (
+                self.stats_cache is None or
+                self.dirty or
+                (current_time - self.cache_timestamp) > self.cache_ttl or
+                self._significant_change_detected(graph_builder)
+            )
+            
+            if needs_refresh:
+                self.cache_misses += 1
+                logger.debug(f"📊 Cache miss #{self.cache_misses} - calculating fresh statistics")
+                
+                calc_start = time.time()
+                self.stats_cache = self._calculate_fresh_statistics(graph_builder)
+                calc_duration = time.time() - calc_start
+                
+                self.calculations += 1
+                self.total_calculation_time += calc_duration
+                self.cache_timestamp = current_time
+                self.dirty = False
+                
+                # Update change detection counters
+                self._update_change_detection(graph_builder)
+                
+                logger.debug(f"📊 Statistics calculated in {calc_duration:.3f}s")
+            else:
+                self.cache_hits += 1
+                logger.debug(f"📊 Cache hit #{self.cache_hits}")
+        
+        # Return deep copy to prevent external mutations affecting cache
+        return copy.deepcopy(self.stats_cache)
+    
+    def _significant_change_detected(self, graph_builder) -> bool:
+        """Detect if significant changes warrant cache refresh"""
+        current_trace_count = len(graph_builder.traces)
+        current_message_count = sum(
+            len(trace.messages) for trace in graph_builder.traces.values()
+        )
+        
+        # Calculate monitored topics hash for change detection
+        monitored_topics_str = ",".join(sorted(graph_builder.monitored_topics))
+        current_monitored_hash = hashlib.md5(monitored_topics_str.encode()).hexdigest()
+        
+        # Check for significant changes
+        trace_change_pct = abs(current_trace_count - self.last_trace_count) / max(self.last_trace_count, 1)
+        message_change = abs(current_message_count - self.last_message_count)
+        topics_changed = current_monitored_hash != self.last_monitored_topics_hash
+        
+        significant_change = (
+            trace_change_pct > 0.1 or  # 10% change in trace count
+            message_change > 50 or     # 50+ message change
+            topics_changed             # Monitored topics changed
+        )
+        
+        if significant_change:
+            logger.debug(
+                f"📊 Significant change detected: "
+                f"traces {trace_change_pct:.1%}, "
+                f"messages +{message_change}, "
+                f"topics_changed: {topics_changed}"
+            )
+        
+        return significant_change
+    
+    def _update_change_detection(self, graph_builder):
+        """Update change detection counters"""
+        self.last_trace_count = len(graph_builder.traces)
+        self.last_message_count = sum(
+            len(trace.messages) for trace in graph_builder.traces.values()
+        )
+        monitored_topics_str = ",".join(sorted(graph_builder.monitored_topics))
+        self.last_monitored_topics_hash = hashlib.md5(monitored_topics_str.encode()).hexdigest()
+    
+    def _calculate_fresh_statistics(self, graph_builder) -> Dict[str, Any]:
+        """Calculate statistics with optimizations"""
+        start_time = time.time()
+        
+        # Use generator expressions and avoid redundant calculations
+        traces = graph_builder.traces.values()
+        
+        # Pre-calculate common values to avoid repeated iteration
+        trace_count = len(graph_builder.traces)
+        all_messages = [msg for trace in traces for msg in trace.messages]
+        message_count = len(all_messages)
+        
+        # Calculate statistics efficiently
+        stats = {
+            'traces': {
+                'total': trace_count,
+                'max_capacity': graph_builder.max_traces,
+                'utilization': trace_count / graph_builder.max_traces if graph_builder.max_traces > 0 else 0
+            },
+            'messages': {
+                'total': message_count,
+                'by_topic': self._calculate_topic_message_counts(all_messages)
+            },
+            'topics': self._calculate_topic_statistics(graph_builder, all_messages),
+            'time_range': self._calculate_time_range(all_messages),
+            'cache_info': {
+                'hits': self.cache_hits,
+                'misses': self.cache_misses,
+                'hit_ratio': self.cache_hits / max(self.cache_hits + self.cache_misses, 1),
+                'calculations': self.calculations,
+                'avg_calculation_time': self.total_calculation_time / max(self.calculations, 1),
+                'last_calculation_time': time.time() - start_time
+            }
+        }
+        
+        calculation_time = time.time() - start_time
+        logger.debug(f"📊 Fresh statistics calculation completed in {calculation_time:.3f}s")
+        
+        return stats
+    
+    def _calculate_topic_message_counts(self, all_messages) -> Dict[str, int]:
+        """Efficiently calculate message counts by topic using Counter"""
+        return dict(Counter(msg.topic for msg in all_messages if msg.topic))
+    
+    def _calculate_topic_statistics(self, graph_builder, all_messages) -> Dict[str, Any]:
+        """Calculate topic statistics with performance optimizations"""
+        all_topics = graph_builder.topic_graph.get_all_topics()
+        topics_with_messages = set(msg.topic for msg in all_messages if msg.topic)
+        
+        # Only calculate detailed stats for topics with recent activity
+        now = datetime.now()
+        detailed_stats = {}
+        
+        # Batch process active topics for efficiency
+        active_topics = [topic for topic in all_topics if topic in topics_with_messages]
+        inactive_topics = [topic for topic in all_topics if topic not in topics_with_messages]
+        
+        # Full statistics for active topics
+        for topic in active_topics:
+            detailed_stats[topic] = graph_builder._calculate_topic_statistics(topic, now)
+        
+        # Minimal stats for inactive topics (avoid expensive calculations)
+        inactive_stats_template = {
+            'message_count': 0,
+            'trace_count': 0,
+            'monitored': False,  # Will be updated below
+            'status': 'No messages',
+            'traces': [],
+            'message_age_p10_ms': 0,
+            'message_age_p50_ms': 0,
+            'message_age_p95_ms': 0,
+            'messages_per_minute_total': 0,
+            'messages_per_minute_rolling': 0,
+            'slowest_traces': []
+        }
+        
+        for topic in inactive_topics:
+            stats = inactive_stats_template.copy()
+            stats['monitored'] = topic in graph_builder.monitored_topics
+            detailed_stats[topic] = stats
+        
+        return {
+            'total': len(all_topics),
+            'monitored': len(graph_builder.monitored_topics),
+            'with_messages': len(topics_with_messages),
+            'details': detailed_stats
+        }
+    
+    def _calculate_time_range(self, all_messages) -> Dict[str, Optional[str]]:
+        """Calculate time range efficiently"""
+        if not all_messages:
+            return {'earliest': None, 'latest': None}
+        
+        # Single pass to find min/max timestamps
+        timestamps = [msg.timestamp for msg in all_messages]
+        return {
+            'earliest': min(timestamps).isoformat(),
+            'latest': max(timestamps).isoformat()
+        }
+    
+    def get_cache_stats(self) -> Dict[str, Any]:
+        """Get cache performance statistics"""
+        total_requests = self.cache_hits + self.cache_misses
+        
+        return {
+            'cache_hits': self.cache_hits,
+            'cache_misses': self.cache_misses,
+            'hit_ratio': self.cache_hits / max(total_requests, 1),
+            'total_requests': total_requests,
+            'calculations_performed': self.calculations,
+            'avg_calculation_time_ms': (self.total_calculation_time / max(self.calculations, 1)) * 1000,
+            'total_calculation_time_ms': self.total_calculation_time * 1000,
+            'cache_ttl_seconds': self.cache_ttl,
+            'currently_cached': self.stats_cache is not None,
+            'cache_age_seconds': time.time() - self.cache_timestamp if self.stats_cache else 0
+        }
 
 class TraceGraphBuilder:
     """Manages topic graph and trace collection with FIFO eviction"""
