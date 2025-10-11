@@ -399,6 +399,117 @@ class KafkaConsumerService:
             logger.error(f"Failed to process message: {e}")
             return None
 
+    async def stop_consuming_gracefully(self, timeout: int = 10):
+        """Gracefully stop consuming with timeout and proper cleanup"""
+        logger.info(f"🔄 Initiating graceful Kafka consumer shutdown (timeout: {timeout}s)...")
+        
+        # Set shutdown flag
+        self.running = False
+        self._shutdown_event.set()
+        
+        try:
+            # Wait for current operations to complete
+            await asyncio.wait_for(self._wait_for_completion(), timeout=timeout)
+            logger.info("✅ Graceful Kafka shutdown completed within timeout")
+        except asyncio.TimeoutError:
+            logger.warning(f"⚠️ Graceful shutdown timeout after {timeout}s, forcing stop...")
+            await self._force_stop()
+        except Exception as e:
+            logger.error(f"❌ Error during graceful shutdown: {e}, forcing stop...")
+            await self._force_stop()
+    
+    async def cleanup_resources(self):
+        """Clean up all Kafka consumer resources"""
+        logger.info("🧹 Cleaning up Kafka consumer resources...")
+        
+        cleanup_count = 0
+        try:
+            # Close Kafka consumer connection
+            if self.consumer:
+                logger.info("Closing Kafka consumer connection...")
+                self.consumer.close()
+                self.consumer = None
+                cleanup_count += 1
+            
+            # Cancel and wait for cleanup tasks
+            if self._cleanup_tasks:
+                logger.info(f"Cancelling {len(self._cleanup_tasks)} cleanup tasks...")
+                for task in self._cleanup_tasks.copy():
+                    if not task.done():
+                        task.cancel()
+                
+                # Wait for task cancellation
+                if self._cleanup_tasks:
+                    await asyncio.gather(*self._cleanup_tasks, return_exceptions=True)
+                    cleanup_count += len(self._cleanup_tasks)
+                
+                self._cleanup_tasks.clear()
+            
+            # Clear message handlers to prevent memory leaks
+            handler_count = len(self.message_handlers)
+            self.message_handlers.clear()
+            cleanup_count += handler_count
+            
+            # Clear subscribed topics list
+            self.subscribed_topics.clear()
+            
+            # Reset state
+            self._shutdown_event.clear()
+            
+            logger.info(f"✅ Kafka consumer resources cleaned up ({cleanup_count} items)")
+            
+        except Exception as e:
+            logger.error(f"❌ Error cleaning up Kafka consumer resources: {e}")
+            # Force cleanup critical resources
+            if self.consumer:
+                try:
+                    self.consumer.close()
+                    self.consumer = None
+                except:
+                    pass
+    
+    async def _wait_for_completion(self):
+        """Wait for current Kafka operations to complete"""
+        # Implementation: wait for current poll operation to finish
+        # This is a simplified version - you may need to adjust based on your specific needs
+        
+        max_wait_cycles = 10
+        wait_cycle = 0
+        
+        while self.running and wait_cycle < max_wait_cycles:
+            # Check if we're in the middle of processing messages
+            # This is a heuristic - adjust based on your actual processing state
+            await asyncio.sleep(0.5)
+            wait_cycle += 1
+        
+        logger.info(f"Kafka consumer completion wait finished after {wait_cycle} cycles")
+    
+    async def _force_stop(self):
+        """Force stop all Kafka operations immediately"""
+        logger.warning("🛑 Force stopping Kafka consumer...")
+        
+        try:
+            # Force close consumer
+            if self.consumer:
+                self.consumer.close()
+                self.consumer = None
+            
+            # Cancel consumption task if it exists
+            if self._consumption_task and not self._consumption_task.done():
+                self._consumption_task.cancel()
+                try:
+                    await self._consumption_task
+                except asyncio.CancelledError:
+                    pass
+            
+            # Force clear all handlers
+            self.message_handlers.clear()
+            
+            logger.info("✅ Kafka consumer force stopped")
+            
+        except Exception as e:
+            logger.error(f"❌ Error during force stop: {e}")
+    
     def stop_consuming(self):
         """Stop consuming messages"""
         self.running = False
