@@ -517,7 +517,19 @@ async def switch_environment(request: Dict[str, Any]):
                         
                         # Start consuming messages asynchronously
                         logger.info(f"🚀 Starting Kafka message consumption for {new_env}...")
-                        asyncio.create_task(kafka_consumer.start_consuming_async())
+                        
+                        # IMPORTANT: Use managed task creation instead of bare asyncio.create_task
+                        if hasattr(app.state, 'task_manager'):
+                            logger.info(f"🚀 Starting managed Kafka consumption task for {new_env}...")
+                            await app.state.task_manager.create_managed_task(
+                                kafka_consumer.start_consuming_async(),
+                                name=f"kafka_consumer_{new_env}",
+                                environment=new_env,
+                                task_type="kafka"
+                            )
+                        else:
+                            # Fallback to existing method if task manager not available
+                            asyncio.create_task(kafka_consumer.start_consuming_async())
                 
                 logger.info(f"✅ Kafka consumer initialized for {new_env}")
             except Exception as e:
