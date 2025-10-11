@@ -1,5 +1,5 @@
 application:
-  start_env: DEV
+  start_env: INT
 cleanup_interval: 300
 landing_page:
   description: Reveal the hidden paths of Kafka traces, gRPC integrations, and blueprint
