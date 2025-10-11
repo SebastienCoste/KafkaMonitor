@@ -568,6 +568,95 @@ class TraceGraphBuilder:
         # Convert to list of tuples (source, destination, count)
         return [(source, dest, count) for (source, dest), count in flow_counts.items()]
 
+    async def clear_traces_efficiently(self):
+        """Clear traces with memory optimization and batching"""
+        if not self.traces:
+            logger.info("No traces to clear")
+            return
+        
+        logger.info(f"🔄 Starting efficient trace clearing for {len(self.traces)} traces...")
+        start_time = time.time()
+        
+        # Get memory usage before clearing
+        try:
+            import psutil
+            process = psutil.Process()
+            memory_before = process.memory_info().rss / 1024 / 1024  # MB
+        except ImportError:
+            logger.warning("psutil not available, skipping memory tracking")
+            memory_before = 0
+        
+        batch_size = self._clear_batch_size
+        trace_ids = list(self.traces.keys())
+        total_traces = len(trace_ids)
+        
+        logger.info(f"Processing {total_traces} traces in batches of {batch_size}")
+        
+        # Process traces in batches to avoid memory spikes
+        for i in range(0, len(trace_ids), batch_size):
+            batch = trace_ids[i:i+batch_size]
+            batch_num = (i // batch_size) + 1
+            total_batches = (total_traces + batch_size - 1) // batch_size
+            
+            logger.debug(f"Processing batch {batch_num}/{total_batches} ({len(batch)} traces)")
+            
+            # Remove traces from main dictionary
+            for trace_id in batch:
+                trace = self.traces.pop(trace_id, None)
+                if trace:
+                    # Explicitly clear trace internal references to help GC
+                    if hasattr(trace, 'messages'):
+                        trace.messages.clear()
+                    if hasattr(trace, 'topics'):
+                        trace.topics.clear()
+                    
+                    self._memory_stats['traces_cleared_total'] += 1
+            
+            # Update batch statistics
+            self._memory_stats['batches_processed'] += 1
+            
+            # Force garbage collection every batch to free memory immediately
+            import gc
+            collected = gc.collect()
+            self._memory_stats['gc_collections'] += 1
+            
+            if collected > 0:
+                logger.debug(f"Batch {batch_num}: collected {collected} objects")
+            
+            # Yield control to event loop to prevent blocking
+            await asyncio.sleep(0.001)
+        
+        # Clear trace order efficiently
+        logger.debug("Clearing trace order deque...")
+        self.trace_order.clear()
+        
+        # Final garbage collection
+        import gc
+        final_collected = gc.collect()
+        self._memory_stats['gc_collections'] += 1
+        
+        # Calculate memory freed
+        try:
+            import psutil
+            process = psutil.Process()
+            memory_after = process.memory_info().rss / 1024 / 1024  # MB
+            memory_freed = memory_before - memory_after
+            self._memory_stats['memory_freed_mb'] += max(0, memory_freed)
+        except ImportError:
+            memory_freed = 0
+        
+        # Record duration
+        duration = time.time() - start_time
+        self._memory_stats['last_clear_duration'] = duration
+        
+        logger.info(
+            f"✅ Efficient trace clearing completed in {duration:.2f}s: "
+            f"cleared {total_traces} traces, "
+            f"processed {self._memory_stats['batches_processed']} batches, "
+            f"freed ~{memory_freed:.1f}MB memory, "
+            f"final GC collected {final_collected} objects"
+        )
+    
     def cleanup_old_traces(self, max_age_hours: int = 24):
         """Clean up traces older than specified age"""
         cutoff_time = datetime.now() - timedelta(hours=max_age_hours)
