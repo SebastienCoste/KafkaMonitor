@@ -2235,6 +2235,78 @@ async def get_statistics():
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
+# -----------------------------------------------------------------------------
+# System Performance API Endpoints
+# -----------------------------------------------------------------------------
+@api_router.get("/system/performance")
+async def get_performance_stats():
+    """Get current system performance statistics"""
+    if not hasattr(app.state, 'performance_monitor'):
+        return {"error": "Performance monitoring not enabled"}
+    
+    monitor = app.state.performance_monitor
+    
+    current_stats = monitor.get_current_stats()
+    trends = monitor.get_trends()
+    
+    # Add application-specific status
+    app_status = {}
+    try:
+        if kafka_consumer:
+            app_status['kafka_consumer'] = {
+                'running': kafka_consumer.running,
+                'subscribed_topics': len(kafka_consumer.subscribed_topics),
+                'mock_mode': kafka_consumer.mock_mode
+            }
+        
+        if graph_builder:
+            memory_stats = graph_builder.get_memory_stats() if hasattr(graph_builder, 'get_memory_stats') else {}
+            cache_stats = graph_builder.stats_manager.get_cache_stats() if hasattr(graph_builder, 'stats_manager') else {}
+            
+            app_status['graph_builder'] = {
+                'trace_count': len(graph_builder.traces),
+                'max_traces': graph_builder.max_traces,
+                'utilization': len(graph_builder.traces) / graph_builder.max_traces if graph_builder.max_traces > 0 else 0,
+                **memory_stats,
+                'cache_stats': cache_stats
+            }
+        
+        if hasattr(app.state, 'task_manager'):
+            task_stats = app.state.task_manager.get_stats()
+            app_status['task_manager'] = task_stats
+        
+    except Exception as e:
+        logger.error(f"Error collecting app status: {e}")
+        app_status['error'] = str(e)
+    
+    return {
+        "current": current_stats,
+        "trends": trends,
+        "application": app_status,
+        "alerts_last_24h": len(monitor.get_alerts(24))
+    }
+
+@api_router.get("/system/performance/history")
+async def get_performance_history():
+    """Get full performance history for charts"""
+    if not hasattr(app.state, 'performance_monitor'):
+        return {"error": "Performance monitoring not enabled"}
+    
+    return app.state.performance_monitor.get_full_history()
+
+@api_router.get("/system/performance/alerts")
+async def get_performance_alerts(hours: int = 24):
+    """Get performance alerts from specified time period"""
+    if not hasattr(app.state, 'performance_monitor'):
+        return {"error": "Performance monitoring not enabled"}
+    
+    alerts = app.state.performance_monitor.get_alerts(hours)
+    return {
+        "alerts": alerts,
+        "count": len(alerts),
+        "hours": hours
+    }
+
 @api_router.get("/traces")
 async def get_traces():
     try:
