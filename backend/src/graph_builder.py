@@ -773,6 +773,16 @@ class TraceGraphBuilder:
 
         return stats
 
+    def get_memory_stats(self) -> Dict[str, Any]:
+        """Get memory management statistics"""
+        return {
+            **self._memory_stats,
+            'current_trace_count': len(self.traces),
+            'max_traces': self.max_traces,
+            'trace_order_length': len(self.trace_order),
+            'memory_utilization': len(self.traces) / self.max_traces if self.max_traces > 0 else 0
+        }
+    
     # Phase 2: Enhanced Graph Visualization Methods
     
     def get_disconnected_graphs(self) -> List[Dict[str, Any]]:
